@@ -865,6 +865,11 @@ URI ~s contains illegal character ~s at position ~d."
      then (format stream "~a" (uri-string uri))
      else (uri-string uri)))
 
+(defmethod uri->string ((uri uri))
+  (with-output-to-string (str)
+    (render-uri uri str)
+    str))
+
 (defun render-parsed-path (path-list escape)
   (do* ((res '())
 	(first (car path-list))
