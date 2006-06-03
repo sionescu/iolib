@@ -163,6 +163,8 @@
  (:structure iovec ("struct iovec"
                     ((* t) base "void *" "iov_base")
                     (size-t len "size_t" "iov_len")))
+#-linux (:integer iov-max "IOV_MAX")
+#+linux (:integer uio-maxiov "UIO_MAXIOV")
 
  ;;
  ;; from sys/socket.h
@@ -412,11 +414,13 @@
 #+linux (:integer ni-idn_use_std3_ascii_rules "NI_IDN_USE_STD3_ASCII_RULES")
 
  ;; error codes
+#+linux (:integer eai-addrfamily "EAI_ADDRFAMILY" "Address family for NAME not supported.")
  (:integer eai-again "EAI_AGAIN" "The name could not be resolved at this time. Future attempts may succeed.")
  (:integer eai-badflags "EAI_BADFLAGS" "The flags had an invalid value.")
  (:integer eai-fail "EAI_FAIL" "A non-recoverable error occurred.")
  (:integer eai-family "EAI_FAMILY" "The address family was not recognized or the address length was invalid for the specified family.")
  (:integer eai-memory "EAI_MEMORY" "There was a memory allocation failure.")
+#+linux (:integer eai-nodata "EAI_NODATA" "No address associated with NAME.")
  (:integer eai-noname "EAI_NONAME" "The name does not resolve for the supplied parameters. NI-NAMEREQD is set and the host's name cannot be located, or both nodename and servname were null.")
  (:integer eai-service "EAI_SERVICE" "The service passed was not recognized for the specified socket type.")
  (:integer eai-socktype "EAI_SOCKTYPE" "The intended socket type was not recognized.")
