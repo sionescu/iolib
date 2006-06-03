@@ -234,9 +234,9 @@
 (define-alien-routine "getnameinfo" int
   (sa (* t))
   (salen socklen-t)
-  (node c-string)
+  (node (* (array char)))
   (nodelen socklen-t)
-  (service c-string)
+  (service (* (array char)))
   (servicelen socklen-t)
   (flags int))
 
