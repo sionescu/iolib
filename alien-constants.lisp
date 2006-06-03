@@ -414,6 +414,8 @@
 #+linux (:integer ni-idn_use_std3_ascii_rules "NI_IDN_USE_STD3_ASCII_RULES")
 
  ;; error codes
+ (:integer netdb-success "NETDB_SUCCESS")
+ (:integer netdb-internal "NETDB_INTERNAL")
 #+linux (:integer eai-addrfamily "EAI_ADDRFAMILY" "Address family for NAME not supported.")
  (:integer eai-again "EAI_AGAIN" "The name could not be resolved at this time. Future attempts may succeed.")
  (:integer eai-badflags "EAI_BADFLAGS" "The flags had an invalid value.")
@@ -442,13 +444,6 @@
                        (c-string-pointer name "char *" "p_name")
                        ((* (* (unsigned 8))) aliases "char **" "p_aliases")
                        (int proto "int" "p_proto")))
- (:integer netdb-internal "NETDB_INTERNAL")
- (:integer netdb-success "NETDB_SUCCESS")
- (:integer host-not-found "HOST_NOT_FOUND")
- (:integer no-data "NO_DATA")
- (:integer no-address "NO_ADDRESS")
- (:integer no-recovery "NO_RECOVERY")
- (:integer try-again "TRY_AGAIN")
 
  ;;
  ;; from net/if.h

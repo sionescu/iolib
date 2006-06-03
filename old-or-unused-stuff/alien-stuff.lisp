@@ -10,6 +10,12 @@
                        (int port "int" "s_port")
                        (c-string-pointer proto "char *" "s_proto")))
 
+ (:integer host-not-found "HOST_NOT_FOUND")
+ (:integer no-data "NO_DATA")
+ (:integer no-address "NO_ADDRESS")
+ (:integer no-recovery "NO_RECOVERY")
+ (:integer try-again "TRY_AGAIN")
+
 (define-alien-routine "endhostent" void)
 
 (define-alien-routine "endservent" void)
