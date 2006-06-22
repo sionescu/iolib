@@ -6,9 +6,11 @@
 
 
 ("sys/types.h" "inttypes.h" "sys/socket.h" "unistd.h" "sys/un.h"
- "netinet/in.h" "netinet/in_systm.h" "netinet/ip.h" "net/if.h"
- "netdb.h" "errno.h" "netinet/tcp.h" "fcntl.h" "limits.h"
- "sys/uio.h" "arpa/inet.h")
+ "netinet/in.h" "netinet/in_systm.h" "netinet/ip.h" "sys/ioctl.h"
+ "net/if.h" "netdb.h" "errno.h" "netinet/tcp.h" "fcntl.h" "limits.h"
+ "sys/uio.h" "arpa/inet.h"
+ #+linux "netpacket/packet.h" #+linux "net/ethernet.h"
+ #+linux "asm/types.h" #+linux "linux/netlink.h" #+linux "linux/rtnetlink.h")
 
 (;;
  ;; from unistd.h
@@ -163,7 +165,7 @@
  (:structure iovec ("struct iovec"
                     ((* t) base "void *" "iov_base")
                     (size-t len "size_t" "iov_len")))
-#-linux (:integer iov-max "IOV_MAX")
+#+freebsd (:integer iov-max "IOV_MAX")
 #+linux (:integer uio-maxiov "UIO_MAXIOV")
 
  ;;
@@ -172,8 +174,12 @@
  (:type socklen-t "socklen_t")
  (:type sa-family-t "sa_family_t")
  (:structure sockaddr ("struct sockaddr"
+                       #+freebsd (uint8-t len "unsigned char" "sa_len")
                        (sa-family-t family "sa_family_t" "sa_family")
-                       (c-string data "char" "sa_data")))
+                       ((array (unsigned 8)) data "char" "sa_data")))
+ (:structure sockaddr-storage ("struct sockaddr_storage"
+                               #+freebsd (uint8-t len "unsigned char" "ss_len")
+                               (sa-family-t family "sa_family_t" "ss_family")))
 
  (:integer msg-ctrunc "MSG_CTRUNC")              ; recvmsg
  (:integer msg-dontroute "MSG_DONTROUTE")        ;         sendmsg
@@ -182,15 +188,17 @@
  (:integer msg-peek "MSG_PEEK")                  ; recvmsg
  (:integer msg-trunc "MSG_TRUNC")                ; recvmsg
  (:integer msg-waitall "MSG_WAITALL")            ; recvmsg
+ (:integer msg-dontwait "MSG_DONTWAIT")          ; recvmsg sendmsg
+ (:integer msg-nosignal "MSG_NOSIGNAL")          ;         sendmsg
 #+linux (:integer msg-errqueue "MSG_ERRQUEUE")   ; recvmsg
-#+linux (:integer msg-nosignal "MSG_NOSIGNAL")   ;         sendmsg
 #+linux (:integer msg-more "MSG_MORE")           ;         sendmsg
 #+linux (:integer msg-confirm "MSG_CONFIRM")     ; sendmsg sendmsg
-#+linux (:integer msg-dontwait "MSG_DONTWAIT")   ; recvmsg sendmsg
 #+linux (:integer msg-proxy "MSG_PROXY")         ; 
 #+linux (:integer msg-fin "MSG_FIN")             ; 
 #+linux (:integer msg-syn "MSG_SYN")             ; 
-#+linux (:integer msg-rst "MSG_RST")             ; 
+#+freebsd (:integer msg-eof "MSG_EOF")           ; 
+#+freebsd (:integer msg-nbio "MSG_NBIO")         ; 
+#+freebsd (:integer msg-compat "MSG_COMPAT")     ; 
  (:structure msghdr ("struct msghdr"
                      (c-string-pointer name "void *" "msg_name")
                      (socklen-t namelen "socklen_t" "msg_namelen")
@@ -201,16 +209,16 @@
                      (int flags "int" "msg_flags")))
 
  (:integer sol-socket "SOL_SOCKET")
- (:integer sol-tcp "SOL_TCP")
- (:integer sol-ip "SOL_IP")
- (:integer sol-raw "SOL_RAW")
+#+linux (:integer sol-tcp "SOL_TCP")
+#+linux (:integer sol-ip "SOL_IP")
+#+linux (:integer sol-raw "SOL_RAW")
 
  (:structure cmsghdr ("struct cmsghdr"
                       (socklen-t len "socklen_t" "cmsg_len")
                       (int level "int" "cmsg_level")
                       (int type "int" "cmsg_type")))
 
-#+linux (:integer scm-rights "SCM_RIGHTS")
+ (:integer scm-rights "SCM_RIGHTS")
 #+linux (:integer scm-credentials "SCM_CREDENTIALS")
 #+linux (:structure ucred ("struct ucred"
                            (pid-t pid "pid_t" "pid")
@@ -228,8 +236,11 @@
  (:integer af-unix "AF_UNIX")
  (:integer af-inet "AF_INET")
  (:integer af-inet6 "AF_INET6")
- (:integer af-netlink "AF_NETLINK")
- (:integer af-packet "AF_PACKET")
+ (:integer af-route "AF_ROUTE")
+ (:integer af-key #+linux "AF_KEY"
+                  #+freebsd "PF_KEY")
+#+linux (:integer af-netlink "AF_NETLINK")
+#+linux (:integer af-packet "AF_PACKET")
 
  ;; socket types
  (:integer sock-stream "SOCK_STREAM")
@@ -237,7 +248,6 @@
  (:integer sock-seqpacket "SOCK_SEQPACKET")
  (:integer sock-raw "SOCK_RAW")
 #+linux (:integer sock-rdm "SOCK_RDM")
-#+linux (:integer sock-packet "SOCK_PACKET")
 
  (:integer somaxconn "SOMAXCONN")
 
@@ -263,8 +273,18 @@
 #+linux (:integer so-sndbufforce "SO_SNDBUFFORCE")   ; get set
  (:integer so-sndlowat "SO_SNDLOWAT")                ; get set
  (:integer so-sndtimeo "SO_SNDTIMEO")                ; get set
-#+linux (:integer so-timestamp "SO_TIMESTAMP")       ; get set
+ (:integer so-timestamp "SO_TIMESTAMP")              ; get set
  (:integer so-type "SO_TYPE")                        ; get
+#+freebsd (:integer so-useloopback "SO_USELOOPBACK")
+#+freebsd (:integer so-reuseport "SO_REUSEPORT")
+#+freebsd (:integer so-nosigpipe "SO_NOSIGPIPE")
+#+freebsd (:integer so-acceptfilter "SO_ACCEPTFILTER")
+#+freebsd (:integer so-bintime "SO_BINTIME")
+#+freebsd (:integer so-label "SO_LABEL")
+#+freebsd (:integer so-peerlabel "SO_PEERLABEL")
+#+freebsd (:integer so-listenqlimit "SO_LISTENQLIMIT")
+#+freebsd (:integer so-listenqlen "SO_LISTENQLEN")
+#+freebsd (:integer so-listenincqlen "SO_LISTENINCQLEN")
 
  (:integer shut-rd "SHUT_RD")
  (:integer shut-wr "SHUT_WR")
@@ -274,8 +294,13 @@
  ;; from sys/un.h
  ;;
  (:structure sockaddr-un ("struct sockaddr_un"
+                          #+freebsd (uint8-t len "unsigned char" "sun_len")
                           (sa-family-t family "sa_family_t" "sun_family")
                           ((array (unsigned 8)) path "char" "sun_path")))
+
+#+freebsd (:integer local-peercred "LOCAL_PEERCRED")
+#+freebsd (:integer local-creds "LOCAL_CREDS")
+#+freebsd (:integer local-connwait "LOCAL_CONNWAIT")
 
  ;;
  ;; from netinet/in.h
@@ -283,35 +308,37 @@
  (:type in-port-t "in_port_t")
  (:type in-addr-t "in_addr_t")
 
- (:structure in-addr ("struct in_addr"
-                      (in-addr-t addr "in_addr_t" "s_addr")))
  (:structure sockaddr-in ("struct sockaddr_in"
+                          #+freebsd (uint8-t len "uint8_t" "sin_len")
                           (sa-family-t family "sa_family_t" "sin_family")
                           (in-port-t port "in_port_t" "sin_port")
-                          ((struct in-addr) addr "struct in_addr" "sin_addr")))
+                          (in-addr-t addr "struct in_addr" "sin_addr")))
 
  (:structure in6-addr ("struct in6_addr"
-                       ((union nil (u6-addr8 (array uint8-t))
-                                   (u6-addr16 (array uint16-t))
-                                   (u6-addr32 (array uint32-t)))
-                        in6-u "union" "in6_u")))
+                       ((union nil (addr8 (array uint8-t  16))
+                                   (addr16 (array uint16-t 8))
+                                   (addr32 (array uint32-t 4)))
+                        in6-u "union" #+linux "in6_u"
+                                      #+freebsd "__u6_addr")))
+
  (:structure sockaddr-in6 ("struct sockaddr_in6"
+                           #+freebsd (uint8-t len "uint8_t" "sin6_len")
                            (sa-family-t family "sa_family_t" "sin6_family")
                            (in-port-t port "in_port_t" "sin6_port")
                            (uint32-t flowinfo "uint32_t" "sin6_flowinfo")
                            ((struct in6-addr) addr "struct in6_addr" "sin6_addr")
                            (uint32-t scope-id "uint32_t" "sin6_scope_id")))
 
- (:structure ip-mreq ("struct ip_mreq"
-                      ((struct in-addr) imr-multiaddr "struct in_addr" "imr_multiaddr")
-                      ((struct in-addr) imr-interface "struct in_addr" "imr_interface")))
- (:structure ip-mreq-source ("struct ip_mreq_source"
-                             ((struct in-addr) imr-multiaddr "struct in_addr" "imr_multiaddr")
-                             ((struct in-addr) imr-interface "struct in_addr" "imr_interface")
-                             ((struct in-addr) imr-sourceaddr "struct in_addr" "imr_sourceaddr")))
- (:structure ipv6-mreq ("struct ipv6_mreq"
-                        ((struct in6-addr) ipv6mr-multiaddr "struct in6_addr" "ipv6mr_multiaddr")
-                        (unsigned ipv6mr-interface "unsigned" "ipv6mr_interface")))
+;;  (:structure ip-mreq ("struct ip_mreq"
+;;                       (in-addr-t imr-multiaddr "struct in_addr" "imr_multiaddr")
+;;                       (in-addr-t imr-interface "struct in_addr" "imr_interface")))
+;;  (:structure ip-mreq-source ("struct ip_mreq_source"
+;;                              (in-addr-t imr-multiaddr "struct in_addr" "imr_multiaddr")
+;;                              (in-addr-t imr-interface "struct in_addr" "imr_interface")
+;;                              (in-addr-t imr-sourceaddr "struct in_addr" "imr_sourceaddr")))
+;;  (:structure ipv6-mreq ("struct ipv6_mreq"
+;;                         ((array (unsigned 8)) ipv6mr-multiaddr "struct in6_addr" "ipv6mr_multiaddr")
+;;                         (unsigned ipv6mr-interface "unsigned" "ipv6mr_interface")))
  
  (:integer inaddr-any "INADDR_ANY")
  (:integer inaddr-broadcast "INADDR_BROADCAST")
@@ -326,9 +353,11 @@
  (:integer ipproto-ip "IPPROTO_IP")
  (:integer ipproto-ipv6 "IPPROTO_IPV6")
  (:integer ipproto-icmp "IPPROTO_ICMP")
+ (:integer ipproto-icmpv6 "IPPROTO_ICMPV6")
  (:integer ipproto-raw "IPPROTO_RAW")
  (:integer ipproto-tcp "IPPROTO_TCP")
  (:integer ipproto-udp "IPPROTO_UDP")
+ (:integer ipproto-sctp "IPPROTO_SCTP")
 
  (:integer inet-addrstrlen "INET_ADDRSTRLEN")
  (:integer inet6-addrstrlen "INET6_ADDRSTRLEN")
@@ -346,17 +375,18 @@
  ;;
  (:integer tcp-nodelay "TCP_NODELAY")
  (:integer tcp-maxseg "TCP_MAXSEG")
- (:integer tcp-cork "TCP_CORK")
- (:integer tcp-keepidle "TCP_KEEPIDLE")
- (:integer tcp-keepintvl "TCP_KEEPINTVL")
- (:integer tcp-keepcnt "TCP_KEEPCNT")
- (:integer tcp-syncnt "TCP_SYNCNT")
- (:integer tcp-linger2 "TCP_LINGER2")
- (:integer tcp-defer-accept "TCP_DEFER_ACCEPT")
- (:integer tcp-window-clamp "TCP_WINDOW_CLAMP")
+#+linux (:integer tcp-cork "TCP_CORK")
+#+linux (:integer tcp-keepidle "TCP_KEEPIDLE")
+#+linux (:integer tcp-keepintvl "TCP_KEEPINTVL")
+#+linux (:integer tcp-keepcnt "TCP_KEEPCNT")
+#+linux (:integer tcp-syncnt "TCP_SYNCNT")
+#+linux (:integer tcp-linger2 "TCP_LINGER2")
+#+linux (:integer tcp-defer-accept "TCP_DEFER_ACCEPT")
+#+linux (:integer tcp-window-clamp "TCP_WINDOW_CLAMP")
  (:integer tcp-info "TCP_INFO")
- (:integer tcp-quickack "TCP_QUICKACK")
+#+linux (:integer tcp-quickack "TCP_QUICKACK")
 
+#+linux
  (:enum connstates ((tcp-established "TCP_ESTABLISHED")
                     (tcp-syn-sent "TCP_SYN_SENT")
                     (tcp-syn-recv "TCP_SYN_RECV")
@@ -416,18 +446,20 @@
  ;; error codes
  (:integer netdb-success "NETDB_SUCCESS")
  (:integer netdb-internal "NETDB_INTERNAL")
-#+linux (:integer eai-addrfamily "EAI_ADDRFAMILY" "Address family for NAME not supported.")
+#+linux (:integer eai-addrfamily "EAI_ADDRFAMILY" "The specified network host does not have any network addresses in the requested address family.")
  (:integer eai-again "EAI_AGAIN" "The name could not be resolved at this time. Future attempts may succeed.")
  (:integer eai-badflags "EAI_BADFLAGS" "The flags had an invalid value.")
  (:integer eai-fail "EAI_FAIL" "A non-recoverable error occurred.")
  (:integer eai-family "EAI_FAMILY" "The address family was not recognized or the address length was invalid for the specified family.")
  (:integer eai-memory "EAI_MEMORY" "There was a memory allocation failure.")
-#+linux (:integer eai-nodata "EAI_NODATA" "No address associated with NAME.")
  (:integer eai-noname "EAI_NONAME" "The name does not resolve for the supplied parameters. NI-NAMEREQD is set and the host's name cannot be located, or both nodename and servname were null.")
  (:integer eai-service "EAI_SERVICE" "The service passed was not recognized for the specified socket type.")
  (:integer eai-socktype "EAI_SOCKTYPE" "The intended socket type was not recognized.")
  (:integer eai-system "EAI_SYSTEM" "A system error occurred. The error code can be found in errno")
- (:integer eai-overflow "EAI_OVERFLOW" "An argument buffer overflowed.")
+#+linux (:integer eai-overflow "EAI_OVERFLOW" "An argument buffer overflowed.")
+#+freebsd (:integer eai-badhints "EAI_BADHINTS")
+#+freebsd (:integer eai-protocol "EAI_PROTOCOL")
+#+freebsd (:integer eai-max "EAI_MAX")
 #+linux (:integer eai-inprogress "EAI_INPROGRESS" "Processing request in progress.")
 #+linux (:integer eai-canceled "EAI_CANCELED" "Request canceled.")
 #+linux (:integer eai-notcanceled "EAI_NOTCANCELED" "Request not canceled.")
@@ -435,14 +467,9 @@
 #+linux (:integer eai-intr "EAI_INTR" "Interrupted by a signal.")
 #+linux (:integer eai-idn_encode "EAI_IDN_ENCODE" "IDN encoding failed.")
 
- (:structure netent ("struct netent"
-                     (c-string-pointer name "char *" "n_name")
-                     ((* c-string) aliases "char **" "n_aliases")
-                     (int type "int" "n_addrtype")
-                     (uint32-t net "int" "n_net")))
  (:structure protoent ("struct protoent"
                        (c-string-pointer name "char *" "p_name")
-                       ((* (* (unsigned 8))) aliases "char **" "p_aliases")
+                       ((* c-string) aliases "char **" "p_aliases")
                        (int proto "int" "p_proto")))
 
  ;;
@@ -452,5 +479,4 @@
                            (unsigned index "unsigned" "if_index")
                            (c-string-pointer name "char *" "if_name")))
  (:integer ifnamesize "IF_NAMESIZE")
- (:integer ifnamsiz "IFNAMSIZ")
-)
+ (:integer ifnamsiz "IFNAMSIZ"))

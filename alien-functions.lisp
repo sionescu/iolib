@@ -75,7 +75,7 @@
 
 (define-alien-routine "writev" ssize-t
   (fd int)
-  (iov (* (struct iovec)))
+  (iov (* (array (struct iovec) 0)))
   (count int))
 
 
@@ -182,7 +182,7 @@
   (domain int)
   (type int)
   (protocol int)
-  (socket-vector (array int 2)))
+  (socket-vector (* (array int 2))))
 
 
 ;;;;;;;;;;;;;;;;;;;;
@@ -191,9 +191,8 @@
 ;;;              ;;;
 ;;;;;;;;;;;;;;;;;;;;
 
-;; I'm assuming that sockaddr_un contains only sun_family and sun_path
-(defconstant unix-path-max (- size-of-sockaddr-un
-                              (/ (alien-size sa-family-t) 8)))
+(defconstant unix-path-max #+linux   108
+                           #+freebsd 104)
 
 
 ;;;;;;;;;;;;;;;;;;;;
@@ -214,6 +213,7 @@
 ;;;               ;;;
 ;;;;;;;;;;;;;;;;;;;;;
 
+#+linux
 (grovel-enum-members connstates)
 
 ;;;;;;;;;;;;;;;
@@ -234,27 +234,16 @@
 (define-alien-routine "getnameinfo" int
   (sa (* t))
   (salen socklen-t)
-  (node (* (array char)))
+  (node (* (array char 0)))
   (nodelen socklen-t)
-  (service (* (array char)))
+  (service (* (array char 0)))
   (servicelen socklen-t)
   (flags int))
 
 (define-alien-routine "gai_strerror" c-string
   (ercode int))
 
-(define-alien-routine "endnetent" void)
-
 (define-alien-routine "endprotoent" void)
-
-(define-alien-routine "getnetbyaddr" (* (struct netent))
-  (net uint32-t)
-  (type int))
-
-(define-alien-routine "getnetbyname" (* (struct netent))
-  (name c-string))
-
-(define-alien-routine "getnetent" (* (struct netent)))
 
 (define-alien-routine "getprotobyname" (* (struct protoent))
   (name c-string))
@@ -263,9 +252,6 @@
   (proto int))
 
 (define-alien-routine "getprotoent" (* (struct protoent)))
-
-(define-alien-routine "setnetent" void
-  (stayopen int))
 
 (define-alien-routine "setprotoent" void
   (stayopen int))
@@ -282,12 +268,12 @@
 
 (define-alien-routine "if_indextoname" c-string
   (ifindex unsigned)
-  (ifname c-string))
+  (ifname (* (array char))))
 
-(define-alien-routine "if_nameindex" (* (struct if-nameindex)))
+(define-alien-routine "if_nameindex" (* (array (struct if-nameindex) 0)))
 
 (define-alien-routine "if_freenameindex" void
-  (pointer (* (struct if-nameindex))))
+  (pointer (* (array (struct if-nameindex) 0))))
 
 
 ;;;;;;;;;;;;;;;;;;;
@@ -296,29 +282,10 @@
 ;;;             ;;;
 ;;;;;;;;;;;;;;;;;;;
 
-(define-alien-routine "htonl" uint32-t
-  (hostlong uint32-t))
-
-(define-alien-routine "htons" uint16-t
-  (hostshort uint16-t))
-
-(define-alien-routine "ntohl" uint32-t
-  (netlong uint32-t))
-
-(define-alien-routine "ntohs" uint16-t
-  (netshort uint16-t))
-
-(define-alien-routine "inet_aton" int
-  (cp c-string)
-  (inp (* (struct in-addr))))
-
-(define-alien-routine "inet_ntoa" c-string
-  (in (struct in-addr)))
-
 (define-alien-routine "inet_ntop" c-string
   (family int)
   (src (* t))
-  (dest c-string)
+  (dest (* (array char 0)))
   (size socklen-t))
 
 (define-alien-routine "inet_pton" int
@@ -326,18 +293,13 @@
   (src c-string)
   (dest (* t)))
 
-(define-alien-routine "inet_addr" in-addr-t
-  (cp c-string))
+;;;;;;;;;;;;;;;;
+;;;          ;;;
+;;; string.h ;;;
+;;;          ;;;
+;;;;;;;;;;;;;;;;
 
-(define-alien-routine "inet_network" in-addr-t
-  (cp c-string))
-
-(define-alien-routine "inet_makeaddr" (struct in-addr)
-  (net int)
-  (host int))
-
-(define-alien-routine "inet_lnaof" in-addr-t
-  (in (struct in-addr)))
-
-(define-alien-routine "inet_netof" in-addr-t
-  (in (struct in-addr)))
+(define-alien-routine "memset" (* t)
+  (buffer (* t))
+  (value int)
+  (length size-t))
