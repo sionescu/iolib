@@ -50,6 +50,7 @@
    #:enough-uri
    #:uri-parsed-path
    #:render-uri
+   #:uri->string
 
    #:make-uri-space			; interning...
    #:uri-space
