@@ -124,7 +124,7 @@
 ;; Error management
 ;;
 
-(defun deal-with-resolv-error (retval host port)
+(defun manage-resolv-error (retval host port)
   (let ((data (or host port)))
     (case retval
       (#.et::eai-fail                   ; non-recoverable error
@@ -187,7 +187,7 @@
                (return-from lookup-host-u8-vector-4
                  (make-host hostname
                             (list (make-address :ipv4 (copy-seq host)))))
-               (deal-with-resolv-error retval host nil))))))
+               (manage-resolv-error retval host nil))))))
 
     ((:ipv6 t)
      (with-alien ((sin6 (struct et::sockaddr-in6)))
@@ -209,7 +209,7 @@
                (return-from lookup-host-u8-vector-4
                  (make-host hostname
                             (list (make-address :ipv6 ipv6addr))))
-               (deal-with-resolv-error retval host nil)))))))))
+               (manage-resolv-error retval host nil)))))))))
 
 (defun lookup-host-u16-vector-8 (host ipv6)
   (setf host (coerce host '(simple-array ub16 (8))))
@@ -238,7 +238,7 @@
                (return-from lookup-host-u16-vector-8
                  (make-host hostname
                             (list (make-address :ipv6 (copy-seq host)))))
-               (deal-with-resolv-error retval host nil))))))))
+               (manage-resolv-error retval host nil))))))))
 
 (defun make-address-from-addrinfo (ptr)
   (declare (type (alien (* (struct et::addrinfo)))
@@ -307,7 +307,7 @@
                                  :hint-flags flags :hint-family family
                                  :hint-type et::sock-stream :hint-protocol et::ipproto-ip)
              (unless addrinfo
-               (deal-with-resolv-error retval host nil))
+               (manage-resolv-error retval host nil))
              (let ((hostobj (make-host-from-addrinfo-struct addrinfo)))
                (et::freeaddrinfo addrinfo)
                (return-from lookup-host hostobj)))))))))
@@ -378,7 +378,7 @@
       (if (zerop retval)
           (return-from lookup-service-number
             (make-service service port-number protocol))
-          (deal-with-resolv-error retval nil port-number)))))
+          (manage-resolv-error retval nil port-number)))))
 
 (defun lookup-service-name (port protocol)
   (multiple-value-bind (retval addrinfo)
@@ -398,7 +398,7 @@
             (et::freeaddrinfo addrinfo))
           (return-from lookup-service-name
             (make-service port port-number true-protocol)))
-        (deal-with-resolv-error retval nil port))))
+        (manage-resolv-error retval nil port))))
 
 (defun lookup-service (port &key (protocol :tcp) (name-required nil))
   (case protocol
