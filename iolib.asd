@@ -56,7 +56,9 @@
      (:file "address" :depends-on ("defpackage" "conditions" "common"))
      (:file "resolv" :depends-on ("defpackage" "common" "config" "conditions" "address"))
      (:file "base-sockets"
-            :depends-on ("defpackage" "config" "common"))))))
+            :depends-on ("defpackage" "config" "common"))
+     (:file "socket-options"
+            :depends-on ("defpackage" "common" "base-sockets"))))))
 
 (defsystem iolib
   :description "I/O library for SBCL."

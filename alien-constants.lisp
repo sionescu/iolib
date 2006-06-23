@@ -8,7 +8,7 @@
 ("sys/types.h" "inttypes.h" "sys/socket.h" "unistd.h" "sys/un.h"
  "netinet/in.h" "netinet/in_systm.h" "netinet/ip.h" "sys/ioctl.h"
  "net/if.h" "netdb.h" "errno.h" "netinet/tcp.h" "fcntl.h" "limits.h"
- "sys/uio.h" "arpa/inet.h"
+ "sys/uio.h" "arpa/inet.h" "sys/select.h" "time.h"
  #+linux "netpacket/packet.h" #+linux "net/ethernet.h"
  #+linux "asm/types.h" #+linux "linux/netlink.h" #+linux "linux/rtnetlink.h")
 
@@ -479,4 +479,20 @@
                            (unsigned index "unsigned" "if_index")
                            (c-string-pointer name "char *" "if_name")))
  (:integer ifnamesize "IF_NAMESIZE")
- (:integer ifnamsiz "IFNAMSIZ"))
+ (:integer ifnamsiz "IFNAMSIZ")
+
+
+ ;;
+ ;; from sys/select.h
+ ;;
+ (:type suseconds-t "suseconds_t")
+
+ ;;
+ ;; from time.h
+ ;;
+ (:type time-t "time_t")
+ (:structure timeval ("struct timeval"
+                      (time-t tv-sec "time_t" "tv_sec")
+                      (suseconds-t tv-usec "suseconds_t" "tv_usec")))
+ ;; THE END
+ )

@@ -24,6 +24,13 @@
 
 (in-package #:iolib-alien)
 
+
+;; size of standard types
+(defconstant size-of-short (/ (alien-size short) 8))
+(defconstant size-of-int (/ (alien-size int) 8))
+(defconstant size-of-long (/ (alien-size long) 8))
+(defconstant size-of-long-long (/ (alien-size long-long) 8))
+
 ;;
 ;; very ugly hack :(
 ;;
@@ -292,6 +299,7 @@
   (family int)
   (src c-string)
   (dest (* t)))
+
 
 ;;;;;;;;;;;;;;;;
 ;;;          ;;;

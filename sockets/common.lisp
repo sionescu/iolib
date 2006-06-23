@@ -58,3 +58,9 @@
                (setf tmpval parsed))
              (setf type :string))
          (values type tmpval))))))
+
+(defun c->lisp-bool (val)
+  (if (zerop val) nil t))
+
+(defun lisp->c-bool (val)
+  (if val 1 0))
