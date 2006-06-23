@@ -55,7 +55,7 @@
      (:file "iface" :depends-on ("defpackage" "conditions" "common"))
      (:file "address" :depends-on ("defpackage" "conditions" "common"))
      (:file "resolv" :depends-on ("defpackage" "common" "config" "conditions" "address"))
-     (:file "base-classes"
+     (:file "base-sockets"
             :depends-on ("defpackage" "config" "common"))))))
 
 (defsystem iolib
