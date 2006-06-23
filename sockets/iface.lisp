@@ -34,7 +34,8 @@
 (defmethod print-object ((iface interface) stream)
   (print-unreadable-object (iface stream :type nil :identity nil)
     (with-slots (name id) iface
-      (format stream "Network Interface: ~s. Index: ~a" (name iface) (index iface)))))
+      (format stream "Network Interface: ~s. Index: ~a"
+              (interface-name iface) (interface-index iface)))))
 
 (defun make-interface (name index)
   (make-instance 'interface
