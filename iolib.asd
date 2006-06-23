@@ -54,7 +54,9 @@
      (:file "conditions" :depends-on ("defpackage"))
      (:file "iface" :depends-on ("defpackage" "conditions" "common"))
      (:file "address" :depends-on ("defpackage" "conditions" "common"))
-     (:file "resolv" :depends-on ("defpackage" "common" "config" "conditions" "address"))))))
+     (:file "resolv" :depends-on ("defpackage" "common" "config" "conditions" "address"))
+     (:file "base-classes"
+            :depends-on ("defpackage" "config" "common"))))))
 
 (defsystem iolib
   :description "I/O library for SBCL."
