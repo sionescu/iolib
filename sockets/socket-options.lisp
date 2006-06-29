@@ -24,7 +24,7 @@
 
 (in-package #:net.sockets)
 
-(defun manage-sockopt-error (level option action &optional val1 val2)
+(defun manage-sockopt-error (retval level option action &optional val1 val2)
   )
 
 ;;
@@ -40,7 +40,7 @@
         (if (zerop retval)
             (return-from set-socket-option-bool
               (values))
-            (manage-sockopt-error level option :set value))))))
+            (manage-sockopt-error retval level option :set value))))))
 
 (defun set-socket-option-int (fd level option value)
   (with-alien ((optval int))
@@ -51,7 +51,7 @@
         (if (zerop retval)
             (return-from set-socket-option-int
               (values))
-            (manage-sockopt-error level option :set value))))))
+            (manage-sockopt-error retval level option :set value))))))
 
 (defun set-socket-option-linger (fd level option onoff linger)
   (with-alien ((optval (struct et::linger)))
@@ -63,7 +63,7 @@
         (if (zerop retval)
             (return-from set-socket-option-linger
               (values))
-            (manage-sockopt-error level option :set onoff linger))))))
+            (manage-sockopt-error retval level option :set onoff linger))))))
 
 (defun set-socket-option-timeval (fd level option sec usec)
   (with-alien ((optval (struct et::timeval)))
@@ -75,7 +75,7 @@
         (if (zerop retval)
             (return-from set-socket-option-timeval
               (values))
-            (manage-sockopt-error level option :set sec usec))))))
+            (manage-sockopt-error retval level option :set sec usec))))))
 
 ;;
 ;; Get Options
@@ -89,7 +89,7 @@
         (if (zerop retval)
             (return-from get-socket-option-bool
               (values (c->lisp-bool optval)))
-            (manage-sockopt-error level option :get))))))
+            (manage-sockopt-error retval level option :get))))))
 
 (defun get-socket-option-int (fd level option)
   (with-alien ((optval int))
@@ -99,7 +99,7 @@
         (if (zerop retval)
             (return-from get-socket-option-int
               (values optval))
-            (manage-sockopt-error level option :get))))))
+            (manage-sockopt-error retval level option :get))))))
 
 (defun get-socket-option-linger (fd level option)
   (with-alien ((optval (struct et::linger)))
@@ -110,7 +110,7 @@
             (return-from get-socket-option-linger
               (values (slot optval 'et::onoff)
                       (slot optval 'et::linger)))
-            (manage-sockopt-error level option :get))))))
+            (manage-sockopt-error retval level option :get))))))
 
 (defun get-socket-option-timeval (fd level option)
   (with-alien ((optval (struct et::timeval)))
@@ -121,7 +121,7 @@
             (return-from get-socket-option-timeval
               (values (slot optval 'et::tv-sec)
                       (slot optval 'et::tv-usec)))
-            (manage-sockopt-error level option :get))))))
+            (manage-sockopt-error retval level option :get))))))
 
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -223,10 +223,10 @@
 #+freebsd
 (define-socket-option peerlabel          :get-and-set et::so-peerlabel    et::sol-socket :bool)
 #+freebsd
-(define-socket-option listen-queue-limit :get-and-set et::so-listenqlimit  et::sol-socket :bool)
+(define-socket-option listen-queue-limit :get-and-set et::so-listenqlimit  et::sol-socket :int)
 #+freebsd
-(define-socket-option listen-queue-length :get-and-set et::so-listenqlen  et::sol-socket :bool)
+(define-socket-option listen-queue-length :get-and-set  et::so-listenqlen  et::sol-socket :int)
 #+freebsd
-(define-socket-option listen-increment-queue-length :get-and-set et::so-listenincqlen  et::sol-socket :bool)
+(define-socket-option listen-incomplete-queue-length :get-and-set et::so-listenincqlen  et::sol-socket :int)
 
 |#

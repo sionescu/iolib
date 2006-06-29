@@ -76,7 +76,7 @@
                      (et::memset (addr hints) 0 et::size-of-addrinfo)
                      (setf (slot hints 'et::flags) hint-flags)
                      (setf (slot hints 'et::family) hint-family)
-                     (setf (slot hints 'et::type) hint-type)
+                     (setf (slot hints 'et::socktype) hint-type)
                      (setf (slot hints 'et::protocol) hint-protocol)
                      (et::getaddrinfo node service (addr hints) (addr res))))
       (values retval (if (zerop retval) res nil)))))
@@ -393,7 +393,7 @@
                                   (* (struct et::sockaddr-in)))
                             'et::port)))
               (true-protocol
-               (socket-type-from-int (slot addrinfo 'et::type))))
+               (socket-type-from-int (slot addrinfo 'et::socktype))))
           (sb-sys:with-pinned-objects (addrinfo)
             (et::freeaddrinfo addrinfo))
           (return-from lookup-service-name

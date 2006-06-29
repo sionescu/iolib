@@ -53,9 +53,6 @@
 ;;;          ;;;
 ;;;;;;;;;;;;;;;;
 
-(define-alien-routine "sysconf" long
-  (name int))
-
 (define-alien-routine "pread" ssize-t
   (fd int)
   (buf (* t))

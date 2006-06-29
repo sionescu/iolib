@@ -30,8 +30,7 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "public domain"
-  :depends-on (#:sb-grovel
-               #:sb-posix)
+  :depends-on (#:sb-grovel)
   :components
   ((sb-grovel:grovel-constants-file
        "alien-constants"

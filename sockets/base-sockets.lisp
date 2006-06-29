@@ -31,11 +31,11 @@
 ;;;;;;;;;;;;;;;
 
 (defclass socket ()
-  ((fd      :initarg :fd      :reader socket-fd)
-   (address :initarg :address :reader socket-address :type netaddr)))
+  ((fd      :reader socket-fd)
+   (address :reader socket-address :type netaddr)))
 
-(defgeneric socket-option (socket option))
-(defgeneric (setf socket-option) (socket option &rest arguments))
+(defgeneric socket-non-blocking-mode (socket))
+(defgeneric (setf socket-non-blocking-mode) (value socket))
 
 (defgeneric socket-close (socket))
 
@@ -105,3 +105,47 @@
 (defgeneric socket-listen (socket &key backlog))
 
 (defgeneric socket-accept-connection (passive-socket &key active-socket wait))
+
+
+
+
+(defun translate-make-socket-keywords-to-constants (family type)
+  (let ((sf (ecase family
+              (:ipv4 et::af-inet)
+              (:ipv6 et::af-inet6)
+              (:unix et::af-unix)))
+        (st (ecase type
+              (:stream   et::sock-stream)
+              (:datagram et::sock-dgram))))
+    (values sf st)))
+
+(defmethod initialize-instance :after ((socket socket) &key family type (protocol 0))
+  (with-slots (fd) socket
+    (multiple-value-bind (sf st)
+        (translate-make-socket-keywords-to-constants family type)
+      (setf fd (et::socket sf st protocol)))))
+
+(defmethod socket-non-blocking-mode ((socket socket))
+  (with-slots (fd) socket
+    (let ((fflags (sb-posix:fcntl fd sb-posix::f-getfl)))
+      (not (zerop (logand fflags sb-posix:o-nonblock))))))
+
+(defmethod (setf socket-non-blocking-mode) (value (socket socket))
+  (declare (type boolean value))
+  (with-slots (fd) socket
+    (let ((fflags (sb-posix:fcntl fd sb-posix::f-getfl)))
+      (sb-posix:fcntl fd sb-posix::f-setfl
+                      (logior fflags
+                              (if value sb-posix:o-nonblock 0))))))
+
+(defmethod socket-close ((socket socket))
+  (sb-posix:close (socket-fd socket)))
+
+(defmethod socket-open-p ((socket socket))
+  (handler-case
+      (progn
+        (sb-posix:fcntl (socket-fd socket) sb-posix::f-getfl)
+        t)
+    (sb-posix:syscall-error (err)
+      (declare (ignore err))
+      nil)))
