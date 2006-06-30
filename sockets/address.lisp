@@ -19,7 +19,6 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 ;; (declaim (optimize (speed 0) (safety 3) (space 0) (debug 2)))
 (declaim (optimize (speed 1) (safety 2) (space 0) (debug 2)))
 
@@ -121,23 +120,19 @@
                  :message (format nil "The vector: ~a is not a string or contains non-ASCII characters." string))
           (return-from dotted-to-vector nil))))
 
-  (with-alien ((in-addr et::in-addr-t))
+  (with-alien ((in-addr sb-posix::in-addr-t))
     (sb-sys:with-pinned-objects (in-addr string)
       (setf in-addr 0)
-      (let ((retval
-             (et::inet-pton et::af-inet       ; address family
-                            string            ; name
-                            (addr in-addr)))) ; pointer to struct in6_addr
-        (unless (or error-p (plusp retval))
-          (return-from dotted-to-vector nil))
-        (cond
-          ((minusp retval) (error 'possible-bug
-                                  :data 'et::af-inet
-                                  :message "inet_pton says the address family is not supported."))
-          ((zerop retval) (error 'invalid-address
-                                 :address string
-                                 :type :ipv4)))))
-    (return-from dotted-to-vector (make-vector-u8-4-from-in-addr in-addr))))
+      (handler-case
+          (sb-posix::inet-pton sb-posix::af-inet ; address family
+                               string            ; name
+                               (addr in-addr))   ; pointer to struct in6_addr
+        (sb-posix:syscall-error (err)
+          (declare (ignore err))
+          (if error-p
+              (error 'invalid-address :address string :type :ipv4)
+              (return-from dotted-to-vector nil)))))
+    (make-vector-u8-4-from-in-addr in-addr)))
 
 (declaim (inline vector-to-dotted))
 (defun vector-to-dotted (vector)
@@ -150,10 +145,10 @@
 
 (declaim (inline make-vector-u16-8-from-in6-addr))
 (defun make-vector-u16-8-from-in6-addr (in6-addr)
-  (declare (type (alien (* (struct et::in6-addr))) in6-addr))
+  (declare (type (alien (* sb-posix::in6-addr)) in6-addr))
   (let ((newvector (make-array 8 :element-type 'ub16))
-        (u16-vector (slot (slot in6-addr 'et::in6-u)
-                          'et::addr16)))
+        (u16-vector (slot (slot in6-addr 'sb-posix::in6-u)
+                          'sb-posix::addr16)))
     (dotimes (i 8)
       (setf (aref newvector i) (ntohs (deref u16-vector i))))
 
@@ -169,25 +164,19 @@
                  :message (format nil "The vector: ~a is not a string or contains non-ASCII characters." string))
           (return-from colon-separated-to-vector nil))))
 
-  (with-alien ((in6-addr (struct et::in6-addr)))
+  (with-alien ((in6-addr sb-posix::in6-addr))
     (sb-sys:with-pinned-objects (in6-addr string)
-      (et::memset (addr in6-addr) 0 et::size-of-in6-addr)
-      (let ((retval
-             (et::inet-pton et::af-inet6       ; address family
-                            string             ; name
-                            (addr in6-addr)))) ; pointer to struct in6_addr
-        (unless (or error-p (plusp retval))
-          (return-from colon-separated-to-vector nil))
-        (cond
-          ((minusp retval) (error 'possible-bug
-                                  :data 'et::af-inet6
-                                  :message "inet_pton says the address family is not supported."))
-          ((zerop retval) (error 'invalid-address
-                                 :address string
-                                 :type :ipv6)))))
-    (let ()
-      
-      (return-from colon-separated-to-vector (make-vector-u16-8-from-in6-addr (addr in6-addr))))))
+      (sb-posix::memset (addr in6-addr) 0 sb-posix::size-of-in6-addr)
+      (handler-case
+          (sb-posix::inet-pton sb-posix::af-inet6 ; address family
+                               string             ; name
+                               (addr in6-addr))   ; pointer to struct in6_addr
+        (sb-posix:syscall-error (err)
+          (declare (ignore err))
+          (if error-p
+              (error 'invalid-address :address string :type :ipv4)
+              (return-from colon-separated-to-vector nil)))))
+    (make-vector-u16-8-from-in6-addr (addr in6-addr))))
 
 (defun vector-to-colon-separated (vector &key (case :downcase) (error-p t))
   (handler-case
@@ -199,19 +188,19 @@
                  :message (format nil "The vector: ~a does not contain only 16-bit positive integers or has not length 8." vector))
           (return-from vector-to-colon-separated nil))))
 
-  (with-alien ((sin6 (struct et::sockaddr-in6))
-               (namebuff (array (unsigned 8) #.et::inet6-addrstrlen)))
+  (with-alien ((sin6 sb-posix::sockaddr-in6)
+               (namebuff (array (unsigned 8) #.sb-posix::inet6-addrstrlen)))
     (sb-sys:with-pinned-objects (sin6 namebuff)
-      (et::memset (addr sin6) 0 et::size-of-sockaddr-in6)
-      (let ((u16-vector (slot (slot (slot sin6 'et::addr)
-                                    'et::in6-u)
-                              'et::addr16)))
+      (sb-posix::memset (addr sin6) 0 sb-posix::size-of-sockaddr-in6)
+      (let ((u16-vector (slot (slot (slot sin6 'sb-posix::addr)
+                                    'sb-posix::in6-u)
+                              'sb-posix::addr16)))
         (dotimes (i 8)
           (setf (deref u16-vector i) (htons (aref vector i))))
-        (et::inet-ntop et::af-inet6                 ; address family
-                       (addr (slot sin6 'et::addr)) ; pointer to struct in6_addr
-                       (alien-sap namebuff)         ; destination buffer
-                       et::inet6-addrstrlen))       ; INET6_ADDRSTRLEN
+        (sb-posix::inet-ntop sb-posix::af-inet6                 ; address family
+                             (addr (slot sin6 'sb-posix::addr)) ; pointer to struct in6_addr
+                             (alien-sap namebuff)               ; destination buffer
+                             sb-posix::inet6-addrstrlen))       ; INET6_ADDRSTRLEN
       (return-from vector-to-colon-separated
         (let ((str (cast namebuff c-string)))
           (ecase case

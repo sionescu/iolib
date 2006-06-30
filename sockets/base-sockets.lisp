@@ -111,19 +111,19 @@
 
 (defun translate-make-socket-keywords-to-constants (family type)
   (let ((sf (ecase family
-              (:ipv4 et::af-inet)
-              (:ipv6 et::af-inet6)
-              (:unix et::af-unix)))
+              (:ipv4 sb-posix::af-inet)
+              (:ipv6 sb-posix::af-inet6)
+              (:unix sb-posix::af-unix)))
         (st (ecase type
-              (:stream   et::sock-stream)
-              (:datagram et::sock-dgram))))
+              (:stream   sb-posix::sock-stream)
+              (:datagram sb-posix::sock-dgram))))
     (values sf st)))
 
 (defmethod initialize-instance :after ((socket socket) &key family type (protocol 0))
   (with-slots (fd) socket
     (multiple-value-bind (sf st)
         (translate-make-socket-keywords-to-constants family type)
-      (setf fd (et::socket sf st protocol)))))
+      (setf fd (sb-posix::socket sf st protocol)))))
 
 (defmethod socket-non-blocking-mode ((socket socket))
   (with-slots (fd) socket

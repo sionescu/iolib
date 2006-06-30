@@ -24,11 +24,11 @@
 
 (in-package #:net.sockets)
 
-(defparameter *ipv6* nil
+(defparameter *ipv6* t
   "Specifies the default behaviour with respect to IPv6:
 - nil   : Only IPv4 addresses are used.
 - :ipv6 : Only IPv6 addresses are used.
-- t     : IPv6 addresses are preferred over IPv4 ones when both types are available.
-Default value is NIL.")
+- t     : IPv4 addresses are preferred over IPv6 ones when both types are available.
+Default value is t.")
 
 (defparameter *default-backlog* 5)

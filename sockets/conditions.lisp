@@ -89,19 +89,19 @@ values, et caetera)."))
                 (print-message-if-not-null condition stream)))
      (:documentation ,documentation)))
 
-(define-resolver-error resolver-again-error et::eai-again :resolver-again
+(define-resolver-error resolver-again-error sb-posix::eai-again :resolver-again
   "Temporary failure occurred while resolving: ~a"
   "Condition signaled when a temporary failure occurred.")
 
-(define-resolver-error resolver-fail-error et::eai-fail :resolver-fail
+(define-resolver-error resolver-fail-error sb-posix::eai-fail :resolver-fail
   "Non recoverable error occurred while resolving: ~a"
   "Condition signaled when a non-recoverable error occurred.")
 
-(define-resolver-error resolver-no-name-error et::eai-noname :resolver-no-name
+(define-resolver-error resolver-no-name-error sb-posix::eai-noname :resolver-no-name
   "Host or service not found: ~a"
   "Condition signaled when a host or service was not found.")
 
-(define-resolver-error resolver-no-service-error et::eai-service :resolver-no-service
+(define-resolver-error resolver-no-service-error sb-posix::eai-service :resolver-no-service
   "Service not found for specific socket type: ~a"
   "Condition signaled when a service was not found for the socket type requested.")
 
@@ -109,7 +109,7 @@ values, et caetera)."))
   ((name  :initarg :name  :initform nil :reader interface-name)
    (index :initarg :index :initform nil :reader interface-index))
   (:report (lambda (condition stream)
-             (if (name condition)
+             (if (interface-name condition)
                  (format stream "Unknown interface: ~a"
                          (interface-name condition))
                  (format stream "Unknown interface index: ~a"
@@ -118,14 +118,10 @@ values, et caetera)."))
   (:documentation "Condition raised when a network interface is not found."))
 
 (define-condition unknown-protocol (system-error)
-  ((name :initarg :name :initform nil :reader protocol-name)
-   (num  :initarg :num  :initform nil :reader protocol-number))
+  ((name :initarg :name :initform nil :reader protocol-name))
   (:report (lambda (condition stream)
-             (if (name condition)
-                 (format stream "Unknown protocol: ~a"
-                         (protocol-name condition))
-                 (format stream "Unknown protocol number: ~a"
-                         (protocol-number condition)))))
+             (format stream "Unknown protocol: ~s"
+                     (protocol-name condition))))
   (:documentation "Condition raised when a network protocol is not found."))
 
 (define-condition invalid-address ()

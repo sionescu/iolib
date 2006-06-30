@@ -43,45 +43,53 @@
                  :index index))
 
 (defun get-network-interfaces ()
-  (with-alien ((ifptr (* (array (struct et::if-nameindex) 0))))
+  (with-alien ((ifptr (* (array sb-posix::if-nameindex 0))))
     (sb-sys:with-pinned-objects (ifptr)
-      (setf ifptr (et::if-nameindex))
+      (setf ifptr (sb-posix::if-nameindex))
       (unless (null-alien ifptr)
-        (let ((ifarr (deref ifptr)))
-          (loop
-             for i from 0
-             for name = (slot (deref ifarr i) 'et::name)
-             for index = (slot (deref ifarr i) 'et::index)
-             while (plusp index)
-             collect (make-interface name index)
-             finally (et::if-freenameindex ifptr)))))))
+        (let* ((ifarr (deref ifptr))
+               (iflist
+                (loop
+                   for i from 0
+                   for name = (slot (deref ifarr i) 'sb-posix::name)
+                   for index = (slot (deref ifarr i) 'sb-posix::index)
+                   while (plusp index)
+                   collect (make-interface name index)
+                   finally (sb-posix::if-freenameindex ifptr))))
+          (return-from get-network-interfaces iflist))))))
 
 (defun get-interface-by-index (index)
   (check-type index unsigned-byte "an unsigned integer")
-  (with-alien ((buff (array char #.et::ifnamesize)))
+  (with-alien ((buff (array char #.sb-posix::ifnamesize)))
     (with-alien-saps ((buff-sap buff))
-      (let ((retval
-             (et::if-indextoname index buff-sap)))
-        (if (null retval)
-            (case (get-errno)
+      (let (retval)
+        (handler-case
+            (setf retval (sb-posix::if-indextoname index buff-sap))
+          (sb-posix:syscall-error (err)
+            (case (sb-posix:syscall-errno err)
               (#.sb-posix:enxio
                (error 'unknown-interface
                       :code sb-posix:enxio
                       :identifier :unknown-interface
-                      :index index)))
-            (make-interface (copy-seq retval) index))))))
+                      :index index)))))
+        (return-from
+         get-interface-by-index
+         (make-interface (copy-seq retval) index))))))
 
 (defun get-interface-by-name (name)
   (check-type name string "a string")
   (sb-sys:with-pinned-objects (name)
-    (let ((retval
-           (et::if-nametoindex name)))
-      (if (zerop retval)
-          (error 'unknown-interface
-                 :code sb-posix:enxio
-                 :identifier :unknown-interface
-                 :name name)
-          (make-interface (copy-seq name) retval)))))
+    (let (retval)
+      (handler-case
+          (setf retval (sb-posix::if-nametoindex name))
+        (sb-posix:syscall-error (err)
+          (case (sb-posix:syscall-errno err)
+            (#.sb-posix:enodev
+             (error 'unknown-interface
+                    :code sb-posix:enodev
+                    :identifier :unknown-interface
+                    :name name)))))
+      (make-interface (copy-seq name) retval))))
 
 (defun lookup-interface (iface)
   (multiple-value-bind (iface-type iface-val)
