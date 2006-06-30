@@ -25,18 +25,6 @@
               (error "Your machine seems to be neither little-endian nor big-endian. Please report this to the maintainer(s).")))
            *features*))
 
-(defsystem iolib-alien
-  :description "Alien definitions for IOLib."
-  :author "Stelian Ionescu <sionescu@common-lisp.net>"
-  :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
-  :licence "public domain"
-  :depends-on (#:sb-grovel)
-  :components
-  ((sb-grovel:grovel-constants-file
-       "alien-constants"
-       :package #:iolib-alien)
-   (:file "alien-functions" :depends-on ("alien-constants"))))
-
 (defsystem net.sockets
   :description "Socket library for SBCL."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
