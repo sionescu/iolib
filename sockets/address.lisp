@@ -191,16 +191,11 @@
   (with-alien ((sin6 sb-posix::sockaddr-in6)
                (namebuff (array (unsigned 8) #.sb-posix::inet6-addrstrlen)))
     (sb-sys:with-pinned-objects (sin6 namebuff)
-      (sb-posix::memset (addr sin6) 0 sb-posix::size-of-sockaddr-in6)
-      (let ((u16-vector (slot (slot (slot sin6 'sb-posix::addr)
-                                    'sb-posix::in6-u)
-                              'sb-posix::addr16)))
-        (dotimes (i 8)
-          (setf (deref u16-vector i) (htons (aref vector i))))
-        (sb-posix::inet-ntop sb-posix::af-inet6                 ; address family
-                             (addr (slot sin6 'sb-posix::addr)) ; pointer to struct in6_addr
-                             (alien-sap namebuff)               ; destination buffer
-                             sb-posix::inet6-addrstrlen))       ; INET6_ADDRSTRLEN
+      (make-sockaddr-in6 (addr sin6) vector)
+      (sb-posix::inet-ntop sb-posix::af-inet6                 ; address family
+                           (addr (slot sin6 'sb-posix::addr)) ; pointer to struct in6_addr
+                           (alien-sap namebuff)               ; destination buffer
+                           sb-posix::inet6-addrstrlen)        ; INET6_ADDRSTRLEN
       (return-from vector-to-colon-separated
         (let ((str (cast namebuff c-string)))
           (ecase case
@@ -223,7 +218,7 @@
   (:documentation "IPv6 address."))
 
 (defclass unixaddr (netaddr)
-  ((abstract :initarg :abstract :reader abstract-p :type boolean))
+  ((abstract :initform nil :initarg :abstract :reader abstract-p :type boolean))
   (:documentation "UNIX socket address."))
 
 
@@ -286,16 +281,14 @@
 
 
 ;;; Constructor
-(defun make-address (type name &key abstract)
-  (check-type abstract boolean "boolean value")
+(defun make-address (type name)
   (ecase type
     (:ipv4 (make-instance 'ipv4addr
-                          :name name))
+                          :name (coerce name '(simple-array ub8 (4)))))
     (:ipv6 (make-instance 'ipv6addr
-                          :name name))
+                          :name (coerce name '(simple-array ub16 (8)))))
     (:unix (make-instance 'unixaddr
-                          :name name
-                          :abstract abstract))))
+                          :name name))))
 
 
 ;;;
@@ -436,12 +429,12 @@
 (defmethod ipv6-reserved-multicast-p ((addr ipv6addr))
   (member (logand (aref (name addr) 0)
                   #xFF0F)
-          '(#xFF00 #xFF03 #xFF0F)))
+          (list #xFF00 #xFF03 #xFF0F)))
 
 (defmethod ipv6-unassigned-multicast-p ((addr ipv6addr))
   (member (logand (aref (name addr) 0)
                   #xFF0F)
-          '(#xFF06 #xFF07 #xFF09 #xFF0A #xFF0B #xFF0C #xFF0D)))
+          (list #xFF06 #xFF07 #xFF09 #xFF0A #xFF0B #xFF0C #xFF0D)))
 
 (defmethod ipv6-transient-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)

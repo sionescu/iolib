@@ -64,3 +64,56 @@
 
 (defun lisp->c-bool (val)
   (if val 1 0))
+
+(defun copy-simple-array-ub16-to-alien-vector (lisp-vec alien-vec)
+  (declare (type (simple-array ub16 (*)) lisp-vec))
+  (dotimes (i (length lisp-vec))
+    (setf (deref alien-vec i)
+          (htons (aref lisp-vec i)))))
+
+(defun map-ipv4-to-ipv6 (addr)
+  (declare (type (simple-array ub8 (*)) addr))
+  (let ((ipv6addr (make-array 8 :element-type 'ub16
+                                :initial-element 0)))
+    ;; setting the IPv4 marker
+    (setf (aref ipv6addr 5) #xFFFF)
+    ;; setting the first two bytes
+    (setf (aref ipv6addr 6) (+ (ash (aref addr 0) 8)
+                               (aref addr 1)))
+    ;; setting the last two bytes
+    (setf (aref ipv6addr 7) (+ (ash (aref addr 2) 8)
+                               (aref addr 3)))
+
+    ipv6addr))
+
+(defun make-sockaddr-in (sin ub8-vector &optional (port 0))
+  (declare (type (alien (* sb-posix::sockaddr-in)) sin))
+  (sb-posix::memset sin 0 sb-posix::size-of-sockaddr-in)
+  (setf (slot sin 'sb-posix::family) sb-posix::af-inet)
+  (setf (slot sin 'sb-posix::addr) (htonl (vector-to-ipaddr ub8-vector)))
+  (setf (slot sin 'sb-posix::port) (htons port))
+  sin)
+
+(defun make-sockaddr-in6 (sin6 ub16-vector &optional (port 0))
+  (declare (type (alien (* sb-posix::sockaddr-in6)) sin6))
+  (sb-posix::memset sin6 0 sb-posix::size-of-sockaddr-in6)
+  (setf (slot sin6 'sb-posix::family) sb-posix::af-inet6)
+  (let ((u16-vector (slot (slot (slot sin6 'sb-posix::addr)
+                                'sb-posix::in6-u)
+                          'sb-posix::addr16)))
+    (copy-simple-array-ub16-to-alien-vector ub16-vector u16-vector)
+    (setf (slot sin6 'sb-posix::port) (htons port)))
+  sin6)
+
+(defun make-sockaddr-un (sun string)
+  (declare (type (alien (* sb-posix::sockaddr-un)) sun)
+           (type string string))
+  (sb-posix::memset sun 0 sb-posix::size-of-sockaddr-un)
+  (setf (slot sun 'sb-posix::family) sb-posix::af-unix)
+  (let ((buff (sb-ext:string-to-octets string))
+        (path (slot sun 'sb-posix::path)))
+    (loop
+       for off below (min (length buff)
+                          (1- sb-posix::unix-path-max))
+       do (setf (deref path off) (aref buff off))))
+  sun)

@@ -8,11 +8,6 @@
 (defpackage #:iolib-system
   (:use #:common-lisp #:asdf #:sb-grovel))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defpackage #:iolib-alien
-    (:nicknames #:et)
-    (:use #:common-lisp #:sb-alien)
-    (:shadow #:listen)))
 (in-package #:iolib-system)
 
 (sb-alien:with-alien ((a (array (sb-alien:unsigned 8) 4)))
@@ -30,8 +25,7 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "GPL-2.1"
-  :depends-on (#:sb-posix
-               #:iolib-alien)
+  :depends-on (#:sb-posix)
   :components
   ((:module :sockets
     :components
@@ -43,14 +37,15 @@
      (:file "address" :depends-on ("defpackage" "conditions" "common"))
      (:file "resolv" :depends-on ("defpackage" "common" "config" "conditions" "address"))
      (:file "base-sockets"
-            :depends-on ("defpackage" "config" "common"))
+            :depends-on ("defpackage" "config" "common" "address" "resolv"))
      (:file "socket-options"
-            :depends-on ("defpackage" "common" "base-sockets"))))))
+            :depends-on ("defpackage" "common" "base-sockets"))
+     (:file "internet-sockets"
+            :depends-on ("defpackage" "common" "config" "base-sockets"))))))
 
 (defsystem iolib
   :description "I/O library for SBCL."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "GPL-2.1"
-  :depends-on (#:iolib-alien
-               #:net.sockets))
+  :depends-on (#:net.sockets))

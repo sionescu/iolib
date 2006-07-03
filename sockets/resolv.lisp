@@ -148,27 +148,6 @@
              (error 'possible-bug :message (format nil "Possible bug while looking up ~a"
                                                    (if host "host" "port")))))))))
 
-(defun map-ipv4-to-ipv6 (addr)
-  (declare (type (simple-array ub8 (*)) addr))
-  (let ((ipv6addr (make-array 8 :element-type 'ub16
-                                :initial-element 0)))
-    ;; setting the IPv4 marker
-    (setf (aref ipv6addr 5) #xFFFF)
-    ;; setting the first two bytes
-    (setf (aref ipv6addr 6) (+ (ash (aref addr 0) 8)
-                               (aref addr 1)))
-    ;; setting the last two bytes
-    (setf (aref ipv6addr 7) (+ (ash (aref addr 2) 8)
-                               (aref addr 3)))
-
-    ipv6addr))
-
-(defun copy-simple-array-ub16-to-alien-vector (lisp-vec alien-vec)
-  (declare (type (simple-array ub16 (*)) lisp-vec))
-  (dotimes (i (length lisp-vec))
-    (setf (deref alien-vec i)
-          (aref lisp-vec i))))
-
 (defun lookup-host-u8-vector-4 (host ipv6)
   (setf host (coerce host '(simple-array ub8 (4))))
 
@@ -177,9 +156,7 @@
         ((nil)
          (with-alien ((sin sb-posix::sockaddr-in))
            (sb-sys:with-pinned-objects (sin)
-             (sb-posix::memset (addr sin) 0 sb-posix::size-of-sockaddr-in)
-             (setf (slot sin 'sb-posix::family) sb-posix::af-inet)
-             (setf (slot sin 'sb-posix::addr) (htonl (vector-to-ipaddr host)))
+             (make-sockaddr-in (addr sin) host)
              (return-from lookup-host-u8-vector-4
                (make-host (get-name-info (addr sin) :flags sb-posix::ni-namereqd)
                           (list (make-address :ipv4 (copy-seq host))))))))
@@ -187,19 +164,11 @@
         ((:ipv6 t)
          (with-alien ((sin6 sb-posix::sockaddr-in6))
            (sb-sys:with-pinned-objects (sin6)
-             (sb-posix::memset (addr sin6) 0 sb-posix::size-of-sockaddr-in6)
-             (setf (slot sin6 'sb-posix::family) sb-posix::af-inet6)
-             (let ((u16-vector (slot (slot (slot sin6 'sb-posix::addr)
-                                           'sb-posix::in6-u)
-                                     'sb-posix::addr16))
-                   (ipv6addr (map-ipv4-to-ipv6 host)))
-
-               (copy-simple-array-ub16-to-alien-vector ipv6addr u16-vector)
-               (setf (deref u16-vector 6) (htons (deref u16-vector 6)))
-               (setf (deref u16-vector 7) (htons (deref u16-vector 7)))
-               (return-from lookup-host-u8-vector-4
-                 (make-host (get-name-info (addr sin6) :flags sb-posix::ni-namereqd)
-                            (list (make-address :ipv6 ipv6addr)))))))))
+             (let ((ipv6addr (map-ipv4-to-ipv6 host)))
+              (make-sockaddr-in6 (addr sin6) ipv6addr)
+              (return-from lookup-host-u8-vector-4
+                (make-host (get-name-info (addr sin6) :flags sb-posix::ni-namereqd)
+                           (list (make-address :ipv6 ipv6addr)))))))))
     (sb-posix::resolv-error (err)
       (manage-resolv-error (sb-posix::resolv-errno err) host nil))))
 
@@ -217,13 +186,7 @@
         ((:ipv6 t)
          (with-alien ((sin6 sb-posix::sockaddr-in6))
            (sb-sys:with-pinned-objects (sin6)
-             (sb-posix::memset (addr sin6) 0 sb-posix::size-of-sockaddr-in6)
-             (setf (slot sin6 'sb-posix::family) sb-posix::af-inet6)
-             (let ((u16-vector (slot (slot (slot sin6 'sb-posix::addr)
-                                           'sb-posix::in6-u)
-                                     'sb-posix::addr16)))
-               (dotimes (i 8)
-                 (setf (deref u16-vector i) (htons (aref host i)))))
+             (make-sockaddr-in6 (addr sin6) host)
              (return-from lookup-host-u16-vector-8
                (make-host (get-name-info (addr sin6) :flags sb-posix::ni-namereqd)
                           (list (make-address :ipv6 (copy-seq host)))))))))
