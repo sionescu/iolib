@@ -40,8 +40,13 @@
             :depends-on ("defpackage" "config" "common" "address" "resolv"))
      (:file "socket-options"
             :depends-on ("defpackage" "common" "base-sockets"))
-     (:file "internet-stream-sockets"
-            :depends-on ("defpackage" "common" "config" "base-sockets"))))))
+     (:file "stream-sockets"
+            :depends-on ("defpackage" "common" "config" "base-sockets"))
+     (:file "datagram-sockets"
+            :depends-on ("defpackage" "common" "config" "base-sockets"))
+     (:file "unix-sockets"
+            :depends-on ("defpackage" "common" "config" "base-sockets"
+                         "stream-sockets" "datagram-sockets"))))))
 
 (defsystem iolib
   :description "I/O library for SBCL."
