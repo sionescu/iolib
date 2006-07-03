@@ -24,12 +24,8 @@
 
 (in-package #:net.sockets)
 
-(defclass socket-stream-internet-active (stream-socket internet-active-socket)
-  ((lisp-stream :reader socket-lisp-stream))
+(defclass socket-stream-internet-active (stream-socket internet-socket active-socket) ()
   (:default-initargs :type :stream))
-
-(defmethod shared-initialize :after ((socket socket-stream-internet-active) slot-names &key)
-  (create-socket-lisp-stream socket))
 
 (defmethod socket-write-char (char (socket socket-stream-internet-active))
   (write-char char (socket-lisp-stream socket)))

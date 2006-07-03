@@ -24,3 +24,20 @@
 
 (in-package #:net.sockets)
 
+(defmethod socket-connect ((socket unix-socket)
+                           (address unixaddr) &key)
+  (with-alien ((sun sb-posix::sockaddr-un))
+    (sb-sys:with-pinned-objects (sun)
+      (make-sockaddr-un (addr sun) (name address))
+      (sb-posix::connect (socket-fd socket)
+                         (addr sun)
+                         sb-posix::size-of-sockaddr-un)
+      (setf (slot-value socket 'address) (copy-netaddr address)))))
+
+(defclass socket-stream-unix-active (stream-socket unix-socket active-socket) ())
+
+(defclass socket-stream-unix-passive (stream-socket unix-socket passive-socket) ())
+
+(defclass socket-datagram-unix-active (datagram-socket unix-socket active-socket) ())
+
+(defclass socket-datagram-unix-passive (datagram-socket unix-socket passive-socket) ())

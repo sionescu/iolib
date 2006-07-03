@@ -40,7 +40,7 @@
             :depends-on ("defpackage" "config" "common" "address" "resolv"))
      (:file "socket-options"
             :depends-on ("defpackage" "common" "base-sockets"))
-     (:file "internet-sockets"
+     (:file "internet-stream-sockets"
             :depends-on ("defpackage" "common" "config" "base-sockets"))))))
 
 (defsystem iolib

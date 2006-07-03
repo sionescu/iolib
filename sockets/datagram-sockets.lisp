@@ -24,3 +24,14 @@
 
 (in-package #:net.sockets)
 
+(defmethod socket-unconnect ((socket datagram-socket))
+  (with-alien ((sin sb-posix::sockaddr-in))
+    (sb-sys:with-pinned-objects (sin)
+      (memset (addr sin) 0 sb-posix::size-of-sockaddr-in)
+      (setf (slot sin 'sb-posix::addr) sb-posix::af-unspec)
+      (sb-posix::connect (socket-fd socket)
+                         (addr sin)
+                         sb-posix::size-of-sockaddr-in)
+      (slot-makunbound socket 'address)
+      (when (typep socket 'internet-socket)
+        (slot-makunbound socket 'port)))))

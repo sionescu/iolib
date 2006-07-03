@@ -43,7 +43,9 @@
 
 (defgeneric socket-open-p (socket))
 
-(defclass stream-socket (socket) ())
+(defclass stream-socket (socket)
+  ((lisp-stream :reader socket-lisp-stream))
+  (:default-initargs :type :stream))
 
 (defgeneric socket-write-char (char socket))
 
@@ -58,41 +60,36 @@
 (defgeneric socket-read-sequence (sequence socket &key start end))
 
 (defgeneric socket-send (buffer socket &key
-                         dont-route dont-wait no-signal out-of-band &allow-other-keys))
+                         dont-route dont-wait no-signal
+                         out-of-band &allow-other-keys))
 
 (defgeneric socket-receive (buffer socket &key
-                            out-of-band peek wait-all dont-wait &allow-other-keys))
+                            out-of-band peek wait-all
+                            dont-wait &allow-other-keys))
 
-(defclass datagram-socket (socket) ())
-
-(defgeneric write-datagram (socket &key address &allow-other-keys))
-
-(defgeneric read-datagram (socket &key address &allow-other-keys))
+(defclass datagram-socket (socket) ()
+  (:default-initargs :type :datagram))
 
 (defclass internet-socket (socket)
   ((port :reader port :type '(unsigned-byte 16)))
   (:default-initargs :family (if *ipv6* :ipv6 :ipv4)))
 
-(defgeneric local-name (socket))
-
-(defgeneric local-host (socket))
-
-(defgeneric local-port (socket))
-
 (defclass unix-socket (socket) ()
   (:default-initargs :family :unix))
+
+(defgeneric local-name (socket))
+
+(defgeneric remote-name (socket))
 
 (defclass active-socket (socket) ())
 
 (defgeneric socket-connect (socket address &key &allow-other-keys))
 
-(defgeneric remote-name (socket))
-
-(defgeneric remote-host (socket))
-
-(defgeneric remote-port (socket))
-
 (defgeneric shutdown (socket &key direction))
+
+(defgeneric local-host (socket))
+
+(defgeneric local-port (socket))
 
 (defclass passive-socket (socket) ())
 
@@ -102,13 +99,9 @@
 
 (defgeneric socket-accept-connection (passive-socket &key active-socket wait))
 
-(defclass internet-active-socket (internet-socket active-socket) ())
+(defgeneric remote-host (socket))
 
-(defclass internet-passive-socket (internet-socket passive-socket) ())
-
-(defclass unix-active-socket (unix-socket active-socket) ())
-
-(defclass unix-passive-socket (unix-socket passive-socket) ())
+(defgeneric remote-port (socket))
 
 
 
@@ -157,12 +150,15 @@
              (socket-open-p socket))
     (socket-close socket))
   (with-slots (fd (fam family) (proto protocol)) socket
-    (multiple-value-bind (sf st pr)
+    (multiple-value-bind (sf st sp)
         (translate-make-socket-keywords-to-constants family type protocol)
-      (setf fd (sb-posix::socket sf st pr))
+      (setf fd (sb-posix::socket sf st sp))
       (setf fam family)
-      (setf proto pr)
+      (setf proto sp)
       (set-finalizer-on-socket socket fd))))
+
+(defmethod shared-initialize :after ((socket stream-socket) slot-names &key)
+  (create-socket-lisp-stream socket))
 
 (defmethod socket-non-blocking-mode ((socket socket))
   (with-slots (fd) socket
@@ -177,7 +173,7 @@
                       (logior fflags
                               (if value sb-posix:o-nonblock 0))))))
 
-(defmethod socket-connect ((socket internet-active-socket)
+(defmethod socket-connect ((socket internet-socket)
                            (address ipv4addr) &key port)
   (with-alien ((sin sb-posix::sockaddr-in))
     (sb-sys:with-pinned-objects (sin)
@@ -188,7 +184,7 @@
       (setf (slot-value socket 'address) (copy-netaddr address))
       (setf (slot-value socket 'port) port))))
 
-(defmethod socket-connect ((socket internet-active-socket)
+(defmethod socket-connect ((socket internet-socket)
                            (address ipv6addr) &key port)
   (with-alien ((sin6 sb-posix::sockaddr-in6))
     (sb-sys:with-pinned-objects (sin6)
@@ -198,13 +194,3 @@
                          sb-posix::size-of-sockaddr-in6)
       (setf (slot-value socket 'address) (copy-netaddr address))
       (setf (slot-value socket 'port) port))))
-
-(defmethod socket-connect ((socket unix-active-socket)
-                           (address unixaddr) &key)
-  (with-alien ((sun sb-posix::sockaddr-un))
-    (sb-sys:with-pinned-objects (sun)
-      (make-sockaddr-un (addr sun) (name address))
-      (sb-posix::connect (socket-fd socket)
-                         (addr sun)
-                         sb-posix::size-of-sockaddr-un)
-      (setf (slot-value socket 'address) (copy-netaddr address)))))
