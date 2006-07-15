@@ -50,18 +50,6 @@
   ((lisp-stream :reader socket-lisp-stream))
   (:default-initargs :type :stream))
 
-(defgeneric socket-write-char (char socket))
-
-(defgeneric socket-read-char (socket &key eof-error-p eof-value))
-
-(defgeneric socket-write-byte (byte socket))
-
-(defgeneric socket-read-byte (socket &key eof-error-p eof-value))
-
-(defgeneric socket-write-sequence (sequence socket &key start end))
-
-(defgeneric socket-read-sequence (sequence socket &key start end))
-
 (defgeneric socket-send (buffer socket &key
                          dont-route dont-wait no-signal
                          out-of-band &allow-other-keys))
@@ -244,39 +232,6 @@
 ;;   Stream sockets   ;;
 ;;                    ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;
-;; Stream interface
-;;
-
-(defmethod socket-write-char (char (socket stream-socket))
-  (write-char char (socket-lisp-stream socket)))
-
-(defmethod socket-read-char ((socket stream-socket)
-                             &key eof-error-p eof-value)
-  (read-char (socket-lisp-stream socket) eof-error-p eof-value))
-
-(defmethod socket-write-byte (byte (socket stream-socket))
-  (write-byte byte (socket-lisp-stream socket)))
-
-(defmethod socket-read-byte ((socket stream-socket)
-                             &key eof-error-p eof-value)
-  (read-byte (socket-lisp-stream socket) eof-error-p eof-value))
-
-(defmethod socket-write-sequence ((sequence simple-array)
-                                  (socket stream-socket)
-                                  &key (start 0) end)
-  (write-sequence sequence (socket-lisp-stream socket) :start start :end end))
-
-(defmethod socket-read-sequence ((sequence simple-array)
-                                 (socket stream-socket)
-                                 &key (start 0) end)
-  (read-sequence sequence (socket-lisp-stream socket) :start start :end end))
-
-
-;;
-;; "Low-level" interface
-;;
 
 (defmethod socket-send ((buffer simple-array)
                         (socket socket-stream-internet-active) &key
