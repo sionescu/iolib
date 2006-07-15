@@ -19,49 +19,9 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (declaim (optimize (speed 0) (safety 3) (space 0) (debug 2)))
-(declaim (optimize (speed 1) (safety 2) (space 0) (debug 2)))
+(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 
 (in-package #:net.sockets)
-
-;;;
-;;; Byte-swap functions
-;;;
-
-(declaim (inline htons))
-(defun htons (short)
-  (declare (integer short))
-#+little-endian
-  (let ((newshort 0))
-    (declare (type ub16 newshort)
-             (type ub16 short))
-    (setf (ldb (byte 8 0) newshort) (ldb (byte 8 8) short))
-    (setf (ldb (byte 8 8) newshort) (ldb (byte 8 0) short))
-    newshort)
-#+big-endian short)
-
-(declaim (inline ntohs))
-(defun ntohs (short)
-  (htons short))
-
-(declaim (inline htonl))
-(defun htonl (long)
-  (declare (integer long))
-#+little-endian
-  (let ((newlong 0))
-    (declare (type ub32 newlong)
-             (type ub32 long))
-    (setf (ldb (byte 8  0) newlong) (ldb (byte 8 24) long))
-    (setf (ldb (byte 8 24) newlong) (ldb (byte 8  0) long))
-    (setf (ldb (byte 8  8) newlong) (ldb (byte 8 16) long))
-    (setf (ldb (byte 8 16) newlong) (ldb (byte 8  8) long))
-    newlong)
-#+big-endian long)
-
-(declaim (inline ntohl))
-(defun ntohl (long)
-  (htonl long))
-
 
 ;;;
 ;;; Conversion functions

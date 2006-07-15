@@ -19,22 +19,32 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
+(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 
 (in-package #:net.sockets)
 
-(defparameter *ipv6* t
-  "Specifies the default behaviour with respect to IPv6:
-- nil   : Only IPv4 addresses are used.
-- :ipv6 : Only IPv6 addresses are used.
-- t     : If both IPv4 and IPv6 addresses are found they are returned in the best order possible(see RFC 3484).
-Default value is T.")
+(defun manage-socket-error (err)
+  (error err))
 
-(define-constant +max-backlog-size+ sb-posix::somaxconn
-  "Maximum length of the pending connections queue(hard limit).")
+(defmacro define-wrapper-function (funcname)
+  (let* ((alien-name (intern (string-upcase (symbol-name funcname))
+                             'sb-posix))
+         (arglist (mapcar #'(lambda (sym)
+                              (intern (string-upcase (symbol-name sym))))
+                          (sb-introspect:function-arglist alien-name))))
+    `(defun ,funcname ,arglist
+       (handler-case
+           (,alien-name ,@arglist)
+         (sb-posix:syscall-error (err)
+           (manage-socket-error err))))))
 
-(defparameter *default-backlog-size* 5
-  (format nil "Default length of the pending connections queue(soft limit). Default value is 5 and maximum value is ~a." +max-backlog-size+))
+(defmacro define-all-wrappers (funclist)
+  `(progn
+     ,@(loop :for func :in funclist
+          :collect `(define-wrapper-function ,func))))
 
-(defparameter *no-sigpipe* t
-  "When T an EOF received on a stream socket won't raise a SIGPIPE. Default value it T.")
+(define-all-wrappers
+    (accept bind close connect getpeername getsockname
+            getsockopt listen recv recvfrom recvmsg send
+            sendmsg sendto setsockopt shutdown socket
+            sockatmark socketpair))

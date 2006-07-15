@@ -19,25 +19,37 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 0) (safety 3) (space 0) (debug 2)))
-;; (declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
+(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 
 (in-package #:net.sockets)
 
+(defclass socket-stream-unix-active (active-socket stream-socket unix-socket) ())
+
+(defclass socket-stream-unix-passive (passive-socket stream-socket unix-socket) ())
+
+(defclass socket-datagram-unix-active (active-socket datagram-socket unix-socket) ())
+
+(defclass socket-datagram-unix-passive (passive-socket datagram-socket unix-socket) ())
+
 (defmethod socket-connect ((socket unix-socket)
                            (address unixaddr) &key)
-  (with-alien ((sun sb-posix::sockaddr-un))
-    (sb-sys:with-pinned-objects (sun)
-      (make-sockaddr-un (addr sun) (name address))
-      (sb-posix::connect (socket-fd socket)
-                         (addr sun)
-                         sb-posix::size-of-sockaddr-un)
-      (setf (slot-value socket 'address) (copy-netaddr address)))))
+  (with-pinned-aliens ((sun sb-posix::sockaddr-un))
+    (make-sockaddr-un (addr sun) (name address))
+    (sb-posix::connect (socket-fd socket)
+                       (addr sun)
+                       sb-posix::size-of-sockaddr-un)
+    (setf (slot-value socket 'address) (copy-netaddr address))))
 
-(defclass socket-stream-unix-active (stream-socket unix-socket active-socket) ())
+(defmethod socket-bind :before ((socket unix-socket)
+                                (address unixaddr) &key)
+  (when (typep socket 'active-socket)
+    (error "You can't bind an active Unix socket.")))
 
-(defclass socket-stream-unix-passive (stream-socket unix-socket passive-socket) ())
-
-(defclass socket-datagram-unix-active (datagram-socket unix-socket active-socket) ())
-
-(defclass socket-datagram-unix-passive (datagram-socket unix-socket passive-socket) ())
+(defmethod socket-bind ((socket unix-socket)
+                        (address unixaddr) &key)
+  (with-pinned-aliens ((sun sb-posix::sockaddr-un))
+    (make-sockaddr-un (addr sun) (name address))
+    (sb-posix::bind (socket-fd socket)
+                    (addr sun)
+                    sb-posix::size-of-sockaddr-un)
+    (setf (slot-value socket 'address) (copy-netaddr address))))

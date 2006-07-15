@@ -3,7 +3,8 @@
 (in-package #:cl-user)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (require :sb-grovel))
+  (require :sb-grovel)
+  (require :sb-introspect))
 
 (defpackage #:iolib-system
   (:use #:common-lisp #:asdf #:sb-grovel))
@@ -30,9 +31,10 @@
   ((:module :sockets
     :components
     ((:file "defpackage")
-     (:file "common" :depends-on ("defpackage"))
-     (:file "config" :depends-on ("defpackage"))
      (:file "conditions" :depends-on ("defpackage"))
+     (:file "alien-wrappers" :depends-on ("defpackage" "conditions"))
+     (:file "common" :depends-on ("defpackage" "alien-wrappers"))
+     (:file "config" :depends-on ("defpackage" "common"))
      (:file "iface" :depends-on ("defpackage" "conditions" "common"))
      (:file "address" :depends-on ("defpackage" "conditions" "common"))
      (:file "resolv" :depends-on ("defpackage" "common" "config" "conditions" "address"))

@@ -19,8 +19,7 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (declaim (optimize (speed 0) (safety 3) (space 0) (debug 2)))
-(declaim (optimize (speed 1) (safety 2) (space 0) (debug 2)))
+(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 
 (in-package #:net.sockets)
 
@@ -145,8 +144,8 @@
        (let ((id (resolver-error-id retval)))
          (if id
              (raise-resolver-error :identifier id :data data)
-             (error 'possible-bug :message (format nil "Possible bug while looking up ~a"
-                                                   (if host "host" "port")))))))))
+             (error "Possible bug while looking up ~a"
+                    (if host "host" "port"))))))))
 
 (defun lookup-host-u8-vector-4 (host ipv6)
   (setf host (coerce host '(simple-array ub8 (4))))
@@ -213,11 +212,12 @@
   (declare (type (alien (* sb-posix::addrinfo))
                  addrinfo))
   (let ((canonname (slot addrinfo 'sb-posix::canonname))
-        (addrlist (loop
-                     for addrptr of-type (alien (* sb-posix::addrinfo))
-                       = addrinfo then (slot addrptr 'sb-posix::next)
-                     while (not (null-alien addrptr))
-                     collect (make-address-from-addrinfo addrptr))))
+        (addrlist
+         (loop
+            :for addrptr :of-type (alien (* sb-posix::addrinfo)) = addrinfo
+            :then (slot addrptr 'sb-posix::next)
+            :while (not (null-alien addrptr))
+            :collect (make-address-from-addrinfo addrptr))))
     (make-host canonname addrlist)))
 
 (defmethod lookup-host :around (host &key (ipv6 *ipv6*) all)
@@ -404,9 +404,9 @@
          (number (slot protoent 'sb-posix::proto))
          (aliasptr (slot protoent 'sb-posix::aliases))
          (aliases (loop
-                    for i from 0
-                    for alias = (deref aliasptr i)
-                    while alias collect alias)))
+                     :for i :from 0
+                     :for alias = (deref aliasptr i)
+                     :while alias :collect alias)))
     (make-protocol name number aliases)))
 
 (defun get-protocol-by-number (protonum)

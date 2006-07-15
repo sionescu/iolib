@@ -19,7 +19,7 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 0) (safety 3) (space 0) (debug 2)))
+(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 
 (in-package #:net.sockets)
 
@@ -34,20 +34,10 @@ be used as a more thorough explanation of the errors's cause."))
   (let ((msg (condition-message condition)))
     (when msg
       (when (eql eof-place :before)
-        (format stream "~%"))
+        (fresh-line stream))
       (format stream "~a" msg)
       (when (eql eof-place :after)
-        (format stream "~%")))))
-
-
-(define-condition possible-bug (error condition-with-message-mixin)
-  ((data :initarg :data :reader bug-data))
-  (:report (lambda (condition stream)
-             (declare (type stream stream))
-             (print-message-if-not-null condition stream :after)
-             (format stream "Bug data: ~a"
-                     (bug-data condition))))
-  (:documentation "Raised when a situation that is probably a bug occurs."))
+        (fresh-line stream)))))
 
 
 (define-condition invalid-argument (error condition-with-message-mixin)
@@ -105,7 +95,7 @@ values, et caetera)."))
   "Service not found for specific socket type: ~a"
   "Condition signaled when a service was not found for the socket type requested.")
 
-(define-condition unknown-interface (system-error condition-with-message-mixin)
+(define-condition unknown-interface (system-error)
   ((name  :initarg :name  :initform nil :reader interface-name)
    (index :initarg :index :initform nil :reader interface-index))
   (:report (lambda (condition stream)
@@ -113,8 +103,7 @@ values, et caetera)."))
                  (format stream "Unknown interface: ~a"
                          (interface-name condition))
                  (format stream "Unknown interface index: ~a"
-                         (interface-index condition)))
-             (print-message-if-not-null condition stream)))
+                         (interface-index condition)))))
   (:documentation "Condition raised when a network interface is not found."))
 
 (define-condition unknown-protocol (system-error)

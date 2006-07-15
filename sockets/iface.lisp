@@ -19,7 +19,7 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 1) (safety 2) (space 0) (debug 2)))
+(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 
 (in-package #:net.sockets)
 
@@ -50,12 +50,12 @@
         (let* ((ifarr (deref ifptr))
                (iflist
                 (loop
-                   for i from 0
-                   for name = (slot (deref ifarr i) 'sb-posix::name)
-                   for index = (slot (deref ifarr i) 'sb-posix::index)
-                   while (plusp index)
-                   collect (make-interface name index)
-                   finally (sb-posix::if-freenameindex ifptr))))
+                   :for i :from 0
+                   :for name = (slot (deref ifarr i) 'sb-posix::name)
+                   :for index = (slot (deref ifarr i) 'sb-posix::index)
+                   :while (plusp index)
+                   :collect (make-interface name index)
+                   :finally (sb-posix::if-freenameindex ifptr))))
           (return-from get-network-interfaces iflist))))))
 
 (defun get-interface-by-index (index)

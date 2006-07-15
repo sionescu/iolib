@@ -5,6 +5,7 @@
 (defpackage #:net.sockets
   (:nicknames #:sockets)
   (:use #:common-lisp #:sb-alien)
+  (:shadow #:listen #:close)
   (:export
    ;; conditions
    #:possible-bug #:invalid-argument

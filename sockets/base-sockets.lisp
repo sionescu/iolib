@@ -19,8 +19,7 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 0) (safety 3) (space 0) (debug 2)))
-;; (declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
+(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 
 (in-package #:net.sockets)
 
@@ -42,6 +41,10 @@
 (defgeneric socket-close (socket))
 
 (defgeneric socket-open-p (socket))
+
+(defgeneric local-name (socket))
+
+(defgeneric remote-name (socket))
 
 (defclass stream-socket (socket)
   ((lisp-stream :reader socket-lisp-stream))
@@ -77,19 +80,11 @@
 (defclass unix-socket (socket) ()
   (:default-initargs :family :unix))
 
-(defgeneric local-name (socket))
-
-(defgeneric remote-name (socket))
-
 (defclass active-socket (socket) ())
 
 (defgeneric socket-connect (socket address &key &allow-other-keys))
 
-(defgeneric shutdown (socket &key direction))
-
-(defgeneric local-host (socket))
-
-(defgeneric local-port (socket))
+(defgeneric socket-shutdown (socket &key direction))
 
 (defclass passive-socket (socket) ())
 
@@ -98,10 +93,6 @@
 (defgeneric socket-listen (socket &key backlog))
 
 (defgeneric socket-accept-connection (passive-socket &key active-socket wait))
-
-(defgeneric remote-host (socket))
-
-(defgeneric remote-port (socket))
 
 
 
@@ -125,7 +116,7 @@
 (defun set-finalizer-on-socket (socket fd)
   (sb-ext:finalize socket #'(lambda () (sb-posix:close fd))))
 
-(defun create-socket-lisp-stream (socket)
+(defun create-lisp-stream-for-socket (socket)
   (setf (slot-value socket 'lisp-stream)
         (sb-sys:make-fd-stream (socket-fd socket)
                                :name (format nil "Socket stream, fd: ~a" (socket-fd socket))
@@ -158,7 +149,7 @@
       (set-finalizer-on-socket socket fd))))
 
 (defmethod shared-initialize :after ((socket stream-socket) slot-names &key)
-  (create-socket-lisp-stream socket))
+  (create-lisp-stream-for-socket socket))
 
 (defmethod socket-non-blocking-mode ((socket socket))
   (with-slots (fd) socket
@@ -166,31 +157,51 @@
       (not (zerop (logand fflags sb-posix:o-nonblock))))))
 
 (defmethod (setf socket-non-blocking-mode) (value (socket socket))
-  (declare (type boolean value))
+  (check-type value boolean "a boolean value")
   (with-slots (fd) socket
     (let ((fflags (sb-posix:fcntl fd sb-posix::f-getfl)))
       (sb-posix:fcntl fd sb-posix::f-setfl
                       (logior fflags
                               (if value sb-posix:o-nonblock 0))))))
 
-(defmethod socket-connect ((socket internet-socket)
-                           (address ipv4addr) &key port)
-  (with-alien ((sin sb-posix::sockaddr-in))
-    (sb-sys:with-pinned-objects (sin)
-      (make-sockaddr-in (addr sin) (name address) port)
-      (sb-posix::connect (socket-fd socket)
-                         (addr sin)
-                         sb-posix::size-of-sockaddr-in)
-      (setf (slot-value socket 'address) (copy-netaddr address))
-      (setf (slot-value socket 'port) port))))
+(defmethod socket-connect ((socket passive-socket)
+                           address &key)
+  (error "You cannot connect a passive socket."))
 
 (defmethod socket-connect ((socket internet-socket)
-                           (address ipv6addr) &key port)
-  (with-alien ((sin6 sb-posix::sockaddr-in6))
-    (sb-sys:with-pinned-objects (sin6)
-      (make-sockaddr-in6 (addr sin6) (name address) port)
-      (sb-posix::connect (socket-fd socket)
-                         (addr sin6)
-                         sb-posix::size-of-sockaddr-in6)
-      (setf (slot-value socket 'address) (copy-netaddr address))
-      (setf (slot-value socket 'port) port))))
+                           (address ipv4addr) &key (port 0))
+  (with-pinned-aliens ((sin sb-posix::sockaddr-in))
+    (make-sockaddr-in (addr sin) (name address) port)
+    (sb-posix::connect (socket-fd socket)
+                       (addr sin)
+                       sb-posix::size-of-sockaddr-in)
+    (setf (slot-value socket 'address) (copy-netaddr address))
+    (setf (slot-value socket 'port) port)))
+
+(defmethod socket-connect ((socket internet-socket)
+                           (address ipv6addr) &key (port 0))
+  (with-pinned-aliens ((sin6 sb-posix::sockaddr-in6))
+    (make-sockaddr-in6 (addr sin6) (name address) port)
+    (sb-posix::connect (socket-fd socket)
+                       (addr sin6)
+                       sb-posix::size-of-sockaddr-in6)
+    (setf (slot-value socket 'address) (copy-netaddr address))
+    (setf (slot-value socket 'port) port)))
+
+(defmethod socket-bind ((socket internet-socket)
+                        (address ipv4addr) &key (port 0))
+  (with-pinned-aliens ((sin sb-posix::sockaddr-in))
+    (make-sockaddr-in (addr sin) (name address) port)
+    (sb-posix::bind (socket-fd socket)
+                    (addr sin)
+                    sb-posix::size-of-sockaddr-in)
+    (setf (slot-value socket 'address) (copy-netaddr address))))
+
+(defmethod socket-bind ((socket internet-socket)
+                        (address ipv6addr) &key (port 0))
+  (with-pinned-aliens ((sin6 sb-posix::sockaddr-in6))
+    (make-sockaddr-in6 (addr sin6) (name address) port)
+    (sb-posix::bind (socket-fd socket)
+                    (addr sin6)
+                    sb-posix::size-of-sockaddr-in6)
+    (setf (slot-value socket 'address) (copy-netaddr address))))

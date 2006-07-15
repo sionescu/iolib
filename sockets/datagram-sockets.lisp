@@ -19,19 +19,21 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 0) (safety 3) (space 0) (debug 2)))
-;; (declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
+(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 
 (in-package #:net.sockets)
 
+(defclass socket-datagram-internet-active (active-socket datagram-socket internet-socket) ())
+
+(defclass socket-datagram-internet-passive (passive-socket datagram-socket internet-socket) ())
+
 (defmethod socket-unconnect ((socket datagram-socket))
-  (with-alien ((sin sb-posix::sockaddr-in))
-    (sb-sys:with-pinned-objects (sin)
-      (memset (addr sin) 0 sb-posix::size-of-sockaddr-in)
-      (setf (slot sin 'sb-posix::addr) sb-posix::af-unspec)
-      (sb-posix::connect (socket-fd socket)
-                         (addr sin)
-                         sb-posix::size-of-sockaddr-in)
-      (slot-makunbound socket 'address)
-      (when (typep socket 'internet-socket)
-        (slot-makunbound socket 'port)))))
+  (with-pinned-aliens ((sin sb-posix::sockaddr-in))
+    (sb-posix::memset (addr sin) 0 sb-posix::size-of-sockaddr-in)
+    (setf (slot sin 'sb-posix::addr) sb-posix::af-unspec)
+    (sb-posix::connect (socket-fd socket)
+                       (addr sin)
+                       sb-posix::size-of-sockaddr-in)
+    (slot-makunbound socket 'address)
+    (when (typep socket 'internet-socket)
+      (slot-makunbound socket 'port))))
