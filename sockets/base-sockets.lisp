@@ -94,6 +94,22 @@
 
 (defgeneric socket-accept-connection (passive-socket &key active-socket wait))
 
+(defclass socket-stream-internet-active (active-socket stream-socket internet-socket) ())
+
+(defclass socket-stream-internet-passive (passive-socket stream-socket internet-socket) ())
+
+(defclass socket-datagram-internet-active (active-socket datagram-socket internet-socket) ())
+
+(defclass socket-datagram-internet-passive (passive-socket datagram-socket internet-socket) ())
+
+(defclass socket-stream-unix-active (active-socket stream-socket unix-socket) ())
+
+(defclass socket-stream-unix-passive (passive-socket stream-socket unix-socket) ())
+
+(defclass socket-datagram-unix-active (active-socket datagram-socket unix-socket) ())
+
+(defclass socket-datagram-unix-passive (passive-socket datagram-socket unix-socket) ())
+
 
 
 (defun translate-make-socket-keywords-to-constants (family type protocol)
@@ -164,6 +180,13 @@
                       (logior fflags
                               (if value sb-posix:o-nonblock 0))))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                      ;;
+;;   Internet sockets   ;;
+;;                      ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defmethod socket-connect ((socket passive-socket)
                            address &key)
   (error "You cannot connect a passive socket."))
@@ -204,4 +227,103 @@
     (sb-posix::bind (socket-fd socket)
                     (addr sin6)
                     sb-posix::size-of-sockaddr-in6)
+    (setf (slot-value socket 'address) (copy-netaddr address))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;                    ;;
+;;   Stream sockets   ;;
+;;                    ;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;
+;; Stream interface
+;;
+
+(defmethod socket-write-char (char (socket stream-socket))
+  (write-char char (socket-lisp-stream socket)))
+
+(defmethod socket-read-char ((socket stream-socket)
+                             &key eof-error-p eof-value)
+  (read-char (socket-lisp-stream socket) eof-error-p eof-value))
+
+(defmethod socket-write-byte (byte (socket stream-socket))
+  (write-byte byte (socket-lisp-stream socket)))
+
+(defmethod socket-read-byte ((socket stream-socket)
+                             &key eof-error-p eof-value)
+  (read-byte (socket-lisp-stream socket) eof-error-p eof-value))
+
+(defmethod socket-write-sequence ((sequence simple-array)
+                                  (socket stream-socket)
+                                  &key (start 0) end)
+  (write-sequence sequence (socket-lisp-stream socket) :start start :end end))
+
+(defmethod socket-read-sequence ((sequence simple-array)
+                                 (socket stream-socket)
+                                 &key (start 0) end)
+  (read-sequence sequence (socket-lisp-stream socket) :start start :end end))
+
+
+;;
+;; "Low-level" interface
+;;
+
+(defmethod socket-send ((buffer simple-array)
+                        (socket socket-stream-internet-active) &key
+                        dont-route dont-wait (no-signal *no-sigpipe*)
+                        out-of-band #+linux more &allow-other-keys)
+  )
+
+(defmethod socket-receive ((buffer simple-array)
+                           (socket socket-stream-internet-active) &key
+                           out-of-band peek wait-all dont-wait &allow-other-keys)
+  )
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                      ;;
+;;   Datagram sockets   ;;
+;;                      ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmethod socket-unconnect ((socket datagram-socket))
+  (with-pinned-aliens ((sin sb-posix::sockaddr-in))
+    (sb-posix::memset (addr sin) 0 sb-posix::size-of-sockaddr-in)
+    (setf (slot sin 'sb-posix::addr) sb-posix::af-unspec)
+    (sb-posix::connect (socket-fd socket)
+                       (addr sin)
+                       sb-posix::size-of-sockaddr-in)
+    (slot-makunbound socket 'address)
+    (when (typep socket 'internet-socket)
+      (slot-makunbound socket 'port))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;
+;;                  ;;
+;;   Unix sockets   ;;
+;;                  ;;
+;;;;;;;;;;;;;;;;;;;;;;
+
+(defmethod socket-connect ((socket unix-socket)
+                           (address unixaddr) &key)
+  (with-pinned-aliens ((sun sb-posix::sockaddr-un))
+    (make-sockaddr-un (addr sun) (name address))
+    (sb-posix::connect (socket-fd socket)
+                       (addr sun)
+                       sb-posix::size-of-sockaddr-un)
+    (setf (slot-value socket 'address) (copy-netaddr address))))
+
+(defmethod socket-bind :before ((socket unix-socket)
+                                (address unixaddr) &key)
+  (when (typep socket 'active-socket)
+    (error "You can't bind an active Unix socket.")))
+
+(defmethod socket-bind ((socket unix-socket)
+                        (address unixaddr) &key)
+  (with-pinned-aliens ((sun sb-posix::sockaddr-un))
+    (make-sockaddr-un (addr sun) (name address))
+    (sb-posix::bind (socket-fd socket)
+                    (addr sun)
+                    sb-posix::size-of-sockaddr-un)
     (setf (slot-value socket 'address) (copy-netaddr address))))
