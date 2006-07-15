@@ -180,16 +180,21 @@
                       (logior fflags
                               (if value sb-posix:o-nonblock 0))))))
 
+(defmethod socket-listen ((socket passive-socket)
+                          &key (backlog (min *default-backlog-size* +max-backlog-size+)))
+  (check-type backlog unsigned-byte "a non-negative integer")
+  (sb-posix:listen (socket-fd socket) backlog))
+
+(defmethod socket-listen ((socket active-socket)
+                          &key backlog)
+  (error "You can't listen on an active socket."))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;                      ;;
 ;;   Internet sockets   ;;
 ;;                      ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod socket-connect ((socket passive-socket)
-                           address &key)
-  (error "You cannot connect a passive socket."))
 
 (defmethod socket-connect ((socket internet-socket)
                            (address ipv4addr) &key (port 0))
@@ -210,6 +215,10 @@
                        sb-posix::size-of-sockaddr-in6)
     (setf (slot-value socket 'address) (copy-netaddr address))
     (setf (slot-value socket 'port) port)))
+
+(defmethod socket-connect ((socket passive-socket)
+                           address &key)
+  (error "You cannot connect a passive socket."))
 
 (defmethod socket-bind ((socket internet-socket)
                         (address ipv4addr) &key (port 0))

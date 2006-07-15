@@ -24,72 +24,65 @@
 
 (in-package #:net.sockets)
 
+;; TODO: Implement it
 (defun manage-sockopt-error (retval level option action &optional val1 val2)
-  )
+  (declare (type symbol action)))
 
 ;;
 ;; Set Options
 ;;
 
 (defun set-socket-option-bool (fd level option value)
-  (with-alien ((optval int))
-    (sb-sys:with-pinned-objects (optval)
-      (setf optval (lisp->c-bool value))
-      (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-int)
-      (values))))
+  (with-pinned-aliens ((optval int))
+    (setf optval (lisp->c-bool value))
+    (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-int)
+    (values)))
 
 (defun set-socket-option-int (fd level option value)
-  (with-alien ((optval int))
-    (sb-sys:with-pinned-objects (optval)
-      (setf optval value)
-      (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-int)
-      (values))))
+  (with-pinned-aliens ((optval int))
+    (setf optval value)
+    (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-int)
+    (values)))
 
 (defun set-socket-option-linger (fd level option onoff linger)
-  (with-alien ((optval sb-posix::linger))
-    (sb-sys:with-pinned-objects (optval)
-      (setf (slot optval 'sb-posix::onoff) onoff)
-      (setf (slot optval 'sb-posix::linger) linger)
-      (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-linger)
-      (values))))
+  (with-pinned-aliens ((optval sb-posix::linger))
+    (setf (slot optval 'sb-posix::onoff) onoff)
+    (setf (slot optval 'sb-posix::linger) linger)
+    (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-linger)
+    (values)))
 
 (defun set-socket-option-timeval (fd level option sec usec)
-  (with-alien ((optval sb-posix::timeval))
-    (sb-sys:with-pinned-objects (optval)
-      (setf (slot optval 'sb-posix::tv-sec) sec)
-      (setf (slot optval 'sb-posix::tv-usec) usec)
-      (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-timeval)
-      (values))))
+  (with-pinned-aliens ((optval sb-posix::timeval))
+    (setf (slot optval 'sb-posix::tv-sec) sec)
+    (setf (slot optval 'sb-posix::tv-usec) usec)
+    (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-timeval)
+    (values)))
 
 ;;
 ;; Get Options
 ;;
 
 (defun get-socket-option-bool (fd level option)
-  (with-alien ((optval int))
-    (sb-sys:with-pinned-objects (optval)
-      (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-int)
-      (c->lisp-bool optval))))
+  (with-pinned-aliens ((optval int))
+    (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-int)
+    (c->lisp-bool optval)))
 
 (defun get-socket-option-int (fd level option)
-  (with-alien ((optval int))
-    (sb-sys:with-pinned-objects (optval)
-      (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-int)
-      optval)))
+  (with-pinned-aliens ((optval int))
+    (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-int)
+    optval))
 
 (defun get-socket-option-linger (fd level option)
-  (with-alien ((optval sb-posix::linger))
-    (sb-sys:with-pinned-objects (optval)
-      (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-linger)
-      (values (slot optval 'sb-posix::onoff)
-              (slot optval 'sb-posix::linger)))))
+  (with-pinned-aliens ((optval sb-posix::linger))
+    (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-linger)
+    (values (slot optval 'sb-posix::onoff)
+            (slot optval 'sb-posix::linger))))
 
 (defun get-socket-option-timeval (fd level option)
-  (with-alien ((optval sb-posix::timeval))
-    (sb-sys:with-pinned-objects (optval)
-      (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-timeval)
-      (values (slot optval 'sb-posix::tv-sec)
-              (slot optval 'sb-posix::tv-usec)))))
+  (with-pinned-aliens ((optval sb-posix::timeval))
+    (sb-posix::setsockopt fd level option (addr optval) sb-posix::size-of-timeval)
+    (values (slot optval 'sb-posix::tv-sec)
+            (slot optval 'sb-posix::tv-usec))))
 
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -114,6 +107,9 @@
 (defgeneric set-socket-option (socket option-name &key &allow-other-keys))
 
 (defmacro define-socket-option (name action optname level argtype os)
+  (declare (type symbol action)
+           (type symbol argtype)
+           (type symbol os))
   (let ((eql-name (make-keyword name))
         (args (second (assoc argtype +helper-args-map+)))
         (helper-get (make-sockopt-helper-name :get argtype))
@@ -129,7 +125,7 @@
                           (,helper-get (socket-fd socket) ,level ,optname)
                         (sb-posix:syscall-error (err)
                           (manage-sockopt-error (sb-posix:syscall-errno err)
-                                                ,level ,optname ,action)))
+                                                ,level ,optname :get)))
                      `(error 'option-not-available option-name))))
            (when (member action (list :set :get-and-set))
              `(defmethod set-socket-option ((socket socket) (option-name (eql ,eql-name)) &key ,@args)
@@ -138,7 +134,7 @@
                           (,helper-set (socket-fd socket) ,level ,optname ,@args)
                         (sb-posix:syscall-error (err)
                           (manage-sockopt-error (sb-posix:syscall-errno err)
-                                                ,level ,optname ,action ,@args)))
+                                                ,level ,optname :set ,@args)))
                      `(error 'option-not-available option-name)))))))))
 
 (define-socket-option accept-connections :get         sb-posix::so-acceptconn   sb-posix::sol-socket :bool    :unix)

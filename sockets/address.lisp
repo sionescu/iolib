@@ -28,7 +28,6 @@
 ;;;
 
 ;; From CLOCC's PORT library
-(declaim (inline vector-to-ipaddr))
 (defun vector-to-ipaddr (vector)
   (declare (type (simple-array ub8 (*)) vector))
   (+ (ash (aref vector 0) 24)
@@ -37,7 +36,6 @@
      (aref vector 3)))
 
 ;; From CLOCC's PORT library
-(declaim (inline ipaddr-to-vector))
 (defun ipaddr-to-vector (ipaddr)
   (declare (type ub32 ipaddr))
   (vector (ldb (byte 8 24) ipaddr)
@@ -45,7 +43,6 @@
           (ldb (byte 8 8)  ipaddr)
           (ldb (byte 8 0)  ipaddr)))
 
-(declaim (inline ipaddr-to-dotted))
 (defun ipaddr-to-dotted (ipaddr)
   (declare (type ub32 ipaddr))
   (format nil "~a.~a.~a.~a"
@@ -54,11 +51,9 @@
           (ldb (byte 8 8)  ipaddr)
           (ldb (byte 8 0)  ipaddr)))
 
-(declaim (inline dotted-to-ipaddr))
 (defun dotted-to-ipaddr (string)
   (vector-to-ipaddr (dotted-to-vector string)))
 
-(declaim (inline make-vector-u8-4-from-in-addr))
 (defun make-vector-u8-4-from-in-addr (in-addr)
   (declare (type ub32 in-addr))
   (let ((vector (make-array 4 :element-type 'ub8)))
@@ -94,7 +89,6 @@
               (return-from dotted-to-vector nil)))))
     (make-vector-u8-4-from-in-addr in-addr)))
 
-(declaim (inline vector-to-dotted))
 (defun vector-to-dotted (vector)
   (declare (type (simple-array ub8 (*)) vector))
   (format nil "~a.~a.~a.~a"
@@ -103,7 +97,6 @@
           (aref vector 2)
           (aref vector 3)))
 
-(declaim (inline make-vector-u16-8-from-in6-addr))
 (defun make-vector-u16-8-from-in6-addr (in6-addr)
   (declare (type (alien (* sb-posix::in6-addr)) in6-addr))
   (let ((newvector (make-array 8 :element-type 'ub16))
@@ -148,19 +141,19 @@
                  :message (format nil "The vector: ~a does not contain only 16-bit positive integers or has not length 8." vector))
           (return-from vector-to-colon-separated nil))))
 
-  (with-alien ((sin6 sb-posix::sockaddr-in6)
-               (namebuff (array (unsigned 8) #.sb-posix::inet6-addrstrlen)))
-    (sb-sys:with-pinned-objects (sin6 namebuff)
-      (make-sockaddr-in6 (addr sin6) vector)
-      (sb-posix::inet-ntop sb-posix::af-inet6                 ; address family
-                           (addr (slot sin6 'sb-posix::addr)) ; pointer to struct in6_addr
-                           (alien-sap namebuff)               ; destination buffer
-                           sb-posix::inet6-addrstrlen)        ; INET6_ADDRSTRLEN
-      (return-from vector-to-colon-separated
-        (let ((str (cast namebuff c-string)))
-          (ecase case
-            (:downcase str)
-            (:upcase (nstring-upcase str))))))))
+  (with-pinned-aliens
+      ((sin6 sb-posix::sockaddr-in6)
+       (namebuff (array (unsigned 8) #.sb-posix::inet6-addrstrlen)))
+    (make-sockaddr-in6 (addr sin6) vector)
+    (sb-posix::inet-ntop sb-posix::af-inet6                 ; address family
+                         (addr (slot sin6 'sb-posix::addr)) ; pointer to struct in6_addr
+                         (alien-sap namebuff)               ; destination buffer
+                         sb-posix::inet6-addrstrlen)        ; INET6_ADDRSTRLEN
+    (return-from vector-to-colon-separated
+      (let ((str (cast namebuff c-string)))
+        (ecase case
+          (:downcase str)
+          (:upcase (nstring-upcase str)))))))
 
 
 ;;;

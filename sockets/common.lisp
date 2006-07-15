@@ -73,7 +73,6 @@
 ;;; Byte-swap functions
 ;;;
 
-(declaim (inline htons))
 (defun htons (short)
 #+little-endian
   (let ((newshort 0))
@@ -84,11 +83,9 @@
     newshort)
 #+big-endian short)
 
-(declaim (inline ntohs))
 (defun ntohs (short)
   (htons short))
 
-(declaim (inline htonl))
 (defun htonl (long)
 #+little-endian
   (let ((newlong 0))
@@ -101,7 +98,6 @@
     newlong)
 #+big-endian long)
 
-(declaim (inline ntohl))
 (defun ntohl (long)
   (htonl long))
 

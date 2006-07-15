@@ -43,20 +43,19 @@
                  :index index))
 
 (defun get-network-interfaces ()
-  (with-alien ((ifptr (* (array sb-posix::if-nameindex 0))))
-    (sb-sys:with-pinned-objects (ifptr)
-      (setf ifptr (sb-posix::if-nameindex))
-      (unless (null-alien ifptr)
-        (let* ((ifarr (deref ifptr))
-               (iflist
-                (loop
-                   :for i :from 0
-                   :for name = (slot (deref ifarr i) 'sb-posix::name)
-                   :for index = (slot (deref ifarr i) 'sb-posix::index)
-                   :while (plusp index)
-                   :collect (make-interface name index)
-                   :finally (sb-posix::if-freenameindex ifptr))))
-          (return-from get-network-interfaces iflist))))))
+  (with-pinned-aliens ((ifptr (* (array sb-posix::if-nameindex 0))))
+    (setf ifptr (sb-posix::if-nameindex))
+    (unless (null-alien ifptr)
+      (let* ((ifarr (deref ifptr))
+             (iflist
+              (loop
+                 :for i :from 0
+                 :for name = (slot (deref ifarr i) 'sb-posix::name)
+                 :for index = (slot (deref ifarr i) 'sb-posix::index)
+                 :while (plusp index)
+                 :collect (make-interface name index)
+                 :finally (sb-posix::if-freenameindex ifptr))))
+        (return-from get-network-interfaces iflist)))))
 
 (defun get-interface-by-index (index)
   (check-type index unsigned-byte "an unsigned integer")
@@ -74,7 +73,7 @@
                       :index index)))))
         (return-from
          get-interface-by-index
-         (make-interface (copy-seq retval) index))))))
+          (make-interface (copy-seq retval) index))))))
 
 (defun get-interface-by-name (name)
   (check-type name string "a string")
