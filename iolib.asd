@@ -37,11 +37,13 @@
      (:file "config" :depends-on ("defpackage" "common"))
      (:file "iface" :depends-on ("defpackage" "conditions" "common"))
      (:file "address" :depends-on ("defpackage" "conditions" "common"))
-     (:file "resolv" :depends-on ("defpackage" "common" "config" "conditions" "address"))
-     (:file "base-sockets"
-            :depends-on ("defpackage" "config" "common" "address" "resolv"))
-     (:file "socket-options"
-            :depends-on ("defpackage" "common" "base-sockets"))))))
+     (:file "resolv" :depends-on ("defpackage" "common"
+                                  "config" "conditions" "address"))
+     (:file "base-sockets" :depends-on ("defpackage" "config"))
+     (:file "socket-options" :depends-on ("defpackage" "common" "base-sockets"))
+     (:file "socket-methods"
+            :depends-on ("defpackage" "config" "common" "address"
+                         "resolv" "base-sockets" "socket-options"))))))
 
 (defsystem iolib
   :description "I/O library for SBCL."

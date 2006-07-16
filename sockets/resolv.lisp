@@ -163,7 +163,7 @@
 
         ((:ipv6 t)
          (with-pinned-aliens ((sin6 sb-posix::sockaddr-in6))
-           (let ((ipv6addr (map-ipv4-to-ipv6 host)))
+           (let ((ipv6addr (map-ipv4-vector-to-ipv6 host)))
              (make-sockaddr-in6 (addr sin6) ipv6addr)
              (return-from lookup-host-u8-vector-4
                (make-host (get-name-info (addr sin6) :flags sb-posix::ni-namereqd)
@@ -191,23 +191,7 @@
     (sb-posix::resolv-error (err)
       (manage-resolv-error (sb-posix::resolv-errno err) host nil))))
 
-(defun make-address-from-addrinfo (ptr)
-  (declare (type (alien (* sb-posix::addrinfo))
-                 ptr))
-  (let ((addr (slot ptr 'sb-posix::addr)))
-    (case (slot ptr 'sb-posix::family)
-      (#.sb-posix::af-inet (make-address
-                      :ipv4
-                      (make-vector-u8-4-from-in-addr
-                       (slot (cast addr (* sb-posix::sockaddr-in))
-                             'sb-posix::addr))))
-      (#.sb-posix::af-inet6 (make-address
-                       :ipv6
-                       (make-vector-u16-8-from-in6-addr
-                        (addr (slot (cast addr (* sb-posix::sockaddr-in6))
-                                    'sb-posix::addr))))))))
-
-(defun make-host-from-addrinfo-struct (addrinfo)
+(defun make-host-from-addrinfo (addrinfo)
   (declare (type (alien (* sb-posix::addrinfo))
                  addrinfo))
   (let ((canonname (slot addrinfo 'sb-posix::canonname))
@@ -216,7 +200,7 @@
             :for addrptr :of-type (alien (* sb-posix::addrinfo)) = addrinfo
             :then (slot addrptr 'sb-posix::next)
             :while (not (null-alien addrptr))
-            :collect (make-address-from-addrinfo addrptr))))
+            :collect (make-netaddr-from-sockaddr (slot addrptr 'sb-posix::addr)))))
     (make-host canonname addrlist)))
 
 (defun map-host-ipv4-addresses-to-ipv6 (hostobj)
@@ -225,13 +209,12 @@
     (setf addresses
           (mapcar #'(lambda (a)
                       (if (ipv4-address-p a)
-                          (make-address :ipv6 (map-ipv4-to-ipv6 (name a)))
+                          (make-address :ipv6 (map-ipv4-vector-to-ipv6 (name a)))
                           a))
                   addresses))))
 
-(defmethod lookup-host :around (host &key (ipv6 *ipv6*))
-  (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration")
-  (call-next-method))
+(defmethod lookup-host :before (host &key (ipv6 *ipv6*))
+  (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration"))
 
 (defmethod lookup-host ((host string) &key (ipv6 *ipv6*))
   (flet ((decide-family-and-flags ()
@@ -277,7 +260,7 @@
                                          :hint-family family
                                          :hint-type sb-posix::sock-stream
                                          :hint-protocol sb-posix::ipproto-ip))
-                      (hostobj (make-host-from-addrinfo-struct addrinfo)))
+                      (hostobj (make-host-from-addrinfo addrinfo)))
                  (sb-posix::freeaddrinfo addrinfo)
                  ;; mapping IPv4 addresses onto IPv6
                  #+freebsd

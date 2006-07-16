@@ -54,17 +54,6 @@
 (defun dotted-to-ipaddr (string)
   (vector-to-ipaddr (dotted-to-vector string)))
 
-(defun make-vector-u8-4-from-in-addr (in-addr)
-  (declare (type ub32 in-addr))
-  (let ((vector (make-array 4 :element-type 'ub8)))
-    (setf in-addr (ntohl in-addr))
-    (setf (aref vector 0) (ldb (byte 8 24) in-addr))
-    (setf (aref vector 1) (ldb (byte 8 16) in-addr))
-    (setf (aref vector 2) (ldb (byte 8  8) in-addr))
-    (setf (aref vector 3) (ldb (byte 8  0) in-addr))
-
-    vector))
-
 (defun dotted-to-vector (string &key (error-p t))
   (handler-case
       (setf string (coerce string '(vector base-char)))
@@ -96,16 +85,6 @@
           (aref vector 1)
           (aref vector 2)
           (aref vector 3)))
-
-(defun make-vector-u16-8-from-in6-addr (in6-addr)
-  (declare (type (alien (* sb-posix::in6-addr)) in6-addr))
-  (let ((newvector (make-array 8 :element-type 'ub16))
-        (u16-vector (slot (slot in6-addr 'sb-posix::in6-u)
-                          'sb-posix::addr16)))
-    (dotimes (i 8)
-      (setf (aref newvector i) (ntohs (deref u16-vector i))))
-
-    newvector))
 
 (defun colon-separated-to-vector (string &key (error-p t))
   (handler-case

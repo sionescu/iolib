@@ -108,7 +108,7 @@
     (setf (deref alien-vec i)
           (htons (aref lisp-vec i)))))
 
-(defun map-ipv4-to-ipv6 (addr)
+(defun map-ipv4-vector-to-ipv6 (addr)
   (declare (type (simple-array ub8 (*)) addr))
   (let ((ipv6addr (make-array 8 :element-type 'ub16
                                 :initial-element 0)))
@@ -154,3 +154,75 @@
                             (1- sb-posix::unix-path-max))
        :do (setf (deref path off) (aref buff off))))
   sun)
+
+(defun make-vector-u8-4-from-in-addr (in-addr)
+  (declare (type ub32 in-addr))
+  (let ((vector (make-array 4 :element-type 'ub8)))
+    (setf in-addr (ntohl in-addr))
+    (setf (aref vector 0) (ldb (byte 8 24) in-addr))
+    (setf (aref vector 1) (ldb (byte 8 16) in-addr))
+    (setf (aref vector 2) (ldb (byte 8  8) in-addr))
+    (setf (aref vector 3) (ldb (byte 8  0) in-addr))
+
+    vector))
+
+(defun make-vector-u16-8-from-in6-addr (in6-addr)
+  (declare (type (alien (* sb-posix::in6-addr)) in6-addr))
+  (let ((newvector (make-array 8 :element-type 'ub16))
+        (u16-vector (slot (slot in6-addr 'sb-posix::in6-u)
+                          'sb-posix::addr16)))
+    (dotimes (i 8)
+      (setf (aref newvector i) (ntohs (deref u16-vector i))))
+
+    newvector))
+
+(defun make-netaddr-from-sockaddr-in (sin)
+  (declare (type (alien (* sb-posix::sockaddr-in)) sin))
+  (make-address :ipv4 (make-vector-u8-4-from-in-addr
+                       (slot sin 'sb-posix::addr))))
+
+(defun make-netaddr-from-sockaddr-in6 (sin6)
+  (declare (type (alien (* sb-posix::sockaddr-in6)) sin6))
+  (make-address :ipv6 (make-vector-u16-8-from-in6-addr
+                       (addr (slot sin6 'sb-posix::addr)))))
+
+(defun make-netaddr-from-sockaddr-un (sun)
+  (declare (type (alien (* sb-posix::sockaddr-un)) sun))
+  (let ((path (slot sun 'sb-posix::path))
+        (name (make-string (1- sb-posix::unix-path-max)))
+        (abstract nil))
+    (if (zerop (deref path 0))
+        ;; abstract address
+        (progn
+          (setf path (cast path (array (unsigned 8) 0)))
+          (setf abstract t)
+          (loop
+             :for sindex :from 0 :below (1- sb-posix::unix-path-max)
+             :for pindex :from 1 :below sb-posix::unix-path-max
+             :do (setf (schar name sindex)
+                       (code-char (deref path pindex)))))
+        ;; address is in the filesystem
+        (setf name (cast path c-string)))
+    (make-instance 'unixaddr
+                   :name name
+                   :abstract abstract)))
+
+(defun make-netaddr-from-sockaddr (sa)
+  (declare (type (alien (* sb-posix::sockaddr)) sa))
+  (ecase (slot sa 'sb-posix::family)
+    (#.sb-posix::af-inet
+     (make-netaddr-from-sockaddr-in (cast sa (* sb-posix::sockaddr-in))))
+    (#.sb-posix::af-inet6
+     (make-netaddr-from-sockaddr-in6 (cast sa (* sb-posix::sockaddr-in6))))
+    (#.sb-posix::af-unix
+     (make-netaddr-from-sockaddr-un (cast sa (* sb-posix::sockaddr-un))))))
+
+(defun make-netaddr-from-sockaddr-storage (sa)
+  (declare (type (alien (* sb-posix::sockaddr-storage)) sa))
+  (ecase (slot sa 'sb-posix::family)
+    (#.sb-posix::af-inet
+     (make-netaddr-from-sockaddr-in (cast sa (* sb-posix::sockaddr-in))))
+    (#.sb-posix::af-inet6
+     (make-netaddr-from-sockaddr-in6 (cast sa (* sb-posix::sockaddr-in6))))
+    (#.sb-posix::af-unix
+     (make-netaddr-from-sockaddr-un (cast sa (* sb-posix::sockaddr-un))))))

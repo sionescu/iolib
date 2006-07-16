@@ -38,13 +38,18 @@
 (defgeneric socket-non-blocking-mode (socket))
 (defgeneric (setf socket-non-blocking-mode) (value socket))
 
-(defgeneric socket-close (socket))
+(defgeneric socket-close (socket)
+  (:method-combination progn :most-specific-last))
 
 (defgeneric socket-open-p (socket))
 
 (defgeneric local-name (socket))
 
 (defgeneric remote-name (socket))
+
+(defgeneric get-socket-option (socket option-name &key))
+
+(defgeneric set-socket-option (socket option-name &key))
 
 (defclass stream-socket (socket)
   ((lisp-stream :reader socket-lisp-stream))
@@ -61,6 +66,8 @@
 (defclass datagram-socket (socket) ()
   (:default-initargs :type :datagram))
 
+(defgeneric socket-unconnect (socket))
+
 (defclass internet-socket (socket)
   ((port :reader port :type '(unsigned-byte 16)))
   (:default-initargs :family (if *ipv6* :ipv6 :ipv4)))
@@ -72,15 +79,15 @@
 
 (defgeneric socket-connect (socket address &key &allow-other-keys))
 
-(defgeneric socket-shutdown (socket &key direction))
+(defgeneric socket-shutdown (socket direction))
 
 (defclass passive-socket (socket) ())
 
-(defgeneric socket-bind-address (socket address &key reuse-address interface))
+(defgeneric socket-bind-address (socket address &key))
 
 (defgeneric socket-listen (socket &key backlog))
 
-(defgeneric socket-accept-connection (passive-socket &key active-socket wait))
+(defgeneric socket-accept-connection (passive-socket &key wait))
 
 (defclass socket-stream-internet-active (active-socket stream-socket internet-socket) ())
 
@@ -97,197 +104,3 @@
 (defclass socket-datagram-unix-active (active-socket datagram-socket unix-socket) ())
 
 (defclass socket-datagram-unix-passive (passive-socket datagram-socket unix-socket) ())
-
-
-
-(defun translate-make-socket-keywords-to-constants (family type protocol)
-  (let ((sf (ecase family
-              (:ipv4 sb-posix::af-inet)
-              (:ipv6 sb-posix::af-inet6)
-              (:unix sb-posix::af-unix)))
-        (st (ecase type
-              (:stream   sb-posix::sock-stream)
-              (:datagram sb-posix::sock-dgram)))
-        (sp (cond
-              ((integerp protocol) protocol)
-              ((eql protocol :default) 0)
-              ((keywordp protocol)
-               (protocol-number
-                (get-protocol-by-name (string-downcase
-                                       (symbol-name protocol))))))))
-    (values sf st sp)))
-
-(defun set-finalizer-on-socket (socket fd)
-  (sb-ext:finalize socket #'(lambda () (sb-posix:close fd))))
-
-(defun create-lisp-stream-for-socket (socket)
-  (setf (slot-value socket 'lisp-stream)
-        (sb-sys:make-fd-stream (socket-fd socket)
-                               :name (format nil "Socket stream, fd: ~a" (socket-fd socket))
-                               :input t :output t :buffering :none :dual-channel-p t
-                               :element-type :default :auto-close nil)))
-
-(defmethod socket-open-p ((socket socket))
-  (handler-case
-      (progn
-        (sb-posix:fcntl (socket-fd socket) sb-posix::f-getfl)
-        t)
-    (sb-posix:syscall-error (err)
-      (declare (ignore err))
-      nil)))
-
-(defmethod socket-close ((socket socket))
-  (sb-posix:close (socket-fd socket))
-  (sb-ext:cancel-finalization socket))
-
-(defmethod shared-initialize :after ((socket socket) slot-names &key family type (protocol :default))
-  (when (and (slot-boundp socket 'fd)
-             (socket-open-p socket))
-    (socket-close socket))
-  (with-slots (fd (fam family) (proto protocol)) socket
-    (multiple-value-bind (sf st sp)
-        (translate-make-socket-keywords-to-constants family type protocol)
-      (setf fd (sb-posix::socket sf st sp))
-      (setf fam family)
-      (setf proto sp)
-      (set-finalizer-on-socket socket fd))))
-
-(defmethod shared-initialize :after ((socket stream-socket) slot-names &key)
-  (create-lisp-stream-for-socket socket))
-
-(defmethod socket-non-blocking-mode ((socket socket))
-  (with-slots (fd) socket
-    (let ((fflags (sb-posix:fcntl fd sb-posix::f-getfl)))
-      (not (zerop (logand fflags sb-posix:o-nonblock))))))
-
-(defmethod (setf socket-non-blocking-mode) (value (socket socket))
-  (check-type value boolean "a boolean value")
-  (with-slots (fd) socket
-    (let ((fflags (sb-posix:fcntl fd sb-posix::f-getfl)))
-      (sb-posix:fcntl fd sb-posix::f-setfl
-                      (logior fflags
-                              (if value sb-posix:o-nonblock 0))))))
-
-(defmethod socket-listen ((socket passive-socket)
-                          &key (backlog (min *default-backlog-size* +max-backlog-size+)))
-  (check-type backlog unsigned-byte "a non-negative integer")
-  (sb-posix:listen (socket-fd socket) backlog))
-
-(defmethod socket-listen ((socket active-socket)
-                          &key backlog)
-  (error "You can't listen on an active socket."))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;                      ;;
-;;   Internet sockets   ;;
-;;                      ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod socket-connect ((socket internet-socket)
-                           (address ipv4addr) &key (port 0))
-  (with-pinned-aliens ((sin sb-posix::sockaddr-in))
-    (make-sockaddr-in (addr sin) (name address) port)
-    (sb-posix::connect (socket-fd socket)
-                       (addr sin)
-                       sb-posix::size-of-sockaddr-in)
-    (setf (slot-value socket 'address) (copy-netaddr address))
-    (setf (slot-value socket 'port) port)))
-
-(defmethod socket-connect ((socket internet-socket)
-                           (address ipv6addr) &key (port 0))
-  (with-pinned-aliens ((sin6 sb-posix::sockaddr-in6))
-    (make-sockaddr-in6 (addr sin6) (name address) port)
-    (sb-posix::connect (socket-fd socket)
-                       (addr sin6)
-                       sb-posix::size-of-sockaddr-in6)
-    (setf (slot-value socket 'address) (copy-netaddr address))
-    (setf (slot-value socket 'port) port)))
-
-(defmethod socket-connect ((socket passive-socket)
-                           address &key)
-  (error "You cannot connect a passive socket."))
-
-(defmethod socket-bind ((socket internet-socket)
-                        (address ipv4addr) &key (port 0))
-  (with-pinned-aliens ((sin sb-posix::sockaddr-in))
-    (make-sockaddr-in (addr sin) (name address) port)
-    (sb-posix::bind (socket-fd socket)
-                    (addr sin)
-                    sb-posix::size-of-sockaddr-in)
-    (setf (slot-value socket 'address) (copy-netaddr address))))
-
-(defmethod socket-bind ((socket internet-socket)
-                        (address ipv6addr) &key (port 0))
-  (with-pinned-aliens ((sin6 sb-posix::sockaddr-in6))
-    (make-sockaddr-in6 (addr sin6) (name address) port)
-    (sb-posix::bind (socket-fd socket)
-                    (addr sin6)
-                    sb-posix::size-of-sockaddr-in6)
-    (setf (slot-value socket 'address) (copy-netaddr address))))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;
-;;                    ;;
-;;   Stream sockets   ;;
-;;                    ;;
-;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod socket-send ((buffer simple-array)
-                        (socket socket-stream-internet-active) &key
-                        dont-route dont-wait (no-signal *no-sigpipe*)
-                        out-of-band #+linux more &allow-other-keys)
-  )
-
-(defmethod socket-receive ((buffer simple-array)
-                           (socket socket-stream-internet-active) &key
-                           out-of-band peek wait-all dont-wait &allow-other-keys)
-  )
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;                      ;;
-;;   Datagram sockets   ;;
-;;                      ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod socket-unconnect ((socket datagram-socket))
-  (with-pinned-aliens ((sin sb-posix::sockaddr-in))
-    (sb-posix::memset (addr sin) 0 sb-posix::size-of-sockaddr-in)
-    (setf (slot sin 'sb-posix::addr) sb-posix::af-unspec)
-    (sb-posix::connect (socket-fd socket)
-                       (addr sin)
-                       sb-posix::size-of-sockaddr-in)
-    (slot-makunbound socket 'address)
-    (when (typep socket 'internet-socket)
-      (slot-makunbound socket 'port))))
-
-
-;;;;;;;;;;;;;;;;;;;;;;
-;;                  ;;
-;;   Unix sockets   ;;
-;;                  ;;
-;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod socket-connect ((socket unix-socket)
-                           (address unixaddr) &key)
-  (with-pinned-aliens ((sun sb-posix::sockaddr-un))
-    (make-sockaddr-un (addr sun) (name address))
-    (sb-posix::connect (socket-fd socket)
-                       (addr sun)
-                       sb-posix::size-of-sockaddr-un)
-    (setf (slot-value socket 'address) (copy-netaddr address))))
-
-(defmethod socket-bind :before ((socket unix-socket)
-                                (address unixaddr) &key)
-  (when (typep socket 'active-socket)
-    (error "You can't bind an active Unix socket.")))
-
-(defmethod socket-bind ((socket unix-socket)
-                        (address unixaddr) &key)
-  (with-pinned-aliens ((sun sb-posix::sockaddr-un))
-    (make-sockaddr-un (addr sun) (name address))
-    (sb-posix::bind (socket-fd socket)
-                    (addr sun)
-                    sb-posix::size-of-sockaddr-un)
-    (setf (slot-value socket 'address) (copy-netaddr address))))

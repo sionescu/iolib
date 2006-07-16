@@ -24,7 +24,7 @@
 
 (in-package #:net.sockets)
 
-;; TODO: Implement it
+;; TODO: manage socket options errors
 (defun manage-sockopt-error (retval level option action &optional val1 val2)
   (declare (type symbol action)))
 

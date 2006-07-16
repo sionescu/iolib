@@ -23,6 +23,7 @@
 
 (in-package #:net.sockets)
 
+;; TODO: manage socket errors
 (defun manage-socket-error (err)
   (error err))
 
