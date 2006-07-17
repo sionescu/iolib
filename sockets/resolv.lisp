@@ -114,8 +114,8 @@
 (defmethod print-object ((host host) stream)
   (print-unreadable-object (host stream :type t :identity nil)
     (with-slots (truename aliases addresses) host
-      (format stream "Cannonical name: ~s. Aliases: ~a.~%Addresses: ~{~a~^, ~}"
-              truename (unless aliases "None") addresses))))
+      (format stream "Cannonical name: ~s. Aliases: ~:[None~;~:*~{~s~^, ~}~].~%Addresses: ~{~a~^, ~}"
+              truename aliases addresses))))
 
 
 ;;
@@ -261,6 +261,9 @@
                                          :hint-type sb-posix::sock-stream
                                          :hint-protocol sb-posix::ipproto-ip))
                       (hostobj (make-host-from-addrinfo addrinfo)))
+                 (when (string-not-equal (host-truename hostobj)
+                                         host)
+                   (setf (slot-value hostobj 'aliases) (list host)))
                  (sb-posix::freeaddrinfo addrinfo)
                  ;; mapping IPv4 addresses onto IPv6
                  #+freebsd

@@ -43,7 +43,10 @@
      (:file "socket-options" :depends-on ("defpackage" "common" "base-sockets"))
      (:file "socket-methods"
             :depends-on ("defpackage" "config" "common" "address"
-                         "resolv" "base-sockets" "socket-options"))))))
+                         "base-sockets" "socket-options"))
+     (:file "make-socket"
+            :depends-on ("defpackage" "config" "common" "address"
+                         "base-sockets" "socket-options" "socket-methods"))))))
 
 (defsystem iolib
   :description "I/O library for SBCL."

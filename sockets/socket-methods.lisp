@@ -235,7 +235,6 @@
     (sb-posix::connect (socket-fd socket)
                        (addr sin)
                        sb-posix::size-of-sockaddr-in)
-    (setf (slot-value socket 'address) (copy-netaddr address))
     (setf (slot-value socket 'port) port)))
 
 (defmethod socket-connect ((socket internet-socket)
@@ -245,7 +244,6 @@
     (sb-posix::connect (socket-fd socket)
                        (addr sin6)
                        sb-posix::size-of-sockaddr-in6)
-    (setf (slot-value socket 'address) (copy-netaddr address))
     (setf (slot-value socket 'port) port)))
 
 (defmethod socket-connect ((socket unix-socket)
@@ -254,8 +252,11 @@
     (make-sockaddr-un (addr sun) (name address))
     (sb-posix::connect (socket-fd socket)
                        (addr sun)
-                       sb-posix::size-of-sockaddr-un)
-    (setf (slot-value socket 'address) (copy-netaddr address))))
+                       sb-posix::size-of-sockaddr-un)))
+
+(defmethod socket-connect :after ((socket active-socket)
+                                  (address netaddr) &key)
+  (setf (slot-value socket 'address) (copy-netaddr address)))
 
 (defmethod socket-connect ((socket passive-socket)
                            address &key)
@@ -293,8 +294,7 @@
     (make-sockaddr-in (addr sin) (name address) port)
     (sb-posix::bind (socket-fd socket)
                     (addr sin)
-                    sb-posix::size-of-sockaddr-in)
-    (setf (slot-value socket 'address) (copy-netaddr address))))
+                    sb-posix::size-of-sockaddr-in)))
 
 (defmethod socket-bind-address ((socket internet-socket)
                                 (address ipv6addr)
@@ -303,8 +303,7 @@
     (make-sockaddr-in6 (addr sin6) (name address) port)
     (sb-posix::bind (socket-fd socket)
                     (addr sin6)
-                    sb-posix::size-of-sockaddr-in6)
-    (setf (slot-value socket 'address) (copy-netaddr address))))
+                    sb-posix::size-of-sockaddr-in6)))
 
 (defmethod socket-bind-address :before ((socket unix-socket)
                                         (address unixaddr) &key)
@@ -317,8 +316,11 @@
     (make-sockaddr-un (addr sun) (name address))
     (sb-posix::bind (socket-fd socket)
                     (addr sun)
-                    sb-posix::size-of-sockaddr-un)
-    (setf (slot-value socket 'address) (copy-netaddr address))))
+                    sb-posix::size-of-sockaddr-un)))
+
+(defmethod socket-bind-address :after ((socket internet-socket)
+                                        (address netaddr) &key)
+  (setf (slot-value socket 'address) (copy-netaddr address)))
 
 
 ;;;;;;;;;;;;

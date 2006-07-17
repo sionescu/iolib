@@ -47,21 +47,13 @@
 
 (defgeneric remote-name (socket))
 
-(defgeneric get-socket-option (socket option-name &key))
+(defgeneric get-socket-option (socket option-name))
 
 (defgeneric set-socket-option (socket option-name &key))
 
 (defclass stream-socket (socket)
   ((lisp-stream :reader socket-lisp-stream))
   (:default-initargs :type :stream))
-
-(defgeneric socket-send (buffer socket &key
-                         dont-route dont-wait no-signal
-                         out-of-band &allow-other-keys))
-
-(defgeneric socket-receive (buffer socket &key
-                            out-of-band peek wait-all
-                            dont-wait &allow-other-keys))
 
 (defclass datagram-socket (socket) ()
   (:default-initargs :type :datagram))
@@ -81,6 +73,14 @@
 
 (defgeneric socket-shutdown (socket direction))
 
+(defgeneric socket-send (buffer socket &key
+                         dont-route dont-wait no-signal
+                         out-of-band &allow-other-keys))
+
+(defgeneric socket-receive (buffer socket &key
+                            out-of-band peek wait-all
+                            dont-wait &allow-other-keys))
+
 (defclass passive-socket (socket) ())
 
 (defgeneric socket-bind-address (socket address &key))
@@ -93,14 +93,10 @@
 
 (defclass socket-stream-internet-passive (passive-socket stream-socket internet-socket) ())
 
-(defclass socket-datagram-internet-active (active-socket datagram-socket internet-socket) ())
-
-(defclass socket-datagram-internet-passive (passive-socket datagram-socket internet-socket) ())
-
 (defclass socket-stream-unix-active (active-socket stream-socket unix-socket) ())
 
 (defclass socket-stream-unix-passive (passive-socket stream-socket unix-socket) ())
 
 (defclass socket-datagram-unix-active (active-socket datagram-socket unix-socket) ())
 
-(defclass socket-datagram-unix-passive (passive-socket datagram-socket unix-socket) ())
+(defclass socket-datagram-internet-active (active-socket datagram-socket internet-socket) ())
