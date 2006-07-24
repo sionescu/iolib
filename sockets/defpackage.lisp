@@ -9,7 +9,8 @@
   (:export
    ;; conditions
    #:possible-bug #:invalid-argument
-   #:system-error #:network-error #:resolver-error
+   #:system-error #:network-error
+   #:resolver-error #:resolver-unknown-error
    #:resolver-again-error #:resolver-fail-error
    #:resolver-no-name-error #:resolver-no-service-error
    #:unknown-interface #:unknown-protocol
@@ -26,7 +27,7 @@
    #:colon-separated-to-vector #:vector-to-colon-separated
 
    ;; addresses
-   #:netaddr #:ipv4addr #:ipv6addr #:unixaddr
+   #:netaddr #:ipv4addr #:ipv6addr #:localaddr
    #:make-address #:netaddr= #:netaddr->presentation #:copy-netaddr
    #:name #:abstract-p
 
@@ -39,7 +40,7 @@
    #:+ipv6-site-local-all-routers+
 
    ;; address predicates
-   #:ipv4-address-p #:ipv6-address-p #:unix-address-p
+   #:ipv4-address-p #:ipv6-address-p #:local-address-p
    #:netaddr-unspecified-p #:netaddr-loopback-p
    #:netaddr-multicast-p #:netaddr-unicast-p
    #:ipv6-ipv4-mapped-p #:ipv6-interface-local-multicast-p

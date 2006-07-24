@@ -30,7 +30,7 @@
 - t     : If both IPv4 and IPv6 addresses are found they are returned in the best order possible(see RFC 3484).
 Default value is T.")
 
-(define-constant +max-backlog-size+ sb-posix::somaxconn
+(define-constant +max-backlog-size+ et:somaxconn
   "Maximum length of the pending connections queue(hard limit).")
 
 (defparameter *default-backlog-size* 5

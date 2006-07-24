@@ -19,7 +19,8 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
+;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
+(declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
 (in-package #:net.sockets)
 
@@ -30,7 +31,7 @@
 ;;;;;;;;;;;;;;;
 
 (defclass socket ()
-  ((fd       :reader socket-fd)
+  ((fd       :initarg :file-descriptor :reader socket-fd)
    (address  :initarg :address  :reader socket-address :type netaddr)
    (family   :initarg :family   :reader socket-family)
    (protocol :initarg :protocol :reader socket-protocol)))
@@ -64,8 +65,8 @@
   ((port :reader port :type '(unsigned-byte 16)))
   (:default-initargs :family (if *ipv6* :ipv6 :ipv4)))
 
-(defclass unix-socket (socket) ()
-  (:default-initargs :family :unix))
+(defclass local-socket (socket) ()
+  (:default-initargs :family :local))
 
 (defclass active-socket (socket) ())
 
@@ -83,20 +84,20 @@
 
 (defclass passive-socket (socket) ())
 
-(defgeneric socket-bind-address (socket address &key))
+(defgeneric bind-address (socket address &key))
 
 (defgeneric socket-listen (socket &key backlog))
 
-(defgeneric socket-accept-connection (passive-socket &key wait))
+(defgeneric accept-connection (passive-socket &key wait))
 
 (defclass socket-stream-internet-active (active-socket stream-socket internet-socket) ())
 
 (defclass socket-stream-internet-passive (passive-socket stream-socket internet-socket) ())
 
-(defclass socket-stream-unix-active (active-socket stream-socket unix-socket) ())
+(defclass socket-stream-local-active (active-socket stream-socket local-socket) ())
 
-(defclass socket-stream-unix-passive (passive-socket stream-socket unix-socket) ())
+(defclass socket-stream-local-passive (passive-socket stream-socket local-socket) ())
 
-(defclass socket-datagram-unix-active (active-socket datagram-socket unix-socket) ())
+(defclass socket-datagram-local-active (active-socket datagram-socket local-socket) ())
 
 (defclass socket-datagram-internet-active (active-socket datagram-socket internet-socket) ())

@@ -19,7 +19,8 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
+;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
+(declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
 (in-package #:net.sockets)
 
@@ -29,7 +30,7 @@
 
 (defmethod socket-close progn ((socket socket))
   (when (slot-boundp socket 'fd)
-    (sb-posix:close (socket-fd socket)))
+    (et:close (socket-fd socket)))
   (sb-ext:cancel-finalization socket)
   (mapc #'(lambda (slot)
             (slot-makunbound socket slot))
@@ -45,18 +46,18 @@
   (unless (slot-boundp socket 'fd)
     (return-from socket-open-p nil))
   (handler-case
-      (with-pinned-aliens ((ss sb-posix::sockaddr-storage)
-                           (size sb-posix::socklen-t
-                                 #.sb-posix::size-of-sockaddr-storage))
+      (with-pinned-aliens ((ss et:sockaddr-storage)
+                           (size et:socklen-t
+                                 #.et::size-of-sockaddr-storage))
         (let ((ssptr (addr ss)))
-          (sb-posix:getsockname (socket-fd socket)
-                                ssptr (addr size))
+          (et:getsockname (socket-fd socket)
+                          ssptr (addr size))
           t))
-    (sb-posix:syscall-error (err)
-      (case (sb-posix:syscall-errno err)
-        ((#.sb-posix:ebadf
-          #.sb-posix:enotsock
-          #.sb-posix:econnreset)
+    (et:unix-error (err)
+      (case (et:system-error-identifier err)
+        ((:ebadf
+          :enotsock
+          :econnreset)
          nil)
         ;; some other error
         (otherwise (error err))))))
@@ -67,12 +68,12 @@
 
 (defun translate-make-socket-keywords-to-constants (family type protocol)
   (let ((sf (ecase family
-              (:ipv4 sb-posix::af-inet)
-              (:ipv6 sb-posix::af-inet6)
-              (:unix sb-posix::af-unix)))
+              (:ipv4  et:af-inet)
+              (:ipv6  et:af-inet6)
+              (:local et:af-local)))
         (st (ecase type
-              (:stream   sb-posix::sock-stream)
-              (:datagram sb-posix::sock-dgram)))
+              (:stream   et:sock-stream)
+              (:datagram et:sock-dgram)))
         (sp (cond
               ((integerp protocol) protocol)
               ((eql protocol :default) 0)
@@ -82,16 +83,33 @@
                                        (symbol-name protocol))))))))
     (values sf st sp)))
 
-(defmethod shared-initialize :after ((socket socket) slot-names &key family type (protocol :default))
+(defun set-finalizer-on-socket (socket fd)
+  (sb-ext:finalize socket #'(lambda () (et:close fd))))
+
+(defmethod shared-initialize :after ((socket active-socket) slot-names
+                                     &key family type (protocol :default))
   (when (socket-open-p socket)
     (socket-close socket))
   (with-slots (fd (fam family) (proto protocol)) socket
     (multiple-value-bind (sf st sp)
         (translate-make-socket-keywords-to-constants family type protocol)
-      (setf fd (sb-posix::socket sf st sp))
+      (setf fd (et:socket sf st sp))
       (setf fam family)
       (setf proto sp)
-      (sb-ext:finalize socket #'(lambda () (sb-posix:close fd))))))
+      (set-finalizer-on-socket socket fd))))
+
+(defmethod shared-initialize :after ((socket passive-socket) slot-names
+                                     &key file-descriptor family
+                                     type (protocol :default))
+  (when (socket-open-p socket)
+    (socket-close socket))
+  (with-slots (fd (fam family) (proto protocol)) socket
+    (multiple-value-bind (sf st sp)
+        (translate-make-socket-keywords-to-constants family type protocol)
+      (setf fd file-descriptor)
+      (setf fam family)
+      (setf proto sp)
+      (set-finalizer-on-socket socket fd))))
 
 (defmethod shared-initialize :after ((socket stream-socket) slot-names &key)
   (setf (slot-value socket 'lisp-stream)
@@ -106,38 +124,38 @@
 
 (defmethod socket-non-blocking-mode ((socket socket))
   (with-slots (fd) socket
-    (let ((fflags (sb-posix:fcntl fd sb-posix::f-getfl)))
-      (not (zerop (logand fflags sb-posix:o-nonblock))))))
+    (let ((file-flags (et:fcntl fd et:f-getfl)))
+      (not (zerop (logand file-flags et:o-nonblock))))))
 
 (defmethod (setf socket-non-blocking-mode) (value (socket socket))
   (check-type value boolean "a boolean value")
   (with-slots (fd) socket
-    (let ((fflags (sb-posix:fcntl fd sb-posix::f-getfl)))
-      (sb-posix:fcntl fd sb-posix::f-setfl
-                      (logior fflags
-                              (if value sb-posix:o-nonblock 0))))))
+    (let ((file-flags (et:fcntl fd et:f-getfl)))
+      (et:fcntl fd et:f-setfl
+                (logior file-flags
+                        (if value et:o-nonblock 0))))))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;  GETSOCKNAME  ;;
 ;;;;;;;;;;;;;;;;;;;
 
 (defmethod local-name ((socket internet-socket))
-  (with-pinned-aliens ((ss sb-posix::sockaddr-storage)
-                       (size sb-posix::socklen-t
-                             #.sb-posix::size-of-sockaddr-storage))
+  (with-pinned-aliens ((ss et:sockaddr-storage)
+                       (size et:socklen-t
+                             #.et::size-of-sockaddr-storage))
     (let ((ssptr (addr ss)))
-      (sb-posix:getsockname (socket-fd socket)
-                            ssptr (addr size))
+      (et:getsockname (socket-fd socket)
+                      ssptr (addr size))
       (values (make-netaddr-from-sockaddr-storage ssptr)
-              (ntohs (slot (cast ssptr (* sb-posix::sockaddr-in))
-                           'sb-posix::port))))))
-(defmethod local-name ((socket unix-socket))
-  (with-pinned-aliens ((sun sb-posix::sockaddr-un)
-                       (size sb-posix::socklen-t
-                             #.sb-posix::size-of-sockaddr-un))
+              (ntohs (slot (cast ssptr (* et:sockaddr-in))
+                           'et:port))))))
+(defmethod local-name ((socket local-socket))
+  (with-pinned-aliens ((sun et:sockaddr-un)
+                       (size et:socklen-t
+                             #.et::size-of-sockaddr-un))
     (let ((sunptr (addr sun)))
-      (sb-posix:getsockname (socket-fd socket)
-                            sunptr (addr size))
+      (et:getsockname (socket-fd socket)
+                      sunptr (addr size))
       (values (make-netaddr-from-sockaddr-un sunptr)))))
 
 ;;;;;;;;;;;;;;;;;;;
@@ -145,24 +163,69 @@
 ;;;;;;;;;;;;;;;;;;;
 
 (defmethod remote-name ((socket internet-socket))
-  (with-pinned-aliens ((ss sb-posix::sockaddr-storage)
-                       (size sb-posix::socklen-t
-                             #.sb-posix::size-of-sockaddr-storage))
+  (with-pinned-aliens ((ss et:sockaddr-storage)
+                       (size et:socklen-t
+                             #.et::size-of-sockaddr-storage))
     (let ((ssptr (addr ss)))
-      (sb-posix:getpeername (socket-fd socket)
-                            ssptr (addr size))
+      (et:getpeername (socket-fd socket)
+                      ssptr (addr size))
       (values (make-netaddr-from-sockaddr-storage ssptr)
-              (ntohs (slot (cast ssptr (* sb-posix::sockaddr-in))
-                           'sb-posix::port))))))
+              (ntohs (slot (cast ssptr (* et:sockaddr-in))
+                           'et:port))))))
 
-(defmethod remote-name ((socket unix-socket))
-  (with-pinned-aliens ((sun sb-posix::sockaddr-un)
-                       (size sb-posix::socklen-t
-                             #.sb-posix::size-of-sockaddr-un))
+(defmethod remote-name ((socket local-socket))
+  (with-pinned-aliens ((sun et:sockaddr-un)
+                       (size et:socklen-t
+                             #.et::size-of-sockaddr-un))
     (let ((sunptr (addr sun)))
-      (sb-posix:getpeername (socket-fd socket)
-                            sunptr (addr size))
+      (et:getpeername (socket-fd socket)
+                      sunptr (addr size))
       (values (make-netaddr-from-sockaddr-un sunptr)))))
+
+;;;;;;;;;;;;
+;;  BIND  ;;
+;;;;;;;;;;;;
+
+(defmethod bind-address :before ((socket internet-socket)
+                                 address &key (reuse-address t))
+  (when reuse-address
+    (set-socket-option socket :reuse-address :value t)))
+
+(defmethod bind-address ((socket internet-socket)
+                         (address ipv4addr)
+                         &key (port 0) interface)
+  (with-pinned-aliens ((sin et:sockaddr-in))
+    (make-sockaddr-in (addr sin) (name address) port)
+    (et:bind (socket-fd socket)
+             (addr sin)
+             et::size-of-sockaddr-in)))
+
+(defmethod bind-address ((socket internet-socket)
+                         (address ipv6addr)
+                         &key (port 0) interface)
+  (with-pinned-aliens ((sin6 et:sockaddr-in6))
+    (make-sockaddr-in6 (addr sin6) (name address) port)
+    (et:bind (socket-fd socket)
+             (addr sin6)
+             et::size-of-sockaddr-in6)))
+
+(defmethod bind-address :before ((socket local-socket)
+                                 (address localaddr) &key)
+  (when (typep socket 'active-socket)
+    (error "You can't bind an active Unix socket.")))
+
+(defmethod bind-address ((socket local-socket)
+                         (address localaddr) &key)
+  (with-pinned-aliens ((sun et:sockaddr-un))
+    (make-sockaddr-un (addr sun) (name address))
+    (et:bind (socket-fd socket)
+             (addr sun)
+             et::size-of-sockaddr-un)))
+
+(defmethod bind-address :after ((socket internet-socket)
+                                (address netaddr) &key)
+  (setf (slot-value socket 'address) (copy-netaddr address)))
+
 
 ;;;;;;;;;;;;;;
 ;;  LISTEN  ;;
@@ -172,7 +235,7 @@
                           &key (backlog (min *default-backlog-size*
                                              +max-backlog-size+)))
   (check-type backlog unsigned-byte "a non-negative integer")
-  (sb-posix:listen (socket-fd socket) backlog))
+  (et:listen (socket-fd socket) backlog))
 
 (defmethod socket-listen ((socket active-socket)
                           &key backlog)
@@ -183,44 +246,47 @@
 ;;  ACCEPT  ;;
 ;;;;;;;;;;;;;;
 
-(defmethod socket-accept-connection :before ((socket passive-socket)
-                                             &key (wait t))
+(defmethod accept-connection :before ((socket passive-socket)
+                                      &key wait)
   (when (typep socket 'datagram-socket)
     (error "You can't accept connections on datagram sockets.")))
 
-(defmethod socket-accept-connection ((socket passive-socket)
-                                     &key (wait t))
-  (with-pinned-aliens ((ss sb-posix::sockaddr-storage)
-                       (size sb-posix::socklen-t
-                             #.sb-posix::size-of-sockaddr-storage))
+(defmethod accept-connection ((socket passive-socket)
+                              &key (wait t))
+  (with-pinned-aliens ((ss et:sockaddr-storage)
+                       (size et:socklen-t
+                             #.et::size-of-sockaddr-storage))
     (let ((ssptr (addr ss))
           non-blocking-state)
       (if wait
+          ;; do a normal wait
+          ;; Note: the socket may already be in non-blocking mode
+          ;; in that case the caller must deal with possible exceptions
           (progn
-            (sb-posix:accept (socket-fd socket)
-                             ssptr (addr size)))
+            (et:accept (socket-fd socket)
+                       ssptr (addr size)))
+          ;; set the socket to non-blocking mode before calling accept()
+          ;; if there's no new connection return NIL
           (handler-case
               (unwind-protect
                    (progn
                      ;; saving the current non-blocking state
                      (setf non-blocking-state (socket-non-blocking-mode socket))
-                     (sb-posix:accept (socket-fd socket)
-                                      ssptr (addr size)))
+                     (et:accept (socket-fd socket)
+                                ssptr (addr size)))
                 ;; restoring the socket's non-blocking state
                 (setf (socket-non-blocking-mode socket) non-blocking-state))
-            (sb-posix:syscall-error (err)
-              (case (sb-posix:syscall-errno err)
+            (et:unix-error (err)
+              (case (et:system-error-identifier err)
                 ;; this means there's no new connection
-                ((#.sb-posix:eagain #.sb-posix:ewouldblock)
-                 (return-from socket-accept-connection nil))
+                ((:eagain :ewouldblock)
+                 (return-from accept-connection nil))
                 ;; some other error
                 (otherwise (error err))))))
       (make-netaddr-from-sockaddr-storage ssptr))))
 
-(defmethod socket-accept-connection ((socket active-socket)
-                                     &key wait)
-  (declare (ignore active-socket)
-           (ignore wait))
+(defmethod accept-connection ((socket active-socket)
+                              &key wait)
   (error "You can't accept connections on active sockets."))
 
 
@@ -230,29 +296,29 @@
 
 (defmethod socket-connect ((socket internet-socket)
                            (address ipv4addr) &key (port 0))
-  (with-pinned-aliens ((sin sb-posix::sockaddr-in))
+  (with-pinned-aliens ((sin et:sockaddr-in))
     (make-sockaddr-in (addr sin) (name address) port)
-    (sb-posix::connect (socket-fd socket)
-                       (addr sin)
-                       sb-posix::size-of-sockaddr-in)
+    (et:connect (socket-fd socket)
+                (addr sin)
+                et::size-of-sockaddr-in)
     (setf (slot-value socket 'port) port)))
 
 (defmethod socket-connect ((socket internet-socket)
                            (address ipv6addr) &key (port 0))
-  (with-pinned-aliens ((sin6 sb-posix::sockaddr-in6))
+  (with-pinned-aliens ((sin6 et:sockaddr-in6))
     (make-sockaddr-in6 (addr sin6) (name address) port)
-    (sb-posix::connect (socket-fd socket)
-                       (addr sin6)
-                       sb-posix::size-of-sockaddr-in6)
+    (et:connect (socket-fd socket)
+                (addr sin6)
+                et::size-of-sockaddr-in6)
     (setf (slot-value socket 'port) port)))
 
-(defmethod socket-connect ((socket unix-socket)
-                           (address unixaddr) &key)
-  (with-pinned-aliens ((sun sb-posix::sockaddr-un))
+(defmethod socket-connect ((socket local-socket)
+                           (address localaddr) &key)
+  (with-pinned-aliens ((sun et:sockaddr-un))
     (make-sockaddr-un (addr sun) (name address))
-    (sb-posix::connect (socket-fd socket)
-                       (addr sun)
-                       sb-posix::size-of-sockaddr-un)))
+    (et:connect (socket-fd socket)
+                (addr sun)
+                et::size-of-sockaddr-un)))
 
 (defmethod socket-connect :after ((socket active-socket)
                                   (address netaddr) &key)
@@ -269,59 +335,14 @@
 (defmethod socket-shutdown ((socket active-socket) direction)
   (check-type direction (member :read :write :read-write)
               "valid shutdown specifier")
-  (sb-posix::shutdown (socket-fd socket)
-                      (ecase direction
-                        (:read sb-posix::shut-rd)
-                        (:write sb-posix::shut-wr)
-                        (:read-write sb-posix::shut-rdwr))))
+  (et::shutdown (socket-fd socket)
+                (ecase direction
+                  (:read et:shut-rd)
+                  (:write et:shut-wr)
+                  (:read-write et:shut-rdwr))))
 
 (defmethod socket-shutdown ((socket passive-socket) direction)
   (error "You cannot shut down passive sockets."))
-
-;;;;;;;;;;;;
-;;  BIND  ;;
-;;;;;;;;;;;;
-
-(defmethod socket-bind-address :before ((socket internet-socket)
-                                        address &key (reuse-address t))
-  (when reuse-address
-    (set-socket-option socket :reuse-address :value t)))
-
-(defmethod socket-bind-address ((socket internet-socket)
-                                (address ipv4addr)
-                                &key (port 0) reuse-address interface)
-  (with-pinned-aliens ((sin sb-posix::sockaddr-in))
-    (make-sockaddr-in (addr sin) (name address) port)
-    (sb-posix::bind (socket-fd socket)
-                    (addr sin)
-                    sb-posix::size-of-sockaddr-in)))
-
-(defmethod socket-bind-address ((socket internet-socket)
-                                (address ipv6addr)
-                                &key (port 0) reuse-address interface)
-  (with-pinned-aliens ((sin6 sb-posix::sockaddr-in6))
-    (make-sockaddr-in6 (addr sin6) (name address) port)
-    (sb-posix::bind (socket-fd socket)
-                    (addr sin6)
-                    sb-posix::size-of-sockaddr-in6)))
-
-(defmethod socket-bind-address :before ((socket unix-socket)
-                                        (address unixaddr) &key)
-  (when (typep socket 'active-socket)
-    (error "You can't bind an active Unix socket.")))
-
-(defmethod socket-bind-address ((socket unix-socket)
-                                (address unixaddr) &key)
-  (with-pinned-aliens ((sun sb-posix::sockaddr-un))
-    (make-sockaddr-un (addr sun) (name address))
-    (sb-posix::bind (socket-fd socket)
-                    (addr sun)
-                    sb-posix::size-of-sockaddr-un)))
-
-(defmethod socket-bind-address :after ((socket internet-socket)
-                                        (address netaddr) &key)
-  (setf (slot-value socket 'address) (copy-netaddr address)))
-
 
 ;;;;;;;;;;;;
 ;;  SEND  ;;
@@ -344,7 +365,7 @@
 
 
 ;;
-;; Only for datagram sockets ATM
+;; Only for datagram sockets
 ;;
 
 (defmethod socket-unconnect :before ((socket active-socket))
@@ -352,12 +373,12 @@
     (error "You can only unconnect active datagram sockets.")))
 
 (defmethod socket-unconnect ((socket datagram-socket))
-  (with-pinned-aliens ((sin sb-posix::sockaddr-in))
-    (sb-posix::memset (addr sin) 0 sb-posix::size-of-sockaddr-in)
-    (setf (slot sin 'sb-posix::addr) sb-posix::af-unspec)
-    (sb-posix::connect (socket-fd socket)
-                       (addr sin)
-                       sb-posix::size-of-sockaddr-in)
+  (with-pinned-aliens ((sin et:sockaddr-in))
+    (et:memset (addr sin) 0 et::size-of-sockaddr-in)
+    (setf (slot sin 'et:address) et:af-unspec)
+    (et:connect (socket-fd socket)
+                (addr sin)
+                et::size-of-sockaddr-in)
     (slot-makunbound socket 'address)
     (when (typep socket 'internet-socket)
       (slot-makunbound socket 'port))))

@@ -23,37 +23,68 @@
 
 (in-package #:net.sockets)
 
-
 (define-constant +resolver-error-map+
-  `((#.sb-posix::eai-again    . :resolver-again)
-    (#.sb-posix::eai-fail     . :resolver-fail)
-    (#.sb-posix::eai-noname   . :resolver-no-name)
-    #+linux (#.sb-posix::eai-nodata   . :resolver-no-name)
-    #+linux (#.sb-posix::eai-addrfamily . :resolver-no-name)
-    (#.sb-posix::eai-service  . :resolver-no-service)
-    (#.sb-posix::eai-system   . :resolver-system)
-    (#.sb-posix::eai-badflags . :resolver-bad-flags)
-    (#.sb-posix::eai-family   . :resolver-family)
-    (#.sb-posix::eai-memory   . :resolver-memory)
-    (#.sb-posix::eai-socktype . :resolver-socket-type)
-    #+linux (#.sb-posix::eai-overflow   . :resolver-overflow)
-    #+freebsd (#.sb-posix::eai-badhints . :resolver-bad-hints)
-    #+freebsd (#.sb-posix::eai-protocol . :resolver-protocol)
-    #+freebsd (#.sb-posix::eai-max      . :resolver-max)))
+  `((:eai-again      . resolver-again-error)
+    (:eai-fail       . resolver-fail-error)
+    (:eai-noname     . resolver-no-name-error)
+    (:eai-nodata     . resolver-no-name-error)
+    (:eai-addrfamily . resolver-no-name-error)
+    (:eai-service    . resolver-no-service-error)))
 
-(defun resolver-error-id (code)
-  (cdr (assoc code +resolver-error-map+)))
+(defun resolver-error-condition (id)
+  (cdr (assoc id +resolver-error-map+)))
 
 (defun resolver-error-code (id)
-  (cdr (rassoc id +resolver-error-map+)))
+  (addrerr-value id))
 
-(defun raise-resolver-error (&key (type 'resolver-error) code identifier data data-presentation message)
-  (error type
-         :code (unless code (resolver-error-code identifier))
-         :identifier identifier
-         :data data
-         :data-presentation data-presentation
-         :message message))
+(define-condition resolver-error (network-error)
+  ((data :initarg :data :reader resolver-error-data))
+  (:documentation "Signaled when an error occurs while trying to resolve an address."))
+
+(defmacro define-resolver-error (name code identifier format-string documentation)
+  `(define-condition ,name (resolver-error)
+     ((code :initform ,code)
+      (identifier :initform ,identifier))
+     (:report (lambda (condition stream)
+                (declare (type stream stream))
+                (format stream ,format-string (resolver-error-data condition))
+                (print-message-if-not-null condition stream)))
+     (:documentation ,documentation)))
+
+(define-resolver-error resolver-again-error (addrerr-value :eai-again) :resolver-again
+  "Temporary failure occurred while resolving: ~a"
+  "Condition signaled when a temporary failure occurred.")
+
+(define-resolver-error resolver-fail-error (addrerr-value :eai-fail) :resolver-fail
+  "Non recoverable error occurred while resolving: ~a"
+  "Condition signaled when a non-recoverable error occurred.")
+
+(define-resolver-error resolver-no-name-error (addrerr-value :eai-noname) :resolver-no-name
+  "Host or service not found: ~a"
+  "Condition signaled when a host or service was not found.")
+
+(define-resolver-error resolver-no-service-error (addrerr-value :eai-service) :resolver-no-service
+  "Service not found for specific socket type: ~a"
+  "Condition signaled when a service was not found for the socket type requested.")
+
+(define-resolver-error resolver-unknown-error 0 :resolver-unknown
+  "Unknown error while resolving: ~a"
+  "Condition signaled when an unknown error is signaled while resolving an address.")
+
+(defun resolver-error (identifier &key data message)
+  (let ((condition-class
+         (resolver-error-condition identifier)))
+    (if condition-class
+        (error condition-class
+               :data data
+               :message message)
+        (error 'resolver-unknown-error
+               :code (or (ignore-errors
+                           (resolver-error-code identifier))
+                         0)
+               :identifier identifier
+               :data data
+               :message message))))
 
 (define-constant +max-ipv4-value+ (1- (expt 2 32)))
 
@@ -69,29 +100,29 @@
 (defun get-address-info (&key node service
                          (hint-flags 0) (hint-family 0)
                          (hint-type 0) (hint-protocol 0))
-  (with-pinned-aliens ((hints sb-posix::addrinfo)
-                       (res (* sb-posix::addrinfo)))
-    (sb-posix::memset (addr hints) 0 sb-posix::size-of-addrinfo)
-    (setf (slot hints 'sb-posix::flags) hint-flags)
-    (setf (slot hints 'sb-posix::family) hint-family)
-    (setf (slot hints 'sb-posix::socktype) hint-type)
-    (setf (slot hints 'sb-posix::protocol) hint-protocol)
-    (sb-posix::getaddrinfo node service (addr hints) (addr res))
-    res))
+  (with-pinned-aliens ((hints et:addrinfo)
+                       (res (* et:addrinfo)))
+    (et:memset (addr hints) 0 et::size-of-addrinfo)
+    (setf (slot hints 'et:flags) hint-flags)
+    (setf (slot hints 'et:family) hint-family)
+    (setf (slot hints 'et:socktype) hint-type)
+    (setf (slot hints 'et:protocol) hint-protocol)
+    (et:getaddrinfo node service (addr hints) (addr res))
+    (sap-alien (alien-sap res) (* et:addrinfo))))
 
 (defun get-name-info (sockaddr &key (want-host t) want-service (flags 0))
   (assert (or want-host want-service))
   (let ((salen (etypecase sockaddr
-                 ((alien (* sb-posix::sockaddr-in)) sb-posix::size-of-sockaddr-in)
-                 ((alien (* sb-posix::sockaddr-in6)) sb-posix::size-of-sockaddr-in6)
-                 ((alien (* sb-posix::sockaddr-storage)) sb-posix::size-of-sockaddr-storage))))
-    (with-alien ((host (array char #.sb-posix::ni-maxhost))
-                 (service (array char #.sb-posix::ni-maxserv)))
+                 ((alien (* et:sockaddr-in)) et::size-of-sockaddr-in)
+                 ((alien (* et:sockaddr-in6)) et::size-of-sockaddr-in6)
+                 ((alien (* et:sockaddr-storage)) et::size-of-sockaddr-storage))))
+    (with-alien ((host (array char #.et:ni-maxhost))
+                 (service (array char #.et:ni-maxserv)))
       (sb-sys:with-pinned-objects (sockaddr host service)
-        (sb-posix::getnameinfo sockaddr salen
-                               (alien-sap host) (if want-host sb-posix::ni-maxhost 0)
-                               (alien-sap service) (if want-service sb-posix::ni-maxserv 0)
-                               flags))
+        (et:getnameinfo sockaddr salen
+                        (alien-sap host) (if want-host et:ni-maxhost 0)
+                        (alien-sap service) (if want-service et:ni-maxserv 0)
+                        flags))
       (values (and want-host (cast host c-string))
               (and want-service (cast service c-string))))))
 
@@ -122,54 +153,27 @@
 ;; Error management
 ;;
 
-(defun manage-resolv-error (retval host port)
-  (let ((data (or host port)))
-    (case retval
-      (#.sb-posix::eai-fail                   ; non-recoverable error
-       (raise-resolver-error :type 'resolver-fail-error
-                             :data data))
-      (#.sb-posix::eai-service                ; non-recoverable error
-       (raise-resolver-error :type 'resolver-no-service-error
-                             :data (prin1-to-string data)))
-      (#.sb-posix::eai-again                  ; temporary error
-       (raise-resolver-error :type 'resolver-again-error
-                             :data (prin1-to-string data)))
-      ((#.sb-posix::eai-noname
-        #+linux #.sb-posix::eai-nodata
-        #+linux #.sb-posix::eai-addrfamily) ; no name found
-       (raise-resolver-error :type 'resolver-no-name-error
-                             :data (prin1-to-string data)))
-      (#.sb-posix::eai-system                 ; probably a kernel error
-       (raise-resolver-error :type 'system-error
-                             :code (get-errno)))
-      (otherwise
-       (let ((id (resolver-error-id retval)))
-         (if id
-             (raise-resolver-error :identifier id :data data)
-             (error "Possible bug while looking up ~a"
-                    (if host "host" "port"))))))))
-
 (defun lookup-host-u8-vector-4 (host ipv6)
   (setf host (coerce host '(simple-array ub8 (4))))
 
   (handler-case
       (ecase ipv6
         ((nil)
-         (with-pinned-aliens ((sin sb-posix::sockaddr-in))
+         (with-pinned-aliens ((sin et:sockaddr-in))
            (make-sockaddr-in (addr sin) host)
            (return-from lookup-host-u8-vector-4
-             (make-host (get-name-info (addr sin) :flags sb-posix::ni-namereqd)
+             (make-host (get-name-info (addr sin) :flags et:ni-namereqd)
                         (list (make-address :ipv4 (copy-seq host)))))))
 
         ((:ipv6 t)
-         (with-pinned-aliens ((sin6 sb-posix::sockaddr-in6))
+         (with-pinned-aliens ((sin6 et:sockaddr-in6))
            (let ((ipv6addr (map-ipv4-vector-to-ipv6 host)))
              (make-sockaddr-in6 (addr sin6) ipv6addr)
              (return-from lookup-host-u8-vector-4
-               (make-host (get-name-info (addr sin6) :flags sb-posix::ni-namereqd)
+               (make-host (get-name-info (addr sin6) :flags et:ni-namereqd)
                           (list (make-address :ipv6 ipv6addr))))))))
-    (sb-posix::resolv-error (err)
-      (manage-resolv-error (sb-posix::resolv-errno err) host nil))))
+    (et:resolv-error (err)
+      (resolver-error (et:system-error-identifier err) :data host))))
 
 (defun lookup-host-u16-vector-8 (host ipv6)
   (setf host (coerce host '(simple-array ub16 (8))))
@@ -177,30 +181,28 @@
   (handler-case
       (ecase ipv6
         ((nil)
-         (raise-resolver-error :type 'resolver-fail-error
-                               :data host
-                               :data-presentation (let ((*print-base* 16)) (format nil "~a" host))
-                               :message "Received IPv6 address but IPv4-only was requested."))
+         (resolver-error :eai-fail
+                         :data host
+                         :message "Received IPv6 address but IPv4-only was requested."))
 
         ((:ipv6 t)
-         (with-pinned-aliens ((sin6 sb-posix::sockaddr-in6))
+         (with-pinned-aliens ((sin6 et::sockaddr-in6))
            (make-sockaddr-in6 (addr sin6) host)
            (return-from lookup-host-u16-vector-8
-             (make-host (get-name-info (addr sin6) :flags sb-posix::ni-namereqd)
+             (make-host (get-name-info (addr sin6) :flags et:ni-namereqd)
                         (list (make-address :ipv6 (copy-seq host))))))))
-    (sb-posix::resolv-error (err)
-      (manage-resolv-error (sb-posix::resolv-errno err) host nil))))
+    (et:resolv-error (err)
+      (resolver-error (et:system-error-identifier err) :data host))))
 
 (defun make-host-from-addrinfo (addrinfo)
-  (declare (type (alien (* sb-posix::addrinfo))
-                 addrinfo))
-  (let ((canonname (slot addrinfo 'sb-posix::canonname))
+  (declare (type (alien (* et:addrinfo)) addrinfo))
+  (let ((canonname (slot addrinfo 'et:canonname))
         (addrlist
          (loop
-            :for addrptr :of-type (alien (* sb-posix::addrinfo)) = addrinfo
-            :then (slot addrptr 'sb-posix::next)
+            :for addrptr :of-type (alien (* et:addrinfo)) = addrinfo
+            :then (slot addrptr 'et:next)
             :while (not (null-alien addrptr))
-            :collect (make-netaddr-from-sockaddr (slot addrptr 'sb-posix::addr)))))
+            :collect (make-netaddr-from-sockaddr (slot addrptr 'et:addr)))))
     (make-host canonname addrlist)))
 
 (defun map-host-ipv4-addresses-to-ipv6 (hostobj)
@@ -219,18 +221,18 @@
 (defmethod lookup-host ((host string) &key (ipv6 *ipv6*))
   (flet ((decide-family-and-flags ()
            (ecase ipv6
-             ((nil) (values sb-posix::af-inet 0))
+             ((nil) (values et:af-inet 0))
              ;; the freebsd I use rejects AI_V4MAPPED and AI_ALL(weird thing)
              ;; therefore I'll use AF_UNSPEC and do the mappings myself
              (t     (values
-                     #-freebsd sb-posix::af-inet6
-                     #+freebsd sb-posix::af-unspec
+                     #-freebsd et:af-inet6
+                     #+freebsd et:af-unspec
                      #+freebsd 0
                      #-freebsd
-                     (logior sb-posix::ai-v4mapped
-                             #+freebsd sb-posix::ai-v4mapped-cfg
-                             sb-posix::ai-all)))
-             (:ipv6 (values sb-posix::af-inet6 0)))))
+                     (logior et:ai-v4mapped
+                             #+freebsd et:ai-v4mapped-cfg
+                             et:ai-all)))
+             (:ipv6 (values et:af-inet6 0)))))
 
     (let (parsed)
       (cond
@@ -252,26 +254,26 @@
 
          (multiple-value-bind (family flags)
              (decide-family-and-flags)
-           (setf flags (logior flags sb-posix::ai-canonname sb-posix::ai-addrconfig))
+           (setf flags (logior flags et:ai-canonname et:ai-addrconfig))
            (handler-case
                (let* ((addrinfo
                        (get-address-info :node host
                                          :hint-flags flags
                                          :hint-family family
-                                         :hint-type sb-posix::sock-stream
-                                         :hint-protocol sb-posix::ipproto-ip))
+                                         :hint-type et:sock-stream
+                                         :hint-protocol et:ipproto-ip))
                       (hostobj (make-host-from-addrinfo addrinfo)))
                  (when (string-not-equal (host-truename hostobj)
                                          host)
                    (setf (slot-value hostobj 'aliases) (list host)))
-                 (sb-posix::freeaddrinfo addrinfo)
+                 (et:freeaddrinfo addrinfo)
                  ;; mapping IPv4 addresses onto IPv6
                  #+freebsd
                  (when (eql ipv6 t)
                    (map-host-ipv4-addresses-to-ipv6 hostobj))
                  (return-from lookup-host hostobj))
-             (sb-posix::resolv-error (err)
-               (manage-resolv-error (sb-posix::resolv-errno err) host nil)))))))))
+             (et:resolv-error (err)
+               (resolver-error (et:system-error-identifier err) :data host)))))))))
 
 (defmethod lookup-host ((host ipv4addr) &key (ipv6 *ipv6*))
   (lookup-host-u8-vector-4 (name host) ipv6))
@@ -315,47 +317,47 @@
 
 (defun socket-type-from-int (alien-val)
   (case alien-val
-    (#.sb-posix::sock-stream    :tcp)
-    (#.sb-posix::sock-dgram     :udp)
-    (#.sb-posix::sock-seqpacket :sctp)
-    (#.sb-posix::sock-raw       :raw)
-    (t                          :unknown)))
+    (#.et:sock-stream    :tcp)
+    (#.et:sock-dgram     :udp)
+    (#.et:sock-seqpacket :sctp)
+    (#.et:sock-raw       :raw)
+    (t                   :unknown)))
 
 (defun lookup-service-number (port-number protocol &key name-required)
   (declare (type ub32 port-number))
-  (with-pinned-aliens ((sin sb-posix::sockaddr-in))
+  (with-pinned-aliens ((sin et:sockaddr-in))
     (let ((service
            (nth-value 1
             (progn
-              (sb-posix::memset (addr sin) 0 sb-posix::size-of-sockaddr-in)
-              (setf (slot sin 'sb-posix::family) sb-posix::af-inet)
-              (setf (slot sin 'sb-posix::port) (htons port-number))
+              (et:memset (addr sin) 0 et::size-of-sockaddr-in)
+              (setf (slot sin 'et:family) et:af-inet)
+              (setf (slot sin 'et:port) (htons port-number))
               (get-name-info (addr sin)
                              :flags (logior
                                      (case protocol
-                                       (:udp sb-posix::ni-dgram)
+                                       (:udp et:ni-dgram)
                                        (t 0))
                                      (if name-required
-                                         sb-posix::ni-namereqd 0))
+                                         et:ni-namereqd 0))
                              :want-host nil :want-service t)))))
       (make-service service port-number protocol))))
 
 (defun lookup-service-name (port protocol)
   (let* ((addrinfo
-          (the (alien (* sb-posix::addrinfo))
+          (the (alien (* et:addrinfo))
             (get-address-info :service port
                               :hint-type (case protocol
-                                           (:tcp sb-posix::sock-stream)
-                                           (:udp sb-posix::sock-dgram)
+                                           (:tcp et:sock-stream)
+                                           (:udp et:sock-dgram)
                                            (:any 0)))))
          (port-number
-          (ntohs (slot (cast (slot addrinfo 'sb-posix::addr)
-                             (* sb-posix::sockaddr-in))
-                       'sb-posix::port)))
+          (ntohs (slot (cast (slot addrinfo 'et:addr)
+                             (* et:sockaddr-in))
+                       'et:port)))
          (true-protocol
-          (socket-type-from-int (slot addrinfo 'sb-posix::socktype))))
+          (socket-type-from-int (slot addrinfo 'et:socktype))))
     (sb-sys:with-pinned-objects (addrinfo)
-      (sb-posix::freeaddrinfo addrinfo))
+      (et:freeaddrinfo addrinfo))
     (return-from lookup-service-name
       (make-service port port-number true-protocol))))
 
@@ -373,8 +375,8 @@
                                   :name-required name-required))
           (:string
            (lookup-service-name port protocol)))
-      (sb-posix:syscall-error (err)
-        (manage-resolv-error (sb-posix:syscall-errno err) nil port)))))
+      (et:resolv-error (err)
+        (resolver-error (et:system-error-identifier err) :data port)))))
 
 
 
@@ -404,10 +406,10 @@
               name protonum aliases))))
 
 (defun make-protocol-from-protoent (protoent)
-  (declare (type (alien (* sb-posix::protoent)) protoent))
-  (let* ((name (slot protoent 'sb-posix::name))
-         (number (slot protoent 'sb-posix::proto))
-         (aliasptr (slot protoent 'sb-posix::aliases))
+  (declare (type (alien (* et:protoent)) protoent))
+  (let* ((name (slot protoent 'et:name))
+         (number (slot protoent 'et:proto))
+         (aliasptr (slot protoent 'et:aliases))
          (aliases (loop
                      :for i :from 0
                      :for alias = (deref aliasptr i)
@@ -415,11 +417,11 @@
     (make-protocol name number aliases)))
 
 (defun get-protocol-by-number (protonum)
-  (make-protocol-from-protoent (sb-posix::getprotobynumber protonum)))
+  (make-protocol-from-protoent (et:getprotobynumber protonum)))
 
 (defun get-protocol-by-name (protoname)
   (make-protocol-from-protoent (sb-sys:with-pinned-objects (protoname)
-                                 (sb-posix::getprotobyname protoname))))
+                                 (et:getprotobyname protoname))))
 
 (defun lookup-protocol (proto)
   (multiple-value-bind (proto-type proto-val)
@@ -431,6 +433,6 @@
 
           (:string
            (get-protocol-by-name proto-val)))
-      (sb-posix:syscall-error (err)
+      (et:unix-error (err)
         (declare (ignore err))
         (error 'unknown-protocol :name proto)))))

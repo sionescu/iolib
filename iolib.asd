@@ -3,11 +3,10 @@
 (in-package #:cl-user)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (require :sb-grovel)
   (require :sb-introspect))
 
 (defpackage #:iolib-system
-  (:use #:common-lisp #:asdf #:sb-grovel))
+  (:use #:common-lisp #:asdf))
 
 (in-package #:iolib-system)
 
@@ -26,7 +25,7 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "GPL-2.1"
-  :depends-on (#:sb-posix)
+  :depends-on (#:iolib-alien-ng)
   :components
   ((:module :sockets
     :components

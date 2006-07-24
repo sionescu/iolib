@@ -19,7 +19,8 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
+;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
+(declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
 (in-package #:net.sockets)
 
@@ -42,35 +43,44 @@
                  :name  name
                  :index index))
 
+(define-condition unknown-interface (system-error)
+  ((name  :initarg :name  :initform nil :reader interface-name)
+   (index :initarg :index :initform nil :reader interface-index))
+  (:report (lambda (condition stream)
+             (if (interface-name condition)
+                 (format stream "Unknown interface: ~a"
+                         (interface-name condition))
+                 (format stream "Unknown interface index: ~a"
+                         (interface-index condition)))))
+  (:documentation "Condition raised when a network interface is not found."))
+
 (defun get-network-interfaces ()
-  (with-pinned-aliens ((ifptr (* (array sb-posix::if-nameindex 0))))
-    (setf ifptr (sb-posix::if-nameindex))
+  (with-pinned-aliens ((ifptr (* (array (struct et:if-nameindex) 0))))
+    (setf ifptr (et:if-nameindex))
     (unless (null-alien ifptr)
       (let* ((ifarr (deref ifptr))
              (iflist
               (loop
                  :for i :from 0
-                 :for name = (slot (deref ifarr i) 'sb-posix::name)
-                 :for index = (slot (deref ifarr i) 'sb-posix::index)
+                 :for name = (slot (deref ifarr i) 'et:name)
+                 :for index = (slot (deref ifarr i) 'et:index)
                  :while (plusp index)
                  :collect (make-interface name index)
-                 :finally (sb-posix::if-freenameindex ifptr))))
+                 :finally (et:if-freenameindex ifptr))))
         (return-from get-network-interfaces iflist)))))
 
 (defun get-interface-by-index (index)
   (check-type index unsigned-byte "an unsigned integer")
-  (with-alien ((buff (array char #.sb-posix::ifnamesize)))
+  (with-alien ((buff (array char #.et:ifnamesize)))
     (with-alien-saps ((buff-sap buff))
       (let (retval)
         (handler-case
-            (setf retval (sb-posix::if-indextoname index buff-sap))
-          (sb-posix:syscall-error (err)
-            (case (sb-posix:syscall-errno err)
-              (#.sb-posix:enxio
-               (error 'unknown-interface
-                      :code sb-posix:enxio
-                      :identifier :unknown-interface
-                      :index index)))))
+            (setf retval (et::if-indextoname index buff-sap))
+          (et:unix-error (err)
+            (error 'unknown-interface
+                   :code (et:system-error-code err)
+                   :identifier (et:system-error-identifier err)
+                   :index index)))
         (return-from
          get-interface-by-index
           (make-interface (copy-seq retval) index))))))
@@ -80,14 +90,12 @@
   (sb-sys:with-pinned-objects (name)
     (let (retval)
       (handler-case
-          (setf retval (sb-posix::if-nametoindex name))
-        (sb-posix:syscall-error (err)
-          (case (sb-posix:syscall-errno err)
-            (#.sb-posix:enodev
-             (error 'unknown-interface
-                    :code sb-posix:enodev
-                    :identifier :unknown-interface
-                    :name name)))))
+          (setf retval (et::if-nametoindex name))
+        (et:unix-error (err)
+          (error 'unknown-interface
+                 :code (et:system-error-code err)
+                 :identifier (et:system-error-identifier err)
+                 :name name)))
       (make-interface (copy-seq name) retval))))
 
 (defun lookup-interface (iface)

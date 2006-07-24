@@ -19,7 +19,8 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
+;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
+(declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
 (in-package #:net.sockets)
 
@@ -61,50 +62,6 @@ values, et caetera)."))
 (define-condition network-error (system-error condition-with-message-mixin)
   ()
   (:documentation "Condition raised when a network error occurs."))
-
-(define-condition resolver-error (network-error)
-  ((data :initarg :data :reader resolver-data)
-   (data-presentation :initarg :data-presentation :initform nil
-                      :reader resolver-data-presentation))
-  (:documentation "Signaled when an error occurs while trying to resolve an data."))
-
-(defmacro define-resolver-error (name code identifier message documentation)
-  `(define-condition ,name (resolver-error)
-     ((code :initform ,code)
-      (identifier :initform ,identifier))
-     (:report (lambda (condition stream)
-                (declare (type stream stream))
-                (format stream ,message (or (resolver-data-presentation condition)
-                                            (resolver-data condition)))
-                (print-message-if-not-null condition stream)))
-     (:documentation ,documentation)))
-
-(define-resolver-error resolver-again-error sb-posix::eai-again :resolver-again
-  "Temporary failure occurred while resolving: ~a"
-  "Condition signaled when a temporary failure occurred.")
-
-(define-resolver-error resolver-fail-error sb-posix::eai-fail :resolver-fail
-  "Non recoverable error occurred while resolving: ~a"
-  "Condition signaled when a non-recoverable error occurred.")
-
-(define-resolver-error resolver-no-name-error sb-posix::eai-noname :resolver-no-name
-  "Host or service not found: ~a"
-  "Condition signaled when a host or service was not found.")
-
-(define-resolver-error resolver-no-service-error sb-posix::eai-service :resolver-no-service
-  "Service not found for specific socket type: ~a"
-  "Condition signaled when a service was not found for the socket type requested.")
-
-(define-condition unknown-interface (system-error)
-  ((name  :initarg :name  :initform nil :reader interface-name)
-   (index :initarg :index :initform nil :reader interface-index))
-  (:report (lambda (condition stream)
-             (if (interface-name condition)
-                 (format stream "Unknown interface: ~a"
-                         (interface-name condition))
-                 (format stream "Unknown interface index: ~a"
-                         (interface-index condition)))))
-  (:documentation "Condition raised when a network interface is not found."))
 
 (define-condition unknown-protocol (system-error)
   ((name :initarg :name :initform nil :reader protocol-name))

@@ -19,21 +19,14 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
+;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
+(declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
 (in-package #:net.sockets)
 
 ;;;
 ;;; Conversion functions
 ;;;
-
-;; From CLOCC's PORT library
-(defun vector-to-ipaddr (vector)
-  (declare (type (simple-array ub8 (*)) vector))
-  (+ (ash (aref vector 0) 24)
-     (ash (aref vector 1) 16)
-     (ash (aref vector 2) 8)
-     (aref vector 3)))
 
 ;; From CLOCC's PORT library
 (defun ipaddr-to-vector (ipaddr)
@@ -51,9 +44,6 @@
           (ldb (byte 8 8)  ipaddr)
           (ldb (byte 8 0)  ipaddr)))
 
-(defun dotted-to-ipaddr (string)
-  (vector-to-ipaddr (dotted-to-vector string)))
-
 (defun dotted-to-vector (string &key (error-p t))
   (handler-case
       (setf string (coerce string '(vector base-char)))
@@ -64,22 +54,25 @@
                  :message (format nil "The vector: ~a is not a string or contains non-ASCII characters." string))
           (return-from dotted-to-vector nil))))
 
-  (with-alien ((in-addr sb-posix::in-addr-t))
+  (with-alien ((in-addr et:in-addr-t))
     (sb-sys:with-pinned-objects (in-addr string)
       (setf in-addr 0)
       (handler-case
-          (sb-posix::inet-pton sb-posix::af-inet ; address family
-                               string            ; name
-                               (addr in-addr))   ; pointer to struct in6_addr
-        (sb-posix:syscall-error (err)
+          (et:inet-pton et:af-inet ; address family
+                        string            ; name
+                        (addr in-addr))   ; pointer to struct in6_addr
+        (et:unix-error (err)
           (declare (ignore err))
           (if error-p
               (error 'invalid-address :address string :type :ipv4)
               (return-from dotted-to-vector nil)))))
     (make-vector-u8-4-from-in-addr in-addr)))
 
+(defun dotted-to-ipaddr (string)
+  (vector-to-ipaddr (dotted-to-vector string)))
+
 (defun vector-to-dotted (vector)
-  (declare (type (simple-array ub8 (*)) vector))
+  (coerce vector '(simple-array ub8 (4)))
   (format nil "~a.~a.~a.~a"
           (aref vector 0)
           (aref vector 1)
@@ -96,14 +89,14 @@
                  :message (format nil "The vector: ~a is not a string or contains non-ASCII characters." string))
           (return-from colon-separated-to-vector nil))))
 
-  (with-alien ((in6-addr sb-posix::in6-addr))
+  (with-alien ((in6-addr et:in6-addr))
     (sb-sys:with-pinned-objects (in6-addr string)
-      (sb-posix::memset (addr in6-addr) 0 sb-posix::size-of-in6-addr)
+      (et:memset (addr in6-addr) 0 et::size-of-in6-addr)
       (handler-case
-          (sb-posix::inet-pton sb-posix::af-inet6 ; address family
-                               string             ; name
-                               (addr in6-addr))   ; pointer to struct in6_addr
-        (sb-posix:syscall-error (err)
+          (et:inet-pton et:af-inet6 ; address family
+                        string             ; name
+                        (addr in6-addr))   ; pointer to struct in6_addr
+        (et:unix-error (err)
           (declare (ignore err))
           (if error-p
               (error 'invalid-address :address string :type :ipv4)
@@ -121,13 +114,13 @@
           (return-from vector-to-colon-separated nil))))
 
   (with-pinned-aliens
-      ((sin6 sb-posix::sockaddr-in6)
-       (namebuff (array (unsigned 8) #.sb-posix::inet6-addrstrlen)))
+      ((sin6 et::sockaddr-in6)
+       (namebuff (array (unsigned 8) #.et:inet6-addrstrlen)))
     (make-sockaddr-in6 (addr sin6) vector)
-    (sb-posix::inet-ntop sb-posix::af-inet6                 ; address family
-                         (addr (slot sin6 'sb-posix::addr)) ; pointer to struct in6_addr
-                         (alien-sap namebuff)               ; destination buffer
-                         sb-posix::inet6-addrstrlen)        ; INET6_ADDRSTRLEN
+    (et::inet-ntop et:af-inet6                       ; address family
+                   (addr (slot sin6 'et::address)) ; pointer to struct in6_addr
+                   (alien-sap namebuff) ; destination buffer
+                   et::inet6-addrstrlen) ; INET6_ADDRSTRLEN
     (return-from vector-to-colon-separated
       (let ((str (cast namebuff c-string)))
         (ecase case
@@ -149,7 +142,7 @@
 (defclass ipv6addr (netaddr) ()
   (:documentation "IPv6 address."))
 
-(defclass unixaddr (netaddr)
+(defclass localaddr (netaddr)
   ((abstract :initform nil :initarg :abstract :reader abstract-p :type boolean))
   (:documentation "UNIX socket address."))
 
@@ -168,7 +161,7 @@
     (with-slots (name) address
       (format stream "IPv6 address: ~a" (vector-to-colon-separated name)))))
 
-(defmethod print-object ((address unixaddr) stream)
+(defmethod print-object ((address localaddr) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
     (with-slots (name abstract) address
       (format stream "Unix socket address: ~a. Abstract: ~:[no~;yes~]" name abstract))))
@@ -190,7 +183,7 @@
 (defmethod netaddr= ((addr1 ipv6addr) (addr2 ipv6addr))
   (equalp (name addr1) (name addr2)))
 
-(defmethod netaddr= ((addr1 unixaddr) (addr2 unixaddr))
+(defmethod netaddr= ((addr1 localaddr) (addr2 localaddr))
   (equal (name addr1) (name addr2)))
 
 
@@ -206,8 +199,8 @@
   (make-instance 'ipv6addr
                  :name (copy-seq (name addr))))
 
-(defmethod copy-netaddr ((addr unixaddr))
-  (make-instance 'unixaddr
+(defmethod copy-netaddr ((addr localaddr))
+  (make-instance 'localaddr
                  :name (copy-seq (name addr))
                  :abstract (abstract-p addr)))
 
@@ -215,12 +208,12 @@
 ;;; Constructor
 (defun make-address (type name)
   (ecase type
-    (:ipv4 (make-instance 'ipv4addr
-                          :name (coerce name '(simple-array ub8 (4)))))
-    (:ipv6 (make-instance 'ipv6addr
-                          :name (coerce name '(simple-array ub16 (8)))))
-    (:unix (make-instance 'unixaddr
-                          :name name))))
+    (:ipv4  (make-instance 'ipv4addr
+                           :name (coerce name '(simple-array ub8 (4)))))
+    (:ipv6  (make-instance 'ipv6addr
+                           :name (coerce name '(simple-array ub16 (8)))))
+    (:local (make-instance 'localaddr
+                           :name name))))
 
 
 ;;;
@@ -273,10 +266,10 @@
 (defmethod ipv6-address-p ((addr netaddr))
   nil)
 
-(defmethod unix-address-p ((addr unixaddr))
+(defmethod local-address-p ((addr localaddr))
   t)
 
-(defmethod unix-address-p ((addr netaddr))
+(defmethod local-address-p ((addr netaddr))
   nil)
 
 ;; IPv4 predicates

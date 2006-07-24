@@ -19,7 +19,8 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 3) (safety 1) (space 1) (debug 1)))
+;; (declaim (optimize (speed 3) (safety 1) (space 1) (debug 1)))
+(declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
 (in-package #:net.sockets)
 
@@ -69,6 +70,9 @@
 (defun lisp->c-bool (val)
   (if val 1 0))
 
+(defmacro addrerr-value (keyword)
+  `(et:alien-enum-value et:addrinfo-errors ,keyword))
+
 ;;;
 ;;; Byte-swap functions
 ;;;
@@ -103,7 +107,7 @@
 
 (defun copy-simple-array-ub16-to-alien-vector (lisp-vec alien-vec)
   (declare (type (simple-array ub16 (8)) lisp-vec)
-           (type (alien (array sb-posix::uint16-t 8)) alien-vec))
+           (type (alien (array et:uint16-t 8)) alien-vec))
   (dotimes (i 8)
     (setf (deref alien-vec i)
           (htons (aref lisp-vec i)))))
@@ -123,35 +127,43 @@
 
     ipv6addr))
 
+;; From CLOCC's PORT library
+(defun vector-to-ipaddr (vector)
+  (coerce vector '(simple-array ub8 (4)))
+  (+ (ash (aref vector 0) 24)
+     (ash (aref vector 1) 16)
+     (ash (aref vector 2) 8)
+     (aref vector 3)))
+
 (defun make-sockaddr-in (sin ub8-vector &optional (port 0))
-  (declare (type (alien (* sb-posix::sockaddr-in)) sin))
-  (sb-posix::memset sin 0 sb-posix::size-of-sockaddr-in)
-  (setf (slot sin 'sb-posix::family) sb-posix::af-inet)
-  (setf (slot sin 'sb-posix::addr) (htonl (vector-to-ipaddr ub8-vector)))
-  (setf (slot sin 'sb-posix::port) (htons port))
+  (declare (type (alien (* et:sockaddr-in)) sin))
+  (et:memset sin 0 et::size-of-sockaddr-in)
+  (setf (slot sin 'et:family) et:af-inet)
+  (setf (slot sin 'et:address) (htonl (vector-to-ipaddr ub8-vector)))
+  (setf (slot sin 'et:port) (htons port))
   sin)
 
 (defun make-sockaddr-in6 (sin6 ub16-vector &optional (port 0))
-  (declare (type (alien (* sb-posix::sockaddr-in6)) sin6))
-  (sb-posix::memset sin6 0 sb-posix::size-of-sockaddr-in6)
-  (setf (slot sin6 'sb-posix::family) sb-posix::af-inet6)
-  (let ((u16-vector (slot (slot (slot sin6 'sb-posix::addr)
-                                'sb-posix::in6-u)
-                          'sb-posix::addr16)))
+  (declare (type (alien (* et:sockaddr-in6)) sin6))
+  (et:memset sin6 0 et::size-of-sockaddr-in6)
+  (setf (slot sin6 'et:family) et:af-inet6)
+  (let ((u16-vector (slot (slot (slot sin6 'et:address)
+                                'et:in6-u)
+                          'et::addr16)))
     (copy-simple-array-ub16-to-alien-vector ub16-vector u16-vector)
-    (setf (slot sin6 'sb-posix::port) (htons port)))
+    (setf (slot sin6 'et:port) (htons port)))
   sin6)
 
 (defun make-sockaddr-un (sun string)
-  (declare (type (alien (* sb-posix::sockaddr-un)) sun)
+  (declare (type (alien (* et:sockaddr-un)) sun)
            (type string string))
-  (sb-posix::memset sun 0 sb-posix::size-of-sockaddr-un)
-  (setf (slot sun 'sb-posix::family) sb-posix::af-unix)
+  (et:memset sun 0 et::size-of-sockaddr-un)
+  (setf (slot sun 'et:family) et:af-local)
   (let ((buff (sb-ext:string-to-octets string))
-        (path (slot sun 'sb-posix::path)))
+        (path (slot sun 'et:path)))
     (loop
        :for off :below (min (length buff)
-                            (1- sb-posix::unix-path-max))
+                            (1- et:unix-path-max))
        :do (setf (deref path off) (aref buff off))))
   sun)
 
@@ -167,29 +179,29 @@
     vector))
 
 (defun make-vector-u16-8-from-in6-addr (in6-addr)
-  (declare (type (alien (* sb-posix::in6-addr)) in6-addr))
+  (declare (type (alien (* et:in6-addr)) in6-addr))
   (let ((newvector (make-array 8 :element-type 'ub16))
-        (u16-vector (slot (slot in6-addr 'sb-posix::in6-u)
-                          'sb-posix::addr16)))
+        (u16-vector (slot (slot in6-addr 'et:in6-u)
+                          'et::addr16)))
     (dotimes (i 8)
       (setf (aref newvector i) (ntohs (deref u16-vector i))))
 
     newvector))
 
 (defun make-netaddr-from-sockaddr-in (sin)
-  (declare (type (alien (* sb-posix::sockaddr-in)) sin))
+  (declare (type (alien (* et:sockaddr-in)) sin))
   (make-address :ipv4 (make-vector-u8-4-from-in-addr
-                       (slot sin 'sb-posix::addr))))
+                       (slot sin 'et:address))))
 
 (defun make-netaddr-from-sockaddr-in6 (sin6)
-  (declare (type (alien (* sb-posix::sockaddr-in6)) sin6))
+  (declare (type (alien (* et:sockaddr-in6)) sin6))
   (make-address :ipv6 (make-vector-u16-8-from-in6-addr
-                       (addr (slot sin6 'sb-posix::addr)))))
+                       (addr (slot sin6 'et:address)))))
 
 (defun make-netaddr-from-sockaddr-un (sun)
-  (declare (type (alien (* sb-posix::sockaddr-un)) sun))
-  (let ((path (slot sun 'sb-posix::path))
-        (name (make-string (1- sb-posix::unix-path-max)))
+  (declare (type (alien (* et:sockaddr-un)) sun))
+  (let ((path (slot sun 'et:path))
+        (name (make-string (1- et:unix-path-max)))
         (abstract nil))
     (if (zerop (deref path 0))
         ;; abstract address
@@ -197,32 +209,32 @@
           (setf path (cast path (array (unsigned 8) 0)))
           (setf abstract t)
           (loop
-             :for sindex :from 0 :below (1- sb-posix::unix-path-max)
-             :for pindex :from 1 :below sb-posix::unix-path-max
+             :for sindex :from 0 :below (1- et:unix-path-max)
+             :for pindex :from 1 :below et:unix-path-max
              :do (setf (schar name sindex)
                        (code-char (deref path pindex)))))
         ;; address is in the filesystem
         (setf name (cast path c-string)))
-    (make-instance 'unixaddr
+    (make-instance 'localaddr
                    :name name
                    :abstract abstract)))
 
 (defun make-netaddr-from-sockaddr (sa)
-  (declare (type (alien (* sb-posix::sockaddr)) sa))
-  (ecase (slot sa 'sb-posix::family)
-    (#.sb-posix::af-inet
-     (make-netaddr-from-sockaddr-in (cast sa (* sb-posix::sockaddr-in))))
-    (#.sb-posix::af-inet6
-     (make-netaddr-from-sockaddr-in6 (cast sa (* sb-posix::sockaddr-in6))))
-    (#.sb-posix::af-unix
-     (make-netaddr-from-sockaddr-un (cast sa (* sb-posix::sockaddr-un))))))
+  (declare (type (alien (* et:sockaddr)) sa))
+  (ecase (slot sa 'et:family)
+    (#.et:af-inet
+     (make-netaddr-from-sockaddr-in (cast sa (* et:sockaddr-in))))
+    (#.et:af-inet6
+     (make-netaddr-from-sockaddr-in6 (cast sa (* et:sockaddr-in6))))
+    (#.et:af-local
+     (make-netaddr-from-sockaddr-un (cast sa (* et:sockaddr-un))))))
 
 (defun make-netaddr-from-sockaddr-storage (sa)
-  (declare (type (alien (* sb-posix::sockaddr-storage)) sa))
-  (ecase (slot sa 'sb-posix::family)
-    (#.sb-posix::af-inet
-     (make-netaddr-from-sockaddr-in (cast sa (* sb-posix::sockaddr-in))))
-    (#.sb-posix::af-inet6
-     (make-netaddr-from-sockaddr-in6 (cast sa (* sb-posix::sockaddr-in6))))
-    (#.sb-posix::af-unix
-     (make-netaddr-from-sockaddr-un (cast sa (* sb-posix::sockaddr-un))))))
+  (declare (type (alien (* et:sockaddr-storage)) sa))
+  (ecase (slot sa 'et:family)
+    (#.et:af-inet
+     (make-netaddr-from-sockaddr-in (cast sa (* et:sockaddr-in))))
+    (#.et:af-inet6
+     (make-netaddr-from-sockaddr-in6 (cast sa (* et:sockaddr-in6))))
+    (#.et:af-local
+     (make-netaddr-from-sockaddr-un (cast sa (* et:sockaddr-un))))))
