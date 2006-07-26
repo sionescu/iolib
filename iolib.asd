@@ -27,14 +27,14 @@
   ((:module :sockets
     :components
     ((:file "defpackage")
-     (:file "conditions" :depends-on ("defpackage"))
      (:file "common" :depends-on ("defpackage"))
+     (:file "conditions" :depends-on ("defpackage" "common"))
      (:file "config" :depends-on ("defpackage" "common"))
-     (:file "iface" :depends-on ("defpackage" "conditions" "common"))
-     (:file "address" :depends-on ("defpackage" "conditions" "common"))
+     (:file "iface" :depends-on ("defpackage" "common" "conditions"))
+     (:file "address" :depends-on ("defpackage" "common" "conditions"))
      (:file "resolv" :depends-on ("defpackage" "common"
                                   "config" "conditions" "address"))
-     (:file "base-sockets" :depends-on ("defpackage" "config"))
+     (:file "base-sockets" :depends-on ("defpackage" "config" "resolv"))
      (:file "socket-options" :depends-on ("defpackage" "common" "base-sockets"))
      (:file "socket-methods"
             :depends-on ("defpackage" "config" "common" "address"

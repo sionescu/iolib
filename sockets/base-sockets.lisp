@@ -31,7 +31,7 @@
 ;;;;;;;;;;;;;;;
 
 (defclass socket ()
-  ((fd       :initarg :file-descriptor :reader socket-fd)
+  ((fd       :reader socket-fd)
    (address  :initarg :address  :reader socket-address :type netaddr)
    (family   :initarg :family   :reader socket-family)
    (protocol :initarg :protocol :reader socket-protocol)))
@@ -50,7 +50,7 @@
 
 (defgeneric get-socket-option (socket option-name))
 
-(defgeneric set-socket-option (socket option-name &key))
+(defgeneric set-socket-option (socket option-name &key &allow-other-keys))
 
 (defclass stream-socket (socket)
   ((lisp-stream :reader socket-lisp-stream))
@@ -59,7 +59,7 @@
 (defclass datagram-socket (socket) ()
   (:default-initargs :type :datagram))
 
-(defgeneric socket-unconnect (socket))
+(defgeneric unconnect (socket))
 
 (defclass internet-socket (socket)
   ((port :reader port :type '(unsigned-byte 16)))
@@ -70,9 +70,9 @@
 
 (defclass active-socket (socket) ())
 
-(defgeneric socket-connect (socket address &key &allow-other-keys))
+(defgeneric connect (socket address &key &allow-other-keys))
 
-(defgeneric socket-shutdown (socket direction))
+(defgeneric shutdown (socket direction))
 
 (defgeneric socket-send (buffer socket &key
                          dont-route dont-wait no-signal

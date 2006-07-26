@@ -73,6 +73,9 @@
 (defmacro addrerr-value (keyword)
   `(et:alien-enum-value et:addrinfo-errors ,keyword))
 
+(defmacro unixerr-value (keyword)
+  `(et:alien-enum-value et:errno-values ,keyword))
+
 ;;;
 ;;; Byte-swap functions
 ;;;

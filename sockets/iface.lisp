@@ -76,10 +76,10 @@
       (let (retval)
         (handler-case
             (setf retval (et::if-indextoname index buff-sap))
-          (et:unix-error (err)
+          (unix-error (err)
             (error 'unknown-interface
-                   :code (et:system-error-code err)
-                   :identifier (et:system-error-identifier err)
+                   :code (error-code err)
+                   :identifier (error-identifier err)
                    :index index)))
         (return-from
          get-interface-by-index
@@ -91,10 +91,10 @@
     (let (retval)
       (handler-case
           (setf retval (et::if-nametoindex name))
-        (et:unix-error (err)
+        (unix-error (err)
           (error 'unknown-interface
-                 :code (et:system-error-code err)
-                 :identifier (et:system-error-identifier err)
+                 :code (error-code err)
+                 :identifier (error-identifier err)
                  :name name)))
       (make-interface (copy-seq name) retval))))
 

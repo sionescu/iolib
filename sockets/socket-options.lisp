@@ -103,10 +103,6 @@
       (:linger (onoff linger))
       (:timeval (sec usec)))))
 
-(defgeneric get-socket-option (socket option-name))
-
-(defgeneric set-socket-option (socket option-name &key &allow-other-keys))
-
 (defmacro define-socket-option (name action optname level argtype os)
   (declare (type symbol action)
            (type symbol argtype)
@@ -122,20 +118,14 @@
            (when (member action (list :get :get-and-set))
              `(defmethod get-socket-option ((socket socket) (option-name (eql ,eql-name)))
                 ,(if (member os *features*)
-                     `(handler-case
-                          (,helper-get (socket-fd socket) ,level ,optname)
-                        (et:unix-error (err)
-                          (sockopt-error (et:system-error-code err)
-                                         ,level ,optname :get)))
+                     `(with-socket-error-filter
+                        (,helper-get (socket-fd socket) ,level ,optname))
                      `(error 'option-not-available option-name))))
            (when (member action (list :set :get-and-set))
              `(defmethod set-socket-option ((socket socket) (option-name (eql ,eql-name)) &key ,@args)
                 ,(if (member os *features*)
-                     `(handler-case
-                          (,helper-set (socket-fd socket) ,level ,optname ,@args)
-                        (et:unix-error (err)
-                          (sockopt-error (et:system-error-code err)
-                                         ,level ,optname :set ,@args)))
+                     `(with-socket-error-filter
+                        (,helper-set (socket-fd socket) ,level ,optname ,@args))
                      `(error 'option-not-available option-name)))))))))
 
 (define-socket-option accept-connections :get         et::so-acceptconn   et::sol-socket :bool    :unix)

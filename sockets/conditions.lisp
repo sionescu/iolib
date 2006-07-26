@@ -24,15 +24,18 @@
 
 (in-package #:net.sockets)
 
+(defmethod error-code ((err system-error))
+  (et:system-error-code err))
 
-(define-condition condition-with-message-mixin (condition)
-  ((message :initarg :message :initform "" :reader condition-message))
-  (:documentation "Simple mixin class that adds a slot named \"message\" which may 
-be used as a more thorough explanation of the errors's cause."))
+(defmethod error-identifier ((err system-error))
+  (et:system-error-identifier err))
+
+(defmethod error-message ((err system-error))
+  (et:message err))
 
 (defun print-message-if-not-null (condition stream &optional (eof-place :before))
   (declare (type stream stream))
-  (let ((msg (condition-message condition)))
+  (let ((msg (error-message condition)))
     (when msg
       (when (eql eof-place :before)
         (fresh-line stream))
@@ -40,8 +43,7 @@ be used as a more thorough explanation of the errors's cause."))
       (when (eql eof-place :after)
         (fresh-line stream)))))
 
-
-(define-condition invalid-argument (error condition-with-message-mixin)
+(define-condition invalid-argument (system-error)
   ((argument :initarg :argument :reader invalid-argument))
   (:report (lambda (condition stream)
              (declare (type stream stream))
@@ -52,27 +54,47 @@ be used as a more thorough explanation of the errors's cause."))
 not valid(wrong type or good type but not within a certain range of
 values, et caetera)."))
 
+;;;;;;;;;;;;;;;;;;;;;;;
+;;;  SOCKET ERRORS  ;;;
+;;;;;;;;;;;;;;;;;;;;;;;
 
+(defparameter *socket-error-map* nil)
 
-(define-condition system-error (error)
-  ((code       :initarg :code       :initform 0        :reader system-error-code)
-   (identifier :initarg :identifier :initform :unknown :reader system-error-identifier))
-  (:documentation "Condition raised when a system error occurs."))
+(define-condition socket-error (system-error) ())
 
-(define-condition network-error (system-error condition-with-message-mixin)
-  ()
-  (:documentation "Condition raised when a network error occurs."))
+(defmacro define-socket-error (name identifier &optional documentation)
+  `(progn
+     (export ',name)
+     (push (cons ,identifier ',name) *socket-error-map*)
+     (define-condition ,name (socket-error) ()
+       (:default-initargs :code (unixerr-value ,identifier)
+                          :identifier ,identifier)
+       (:documentation ,documentation))))
 
-(define-condition unknown-protocol (system-error)
-  ((name :initarg :name :initform nil :reader protocol-name))
-  (:report (lambda (condition stream)
-             (format stream "Unknown protocol: ~s"
-                     (protocol-name condition))))
-  (:documentation "Condition raised when a network protocol is not found."))
+(define-socket-error socket-address-in-use-error        :eaddrinuse)
+(define-socket-error socket-address-not-available-error :eaddrnotavail)
+(define-socket-error socket-network-down-error          :enetdown)
+(define-socket-error socket-network-reset-error         :enetreset)
+(define-socket-error socket-connection-aborted-error    :econnaborted)
+(define-socket-error socket-connection-reset-error      :econnreset)
+(define-socket-error socket-connection-refused-error    :econnrefused)
+(define-socket-error socket-connection-shutdown-error   :eshutdown)
+(define-socket-error socket-connection-timeout-error    :etimedout)
+(define-socket-error socket-no-buffer-space-error       :enobufs)
+(define-socket-error socket-host-down-error             :ehostdown)
+(define-socket-error socket-host-unreachable-error      :ehostunreach)
+(define-socket-error socket-already-connected-error     :eisconn)
+(define-socket-error socket-option-not-supported-error  :enoprotoopt)
 
-(define-condition invalid-address ()
-  ((address  :initarg :address  :initform nil :reader address)
-   (addrtype :initarg :type     :initform nil :reader address-type))
-  (:report (lambda (condition stream)
-             (format stream "Invalid ~a address: ~a" (address-type condition) (address condition))))
-  (:documentation "Condition raised when an address designator is invalid."))
+(defun socket-error (unix-error)
+  (let* ((id (error-identifier unix-error))
+         (condition (cdr (assoc id *socket-error-map*))))
+    (if condition
+        (error condition)
+        (error unix-error))))
+
+(defmacro with-socket-error-filter (&body body)
+  `(handler-case
+       (progn ,@body)
+     (unix-error (err)
+       (socket-error err))))

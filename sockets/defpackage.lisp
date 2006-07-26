@@ -5,19 +5,17 @@
 (defpackage #:net.sockets
   (:nicknames #:sockets)
   (:use #:common-lisp #:sb-alien)
-  (:shadow #:listen #:close)
+  (:import-from #:iolib-alien-ng
+                #:system-error #:unix-error #:message)
   (:export
    ;; conditions
    #:possible-bug #:invalid-argument
-   #:system-error #:network-error
-   #:resolver-error #:resolver-unknown-error
-   #:resolver-again-error #:resolver-fail-error
-   #:resolver-no-name-error #:resolver-no-service-error
+   #:system-error #:unix-error #:resolver-error
    #:unknown-interface #:unknown-protocol
    #:invalid-address
    ; condition accessors
    #:bug-data #:invalid-argument
-   #:system-error-code #:system-error-identifier #:resolver-data
+   #:error-code #:error-identifier #:error-message
    #:interface-name #:interface-index #:protocol-name #:protocol-number
    #:address #:address-type
 

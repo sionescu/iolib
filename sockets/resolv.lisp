@@ -23,6 +23,12 @@
 
 (in-package #:net.sockets)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                     ;;;
+;;; RESOLVER CONDITIONS ;;;
+;;;                     ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define-constant +resolver-error-map+
   `((:eai-again      . resolver-again-error)
     (:eai-fail       . resolver-fail-error)
@@ -34,41 +40,42 @@
 (defun resolver-error-condition (id)
   (cdr (assoc id +resolver-error-map+)))
 
-(defun resolver-error-code (id)
-  (addrerr-value id))
+(defmacro resolver-error-code (id)
+  `(addrerr-value ,id))
 
-(define-condition resolver-error (network-error)
+(define-condition resolver-error (system-error)
   ((data :initarg :data :reader resolver-error-data))
   (:documentation "Signaled when an error occurs while trying to resolve an address."))
 
-(defmacro define-resolver-error (name code identifier format-string documentation)
-  `(define-condition ,name (resolver-error)
-     ((code :initform ,code)
-      (identifier :initform ,identifier))
-     (:report (lambda (condition stream)
-                (declare (type stream stream))
-                (format stream ,format-string (resolver-error-data condition))
-                (print-message-if-not-null condition stream)))
-     (:documentation ,documentation)))
+(defmacro define-resolver-error (name code identifier format-string &optional documentation)
+  `(progn
+     (export ',name)
+     (define-condition ,name (resolver-error)
+       ((code :initform ,code)
+        (identifier :initform ,identifier))
+       (:report (lambda (condition stream)
+                  (format stream ,format-string (resolver-error-data condition))
+                  (print-message-if-not-null condition stream)))
+       (:documentation ,documentation))))
 
-(define-resolver-error resolver-again-error (addrerr-value :eai-again) :resolver-again
-  "Temporary failure occurred while resolving: ~a"
+(define-resolver-error resolver-again-error (resolver-error-code :eai-again) :resolver-again
+  "Temporary failure occurred while resolving: ~s"
   "Condition signaled when a temporary failure occurred.")
 
-(define-resolver-error resolver-fail-error (addrerr-value :eai-fail) :resolver-fail
-  "Non recoverable error occurred while resolving: ~a"
+(define-resolver-error resolver-fail-error (resolver-error-code :eai-fail) :resolver-fail
+  "Non recoverable error occurred while resolving: ~s"
   "Condition signaled when a non-recoverable error occurred.")
 
-(define-resolver-error resolver-no-name-error (addrerr-value :eai-noname) :resolver-no-name
-  "Host or service not found: ~a"
+(define-resolver-error resolver-no-name-error (resolver-error-code :eai-noname) :resolver-no-name
+  "Host or service not found: ~s"
   "Condition signaled when a host or service was not found.")
 
-(define-resolver-error resolver-no-service-error (addrerr-value :eai-service) :resolver-no-service
-  "Service not found for specific socket type: ~a"
+(define-resolver-error resolver-no-service-error (resolver-error-code :eai-service) :resolver-no-service
+  "Service not found for specific socket type: ~s"
   "Condition signaled when a service was not found for the socket type requested.")
 
 (define-resolver-error resolver-unknown-error 0 :resolver-unknown
-  "Unknown error while resolving: ~a"
+  "Unknown error while resolving: ~s"
   "Condition signaled when an unknown error is signaled while resolving an address.")
 
 (defun resolver-error (identifier &key data message)
@@ -76,6 +83,8 @@
          (resolver-error-condition identifier)))
     (if condition-class
         (error condition-class
+               :code (resolver-error-code identifier)
+               :identifier identifier
                :data data
                :message message)
         (error 'resolver-unknown-error
@@ -405,6 +414,13 @@
       (format stream "Name: ~s. Protocol number: ~a. Aliases: ~{~s~^, ~}"
               name protonum aliases))))
 
+(define-condition unknown-protocol (system-error)
+  ((name :initarg :name :initform nil :reader protocol-name))
+  (:report (lambda (condition stream)
+             (format stream "Unknown protocol: ~s"
+                     (protocol-name condition))))
+  (:documentation "Condition raised when a network protocol is not found."))
+
 (defun make-protocol-from-protoent (protoent)
   (declare (type (alien (* et:protoent)) protoent))
   (let* ((name (slot protoent 'et:name))
@@ -433,6 +449,6 @@
 
           (:string
            (get-protocol-by-name proto-val)))
-      (et:unix-error (err)
+      (unix-error (err)
         (declare (ignore err))
         (error 'unknown-protocol :name proto)))))

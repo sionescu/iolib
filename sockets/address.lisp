@@ -24,6 +24,17 @@
 
 (in-package #:net.sockets)
 
+;;;;;;;;;;;;;;;;
+;;;  ERRORS  ;;;
+;;;;;;;;;;;;;;;;
+
+(define-condition invalid-address ()
+  ((address  :initarg :address  :initform nil :reader address)
+   (addrtype :initarg :type     :initform nil :reader address-type))
+  (:report (lambda (condition stream)
+             (format stream "Invalid ~a address: ~a" (address-type condition) (address condition))))
+  (:documentation "Condition raised when an address designator is invalid."))
+
 ;;;
 ;;; Conversion functions
 ;;;
@@ -61,7 +72,7 @@
           (et:inet-pton et:af-inet ; address family
                         string            ; name
                         (addr in-addr))   ; pointer to struct in6_addr
-        (et:unix-error (err)
+        (unix-error (err)
           (declare (ignore err))
           (if error-p
               (error 'invalid-address :address string :type :ipv4)
@@ -96,7 +107,7 @@
           (et:inet-pton et:af-inet6 ; address family
                         string             ; name
                         (addr in6-addr))   ; pointer to struct in6_addr
-        (et:unix-error (err)
+        (unix-error (err)
           (declare (ignore err))
           (if error-p
               (error 'invalid-address :address string :type :ipv4)
