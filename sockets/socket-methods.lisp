@@ -83,7 +83,7 @@
 (defmethod shared-initialize :after ((socket stream-socket) slot-names &key)
   (setf (slot-value socket 'lisp-stream)
         (sb-sys:make-fd-stream (socket-fd socket)
-                               :name (format nil "Socket stream, fd: ~a" (socket-fd socket))
+                               :name (format nil "Socket stream, fd: ~A" (socket-fd socket))
                                :input t :output t :buffering :none :dual-channel-p t
                                :element-type :default :auto-close nil)))
 
@@ -92,6 +92,67 @@
 
 (defmethod socket-type ((socket datagram-socket))
   :datagram)
+
+;;;;;;;;;;;;;;;;;;;;
+;;  PRINT-OBJECT  ;;
+;;;;;;;;;;;;;;;;;;;;
+
+(defmethod print-object ((socket socket-stream-internet-active) stream)
+  (print-unreadable-object (socket stream :type nil :identity t)
+    (format stream "internet stream socket" )
+    (if (slot-boundp socket 'address)
+        (format stream " connected to ~A/~A"
+                (netaddr->presentation (socket-address socket))
+                (socket-port socket))
+        (format stream ", unconnected"))))
+
+(defmethod print-object ((socket socket-stream-internet-passive) stream)
+  (print-unreadable-object (socket stream :type nil :identity t)
+    (format stream "internet stream socket" )
+    (if (slot-boundp socket 'address)
+        (format stream " ~A ~A/~A"
+                (if (socket-listening-p socket)
+                    "waiting for connections @"
+                    "bound to")
+                (netaddr->presentation (socket-address socket))
+                (socket-port socket))
+        (format stream ", unbound"))))
+
+(defmethod print-object ((socket socket-stream-local-active) stream)
+  (print-unreadable-object (socket stream :type nil :identity t)
+    (format stream "local stream socket" )
+    (if (slot-boundp socket 'address)
+        (format stream " connected to ~S"
+                (netaddr->presentation (socket-address socket)))
+        (format stream ", unconnected"))))
+
+(defmethod print-object ((socket socket-stream-local-passive) stream)
+  (print-unreadable-object (socket stream :type nil :identity t)
+    (format stream "local stream socket" )
+    (if (slot-boundp socket 'address)
+        (format stream " ~A ~A"
+                (if (socket-listening-p socket)
+                    "waiting for connections @"
+                    "bound to")
+                (netaddr->presentation (socket-address socket)))
+        (format stream ", unbound"))))
+
+(defmethod print-object ((socket socket-datagram-local-active) stream)
+  (print-unreadable-object (socket stream :type nil :identity t)
+    (format stream "local datagram socket" )
+    (if (slot-boundp socket 'address)
+        (format stream " connected to ~S"
+                (netaddr->presentation (socket-address socket)))
+        (format stream ", unconnected"))))
+
+(defmethod print-object ((socket socket-datagram-internet-active) stream)
+  (print-unreadable-object (socket stream :type nil :identity t)
+    (format stream "internet stream socket" )
+    (if (slot-boundp socket 'address)
+        (format stream " connected to ~A/~A"
+                (netaddr->presentation (socket-address socket))
+                (socket-port socket))
+        (format stream ", unconnected"))))
 
 ;;;;;;;;;;;;;
 ;;  CLOSE  ;;
@@ -112,6 +173,9 @@
 
 (defmethod socket-close progn ((socket internet-socket))
   (slot-makunbound socket 'port))
+
+(defmethod socket-close progn ((socket passive-socket))
+  (slot-makunbound socket 'listening))
 
 (defmethod socket-open-p ((socket socket))
   (unless (slot-boundp socket 'fd)
@@ -227,7 +291,7 @@
       (et:bind (socket-fd socket)
                (addr sin)
                et::size-of-sockaddr-in)))
-  (values))
+  (values socket))
 
 (defmethod bind-address ((socket internet-socket)
                          (address ipv6addr)
@@ -238,7 +302,7 @@
       (et:bind (socket-fd socket)
                (addr sin6)
                et::size-of-sockaddr-in6)))
-  (values))
+  (values socket))
 
 (defmethod bind-address :before ((socket local-socket)
                                  (address localaddr) &key)
@@ -253,7 +317,7 @@
       (et:bind (socket-fd socket)
                (addr sun)
                et::size-of-sockaddr-un)))
-  (values))
+  (values socket))
 
 (defmethod bind-address :after ((socket socket)
                                 (address netaddr) &key)
@@ -274,7 +338,8 @@
   (check-type backlog unsigned-byte "a non-negative integer")
   (with-socket-error-filter
     (et:listen (socket-fd socket) backlog))
-  (values))
+  (setf (slot-value socket 'listening) t)
+  (values socket))
 
 (defmethod socket-listen ((socket active-socket)
                           &key backlog)
@@ -355,7 +420,7 @@
                   (addr sin)
                   et::size-of-sockaddr-in))
     (setf (slot-value socket 'port) port))
-  (values))
+  (values socket))
 
 (defmethod connect ((socket internet-socket)
                     (address ipv6addr) &key (port 0))
@@ -366,7 +431,7 @@
                   (addr sin6)
                   et::size-of-sockaddr-in6))
     (setf (slot-value socket 'port) port))
-  (values))
+  (values socket))
 
 (defmethod connect ((socket local-socket)
                     (address localaddr) &key)
@@ -376,7 +441,7 @@
       (et:connect (socket-fd socket)
                   (addr sun)
                   et::size-of-sockaddr-un)))
-  (values))
+  (values socket))
 
 (defmethod connect :after ((socket active-socket)
                            (address netaddr) &key)
@@ -399,7 +464,7 @@
                    (:read et:shut-rd)
                    (:write et:shut-wr)
                    (:read-write et:shut-rdwr))))
-  socket)
+  (values socket))
 
 (defmethod shutdown ((socket passive-socket) direction)
   (error "You cannot shut down passive sockets."))
@@ -409,8 +474,6 @@
 ;;;;;;;;;;;;
 
 (defun normalize-send-buffer (buff length)
-  (check-type length (or unsigned-byte null)
-              "a non-negative value or NIL")
   (let ((end (if length
                  (min length (length buff))
                  (length buff))))
@@ -419,6 +482,15 @@
       (simple-base-string (values buff end))
       (string (values (sb-ext:string-to-octets buff :end end)
                       end)))))
+
+(defmethod socket-send :before ((buffer simple-array)
+                                (socket active-socket)
+                                &key length remote-address remote-port)
+  (check-type length (or unsigned-byte null)
+              "a non-negative value or NIL")
+  (when (or remote-port remote-address)
+    (check-type remote-address netaddr "a network address")
+    (check-type remote-port (unsigned-byte 16) "a valid IP port number")))
 
 (defmethod socket-send ((buffer simple-array)
                         (socket active-socket) &key length
@@ -454,8 +526,6 @@
 ;;;;;;;;;;;;
 
 (defun normalize-receive-buffer (buff length)
-  (check-type length (or unsigned-byte null)
-              "a non-negative value or NIL")
   (let ((end (if length
                  (min length (length buff))
                  (length buff))))
@@ -463,35 +533,42 @@
       ((simple-array ub8 (*)) (values buff end))
       (simple-base-string (values buff end)))))
 
+(defmethod socket-receive :before ((buffer simple-array)
+                                   (socket active-socket)
+                                   &key length)
+  (check-type length (or unsigned-byte null)
+              "a non-negative value or NIL"))
+
 (defmethod socket-receive ((buffer simple-array)
                            (socket active-socket) &key length
-                           remote-address out-of-band peek wait-all
-                           dont-wait trunc (no-signal *no-sigpipe*))
-
-  (check-type buffer (simple-array ub8 (*)))
-  (check-type length (or unsigned-byte null)
-              "a non-negative value or NIL")
+                           out-of-band peek wait-all
+                           dont-wait (no-signal *no-sigpipe*))
 
   (let ((flags (logior (if out-of-band et:msg-oob 0)
                        (if peek        et:msg-peek 0)
                        (if wait-all    et:msg-waitall 0)
                        (if dont-wait   et:msg-dontwait 0)
-                       (if trunc       et:msg-trunc 0)
-                       (if no-signal   et:msg-nosignal 0))))
+                       (if no-signal   et:msg-nosignal 0)))
+        bytes-received)
     (multiple-value-bind (buff bufflen)
         (normalize-receive-buffer buffer length)
       (with-alien ((ss et:sockaddr-storage)
                    (size et:socklen-t #.et::size-of-sockaddr-storage))
-        (when remote-address
-          (netaddr->sockaddr-storage ss remote-address))
         (with-vector-saps ((buff-sap buff))
           (with-socket-error-filter
-            (return-from socket-receive
-              (et:recvfrom (socket-fd socket)
-                           buff-sap bufflen
-                           flags
-                           (if remote-address (addr ss) nil)
-                           (if remote-address (addr size) nil)))))))))
+            (setf bytes-received
+                  (et:recvfrom (socket-fd socket)
+                               buff-sap bufflen
+                               flags
+                               (addr ss) (addr size)))))
+        (return-from socket-receive
+          (values-list
+           (nconc (list buffer bytes-received)
+                  ;; when socket is a datagram socket
+                  ;; return the sender's address
+                  (when (typep socket 'datagram-socket)
+                    (multiple-value-list
+                     (sockaddr-storage->netaddr (addr ss)))))))))))
 
 (defmethod socket-receive (buffer (socket passive-socket) &key)
   (error "You cannot receive data from a passive socket."))
@@ -513,6 +590,8 @@
       (et:connect (socket-fd socket)
                   (addr sin)
                   et::size-of-sockaddr-in)
-      (slot-makunbound socket 'address)
-      (when (typep socket 'internet-socket)
-        (slot-makunbound socket 'port)))))
+      (slot-makunbound socket 'address))))
+
+(defmethod unconnect :after ((socket internet-socket))
+  (when (typep socket 'internet-socket)
+    (slot-makunbound socket 'port)))

@@ -39,7 +39,7 @@
     (when msg
       (when (eql eof-place :before)
         (fresh-line stream))
-      (format stream "~a" msg)
+      (format stream "~A" msg)
       (when (eql eof-place :after)
         (fresh-line stream)))))
 
@@ -47,7 +47,7 @@
   ((argument :initarg :argument :reader invalid-argument))
   (:report (lambda (condition stream)
              (declare (type stream stream))
-             (format stream "Invalid argument: ~a"
+             (format stream "Invalid argument: ~A"
                      (invalid-argument condition))
              (print-message-if-not-null condition stream)))
   (:documentation "Signaled when one or more of a function's arguments are considered

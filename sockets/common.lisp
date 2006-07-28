@@ -78,6 +78,9 @@
 (defmacro unixerr-value (keyword)
   `(et:alien-enum-value et:errno-values ,keyword))
 
+(defun xor (x1 x2)
+  (not (eql (not x1) (not x2))))
+
 ;;;
 ;;; Byte-swap functions
 ;;;
@@ -195,13 +198,15 @@
 
 (defun sockaddr-in->netaddr (sin)
   (declare (type (alien (* et:sockaddr-in)) sin))
-  (make-address :ipv4 (make-vector-u8-4-from-in-addr
-                       (slot sin 'et:address))))
+  (values (make-address :ipv4 (make-vector-u8-4-from-in-addr
+                               (slot sin 'et:address)))
+          (slot sin 'et:port)))
 
 (defun sockaddr-in6->netaddr (sin6)
   (declare (type (alien (* et:sockaddr-in6)) sin6))
-  (make-address :ipv6 (make-vector-u16-8-from-in6-addr
-                       (addr (slot sin6 'et:address)))))
+  (values (make-address :ipv6 (make-vector-u16-8-from-in6-addr
+                               (addr (slot sin6 'et:address))))
+          (slot sin6 'et:port)))
 
 (defun sockaddr-un->netaddr (sun)
   (declare (type (alien (* et:sockaddr-un)) sun))

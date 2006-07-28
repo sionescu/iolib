@@ -35,7 +35,7 @@
 (defmethod print-object ((iface interface) stream)
   (print-unreadable-object (iface stream :type nil :identity nil)
     (with-slots (name id) iface
-      (format stream "Network Interface: ~s. Index: ~a"
+      (format stream "Network Interface: ~S. Index: ~A"
               (interface-name iface) (interface-index iface)))))
 
 (defun make-interface (name index)
@@ -48,9 +48,9 @@
    (index :initarg :index :initform nil :reader interface-index))
   (:report (lambda (condition stream)
              (if (interface-name condition)
-                 (format stream "Unknown interface: ~a"
+                 (format stream "Unknown interface: ~A"
                          (interface-name condition))
-                 (format stream "Unknown interface index: ~a"
+                 (format stream "Unknown interface index: ~A"
                          (interface-index condition)))))
   (:documentation "Condition raised when a network interface is not found."))
 

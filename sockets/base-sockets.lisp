@@ -64,7 +64,7 @@
 (defgeneric unconnect (socket))
 
 (defclass internet-socket (socket)
-  ((port :initarg :port :reader port :type '(unsigned-byte 16)))
+  ((port :initarg :port :reader socket-port :type '(unsigned-byte 16)))
   (:default-initargs :family (if *ipv6* :ipv6 :ipv4)))
 
 (defclass local-socket (socket) ()
@@ -80,7 +80,8 @@
 
 (defgeneric socket-receive (buffer socket &key &allow-other-keys))
 
-(defclass passive-socket (socket) ())
+(defclass passive-socket (socket)
+  ((listening :initform nil :reader socket-listening-p :type boolean)))
 
 (defgeneric bind-address (socket address &key &allow-other-keys))
 

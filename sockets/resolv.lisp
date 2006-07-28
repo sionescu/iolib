@@ -59,23 +59,23 @@
        (:documentation ,documentation))))
 
 (define-resolver-error resolver-again-error (resolver-error-code :eai-again) :resolver-again
-  "Temporary failure occurred while resolving: ~s"
+  "Temporary failure occurred while resolving: ~S"
   "Condition signaled when a temporary failure occurred.")
 
 (define-resolver-error resolver-fail-error (resolver-error-code :eai-fail) :resolver-fail
-  "Non recoverable error occurred while resolving: ~s"
+  "Non recoverable error occurred while resolving: ~S"
   "Condition signaled when a non-recoverable error occurred.")
 
 (define-resolver-error resolver-no-name-error (resolver-error-code :eai-noname) :resolver-no-name
-  "Host or service not found: ~s"
+  "Host or service not found: ~S"
   "Condition signaled when a host or service was not found.")
 
 (define-resolver-error resolver-no-service-error (resolver-error-code :eai-service) :resolver-no-service
-  "Service not found for specific socket type: ~s"
+  "Service not found for specific socket type: ~S"
   "Condition signaled when a service was not found for the socket type requested.")
 
 (define-resolver-error resolver-unknown-error 0 :resolver-unknown
-  "Unknown error while resolving: ~s"
+  "Unknown error while resolving: ~S"
   "Condition signaled when an unknown error is signaled while resolving an address.")
 
 (defun resolver-error (identifier &key data message)
@@ -154,7 +154,7 @@
 (defmethod print-object ((host host) stream)
   (print-unreadable-object (host stream :type t :identity nil)
     (with-slots (truename aliases addresses) host
-      (format stream "Cannonical name: ~s. Aliases: ~:[None~;~:*~{~s~^, ~}~].~%Addresses: ~{~a~^, ~}"
+      (format stream "Cannonical name: ~S. Aliases: ~:[None~;~:*~{~S~^, ~}~].~%Addresses: ~{~A~^, ~}"
               truename aliases addresses))))
 
 
@@ -260,7 +260,7 @@
            (type-error (err)
              (declare (ignore err))
              (error 'invalid-argument :argument host
-                    :message (format nil "The string ~s contains non-ASCII characters." host))))
+                    :message (format nil "The string ~S contains non-ASCII characters." host))))
 
          (multiple-value-bind (family flags)
              (decide-family-and-flags)
@@ -323,7 +323,7 @@
 (defmethod print-object ((service service) stream)
   (print-unreadable-object (service stream :type t :identity nil)
     (with-slots (name port protocol) service
-      (format stream "Name: ~a. Port: ~a. Protocol: ~a" name port protocol))))
+      (format stream "Name: ~A. Port: ~A. Protocol: ~A" name port protocol))))
 
 (defun socket-type-from-int (alien-val)
   (case alien-val
@@ -412,13 +412,13 @@
 (defmethod print-object ((protocol protocol) stream)
   (print-unreadable-object (protocol stream :type t :identity nil)
     (with-slots (name aliases protonum) protocol
-      (format stream "Name: ~s. Protocol number: ~a. Aliases: ~{~s~^, ~}"
+      (format stream "Name: ~S. Protocol number: ~A. Aliases: ~{~S~^, ~}"
               name protonum aliases))))
 
 (define-condition unknown-protocol (system-error)
   ((name :initarg :name :initform nil :reader protocol-name))
   (:report (lambda (condition stream)
-             (format stream "Unknown protocol: ~s"
+             (format stream "Unknown protocol: ~S"
                      (protocol-name condition))))
   (:documentation "Condition raised when a network protocol is not found."))
 

@@ -32,7 +32,7 @@
   ((address  :initarg :address  :initform nil :reader address)
    (addrtype :initarg :type     :initform nil :reader address-type))
   (:report (lambda (condition stream)
-             (format stream "Invalid ~a address: ~a" (address-type condition) (address condition))))
+             (format stream "Invalid ~A address: ~A" (address-type condition) (address condition))))
   (:documentation "Condition raised when an address designator is invalid."))
 
 ;;;
@@ -49,7 +49,7 @@
 
 (defun ipaddr-to-dotted (ipaddr)
   (declare (type ub32 ipaddr))
-  (format nil "~a.~a.~a.~a"
+  (format nil "~A.~A.~A.~A"
           (ldb (byte 8 24) ipaddr)
           (ldb (byte 8 16) ipaddr)
           (ldb (byte 8 8)  ipaddr)
@@ -62,7 +62,7 @@
       (declare (ignore err))
       (if error-p
           (error 'invalid-argument :argument string
-                 :message (format nil "The vector: ~a is not a string or contains non-ASCII characters." string))
+                 :message (format nil "The vector: ~A is not a string or contains non-ASCII characters." string))
           (return-from dotted-to-vector nil))))
 
   (with-alien ((in-addr et:in-addr-t))
@@ -84,7 +84,7 @@
 
 (defun vector-to-dotted (vector)
   (coerce vector '(simple-array ub8 (4)))
-  (format nil "~a.~a.~a.~a"
+  (format nil "~A.~A.~A.~A"
           (aref vector 0)
           (aref vector 1)
           (aref vector 2)
@@ -97,7 +97,7 @@
       (declare (ignore err))
       (if error-p
           (error 'invalid-argument :argument string
-                 :message (format nil "The vector: ~a is not a string or contains non-ASCII characters." string))
+                 :message (format nil "The vector: ~A is not a string or contains non-ASCII characters." string))
           (return-from colon-separated-to-vector nil))))
 
   (with-alien ((in6-addr et:in6-addr))
@@ -121,7 +121,7 @@
       (declare (ignore err))
       (if error-p
           (error 'invalid-argument :argument vector
-                 :message (format nil "The vector: ~a does not contain only 16-bit positive integers or has not length 8." vector))
+                 :message (format nil "The vector: ~A does not contain only 16-bit positive integers or has not length 8." vector))
           (return-from vector-to-colon-separated nil))))
 
   (with-alien
@@ -165,17 +165,17 @@
 (defmethod print-object ((address ipv4addr) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
     (with-slots (name) address
-      (format stream "IPv4 address: ~a" (vector-to-dotted name)))))
+      (format stream "IPv4 address: ~A" (vector-to-dotted name)))))
 
 (defmethod print-object ((address ipv6addr) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
     (with-slots (name) address
-      (format stream "IPv6 address: ~a" (vector-to-colon-separated name)))))
+      (format stream "IPv6 address: ~A" (vector-to-colon-separated name)))))
 
 (defmethod print-object ((address localaddr) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
     (with-slots (name abstract) address
-      (format stream "Unix socket address: ~a. Abstract: ~:[no~;yes~]" name abstract))))
+      (format stream "Unix socket address: ~A. Abstract: ~:[no~;yes~]" name abstract))))
 
 (defmethod netaddr->presentation ((addr ipv4addr))
   (vector-to-dotted (name addr)))
