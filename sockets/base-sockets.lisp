@@ -36,6 +36,8 @@
    (family   :initarg :family   :reader socket-family)
    (protocol :initarg :protocol :reader socket-protocol)))
 
+(defgeneric socket-type (socket))
+
 (defgeneric socket-non-blocking-mode (socket))
 (defgeneric (setf socket-non-blocking-mode) (value socket))
 
@@ -62,7 +64,7 @@
 (defgeneric unconnect (socket))
 
 (defclass internet-socket (socket)
-  ((port :reader port :type '(unsigned-byte 16)))
+  ((port :initarg :port :reader port :type '(unsigned-byte 16)))
   (:default-initargs :family (if *ipv6* :ipv6 :ipv4)))
 
 (defclass local-socket (socket) ()
@@ -74,21 +76,17 @@
 
 (defgeneric shutdown (socket direction))
 
-(defgeneric socket-send (buffer socket &key
-                         dont-route dont-wait no-signal
-                         out-of-band &allow-other-keys))
+(defgeneric socket-send (buffer socket &key &allow-other-keys))
 
-(defgeneric socket-receive (buffer socket &key
-                            out-of-band peek wait-all
-                            dont-wait &allow-other-keys))
+(defgeneric socket-receive (buffer socket &key &allow-other-keys))
 
 (defclass passive-socket (socket) ())
 
-(defgeneric bind-address (socket address &key))
+(defgeneric bind-address (socket address &key &allow-other-keys))
 
-(defgeneric socket-listen (socket &key backlog))
+(defgeneric socket-listen (socket &key backlog &allow-other-keys))
 
-(defgeneric accept-connection (passive-socket &key wait))
+(defgeneric accept-connection (passive-socket &key wait &allow-other-keys))
 
 (defclass socket-stream-internet-active (active-socket stream-socket internet-socket) ())
 

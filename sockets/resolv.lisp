@@ -211,7 +211,8 @@
             :for addrptr :of-type (alien (* et:addrinfo)) = addrinfo
             :then (slot addrptr 'et:next)
             :while (not (null-alien addrptr))
-            :collect (make-netaddr-from-sockaddr (slot addrptr 'et:addr)))))
+            :collect (sockaddr-storage->netaddr
+                      (slot addrptr 'et:addr)))))
     (make-host canonname addrlist)))
 
 (defun map-host-ipv4-addresses-to-ipv6 (hostobj)

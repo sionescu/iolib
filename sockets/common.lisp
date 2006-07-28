@@ -191,17 +191,17 @@
 
     newvector))
 
-(defun make-netaddr-from-sockaddr-in (sin)
+(defun sockaddr-in->netaddr (sin)
   (declare (type (alien (* et:sockaddr-in)) sin))
   (make-address :ipv4 (make-vector-u8-4-from-in-addr
                        (slot sin 'et:address))))
 
-(defun make-netaddr-from-sockaddr-in6 (sin6)
+(defun sockaddr-in6->netaddr (sin6)
   (declare (type (alien (* et:sockaddr-in6)) sin6))
   (make-address :ipv6 (make-vector-u16-8-from-in6-addr
                        (addr (slot sin6 'et:address)))))
 
-(defun make-netaddr-from-sockaddr-un (sun)
+(defun sockaddr-un->netaddr (sun)
   (declare (type (alien (* et:sockaddr-un)) sun))
   (let ((path (slot sun 'et:path))
         (name (make-string (1- et:unix-path-max)))
@@ -222,22 +222,25 @@
                    :name name
                    :abstract abstract)))
 
-(defun make-netaddr-from-sockaddr (sa)
-  (declare (type (alien (* et:sockaddr)) sa))
-  (ecase (slot sa 'et:family)
-    (#.et:af-inet
-     (make-netaddr-from-sockaddr-in (cast sa (* et:sockaddr-in))))
-    (#.et:af-inet6
-     (make-netaddr-from-sockaddr-in6 (cast sa (* et:sockaddr-in6))))
-    (#.et:af-local
-     (make-netaddr-from-sockaddr-un (cast sa (* et:sockaddr-un))))))
-
-(defun make-netaddr-from-sockaddr-storage (sa)
+(defun sockaddr-storage->netaddr (sa)
   (declare (type (alien (* et:sockaddr-storage)) sa))
   (ecase (slot sa 'et:family)
     (#.et:af-inet
-     (make-netaddr-from-sockaddr-in (cast sa (* et:sockaddr-in))))
+     (sockaddr-in->netaddr (cast sa (* et:sockaddr-in))))
     (#.et:af-inet6
-     (make-netaddr-from-sockaddr-in6 (cast sa (* et:sockaddr-in6))))
+     (sockaddr-in6->netaddr (cast sa (* et:sockaddr-in6))))
     (#.et:af-local
-     (make-netaddr-from-sockaddr-un (cast sa (* et:sockaddr-un))))))
+     (sockaddr-un->netaddr (cast sa (* et:sockaddr-un))))))
+
+(defun netaddr->sockaddr-storage (sa netaddr &optional (port 0))
+  (declare (type (alien (* et:sockaddr-storage)) sa))
+  (ecase (slot sa 'et:family)
+    (#.et:af-inet
+     (make-sockaddr-in (cast sa (* et:sockaddr-in))
+                       (name netaddr) port))
+    (#.et:af-inet6
+     (make-sockaddr-in6 (cast sa (* et:sockaddr-in6))
+                        (name netaddr) port))
+    (#.et:af-local
+     (make-sockaddr-un (cast sa (* et:sockaddr-un))
+                       (name netaddr)))))

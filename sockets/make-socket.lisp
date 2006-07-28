@@ -24,6 +24,6 @@
 
 (in-package #:net.sockets)
 
-(defun make-socket (&rest args &key address-family type
-                    connect (ipv6 *ipv6*))
-  )
+;; (defun make-socket (&rest args &key address-family type
+;;                     connect (ipv6 *ipv6*))
+;;   )
