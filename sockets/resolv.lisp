@@ -109,8 +109,8 @@
 (defun get-address-info (&key node service
                          (hint-flags 0) (hint-family 0)
                          (hint-type 0) (hint-protocol 0))
-  (with-pinned-aliens ((hints et:addrinfo)
-                       (res (* et:addrinfo)))
+  (with-alien ((hints et:addrinfo)
+               (res (* et:addrinfo)))
     (et:memset (addr hints) 0 et::size-of-addrinfo)
     (setf (slot hints 'et:flags) hint-flags)
     (setf (slot hints 'et:family) hint-family)
@@ -127,7 +127,7 @@
                  ((alien (* et:sockaddr-storage)) et::size-of-sockaddr-storage))))
     (with-alien ((host (array char #.et:ni-maxhost))
                  (service (array char #.et:ni-maxserv)))
-      (sb-sys:with-pinned-objects (sockaddr host service)
+      (sb-sys:with-pinned-objects (host service)
         (et:getnameinfo sockaddr salen
                         (alien-sap host) (if want-host et:ni-maxhost 0)
                         (alien-sap service) (if want-service et:ni-maxserv 0)
@@ -168,14 +168,14 @@
   (handler-case
       (ecase ipv6
         ((nil)
-         (with-pinned-aliens ((sin et:sockaddr-in))
+         (with-alien ((sin et:sockaddr-in))
            (make-sockaddr-in (addr sin) host)
            (return-from lookup-host-u8-vector-4
              (make-host (get-name-info (addr sin) :flags et:ni-namereqd)
                         (list (make-address :ipv4 (copy-seq host)))))))
 
         ((:ipv6 t)
-         (with-pinned-aliens ((sin6 et:sockaddr-in6))
+         (with-alien ((sin6 et:sockaddr-in6))
            (let ((ipv6addr (map-ipv4-vector-to-ipv6 host)))
              (make-sockaddr-in6 (addr sin6) ipv6addr)
              (return-from lookup-host-u8-vector-4
@@ -195,7 +195,7 @@
                          :message "Received IPv6 address but IPv4-only was requested."))
 
         ((:ipv6 t)
-         (with-pinned-aliens ((sin6 et::sockaddr-in6))
+         (with-alien ((sin6 et::sockaddr-in6))
            (make-sockaddr-in6 (addr sin6) host)
            (return-from lookup-host-u16-vector-8
              (make-host (get-name-info (addr sin6) :flags et:ni-namereqd)
@@ -335,7 +335,7 @@
 
 (defun lookup-service-number (port-number protocol &key name-required)
   (declare (type ub32 port-number))
-  (with-pinned-aliens ((sin et:sockaddr-in))
+  (with-alien ((sin et:sockaddr-in))
     (let ((service
            (nth-value 1
             (progn

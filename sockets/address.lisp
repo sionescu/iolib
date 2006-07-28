@@ -66,10 +66,10 @@
           (return-from dotted-to-vector nil))))
 
   (with-alien ((in-addr et:in-addr-t))
-    (sb-sys:with-pinned-objects (in-addr string)
+    (sb-sys:with-pinned-objects (string)
       (setf in-addr 0)
       (handler-case
-          (et:inet-pton et:af-inet ; address family
+          (et:inet-pton et:af-inet        ; address family
                         string            ; name
                         (addr in-addr))   ; pointer to struct in6_addr
         (unix-error (err)
@@ -101,12 +101,12 @@
           (return-from colon-separated-to-vector nil))))
 
   (with-alien ((in6-addr et:in6-addr))
-    (sb-sys:with-pinned-objects (in6-addr string)
+    (sb-sys:with-pinned-objects (string)
       (et:memset (addr in6-addr) 0 et::size-of-in6-addr)
       (handler-case
-          (et:inet-pton et:af-inet6 ; address family
+          (et:inet-pton et:af-inet6        ; address family
                         string             ; name
-                        (addr in6-addr))   ; pointer to struct in6_addr
+                        (addr in6-addr)) ; pointer to struct in6_addr
         (unix-error (err)
           (declare (ignore err))
           (if error-p
@@ -124,14 +124,14 @@
                  :message (format nil "The vector: ~a does not contain only 16-bit positive integers or has not length 8." vector))
           (return-from vector-to-colon-separated nil))))
 
-  (with-pinned-aliens
-      ((sin6 et::sockaddr-in6)
+  (with-alien
+      ((sin6 et:sockaddr-in6)
        (namebuff (array (unsigned 8) #.et:inet6-addrstrlen)))
     (make-sockaddr-in6 (addr sin6) vector)
-    (et::inet-ntop et:af-inet6                       ; address family
-                   (addr (slot sin6 'et::address)) ; pointer to struct in6_addr
-                   (alien-sap namebuff) ; destination buffer
-                   et::inet6-addrstrlen) ; INET6_ADDRSTRLEN
+    (et:inet-ntop et:af-inet6                    ; address family
+                  (addr (slot sin6 'et:address)) ; pointer to struct in6_addr
+                  (alien-sap namebuff)           ; destination buffer
+                  et:inet6-addrstrlen)           ; INET6_ADDRSTRLEN
     (return-from vector-to-colon-separated
       (let ((str (cast namebuff c-string)))
         (ecase case

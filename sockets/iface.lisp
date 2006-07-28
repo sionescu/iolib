@@ -55,7 +55,7 @@
   (:documentation "Condition raised when a network interface is not found."))
 
 (defun get-network-interfaces ()
-  (with-pinned-aliens ((ifptr (* (array (struct et:if-nameindex) 0))))
+  (with-alien ((ifptr (* (array (struct et:if-nameindex) 0))))
     (setf ifptr (et:if-nameindex))
     (unless (null-alien ifptr)
       (let* ((ifarr (deref ifptr))

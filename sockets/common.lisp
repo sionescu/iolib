@@ -31,9 +31,11 @@
                      vars))
        ,@body)))
 
-(defmacro with-pinned-aliens ((&rest vars) &body body)
-  `(sb-alien:with-alien ,vars
-     (sb-sys:with-pinned-objects ,(mapcar #'first vars)
+(defmacro with-vector-saps ((&rest vars) &body body)
+  `(sb-sys:with-pinned-objects ,(mapcar #'second vars)
+     (let (,@(mapcar #'(lambda (pair)
+                         `(,(first pair) (sb-sys:vector-sap ,(second pair))))
+                     vars))
        ,@body)))
 
 (defmacro define-constant (name value &optional doc)

@@ -34,26 +34,26 @@
 ;;
 
 (defun set-socket-option-bool (fd level option value)
-  (with-pinned-aliens ((optval int))
+  (with-alien ((optval int))
     (setf optval (lisp->c-bool value))
     (et:setsockopt fd level option (addr optval) et::size-of-int)
     (values)))
 
 (defun set-socket-option-int (fd level option value)
-  (with-pinned-aliens ((optval int))
+  (with-alien ((optval int))
     (setf optval value)
     (et:setsockopt fd level option (addr optval) et::size-of-int)
     (values)))
 
 (defun set-socket-option-linger (fd level option onoff linger)
-  (with-pinned-aliens ((optval et:linger))
+  (with-alien ((optval et:linger))
     (setf (slot optval 'et:onoff) onoff)
     (setf (slot optval 'et:linger) linger)
     (et:setsockopt fd level option (addr optval) et::size-of-linger)
     (values)))
 
 (defun set-socket-option-timeval (fd level option sec usec)
-  (with-pinned-aliens ((optval et:timeval))
+  (with-alien ((optval et:timeval))
     (setf (slot optval 'et:tv-sec) sec)
     (setf (slot optval 'et:tv-usec) usec)
     (et:setsockopt fd level option (addr optval) et::size-of-timeval)
@@ -64,23 +64,23 @@
 ;;
 
 (defun get-socket-option-bool (fd level option)
-  (with-pinned-aliens ((optval int))
+  (with-alien ((optval int))
     (et:setsockopt fd level option (addr optval) et::size-of-int)
     (c->lisp-bool optval)))
 
 (defun get-socket-option-int (fd level option)
-  (with-pinned-aliens ((optval int))
+  (with-alien ((optval int))
     (et:setsockopt fd level option (addr optval) et::size-of-int)
     optval))
 
 (defun get-socket-option-linger (fd level option)
-  (with-pinned-aliens ((optval et:linger))
+  (with-alien ((optval et:linger))
     (et:setsockopt fd level option (addr optval) et::size-of-linger)
     (values (slot optval 'et:onoff)
             (slot optval 'et:linger))))
 
 (defun get-socket-option-timeval (fd level option)
-  (with-pinned-aliens ((optval et:timeval))
+  (with-alien ((optval et:timeval))
     (et:setsockopt fd level option (addr optval) et::size-of-timeval)
     (values (slot optval 'et:tv-sec)
             (slot optval 'et:tv-usec))))

@@ -118,9 +118,9 @@
     (return-from socket-open-p nil))
   (with-socket-error-filter
     (handler-case
-        (with-pinned-aliens ((ss et:sockaddr-storage)
-                             (size et:socklen-t
-                                   #.et::size-of-sockaddr-storage))
+        (with-alien ((ss et:sockaddr-storage)
+                     (size et:socklen-t
+                           #.et::size-of-sockaddr-storage))
           (let ((ssptr (addr ss)))
             (et:getsockname (socket-fd socket)
                             ssptr (addr size))
@@ -159,9 +159,9 @@
 ;;;;;;;;;;;;;;;;;;;
 
 (defmethod local-name ((socket internet-socket))
-  (with-pinned-aliens ((ss et:sockaddr-storage)
-                       (size et:socklen-t
-                             #.et::size-of-sockaddr-storage))
+  (with-alien ((ss et:sockaddr-storage)
+               (size et:socklen-t
+                     #.et::size-of-sockaddr-storage))
     (let ((ssptr (addr ss)))
       (with-socket-error-filter
         (et:getsockname (socket-fd socket)
@@ -171,9 +171,9 @@
                 (ntohs (slot (cast ssptr (* et:sockaddr-in))
                              'et:port)))))))
 (defmethod local-name ((socket local-socket))
-  (with-pinned-aliens ((sun et:sockaddr-un)
-                       (size et:socklen-t
-                             #.et::size-of-sockaddr-un))
+  (with-alien ((sun et:sockaddr-un)
+               (size et:socklen-t
+                     #.et::size-of-sockaddr-un))
     (let ((sunptr (addr sun)))
       (with-socket-error-filter
         (et:getsockname (socket-fd socket)
@@ -186,9 +186,9 @@
 ;;;;;;;;;;;;;;;;;;;
 
 (defmethod remote-name ((socket internet-socket))
-  (with-pinned-aliens ((ss et:sockaddr-storage)
-                       (size et:socklen-t
-                             #.et::size-of-sockaddr-storage))
+  (with-alien ((ss et:sockaddr-storage)
+               (size et:socklen-t
+                     #.et::size-of-sockaddr-storage))
     (let ((ssptr (addr ss)))
       (with-socket-error-filter
         (et:getpeername (socket-fd socket)
@@ -199,9 +199,9 @@
                              'et:port)))))))
 
 (defmethod remote-name ((socket local-socket))
-  (with-pinned-aliens ((sun et:sockaddr-un)
-                       (size et:socklen-t
-                             #.et::size-of-sockaddr-un))
+  (with-alien ((sun et:sockaddr-un)
+               (size et:socklen-t
+                     #.et::size-of-sockaddr-un))
     (let ((sunptr (addr sun)))
       (with-socket-error-filter
         (et:getpeername (socket-fd socket)
@@ -221,7 +221,7 @@
 (defmethod bind-address ((socket internet-socket)
                          (address ipv4addr)
                          &key (port 0) interface)
-  (with-pinned-aliens ((sin et:sockaddr-in))
+  (with-alien ((sin et:sockaddr-in))
     (make-sockaddr-in (addr sin) (name address) port)
     (with-socket-error-filter
       (et:bind (socket-fd socket)
@@ -232,7 +232,7 @@
 (defmethod bind-address ((socket internet-socket)
                          (address ipv6addr)
                          &key (port 0) interface)
-  (with-pinned-aliens ((sin6 et:sockaddr-in6))
+  (with-alien ((sin6 et:sockaddr-in6))
     (make-sockaddr-in6 (addr sin6) (name address) port)
     (with-socket-error-filter
       (et:bind (socket-fd socket)
@@ -247,7 +247,7 @@
 
 (defmethod bind-address ((socket local-socket)
                          (address localaddr) &key)
-  (with-pinned-aliens ((sun et:sockaddr-un))
+  (with-alien ((sun et:sockaddr-un))
     (make-sockaddr-un (addr sun) (name address))
     (with-socket-error-filter
       (et:bind (socket-fd socket)
@@ -292,9 +292,9 @@
 
 (defmethod accept-connection ((socket passive-socket)
                               &key (wait t))
-  (with-pinned-aliens ((ss et:sockaddr-storage)
-                       (size et:socklen-t
-                             #.et::size-of-sockaddr-storage))
+  (with-alien ((ss et:sockaddr-storage)
+               (size et:socklen-t
+                     #.et::size-of-sockaddr-storage))
     (let (non-blocking-state
           client-fd)
       (with-socket-error-filter
@@ -348,7 +348,7 @@
 
 (defmethod connect ((socket internet-socket)
                     (address ipv4addr) &key (port 0))
-  (with-pinned-aliens ((sin et:sockaddr-in))
+  (with-alien ((sin et:sockaddr-in))
     (make-sockaddr-in (addr sin) (name address) port)
     (with-socket-error-filter
       (et:connect (socket-fd socket)
@@ -359,7 +359,7 @@
 
 (defmethod connect ((socket internet-socket)
                     (address ipv6addr) &key (port 0))
-  (with-pinned-aliens ((sin6 et:sockaddr-in6))
+  (with-alien ((sin6 et:sockaddr-in6))
     (make-sockaddr-in6 (addr sin6) (name address) port)
     (with-socket-error-filter
       (et:connect (socket-fd socket)
@@ -370,7 +370,7 @@
 
 (defmethod connect ((socket local-socket)
                     (address localaddr) &key)
-  (with-pinned-aliens ((sun et:sockaddr-un))
+  (with-alien ((sun et:sockaddr-un))
     (make-sockaddr-un (addr sun) (name address))
     (with-socket-error-filter
       (et:connect (socket-fd socket)
@@ -437,11 +437,11 @@
       (with-alien ((ss et:sockaddr-storage))
         (when remote-address
           (netaddr->sockaddr-storage ss remote-address remote-port))
-        (sb-sys:with-pinned-objects (buff ss)
+        (with-vector-saps ((buff-sap buff))
           (with-socket-error-filter
             (return-from socket-send
               (et:sendto (socket-fd socket)
-                         (sb-sys:vector-sap buff) bufflen
+                         buff-sap bufflen
                          flags
                          (if remote-address (addr ss) nil)
                          (if remote-address et::size-of-sockaddr-storage 0)))))))))
@@ -484,11 +484,11 @@
                    (size et:socklen-t #.et::size-of-sockaddr-storage))
         (when remote-address
           (netaddr->sockaddr-storage ss remote-address))
-        (sb-sys:with-pinned-objects (buff ss size)
+        (with-vector-saps ((buff-sap buff))
           (with-socket-error-filter
             (return-from socket-receive
               (et:recvfrom (socket-fd socket)
-                           (sb-sys:vector-sap buff) bufflen
+                           buff-sap bufflen
                            flags
                            (if remote-address (addr ss) nil)
                            (if remote-address (addr size) nil)))))))))
@@ -507,7 +507,7 @@
 
 (defmethod unconnect ((socket datagram-socket))
   (with-socket-error-filter
-    (with-pinned-aliens ((sin et:sockaddr-in))
+    (with-alien ((sin et:sockaddr-in))
       (et:memset (addr sin) 0 et::size-of-sockaddr-in)
       (setf (slot sin 'et:address) et:af-unspec)
       (et:connect (socket-fd socket)
