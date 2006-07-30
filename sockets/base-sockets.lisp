@@ -81,7 +81,9 @@
 (defgeneric socket-receive (buffer socket &key &allow-other-keys))
 
 (defclass passive-socket (socket)
-  ((listening :initform nil :reader socket-listening-p :type boolean)))
+  ((listening :initform nil :reader socket-listening-p :type boolean)
+   (active-class :initarg :active-class :reader active-class
+                 :type symbol :allocation :class)))
 
 (defgeneric bind-address (socket address &key &allow-other-keys))
 
@@ -91,11 +93,13 @@
 
 (defclass socket-stream-internet-active (active-socket stream-socket internet-socket) ())
 
-(defclass socket-stream-internet-passive (passive-socket stream-socket internet-socket) ())
+(defclass socket-stream-internet-passive (passive-socket stream-socket internet-socket) ()
+  (:default-initargs :active-class 'socket-stream-internet-active))
 
 (defclass socket-stream-local-active (active-socket stream-socket local-socket) ())
 
-(defclass socket-stream-local-passive (passive-socket stream-socket local-socket) ())
+(defclass socket-stream-local-passive (passive-socket stream-socket local-socket) ()
+  (:default-initargs :active-class 'socket-stream-local-active))
 
 (defclass socket-datagram-local-active (active-socket datagram-socket local-socket) ())
 

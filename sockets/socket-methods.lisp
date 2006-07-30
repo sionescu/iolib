@@ -386,10 +386,7 @@
 
       (let ((client-socket
              ;; create the client socket object
-             (make-instance (select-socket-type (socket-family   socket)
-                                                (socket-type     socket)
-                                                :active
-                                                (socket-protocol socket))
+             (make-instance (active-class socket)
                             :file-descriptor client-fd)))
         ;; setting the socket's remote address and port
         (multiple-value-bind (remote-address remote-port)
@@ -473,30 +470,36 @@
 ;;  SEND  ;;
 ;;;;;;;;;;;;
 
-(defun normalize-send-buffer (buff length)
-  (let ((end (if length
-                 (min length (length buff))
+(defun normalize-send-buffer (buff vstart vend)
+  (let ((start (or vstart 0))
+        (end (if vend
+                 (min vend (length buff))
                  (length buff))))
+    (assert (<= start end))
     (etypecase buff
-      ((simple-array ub8 (*)) (values buff end))
-      (simple-base-string (values buff end))
-      (string (values (sb-ext:string-to-octets buff :end end)
-                      end)))))
+      ((simple-array ub8 (*)) (values buff start (- end start)))
+      (simple-base-string (values buff start (- end start)))
+      (string (values (sb-ext:string-to-octets buff :start start :end end)
+                      0 (- end start))))))
 
 (defmethod socket-send :before ((buffer simple-array)
                                 (socket active-socket)
-                                &key length remote-address remote-port)
-  (check-type length (or unsigned-byte null)
+                                &key start end
+                                remote-address remote-port)
+  (check-type start (or unsigned-byte null)
+              "a non-negative value or NIL")
+  (check-type end (or unsigned-byte null)
               "a non-negative value or NIL")
   (when (or remote-port remote-address)
     (check-type remote-address netaddr "a network address")
     (check-type remote-port (unsigned-byte 16) "a valid IP port number")))
 
 (defmethod socket-send ((buffer simple-array)
-                        (socket active-socket) &key length
+                        (socket active-socket) &key start end
                         remote-address remote-port end-of-record
                         dont-route dont-wait (no-signal *no-sigpipe*)
                         out-of-band #+linux more #+linux confirm)
+
   (let ((flags (logior (if end-of-record et:msg-eor 0)
                        (if dont-route et:msg-dontroute 0)
                        (if dont-wait  et:msg-dontwait 0)
@@ -504,12 +507,14 @@
                        (if out-of-band et:msg-oob 0)
                        #+linux (if more et:msg-more 0)
                        #+linux (if confirm et:msg-confirm 0))))
-    (multiple-value-bind (buff bufflen)
-        (normalize-send-buffer buffer length)
+
+    (multiple-value-bind (buff start-offset bufflen)
+        (normalize-send-buffer buffer start end)
       (with-alien ((ss et:sockaddr-storage))
         (when remote-address
           (netaddr->sockaddr-storage ss remote-address remote-port))
         (with-vector-saps ((buff-sap buff))
+          (setf buff-sap (sb-sys:sap+ buff-sap start-offset))
           (with-socket-error-filter
             (return-from socket-send
               (et:sendto (socket-fd socket)
@@ -525,22 +530,26 @@
 ;;  RECV  ;;
 ;;;;;;;;;;;;
 
-(defun normalize-receive-buffer (buff length)
-  (let ((end (if length
-                 (min length (length buff))
+(defun normalize-receive-buffer (buff vstart vend)
+  (let ((start (or vstart 0))
+        (end (if vend
+                 (min vend (length buff))
                  (length buff))))
+    (assert (<= start end))
     (etypecase buff
-      ((simple-array ub8 (*)) (values buff end))
-      (simple-base-string (values buff end)))))
+      ((simple-array ub8 (*)) (values buff start (- end start)))
+      (simple-base-string (values buff start (- end start))))))
 
 (defmethod socket-receive :before ((buffer simple-array)
                                    (socket active-socket)
-                                   &key length)
-  (check-type length (or unsigned-byte null)
+                                   &key start end)
+  (check-type start (or unsigned-byte null)
+              "a non-negative value or NIL")
+  (check-type end (or unsigned-byte null)
               "a non-negative value or NIL"))
 
 (defmethod socket-receive ((buffer simple-array)
-                           (socket active-socket) &key length
+                           (socket active-socket) &key start end
                            out-of-band peek wait-all
                            dont-wait (no-signal *no-sigpipe*))
 
@@ -550,17 +559,20 @@
                        (if dont-wait   et:msg-dontwait 0)
                        (if no-signal   et:msg-nosignal 0)))
         bytes-received)
-    (multiple-value-bind (buff bufflen)
-        (normalize-receive-buffer buffer length)
+
+    (multiple-value-bind (buff start-offset bufflen)
+        (normalize-receive-buffer buffer start end)
       (with-alien ((ss et:sockaddr-storage)
                    (size et:socklen-t #.et::size-of-sockaddr-storage))
         (with-vector-saps ((buff-sap buff))
+          (setf buff-sap (sb-sys:sap+ buff-sap start-offset))
           (with-socket-error-filter
             (setf bytes-received
                   (et:recvfrom (socket-fd socket)
                                buff-sap bufflen
                                flags
                                (addr ss) (addr size)))))
+
         (return-from socket-receive
           (values-list
            (nconc (list buffer bytes-received)
