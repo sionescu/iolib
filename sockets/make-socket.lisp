@@ -24,6 +24,21 @@
 
 (in-package #:net.sockets)
 
-;; (defun make-socket (&rest args &key address-family type
-;;                     connect (ipv6 *ipv6*))
-;;   )
+(defun make-socket (&key
+                    (address-family :internet)
+                    (type :stream)
+                    (connect :active)
+                    (protocol :default)
+                    (ipv6 *ipv6*))
+  (check-type address-family (member :internet :local))
+  (check-type type (member :stream :datagram))
+  (check-type connect (member :active :passive))
+  (check-type ipv6 (member nil t :ipv6))
+  (when (eql address-family :internet)
+    (cond
+      ((null ipv6) (setf address-family :ipv4))
+      (t           (setf address-family :ipv6))))
+
+  (let ((socket-class
+         (select-socket-type address-family type connect protocol)))
+    (make-instance socket-class)))

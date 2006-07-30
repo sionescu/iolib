@@ -28,5 +28,4 @@
           :depends-on ("defpackage" "config" "common" "address"
                        "base-sockets" "socket-options"))
    (:file "make-socket"
-          :depends-on ("defpackage" "config" "common" "address"
-                       "base-sockets" "socket-options" "socket-methods"))))
+          :depends-on ("defpackage" "config" "socket-methods"))))

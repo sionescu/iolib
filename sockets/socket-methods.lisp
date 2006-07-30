@@ -25,15 +25,15 @@
 (in-package #:net.sockets)
 
 (defparameter *socket-type-map*
-  '(((:ipv4 :stream   :active  :default) . socket-stream-internet-active)
-    ((:ipv6 :stream   :active  :default) . socket-stream-internet-active)
-    ((:ipv4 :stream   :passive :default) . socket-stream-internet-passive)
-    ((:ipv6 :stream   :passive :default) . socket-stream-internet-passive)
-    ((:unix :stream   :active  :default) . socket-stream-local-active)
-    ((:unix :stream   :passive :default) . socket-stream-local-passive)
-    ((:unix :datagram :active  :default) . socket-datagram-local-active)
-    ((:ipv4 :datagram :active  :default) . socket-datagram-internet-active)
-    ((:ipv6 :datagram :active  :default) . socket-datagram-internet-active)))
+  '(((:ipv4  :stream   :active  :default) . socket-stream-internet-active)
+    ((:ipv6  :stream   :active  :default) . socket-stream-internet-active)
+    ((:ipv4  :stream   :passive :default) . socket-stream-internet-passive)
+    ((:ipv6  :stream   :passive :default) . socket-stream-internet-passive)
+    ((:local :stream   :active  :default) . socket-stream-local-active)
+    ((:local :stream   :passive :default) . socket-stream-local-passive)
+    ((:local :datagram :active  :default) . socket-datagram-local-active)
+    ((:ipv4  :datagram :active  :default) . socket-datagram-internet-active)
+    ((:ipv6  :datagram :active  :default) . socket-datagram-internet-active)))
 
 (defun select-socket-type (family type connect protocol)
   (or (cdr (assoc (list family type connect protocol) *socket-type-map*
