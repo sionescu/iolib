@@ -23,4 +23,5 @@
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "GPL-2.1"
   :depends-on (#:iolib-alien-ng
-               #:net.sockets))
+               #:net.sockets
+               #:net.dns-client))
