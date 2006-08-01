@@ -241,13 +241,13 @@
 
 (defun netaddr->sockaddr-storage (sa netaddr &optional (port 0))
   (declare (type (alien (* et:sockaddr-storage)) sa))
-  (ecase (slot sa 'et:family)
-    (#.et:af-inet
+  (etypecase netaddr
+    (ipv4addr
      (make-sockaddr-in (cast sa (* et:sockaddr-in))
                        (name netaddr) port))
-    (#.et:af-inet6
+    (ipv6addr
      (make-sockaddr-in6 (cast sa (* et:sockaddr-in6))
                         (name netaddr) port))
-    (#.et:af-local
+    (localaddr
      (make-sockaddr-un (cast sa (* et:sockaddr-un))
                        (name netaddr)))))

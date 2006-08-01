@@ -478,11 +478,13 @@
     (assert (<= start end))
     (etypecase buff
       ((simple-array ub8 (*)) (values buff start (- end start)))
+      ((vector ub8) (values (coerce buff '(simple-array ub8 (*)))
+                            start (- end start)))
       (simple-base-string (values buff start (- end start)))
       (string (values (sb-ext:string-to-octets buff :start start :end end)
                       0 (- end start))))))
 
-(defmethod socket-send :before ((buffer simple-array)
+(defmethod socket-send :before ((buffer array)
                                 (socket active-socket)
                                 &key start end
                                 remote-address remote-port)
@@ -494,7 +496,7 @@
     (check-type remote-address netaddr "a network address")
     (check-type remote-port (unsigned-byte 16) "a valid IP port number")))
 
-(defmethod socket-send ((buffer simple-array)
+(defmethod socket-send ((buffer array)
                         (socket active-socket) &key start end
                         remote-address remote-port end-of-record
                         dont-route dont-wait (no-signal *no-sigpipe*)
@@ -512,7 +514,7 @@
         (normalize-send-buffer buffer start end)
       (with-alien ((ss et:sockaddr-storage))
         (when remote-address
-          (netaddr->sockaddr-storage ss remote-address remote-port))
+          (netaddr->sockaddr-storage (addr ss) remote-address remote-port))
         (with-vector-saps ((buff-sap buff))
           (setf buff-sap (sb-sys:sap+ buff-sap start-offset))
           (with-socket-error-filter
