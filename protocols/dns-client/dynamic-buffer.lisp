@@ -20,20 +20,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
-(declaim (optimize (speed 0) (safety 2) (space 0) (debug 3)))
+(declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
 (in-package #:net.sockets)
 
-(defclass dynamic-buffer ()
-  ((contents :reader buffer-contents)
+(deftype octet ()
+  `(unsigned-byte 8))
+
+(defclass dynamic-output-buffer ()
+  ((sequence :initform nil    :reader buffer-sequence)
    (length   :initform 0      :reader buffer-length)
    (size     :initarg :size   :reader buffer-size))
   (:default-initargs :size +dns-datagram-size+))
 
-(defmethod initialize-instance :after ((buffer dynamic-buffer)
+(defmethod initialize-instance :after ((buffer dynamic-output-buffer)
                                        &key size)
-  (setf (slot-value buffer 'contents)
-        (make-array size :element-type '(unsigned-byte 8)
+  (setf (slot-value buffer 'sequence)
+        (make-array size :element-type 'octet
                     :adjustable t :fill-pointer 0)))
 
 (defun ub16-to-vector (value)
@@ -46,55 +49,142 @@
           (ldb (byte 8 8) value)
           (ldb (byte 8 0) value)))
 
-(defmethod output-vector :before ((buffer dynamic-buffer)
-                                  vector)
-  (with-slots (contents length size) buffer
+(defmethod write-vector :before ((buffer dynamic-output-buffer)
+                                 vector)
+  (with-slots (sequence length size) buffer
     (let ((vector-length (length vector)))
       (when (< size (+ length vector-length))
         (let ((newsize (+ size vector-length 50)))
-          (setf contents (adjust-array contents newsize))
+          (setf sequence (adjust-array sequence newsize))
           (setf size newsize))))))
 
-(defmethod output-vector ((buffer dynamic-buffer)
-                          vector)
-  (with-slots (contents length) buffer
+(defmethod write-vector ((buffer dynamic-output-buffer)
+                         vector)
+  (with-slots (sequence length) buffer
     (let ((vector-length (length vector)))
-      (incf (fill-pointer contents) vector-length)
-      (replace contents vector :start1 length)
+      (incf (fill-pointer sequence) vector-length)
+      (replace sequence vector :start1 length)
       (incf length vector-length)))
   buffer)
 
-(defmethod output-unsigned-8 ((buffer dynamic-buffer)
-                               (value integer))
-  (output-vector buffer (vector value)))
+(defmethod write-unsigned-8 ((buffer dynamic-output-buffer)
+                             (value integer))
+  (write-vector buffer (vector value)))
 
-(defmethod output-unsigned-16 ((buffer dynamic-buffer)
-                               (value integer))
-  (output-vector buffer (ub16-to-vector value)))
+(defmethod write-unsigned-16 ((buffer dynamic-output-buffer)
+                              (value integer))
+  (write-vector buffer (ub16-to-vector value)))
 
-(defmethod output-unsigned-32 ((buffer dynamic-buffer)
-                               (value integer))
-  (output-vector buffer (ub32-to-vector value)))
+(defmethod write-unsigned-32 ((buffer dynamic-output-buffer)
+                              (value integer))
+  (write-vector buffer (ub32-to-vector value)))
 
-(defmethod output-string ((buffer dynamic-buffer)
-                          (string simple-string))
-  (output-unsigned-8 buffer (length string))
-  (output-vector buffer (sb-ext:string-to-octets string)))
 
-(defun domain-name-to-dns-format (domain-name)
-  (let* ((octets (sb-ext:string-to-octets domain-name))
-         (tmp-vec (make-array (1+ (length octets))
-                              :element-type '(unsigned-byte 8))))
-    (replace tmp-vec octets :start1 1)
-    (let ((vector-length (length tmp-vec)))
-      (loop
-         :for start-off := 1 then (1+ end-off)
-         :for end-off := (or (position (char-code #\.) tmp-vec :start start-off)
-                             vector-length)
-         :do (setf (aref tmp-vec (1- start-off)) (- end-off start-off))
-         :when (>= end-off vector-length) :do (loop-finish)))
-    tmp-vec))
+(defclass dynamic-input-buffer ()
+  ((sequence :initform nil :initarg :sequence :reader buffer-sequence)
+   (position :initform 0   :reader buffer-position)
+   (size     :reader buffer-size)))
 
-(defmethod output-domain-name ((buffer dynamic-buffer)
-                               (domain-name simple-string))
-  (output-vector buffer (domain-name-to-dns-format domain-name)))
+(defmethod initialize-instance :after ((buffer dynamic-input-buffer) &key)
+  (with-slots (sequence size) buffer
+    (cond
+      ((null sequence)
+       (setf sequence (make-array 0 :element-type 'octet :adjustable t
+                                  :initial-contents sequence)))
+      ((not (and (adjustable-array-p sequence)
+                 (typep sequence '(vector octet))))
+       (setf sequence (make-array (length sequence)
+                                  :element-type 'octet :adjustable t
+                                  :initial-contents sequence))))
+    (setf size (length sequence))))
+
+(define-condition input-buffer-scarcity (error)
+  ((bytes-requested :initarg :requested :reader bytes-requested)
+   (bytes-remaining :initarg :remaining :reader bytes-remaining))
+  (:documentation "Signals that an INPUT-BUFFER contains less unread bytes than requested."))
+
+(define-condition input-buffer-eof (input-buffer-scarcity) ()
+  (:documentation "Signals that an INPUT-BUFFER contains no more unread bytes."))
+
+(define-condition input-buffer-index-out-of-bounds (error) ()
+  (:documentation "Signals that BUFFER-SEEK on an INPUT-BUFFER was passed an invalid offset."))
+
+(defmethod buffer-seek ((buffer dynamic-input-buffer) offset)
+  (check-type offset unsigned-byte "a non-negative value")
+  (with-slots (sequence size position) buffer
+    (if (> offset (1- size))
+        (error 'input-buffer-index-out-of-bounds)
+        (setf position offset))))
+
+(defmethod buffer-append ((buffer dynamic-input-buffer)
+                          vector)
+  (with-slots (sequence size) buffer
+    (let ((oldsize size)
+          (newsize (+ (length sequence)
+                      (length vector))))
+      (setf sequence (adjust-array sequence newsize))
+      (replace sequence vector :start1 oldsize)
+      (setf size newsize))))
+
+(defmethod bytes-unread ((buffer dynamic-input-buffer))
+  (with-slots (position size) buffer
+    (- size position)))
+
+(defmethod check-if-enough-bytes ((buffer dynamic-input-buffer)
+                                  length &key (check-all t))
+  (let ((bytes-unread (bytes-unread buffer)))
+    (cond
+      ((and (zerop bytes-unread)
+            (plusp length))
+       (error 'input-buffer-eof
+              :requested length
+              :remaining bytes-unread))
+      ((and check-all
+            (< bytes-unread length))
+       (error 'input-buffer-scarcity
+              :requested length
+              :remaining bytes-unread)))
+    t))
+
+(defun read-ub16-from-vector (vector position)
+  (+ (ash (aref vector position) 8)
+     (aref vector (1+ position))))
+
+(defun read-ub32-from-vector (vector position)
+  (+ (ash (aref vector position) 24)
+     (ash (aref vector (1+ position)) 16)
+     (ash (aref vector (+ position 2)) 8)
+     (aref vector (+ position 3))))
+
+(defmethod read-vector ((buffer dynamic-input-buffer)
+                        length &key (read-all t))
+  (let* ((bytes-to-read
+          (min (bytes-unread buffer) length))
+         (newvector
+          (make-array bytes-to-read :element-type 'octet)))
+    (check-if-enough-bytes buffer length :check-all read-all)
+    (with-slots (sequence position) buffer
+      (replace newvector sequence :start2 position)
+      (incf position bytes-to-read))
+    newvector))
+
+(defmethod read-unsigned-8 ((buffer dynamic-input-buffer))
+  (check-if-enough-bytes buffer 1)
+  (with-slots (sequence position) buffer
+    (prog1
+        (aref sequence position)
+      (incf position))))
+
+(defmethod read-unsigned-16 ((buffer dynamic-input-buffer))
+  (check-if-enough-bytes buffer 2)
+  (with-slots (sequence position) buffer
+    (prog1
+        (read-ub16-from-vector sequence position)
+      (incf position 2))))
+
+(defmethod read-unsigned-32 ((buffer dynamic-input-buffer))
+  (check-if-enough-bytes buffer 4)
+  (with-slots (sequence position) buffer
+    (prog1
+        (read-ub32-from-vector sequence position)
+      (incf position 4))))

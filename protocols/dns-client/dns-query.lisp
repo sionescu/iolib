@@ -32,12 +32,6 @@
 ;;;                     ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defclass dns-nameserver ()
-  ((name     :initarg :name     :accessor dns-nameserver-name)
-   (address  :initarg :address  :accessor dns-addressserver-address)
-   (sent     :initarg :sent     :accessor dns-sentserver-sent)
-   (received :initarg :received :accessor dns-receivedserver-received)))
-
 (defclass dns-message ()
   ((id         :initform 0
                :initarg :id         :accessor dns-message-id)
@@ -98,74 +92,6 @@
                             #\.)
         (setf name (concatenate 'string name (string #\.)))))))
 
-(defclass dns-rr (dns-record)
-  ((ttl  :initarg :ttl  :accessor dns-rr-ttl)))
-
-(defmethod initialize-instance :after ((rr dns-rr) &key)
-  (with-slots (ttl) rr
-    (check-type ttl (unsigned-byte 32) "a valid TTL")))
-
-(defclass dns-rr-a (dns-rr)
-  ((address :initarg :address :accessor dns-rr-a-address))
-  (:default-initargs :type :a))
-
-(defclass dns-rr-ns (dns-rr)
-  ((dname :initarg :dname :accessor dns-rr-ns-dname))
-  (:default-initargs :type :ns))
-
-(defclass dns-rr-cname (dns-rr) ()
-  (:default-initargs :type :cname))
-
-(defclass dns-rr-soa (dns-rr)
-  ((mname   :initarg :mname   :accessor dns-rr-soa-mname)
-   (rname   :initarg :rname   :accessor dns-rr-soa-rname)
-   (serial  :initarg :serial  :accessor dns-rr-soa-serial)
-   (refresh :initarg :refresh :accessor dns-rr-soa-refresh)
-   (retry   :initarg :retry   :accessor dns-rr-soa-retry)
-   (expire  :initarg :expire  :accessor dns-rr-soa-expire)
-   (minimum :initarg :minimum :accessor dns-rr-soa-minimum))
-  (:default-initargs :type :soa))
-
-(defclass dns-rr-wks (dns-rr)
-  ((address :initarg :address :accessor dns-rr-wks-address)
-   (protocol :initarg :protocol :accessor dns-rr-wks-protocol)
-   (bitmap :initarg :bitmap :accessor dns-rr-wkx-bitmap))
-  (:default-initargs :type :wks))
-
-(defclass dns-rr-ptr (dns-rr)
-  ((dname :initarg :dname :accessor dns-rr-ptr-dname))
-  (:default-initargs :type :ptr))
-
-(defclass dns-rr-hinfo (dns-rr)
-  ((cpu :initarg :cpu :accessor dns-rr-hinfo-cpu)
-   (os  :initarg :os  :accessor dns-rr-hinfo-os))
-  (:default-initargs :type :hinfo))
-
-(defclass dns-rr-mx (dns-rr)
-  ((preference :initarg :preference :accessor dns-rr-mx-preference)
-   (exchange   :initarg :exchange   :accessor dns-rr-mx-exchange))
-  (:default-initargs :type :mx))
-
-(defclass dns-rr-txt (dns-rr)
-  ((data :initarg :data :accessor dns-rr-txt-data))
-  (:default-initargs :type :txt))
-
-(defclass dns-rr-aaaa (dns-rr)
-  ((address :initarg :address :accessor dns-rr-aaaa-address))
-  (:default-initargs :type :aaaa))
-
-(defmethod add-answer-rr ((message dns-message)
-                          (record dns-rr))
-  (vector-push-extend record (dns-message-answer message)))
-
-(defmethod add-authority-rr ((message dns-message)
-                             (record dns-rr))
-  (vector-push-extend record (dns-message-authority message)))
-
-(defmethod add-additional-rr ((message dns-message)
-                              (record dns-rr))
-  (vector-push-extend record (dns-message-additional message)))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;;                ;;;
@@ -194,27 +120,50 @@
 ;;;                 ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod output-record ((buffer dynamic-buffer)
+(defmethod write-dns-string ((buffer dynamic-output-buffer)
+                             (string simple-string))
+  (write-unsigned-8 buffer (length string))
+  (write-vector buffer (sb-ext:string-to-octets string)))
+
+(defun domain-name-to-dns-format (domain-name)
+  (let* ((octets (sb-ext:string-to-octets domain-name))
+         (tmp-vec (make-array (1+ (length octets))
+                              :element-type 'octet)))
+    (replace tmp-vec octets :start1 1)
+    (let ((vector-length (length tmp-vec)))
+      (loop
+         :for start-off := 1 then (1+ end-off)
+         :for end-off := (or (position (char-code #\.) tmp-vec :start start-off)
+                             vector-length)
+         :do (setf (aref tmp-vec (1- start-off)) (- end-off start-off))
+         :when (>= end-off vector-length) :do (loop-finish)))
+    tmp-vec))
+
+(defmethod write-domain-name ((buffer dynamic-output-buffer)
+                              (domain-name simple-string))
+  (write-vector buffer (domain-name-to-dns-format domain-name)))
+
+(defmethod output-record ((buffer dynamic-output-buffer)
                           (record dns-question))
   (with-slots (name type class) record
-    (output-domain-name buffer name)
-    (output-unsigned-16 buffer (query-type-number type))
-    (output-unsigned-16 buffer (query-class-number class))))
+    (write-domain-name buffer name)
+    (write-unsigned-16 buffer (query-type-number type))
+    (write-unsigned-16 buffer (query-class-number class))))
 
-(defmethod output-message-header ((buffer dynamic-buffer)
+(defmethod output-message-header ((buffer dynamic-output-buffer)
                                   (message dns-message))
   (with-slots (id flags question answer authority additional)
       message
-    (output-unsigned-16 buffer id)
-    (output-unsigned-16 buffer flags)
-    (output-unsigned-16 buffer 1)
-    (output-unsigned-16 buffer (length answer))
-    (output-unsigned-16 buffer (length authority))
-    (output-unsigned-16 buffer (length additional))))
+    (write-unsigned-16 buffer id)
+    (write-unsigned-16 buffer flags)
+    (write-unsigned-16 buffer 1)
+    (write-unsigned-16 buffer (length answer))
+    (write-unsigned-16 buffer (length authority))
+    (write-unsigned-16 buffer (length additional))))
 
 (defmethod output-message ((message dns-message))
   (with-slots (question) message
-    (let ((buffer (make-instance 'dynamic-buffer)))
+    (let ((buffer (make-instance 'dynamic-output-buffer)))
       (output-message-header buffer message)
       (output-record buffer question)
       buffer)))
