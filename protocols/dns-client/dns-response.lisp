@@ -25,60 +25,17 @@
 (in-package #:net.sockets)
 
 (defclass dns-rr (dns-record)
-  ((ttl  :initarg :ttl  :accessor dns-rr-ttl)))
+  ((ttl  :initarg :ttl  :accessor dns-rr-ttl)
+   (data :initarg :data :accessor dns-rr-data)))
 
 (defmethod initialize-instance :after ((rr dns-rr) &key)
   (with-slots (ttl) rr
     (check-type ttl (unsigned-byte 32) "a valid TTL")))
 
-(defclass dns-rr-a (dns-rr)
-  ((address :initarg :address :accessor dns-rr-a-address))
-  (:default-initargs :type :a))
 
-(defclass dns-rr-ns (dns-rr)
-  ((dname :initarg :dname :accessor dns-rr-ns-dname))
-  (:default-initargs :type :ns))
-
-(defclass dns-rr-cname (dns-rr) ()
-  (:default-initargs :type :cname))
-
-(defclass dns-rr-soa (dns-rr)
-  ((mname   :initarg :mname   :accessor dns-rr-soa-mname)
-   (rname   :initarg :rname   :accessor dns-rr-soa-rname)
-   (serial  :initarg :serial  :accessor dns-rr-soa-serial)
-   (refresh :initarg :refresh :accessor dns-rr-soa-refresh)
-   (retry   :initarg :retry   :accessor dns-rr-soa-retry)
-   (expire  :initarg :expire  :accessor dns-rr-soa-expire)
-   (minimum :initarg :minimum :accessor dns-rr-soa-minimum))
-  (:default-initargs :type :soa))
-
-(defclass dns-rr-wks (dns-rr)
-  ((address :initarg :address :accessor dns-rr-wks-address)
-   (protocol :initarg :protocol :accessor dns-rr-wks-protocol)
-   (bitmap :initarg :bitmap :accessor dns-rr-wkx-bitmap))
-  (:default-initargs :type :wks))
-
-(defclass dns-rr-ptr (dns-rr)
-  ((dname :initarg :dname :accessor dns-rr-ptr-dname))
-  (:default-initargs :type :ptr))
-
-(defclass dns-rr-hinfo (dns-rr)
-  ((cpu :initarg :cpu :accessor dns-rr-hinfo-cpu)
-   (os  :initarg :os  :accessor dns-rr-hinfo-os))
-  (:default-initargs :type :hinfo))
-
-(defclass dns-rr-mx (dns-rr)
-  ((preference :initarg :preference :accessor dns-rr-mx-preference)
-   (exchange   :initarg :exchange   :accessor dns-rr-mx-exchange))
-  (:default-initargs :type :mx))
-
-(defclass dns-rr-txt (dns-rr)
-  ((data :initarg :data :accessor dns-rr-txt-data))
-  (:default-initargs :type :txt))
-
-(defclass dns-rr-aaaa (dns-rr)
-  ((address :initarg :address :accessor dns-rr-aaaa-address))
-  (:default-initargs :type :aaaa))
+(defmethod add-question ((message dns-message)
+                         (question dns-question))
+  (vector-push-extend question (dns-message-question message)))
 
 (defmethod add-answer-rr ((message dns-message)
                           (record dns-rr))
@@ -146,7 +103,6 @@
                                 (setf pointer-seen t)
                                 (setf offset (+ (buffer-position buffer) 2)))
                               (setf offset (+ (buffer-position buffer) 1))))
-                        (format t "~s ~a ~a ~a ~a~%" string offset pointer-seen pointer rec)
                         (buffer-seek buffer pointer)
                         (setf string (read-dns-string buffer)))
                   :collect string
@@ -159,3 +115,133 @@
         (dns-domain-name-to-string buffer)
       (setf position offset)
       string)))
+
+
+(defmethod read-question ((buffer dynamic-input-buffer))
+  (let ((name (read-domain-name buffer))
+        (type (query-type-id (read-unsigned-16 buffer)))
+        (class (query-class-id (read-unsigned-16 buffer))))
+    (make-question name type class)))
+
+(defmethod read-rr-data ((buffer dynamic-input-buffer)
+                         (type (eql :a)) (class (eql :in))
+                         resource-length)
+  (unless (= resource-length 4)
+    (error 'dns-message-error))
+  (let ((address (make-array 4 :element-type 'octet)))
+    (loop
+       :for i :below 4
+       :do (setf (aref address i) (read-unsigned-8 buffer)))
+    address))
+
+(defmethod read-rr-data ((buffer dynamic-input-buffer)
+                         (type (eql :aaaa)) (class (eql :in))
+                         resource-length)
+  (unless (= resource-length 16)
+    (error 'dns-message-error))
+  (let ((address (make-array 8 :element-type '(unsigned-byte 16))))
+    (loop
+       :for i :below 8
+       :do (setf (aref address i) (read-unsigned-16 buffer)))
+    address))
+
+(defmethod read-rr-data ((buffer dynamic-input-buffer)
+                         (type (eql :cname)) (class (eql :in))
+                         resource-length)
+  (read-domain-name buffer)) ; CNAME
+
+(defmethod read-rr-data ((buffer dynamic-input-buffer)
+                         (type (eql :hinfo)) (class (eql :in))
+                         resource-length)
+  (list (read-dns-string buffer)   ; CPU
+        (read-dns-string buffer))) ; OS
+
+(defmethod read-rr-data ((buffer dynamic-input-buffer)
+                         (type (eql :mx)) (class (eql :in))
+                         resource-length)
+  (list (read-unsigned-16 buffer)   ; PREFERENCE
+        (read-domain-name buffer))) ; EXCHANGE
+
+(defmethod read-rr-data ((buffer dynamic-input-buffer)
+                         (type (eql :ns)) (class (eql :in))
+                         resource-length)
+  (read-domain-name buffer)) ; NSDNAME
+
+(defmethod read-rr-data ((buffer dynamic-input-buffer)
+                         (type (eql :ptr)) (class (eql :in))
+                         resource-length)
+  (read-domain-name buffer)) ; PTRDNAME
+
+(defmethod read-rr-data ((buffer dynamic-input-buffer)
+                         (type (eql :soa)) (class (eql :in))
+                         resource-length)
+  (list (read-domain-name buffer)   ; MNAME
+        (read-domain-name buffer)   ; RNAME
+        (read-unsigned-32 buffer)   ; SERIAL
+        (read-unsigned-32 buffer)   ; REFRESH
+        (read-unsigned-32 buffer)   ; RETRY
+        (read-unsigned-32 buffer)   ; EXPIRE
+        (read-unsigned-32 buffer))) ; MINIMUM
+
+(defmethod read-rr-data ((buffer dynamic-input-buffer)
+                         (type (eql :txt)) (class (eql :in))
+                         resource-length)
+  (loop
+     :for string := (read-dns-string buffer) ; TXT-DATA
+     :for total-length := (1+ (length string)) :then (+ total-length 1
+                                                        (length string))
+     :collect string
+     :until (>= total-length resource-length)
+     :finally (when (> total-length resource-length)
+                (error 'dns-message-error))))
+
+(defmethod read-rr-data ((buffer dynamic-input-buffer)
+                         type class resource-length)
+  (error 'dns-message-error))
+
+(defmethod read-dns-rr ((buffer dynamic-input-buffer))
+  (let* ((name (read-domain-name buffer))
+         (type (query-type-id (read-unsigned-16 buffer)))
+         (class (query-class-id (read-unsigned-16 buffer)))
+         (ttl (read-unsigned-32 buffer))
+         (rdlen (read-unsigned-16 buffer))
+         (rdata (read-rr-data buffer type class rdlen)))
+    (make-instance 'dns-rr
+                   :name name
+                   :type type
+                   :class class
+                   :ttl ttl
+                   :data rdata)))
+
+(defmethod read-message-header ((buffer dynamic-input-buffer))
+  (let ((id (read-unsigned-16 buffer))
+        (flags (read-unsigned-16 buffer))
+        (qdcount (read-unsigned-16 buffer))
+        (ancount (read-unsigned-16 buffer))
+        (nscount (read-unsigned-16 buffer))
+        (arcount (read-unsigned-16 buffer)))
+    (make-instance 'dns-message
+                   :id id :flags flags
+                   :qdcount qdcount :ancount ancount
+                   :nscount nscount :arcount arcount)))
+
+(defmethod read-dns-message ((buffer dynamic-input-buffer))
+  (let ((msg (read-message-header buffer)))
+    (with-slots (qdcount ancount nscount arcount) msg
+      (loop
+         :for i :below (dns-message-question-count msg)
+         :for q := (read-question buffer)
+         :do (add-question msg q))
+      (loop
+         :for i :below (dns-message-answer-count msg)
+         :for rr := (read-dns-rr buffer)
+         :do (add-answer-rr msg rr))
+      (loop
+         :for i :below (dns-message-authority-count msg)
+         :for rr := (read-dns-rr buffer)
+         :do (add-authority-rr msg rr))
+      (loop
+         :for i :below (dns-message-additional-count msg)
+         :for rr := (read-dns-rr buffer)
+         :do (add-additional-rr msg rr)))
+    msg))

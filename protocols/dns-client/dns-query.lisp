@@ -24,8 +24,6 @@
 
 (in-package #:net.sockets)
 
-(defparameter *dns-recursion-desired* t)
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                     ;;;
 ;;;  CLASS DEFINITIONS  ;;;
@@ -33,18 +31,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defclass dns-message ()
-  ((id         :initform 0
-               :initarg :id         :accessor dns-message-id)
-   (flags      :initform 0
-               :initarg :flags      :accessor dns-message-flags)
-   (question   :initform nil
-               :initarg :question   :accessor dns-message-question)
-   (answer     :initform (make-array 1 :adjustable t :fill-pointer 0)
-               :initarg :answer     :accessor dns-message-answer)
-   (authority  :initform (make-array 1 :adjustable t :fill-pointer 0)
-               :initarg :authority  :accessor dns-message-authority)
-   (additional :initform (make-array 1 :adjustable t :fill-pointer 0)
-               :initarg :additional :accessor dns-message-additional)))
+  ((id    :initform 0 :initarg :id    :accessor dns-message-id)
+   (flags :initform 0 :initarg :flags :accessor dns-message-flags)
+   (decoded-flags :reader decoded-flags)
+   (qdcount :initarg :qdcount :reader dns-message-question-count)
+   (ancount :initarg :ancount :reader dns-message-answer-count)
+   (nscount :initarg :nscount :reader dns-message-authority-count)
+   (arcount :initarg :arcount :reader dns-message-additional-count)
+   (question   :reader dns-message-question)
+   (answer     :reader dns-message-answer)
+   (authority  :reader dns-message-authority)
+   (additional :reader dns-message-additional))
+  (:default-initargs :qdcount 1 :ancount 0 :nscount 0 :arcount 0))
 
 (defmacro define-flags-bitfield (name offset length &optional (type :integer))
   (let ((method-name (et::symbolicate name :-field)))
@@ -71,6 +69,28 @@
 (define-flags-bitfield recursion-desired 8 1 :boolean)
 (define-flags-bitfield recursion-available 7 1 :boolean)
 (define-flags-bitfield rcode 0 4 :rcode)
+
+(defmethod decode-flags ((msg dns-message))
+  (let (flags)
+    (push (if (response-field msg) :response :query) flags)
+    (push (if (eql (opcode-field msg) +opcode-standard+)
+              :opcode-standard :opcode-unknown)
+          flags)
+    (when (authoritative-field msg) (push :authoritative flags))
+    (when (truncated-field msg) (push :truncated flags))
+    (when (recursion-desired-field msg) (push :recursion-desired flags))
+    (when (recursion-available-field msg) (push :recursion-available flags))
+    (push (or (rcode-field msg) :rcode-unknown) flags)
+    (nreverse flags)))
+
+(defmethod initialize-instance :after ((msg dns-message) &key
+                                       qdcount ancount nscount arcount)
+  (with-slots (id flags decoded-flags question answer authority additional) msg
+    (setf decoded-flags (decode-flags msg))
+    (setf question (make-array qdcount :adjustable t :fill-pointer 0))
+    (setf answer (make-array ancount :adjustable t :fill-pointer 0))
+    (setf authority (make-array nscount :adjustable t :fill-pointer 0))
+    (setf additional (make-array arcount :adjustable t :fill-pointer 0))))
 
 (defclass dns-record ()
   ((name  :initarg :name  :accessor dns-record-name)
@@ -105,12 +125,11 @@
                  :type qtype
                  :class qclass))
 
-(defun make-query (id question
-                   &optional (recursion-desired *dns-recursion-desired*))
+(defun make-query (id question &optional recursion-desired)
   (let ((msg (make-instance 'dns-message :id id)))
     (setf (opcode-field msg) +opcode-standard+)
     (setf (recursion-desired-field msg) recursion-desired)
-    (setf (dns-message-question msg) question)
+    (vector-push-extend question (dns-message-question msg))
     msg))
 
 
@@ -143,27 +162,27 @@
                               (domain-name simple-string))
   (write-vector buffer (domain-name-to-dns-format domain-name)))
 
-(defmethod output-record ((buffer dynamic-output-buffer)
-                          (record dns-question))
+(defmethod write-record ((buffer dynamic-output-buffer)
+                         (record dns-question))
   (with-slots (name type class) record
     (write-domain-name buffer name)
     (write-unsigned-16 buffer (query-type-number type))
     (write-unsigned-16 buffer (query-class-number class))))
 
-(defmethod output-message-header ((buffer dynamic-output-buffer)
-                                  (message dns-message))
+(defmethod write-message-header ((buffer dynamic-output-buffer)
+                                 (message dns-message))
   (with-slots (id flags question answer authority additional)
       message
     (write-unsigned-16 buffer id)
     (write-unsigned-16 buffer flags)
-    (write-unsigned-16 buffer 1)
+    (write-unsigned-16 buffer (length question))
     (write-unsigned-16 buffer (length answer))
     (write-unsigned-16 buffer (length authority))
     (write-unsigned-16 buffer (length additional))))
 
-(defmethod output-message ((message dns-message))
+(defmethod write-dns-message ((message dns-message))
   (with-slots (question) message
     (let ((buffer (make-instance 'dynamic-output-buffer)))
-      (output-message-header buffer message)
-      (output-record buffer question)
+      (write-message-header buffer message)
+      (write-record buffer (aref question 0))
       buffer)))

@@ -85,20 +85,22 @@
    (position :initform 0   :reader buffer-position)
    (size     :reader buffer-size)))
 
-(defmethod initialize-instance :after ((buffer dynamic-input-buffer) &key)
-  (with-slots (sequence size) buffer
+(defmethod initialize-instance :after ((buffer dynamic-input-buffer) &key size)
+  (with-slots (sequence (seq-size size)) buffer
+    (setf seq-size (or size (length sequence)))
     (cond
       ((null sequence)
        (setf sequence (make-array 0 :element-type 'octet :adjustable t
                                   :initial-contents sequence)))
       ((not (and (adjustable-array-p sequence)
                  (typep sequence '(vector octet))))
-       (setf sequence (make-array (length sequence)
+       (setf sequence (make-array seq-size
                                   :element-type 'octet :adjustable t
-                                  :initial-contents sequence))))
-    (setf size (length sequence))))
+                                  :displaced-to sequence))))))
 
-(define-condition input-buffer-scarcity (error)
+(define-condition input-buffer-error (error) ())
+
+(define-condition input-buffer-scarcity (input-buffer-error)
   ((bytes-requested :initarg :requested :reader bytes-requested)
    (bytes-remaining :initarg :remaining :reader bytes-remaining))
   (:documentation "Signals that an INPUT-BUFFER contains less unread bytes than requested."))
@@ -106,7 +108,7 @@
 (define-condition input-buffer-eof (input-buffer-scarcity) ()
   (:documentation "Signals that an INPUT-BUFFER contains no more unread bytes."))
 
-(define-condition input-buffer-index-out-of-bounds (error) ()
+(define-condition input-buffer-index-out-of-bounds (input-buffer-error) ()
   (:documentation "Signals that BUFFER-SEEK on an INPUT-BUFFER was passed an invalid offset."))
 
 (defmethod buffer-seek ((buffer dynamic-input-buffer) offset)
@@ -119,12 +121,13 @@
 (defmethod buffer-append ((buffer dynamic-input-buffer)
                           vector)
   (with-slots (sequence size) buffer
-    (let ((oldsize size)
-          (newsize (+ (length sequence)
-                      (length vector))))
-      (setf sequence (adjust-array sequence newsize))
-      (replace sequence vector :start1 oldsize)
-      (setf size newsize))))
+    (when (plusp (length vector))
+      (let ((oldsize size)
+            (newsize (+ (length sequence)
+                        (length vector))))
+        (setf sequence (adjust-array sequence newsize))
+        (replace sequence vector :start1 oldsize)
+        (setf size newsize)))))
 
 (defmethod bytes-unread ((buffer dynamic-input-buffer))
   (with-slots (position size) buffer
