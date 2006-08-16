@@ -23,7 +23,7 @@
 
 (in-package #:net.sockets)
 
-(defparameter *ipv6* t
+(defvar *ipv6* t
   "Specifies the default behaviour with respect to IPv6:
 - nil   : Only IPv4 addresses are used.
 - :ipv6 : Only IPv6 addresses are used.
@@ -33,8 +33,8 @@ Default value is T.")
 (define-constant +max-backlog-size+ et:somaxconn
   "Maximum length of the pending connections queue(hard limit).")
 
-(defparameter *default-backlog-size* 5
+(defvar *default-backlog-size* 5
   (format nil "Default length of the pending connections queue(soft limit). Default value is 5 and maximum value is ~A." +max-backlog-size+))
 
-(defparameter *no-sigpipe* t
+(defvar *no-sigpipe* t
   "When T an EOF received on a stream socket won't raise a SIGPIPE. Default value it T.")

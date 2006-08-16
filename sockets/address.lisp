@@ -183,6 +183,9 @@
 (defmethod netaddr->presentation ((addr ipv6addr))
   (vector-to-colon-separated (name addr)))
 
+(defmethod netaddr->presentation ((addr localaddr))
+  (name addr))
+
 
 ;;;
 ;;; Equality methods
@@ -214,6 +217,10 @@
   (make-instance 'localaddr
                  :name (copy-seq (name addr))
                  :abstract (abstract-p addr)))
+
+(defmethod map-ipv4-address->ipv6 ((addr ipv4addr))
+  (make-instance 'ipv6addr
+                 :name (map-ipv4-vector-to-ipv6 (name addr))))
 
 
 ;;; Constructor
@@ -268,19 +275,31 @@
 (defmethod ipv4-address-p ((addr ipv4addr))
   t)
 
-(defmethod ipv4-address-p ((addr netaddr))
+(defmethod ipv4-address-p (addr)
   nil)
 
 (defmethod ipv6-address-p ((addr ipv6addr))
   t)
 
-(defmethod ipv6-address-p ((addr netaddr))
+(defmethod ipv6-address-p (addr)
   nil)
 
 (defmethod local-address-p ((addr localaddr))
   t)
 
-(defmethod local-address-p ((addr netaddr))
+(defmethod local-address-p (addr)
+  nil)
+
+(defmethod address-type ((address ipv4addr))
+  :ipv4)
+
+(defmethod address-type ((address ipv6addr))
+  :ipv6)
+
+(defmethod address-type ((address localaddr))
+  :local)
+
+(defmethod address-type (address)
   nil)
 
 ;; IPv4 predicates

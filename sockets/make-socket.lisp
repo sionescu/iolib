@@ -35,10 +35,7 @@
   (check-type connect (member :active :passive))
   (check-type ipv6 (member nil t :ipv6))
   (when (eql address-family :internet)
-    (cond
-      ((null ipv6) (setf address-family :ipv4))
-      (t           (setf address-family :ipv6))))
-
+    (setf address-family (if ipv6 :ipv6 :ipv4)))
   (let ((socket-class
          (select-socket-type address-family type connect protocol)))
-    (make-instance socket-class)))
+    (make-instance socket-class :family address-family)))

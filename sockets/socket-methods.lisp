@@ -282,26 +282,34 @@
   (when reuse-address
     (set-socket-option socket :reuse-address :value t)))
 
+(defun ipv4-bind (fd address port)
+  (with-alien ((sin et:sockaddr-in))
+    (make-sockaddr-in (addr sin) address port)
+    (with-socket-error-filter
+      (et:bind fd (addr sin)
+               et::size-of-sockaddr-in))))
+
+(defun ipv6-bind (fd address port)
+  (with-alien ((sin6 et:sockaddr-in6))
+    (make-sockaddr-in6 (addr sin6) address port)
+    (with-socket-error-filter
+      (et:bind fd (addr sin6)
+               et::size-of-sockaddr-in6))))
+
 (defmethod bind-address ((socket internet-socket)
                          (address ipv4addr)
                          &key (port 0) interface)
-  (with-alien ((sin et:sockaddr-in))
-    (make-sockaddr-in (addr sin) (name address) port)
-    (with-socket-error-filter
-      (et:bind (socket-fd socket)
-               (addr sin)
-               et::size-of-sockaddr-in)))
+  (if (eql (socket-family socket) :ipv6)
+      (ipv6-bind (socket-fd socket)
+                 (map-ipv4-vector-to-ipv6 (name address))
+                 port)
+      (ipv4-bind (socket-fd socket) (name address) port))
   (values socket))
 
 (defmethod bind-address ((socket internet-socket)
                          (address ipv6addr)
                          &key (port 0) interface)
-  (with-alien ((sin6 et:sockaddr-in6))
-    (make-sockaddr-in6 (addr sin6) (name address) port)
-    (with-socket-error-filter
-      (et:bind (socket-fd socket)
-               (addr sin6)
-               et::size-of-sockaddr-in6)))
+  (ipv6-bind (socket-fd socket) (name address) port)
   (values socket))
 
 (defmethod bind-address :before ((socket local-socket)
@@ -408,26 +416,34 @@
   (when *no-sigpipe*
     (set-socket-option socket :no-sigpipe :value t)))
 
+(defun ipv4-connect (fd address port)
+  (with-alien ((sin et:sockaddr-in))
+    (make-sockaddr-in (addr sin) address port)
+    (with-socket-error-filter
+      (et:connect fd (addr sin)
+                  et::size-of-sockaddr-in))))
+
+(defun ipv6-connect (fd address port)
+  (with-alien ((sin6 et:sockaddr-in6))
+    (make-sockaddr-in6 (addr sin6) address port)
+    (with-socket-error-filter
+      (et:connect fd (addr sin6)
+                  et::size-of-sockaddr-in6))))
+
 (defmethod connect ((socket internet-socket)
                     (address ipv4addr) &key (port 0))
-  (with-alien ((sin et:sockaddr-in))
-    (make-sockaddr-in (addr sin) (name address) port)
-    (with-socket-error-filter
-      (et:connect (socket-fd socket)
-                  (addr sin)
-                  et::size-of-sockaddr-in))
-    (setf (slot-value socket 'port) port))
+  (if (eql (socket-family socket) :ipv6)
+      (ipv6-connect (socket-fd socket)
+                    (map-ipv4-vector-to-ipv6 (name address))
+                    port)
+      (ipv4-connect (socket-fd socket) (name address) port))
+  (setf (slot-value socket 'port) port)
   (values socket))
 
 (defmethod connect ((socket internet-socket)
                     (address ipv6addr) &key (port 0))
-  (with-alien ((sin6 et:sockaddr-in6))
-    (make-sockaddr-in6 (addr sin6) (name address) port)
-    (with-socket-error-filter
-      (et:connect (socket-fd socket)
-                  (addr sin6)
-                  et::size-of-sockaddr-in6))
-    (setf (slot-value socket 'port) port))
+  (ipv6-connect (socket-fd socket) (name address) port)
+  (setf (slot-value socket 'port) port)
   (values socket))
 
 (defmethod connect ((socket local-socket)
@@ -510,6 +526,9 @@
                        #+linux (if more et:msg-more 0)
                        #+linux (if confirm et:msg-confirm 0))))
 
+    (when (and (ipv4-address-p remote-address)
+               (eql (socket-family socket) :ipv6))
+      (setf remote-address (map-ipv4-address->ipv6 remote-address)))
     (multiple-value-bind (buff start-offset bufflen)
         (normalize-send-buffer buffer start end)
       (with-alien ((ss et:sockaddr-storage))
