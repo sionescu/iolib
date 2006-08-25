@@ -182,7 +182,6 @@
 
 (defmethod write-dns-message ((message dns-message))
   (with-slots (question) message
-    (let ((buffer (make-instance 'dynamic-output-buffer)))
+    (with-output-buffer buffer
       (write-message-header buffer message)
-      (write-record buffer (aref question 0))
-      buffer)))
+      (write-record buffer (aref question 0)))))

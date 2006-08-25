@@ -19,7 +19,8 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
+;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
+(declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
 (in-package #:net.sockets)
 
@@ -140,6 +141,11 @@
    (aliases   :initarg :aliases   :reader host-aliases)
    (addresses :initarg :addresses :reader host-addresses)))
 
+(defmethod initialize-instance :after ((host host) &key)
+  (with-slots (addresses) host
+    (unless (consp addresses)
+      (setf addresses (list addresses)))))
+
 (defmethod random-address ((host host))
   (with-slots (addresses) host
     (nth (random (length addresses))
@@ -172,7 +178,7 @@
            (make-sockaddr-in (addr sin) host)
            (return-from lookup-host-u8-vector-4
              (make-host (get-name-info (addr sin) :flags et:ni-namereqd)
-                        (list (make-address :ipv4 (copy-seq host)))))))
+                        (list (make-address (copy-seq host)))))))
 
         ((:ipv6 t)
          (with-alien ((sin6 et:sockaddr-in6))
@@ -180,7 +186,7 @@
              (make-sockaddr-in6 (addr sin6) ipv6addr)
              (return-from lookup-host-u8-vector-4
                (make-host (get-name-info (addr sin6) :flags et:ni-namereqd)
-                          (list (make-address :ipv6 ipv6addr))))))))
+                          (list (make-address ipv6addr))))))))
     (et:resolv-error (err)
       (resolver-error (et:system-error-identifier err) :data host))))
 
@@ -199,7 +205,7 @@
            (make-sockaddr-in6 (addr sin6) host)
            (return-from lookup-host-u16-vector-8
              (make-host (get-name-info (addr sin6) :flags et:ni-namereqd)
-                        (list (make-address :ipv6 (copy-seq host))))))))
+                        (list (make-address (copy-seq host))))))))
     (et:resolv-error (err)
       (resolver-error (et:system-error-identifier err) :data host))))
 
@@ -219,11 +225,12 @@
   (declare (type host hostobj))
   (with-slots (addresses) hostobj
     (setf addresses
-          (mapcar #'(lambda (a)
-                      (if (ipv4-address-p a)
-                          (make-address :ipv6 (map-ipv4-vector-to-ipv6 (name a)))
-                          a))
-                  addresses))))
+          (mapcar #'(lambda (address)
+                      (if (ipv4-address-p address)
+                          (make-address (map-ipv4-vector-to-ipv6 (name address)))
+                          address))
+                  addresses)))
+  hostobj)
 
 (defmethod lookup-host :before (host &key (ipv6 *ipv6*))
   (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration"))
@@ -289,7 +296,7 @@
   (lookup-host-u8-vector-4 (name host) ipv6))
 
 (defmethod lookup-host ((host ipv6addr) &key (ipv6 *ipv6*))
-  (lookup-host-u8-vector-4 (name host) ipv6))
+  (lookup-host-u16-vector-8 (name host) ipv6))
 
 (defmethod lookup-host (host &key (ipv6 *ipv6*))
   (etypecase host

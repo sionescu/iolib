@@ -83,7 +83,7 @@
   (vector-to-ipaddr (dotted-to-vector string)))
 
 (defun vector-to-dotted (vector)
-  (coerce vector '(simple-array ub8 (4)))
+  (setf vector (coerce vector '(simple-array ub8 (4))))
   (format nil "~A.~A.~A.~A"
           (aref vector 0)
           (aref vector 1)
@@ -137,6 +137,30 @@
         (ecase case
           (:downcase str)
           (:upcase (nstring-upcase str)))))))
+
+(defun string-address->vector (address)
+  (or (dotted-to-vector address :error-p nil)
+      (colon-separated-to-vector address :error-p nil)))
+
+(defun vector-address-or-nil (address)
+  (let (vector addr-type)
+    (typecase address
+      (string (cond
+                ((setf vector (dotted-to-vector address :error-p nil))
+                 (setf addr-type :ipv4))
+                ((setf vector (colon-separated-to-vector address :error-p nil))
+                 (setf addr-type :ipv6))))
+      ((array * (4)) (cond ((setf vector (ignore-errors
+                                           (coerce address '(simple-array octet (4)))))
+                            (setf addr-type :ipv4))))
+      ((array * (8)) (cond ((setf vector (ignore-errors
+                                           (coerce address '(simple-array ub16 (8)))))
+                            (setf addr-type :ipv6))))
+      (ipv4addr (setf vector (name address)
+                      addr-type :ipv4))
+      (ipv6addr (setf vector (name address)
+                      addr-type :ipv6)))
+    (values vector addr-type)))
 
 
 ;;;
@@ -224,14 +248,17 @@
 
 
 ;;; Constructor
-(defun make-address (type name)
-  (ecase type
-    (:ipv4  (make-instance 'ipv4addr
-                           :name (coerce name '(simple-array ub8 (4)))))
-    (:ipv6  (make-instance 'ipv6addr
-                           :name (coerce name '(simple-array ub16 (8)))))
-    (:local (make-instance 'localaddr
-                           :name name))))
+(defun make-address (name)
+  (let (n)
+    (cond
+      ((stringp name)
+       (make-instance 'localaddr :name name))
+      ((setf n (ignore-errors
+                 (coerce name '(simple-array ub8  (4)))))
+       (make-instance 'ipv4addr :name n))
+      ((setf n (ignore-errors
+                 (coerce name '(simple-array ub16 (8)))))
+       (make-instance 'ipv6addr :name n)))))
 
 
 ;;;
@@ -239,32 +266,32 @@
 ;;;
 
 (defparameter +ipv4-unspecified+
-  (make-address :ipv4 #(0 0 0 0)))
+  (make-address #(0 0 0 0)))
 
 (defparameter +ipv4-loopback+
-  (make-address :ipv4 #(127 0 0 1)))
+  (make-address #(127 0 0 1)))
 
 (defparameter +ipv6-unspecified+
-  (make-address :ipv6 #(0 0 0 0 0 0 0 0)))
+  (make-address #(0 0 0 0 0 0 0 0)))
 
 (defparameter +ipv6-loopback+
-  (make-address :ipv6 #(0 0 0 0 0 0 0 1)))
+  (make-address #(0 0 0 0 0 0 0 1)))
 
 ;; Multicast addresses replacing IPv4 broadcast addresses
 (defparameter +ipv6-interface-local-all-nodes+
-  (make-address :ipv6 #(#xFF01 0 0 0 0 0 0 1)))
+  (make-address #(#xFF01 0 0 0 0 0 0 1)))
 
 (defparameter +ipv6-link-local-all-nodes+
-  (make-address :ipv6 #(#xFF02 0 0 0 0 0 0 1)))
+  (make-address #(#xFF02 0 0 0 0 0 0 1)))
 
 (defparameter +ipv6-interface-local-all-routers+
-  (make-address :ipv6 #(#xFF01 0 0 0 0 0 0 2)))
+  (make-address #(#xFF01 0 0 0 0 0 0 2)))
 
 (defparameter +ipv6-link-local-all-routers+
-  (make-address :ipv6 #(#xFF02 0 0 0 0 0 0 2)))
+  (make-address #(#xFF02 0 0 0 0 0 0 2)))
 
 (defparameter +ipv6-site-local-all-routers+
-  (make-address :ipv6 #(#xFF05 0 0 0 0 0 0 2)))
+  (make-address #(#xFF05 0 0 0 0 0 0 2)))
 
 
 ;;;

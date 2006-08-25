@@ -50,7 +50,7 @@
           (ldb (byte 8 0) value)))
 
 (defmethod write-vector :before ((buffer dynamic-output-buffer)
-                                 vector)
+                                 (vector array))
   (with-slots (sequence length size) buffer
     (let ((vector-length (length vector)))
       (when (< size (+ length vector-length))
@@ -59,7 +59,7 @@
           (setf size newsize))))))
 
 (defmethod write-vector ((buffer dynamic-output-buffer)
-                         vector)
+                         (vector array))
   (with-slots (sequence length) buffer
     (let ((vector-length (length vector)))
       (incf (fill-pointer sequence) vector-length)
@@ -78,6 +78,11 @@
 (defmethod write-unsigned-32 ((buffer dynamic-output-buffer)
                               (value integer))
   (write-vector buffer (ub32-to-vector value)))
+
+(defmacro with-output-buffer (var &body body)
+  `(let ((,var (make-instance 'dynamic-output-buffer)))
+     ,@body
+     ,var))
 
 
 (defclass dynamic-input-buffer ()
@@ -191,3 +196,8 @@
     (prog1
         (read-ub32-from-vector sequence position)
       (incf position 4))))
+
+(defmacro with-input-buffer ((var buffer &key size) &body body)
+  `(let ((,var (make-instance 'dynamic-input-buffer)))
+     ,@body
+     ,var))

@@ -198,14 +198,14 @@
 
 (defun sockaddr-in->netaddr (sin)
   (declare (type (alien (* et:sockaddr-in)) sin))
-  (values (make-address :ipv4 (make-vector-u8-4-from-in-addr
-                               (slot sin 'et:address)))
+  (values (make-address (make-vector-u8-4-from-in-addr
+                         (slot sin 'et:address)))
           (slot sin 'et:port)))
 
 (defun sockaddr-in6->netaddr (sin6)
   (declare (type (alien (* et:sockaddr-in6)) sin6))
-  (values (make-address :ipv6 (make-vector-u16-8-from-in6-addr
-                               (addr (slot sin6 'et:address))))
+  (values (make-address (make-vector-u16-8-from-in6-addr
+                         (addr (slot sin6 'et:address))))
           (slot sin6 'et:port)))
 
 (defun sockaddr-un->netaddr (sun)

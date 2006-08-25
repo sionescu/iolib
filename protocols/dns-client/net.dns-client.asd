@@ -19,4 +19,6 @@
    (:file "dynamic-buffer" :depends-on ("dns-constants"))
    (:file "dns-query" :depends-on ("dns-constants" "dynamic-buffer"))
    (:file "dns-response" :depends-on ("dns-constants" "dns-query"))
-   (:file "dns-do-query" :depends-on ("dns-constants" "dns-query" "dns-response"))))
+   (:file "dns-do-query" :depends-on ("dns-constants" "dns-query" "dns-response"))
+   (:file "etc-files" :depends-on ("dynamic-buffer"))
+   (:file "dns-lookup" :depends-on ("dns-do-query" "etc-files"))))

@@ -98,25 +98,14 @@
   (concatenate 'string (ipv6-vector-to-dotted (reverse-vector address))
                ".ip6.arpa."))
 
-(defun string-address->vector (address)
-  (or (dotted-to-vector address :error-p nil)
-      (colon-separated-to-vector address :error-p nil)))
-
 (defun dns-ptr-name (address)
-  (etypecase address
-    (string
-     (let ((vector (string-address->vector address)))
-       (unless vector
-         (error "The argument is not a valid IP address"))
-       (dns-ptr-name vector)))
-    ((array * (4)) (ipv4-dns-ptr-name
-                    (coerce address '(simple-array octet (4)))))
-    ((array * (8)) (ipv6-dns-ptr-name
-                    (coerce address '(simple-array ub16 (8)))))
-    (ipv4addr (ipv4-dns-ptr-name
-               (name address)))
-    (ipv6addr (ipv6-dns-ptr-name
-               (name address)))))
+  (multiple-value-bind (vector address-type)
+      (vector-address-or-nil address)
+    (when (null address)
+      (error "The argument is not a valid IP address"))
+    (ecase address-type
+      (:ipv4 (ipv4-dns-ptr-name vector))
+      (:ipv6 (ipv6-dns-ptr-name vector)))))
 
 (defun dns-query (name &key (type :a) (nameserver *dns-nameservers*)
                   (repeat *dns-repeat*) (timeout *dns-timeout*)
