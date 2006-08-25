@@ -94,13 +94,13 @@
                                   nil)))
     (car line)))
 
-(defun merge-lines-into-one-host (lines)
+(defun merge-lines-into-one-host (lines ipv6)
   (flet ((pushnew-alias (alias place cname)
            (when (string-not-equal alias cname)
              (pushnew alias place :test #'string-equal)
              place)))
 
-    (let (ips aliases)
+    (let (ips aliases host)
       (destructuring-bind (first-ip cname first-aliases) (car lines)
         (setf ips (list first-ip))
         (mapc #'(lambda (alias) (setf aliases (pushnew-alias alias aliases cname)))
@@ -111,7 +111,12 @@
                     (mapc #'(lambda (alias) (setf aliases (pushnew-alias alias aliases cname)))
                           (cons alias more-aliases))))
               (cdr lines))
-        (make-host cname (mapcar #'make-address (nreverse ips)) (nreverse aliases))))))
+        (setf host (make-host cname
+                              (mapcar #'make-address (nreverse ips))
+                              (nreverse aliases)))
+        (if (eql ipv6 t)
+            (map-host-ipv4-addresses-to-ipv6 host)
+            host)))))
 
 (defun search-etc-hosts-name (name ipv6)
   (let ((lines (search-in-etc-file "/etc/hosts"
@@ -124,4 +129,4 @@
                                            (list vector col2 other-cols))))
                                    t)))
     (when lines
-      (merge-lines-into-one-host lines))))
+      (merge-lines-into-one-host lines ipv6))))
