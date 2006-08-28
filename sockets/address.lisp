@@ -215,11 +215,16 @@
 ;;; Equality methods
 ;;;
 
+(defun vector-equal (v1 v2)
+  (and (typep v1 'vector)
+       (equal (type-of v1) (type-of v2))
+       (every #'eql v1 v2)))
+
 (defmethod netaddr= ((addr1 ipv4addr) (addr2 ipv4addr))
-  (equalp (name addr1) (name addr2)))
+  (vector-equal (name addr1) (name addr2)))
 
 (defmethod netaddr= ((addr1 ipv6addr) (addr2 ipv6addr))
-  (equalp (name addr1) (name addr2)))
+  (vector-equal (name addr1) (name addr2)))
 
 (defmethod netaddr= ((addr1 localaddr) (addr2 localaddr))
   (equal (name addr1) (name addr2)))
@@ -258,7 +263,8 @@
        (make-instance 'ipv4addr :name n))
       ((setf n (ignore-errors
                  (coerce name '(simple-array ub16 (8)))))
-       (make-instance 'ipv6addr :name n)))))
+       (make-instance 'ipv6addr :name n))
+      (t (error 'invalid-address :address name :type :unknown)))))
 
 
 ;;;

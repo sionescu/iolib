@@ -85,7 +85,7 @@
                                   #'(lambda (col1 col2 other-cols)
                                       (let ((vector (string-address->vector col1)))
                                         (when (and (vector-ipv6-good-p vector ipv6)
-                                                   (equalp vector ip))
+                                                   (vector-equal vector ip))
                                           (let ((host
                                                  (make-host col2 (make-address vector) other-cols)))
                                             (if (eql ipv6 t)
