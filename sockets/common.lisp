@@ -224,7 +224,7 @@
              :do (setf (schar name sindex)
                        (code-char (deref path pindex)))))
         ;; address is in the filesystem
-        (setf name (cast path c-string)))
+        (setf name (cast path c-ascii-string)))
     (make-instance 'localaddr
                    :name name
                    :abstract abstract)))

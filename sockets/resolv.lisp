@@ -133,8 +133,8 @@
                         (alien-sap host) (if want-host et:ni-maxhost 0)
                         (alien-sap service) (if want-service et:ni-maxserv 0)
                         flags))
-      (values (and want-host (cast host c-string))
-              (and want-service (cast service c-string))))))
+      (values (and want-host (cast host c-ascii-string))
+              (and want-service (cast service c-ascii-string))))))
 
 (defclass host ()
   ((truename  :initarg :truename  :reader host-truename)

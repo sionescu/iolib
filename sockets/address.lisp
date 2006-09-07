@@ -133,7 +133,7 @@
                   (alien-sap namebuff)           ; destination buffer
                   et:inet6-addrstrlen)           ; INET6_ADDRSTRLEN
     (return-from vector-to-colon-separated
-      (let ((str (cast namebuff c-string)))
+      (let ((str (cast namebuff c-ascii-string)))
         (ecase case
           (:downcase str)
           (:upcase (nstring-upcase str)))))))
