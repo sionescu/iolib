@@ -214,7 +214,7 @@
   (let ((canonname (slot addrinfo 'et:canonname))
         (addrlist
          (loop
-            :for addrptr :of-type (alien (* et:addrinfo)) = addrinfo
+            :for addrptr :of-type (alien (* et:addrinfo)) := addrinfo
             :then (slot addrptr 'et:next)
             :while (not (null-alien addrptr))
             :collect (sockaddr-storage->netaddr
@@ -436,7 +436,7 @@
          (aliasptr (slot protoent 'et:aliases))
          (aliases (loop
                      :for i :from 0
-                     :for alias = (deref aliasptr i)
+                     :for alias := (deref aliasptr i)
                      :while alias :collect alias)))
     (make-protocol name number aliases)))
 

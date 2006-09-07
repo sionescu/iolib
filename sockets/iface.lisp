@@ -62,12 +62,12 @@
              (iflist
               (loop
                  :for i :from 0
-                 :for name = (slot (deref ifarr i) 'et:name)
-                 :for index = (slot (deref ifarr i) 'et:index)
+                 :for name := (slot (deref ifarr i) 'et:name)
+                 :for index := (slot (deref ifarr i) 'et:index)
                  :while (plusp index)
                  :collect (make-interface name index)
                  :finally (et:if-freenameindex ifptr))))
-        (return-from get-network-interfaces iflist)))))
+        iflist))))
 
 (defun get-interface-by-index (index)
   (check-type index unsigned-byte "an unsigned integer")
@@ -81,8 +81,7 @@
                    :code (error-code err)
                    :identifier (error-identifier err)
                    :index index)))
-        (return-from
-         get-interface-by-index
+        (return-from get-interface-by-index
           (make-interface (copy-seq retval) index))))))
 
 (defun get-interface-by-name (name)
