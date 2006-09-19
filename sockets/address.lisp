@@ -215,9 +215,13 @@
 ;;; Equality methods
 ;;;
 
+;; (defun vector-equal (v1 v2)
+;;   (and (typep v1 'vector)
+;;        (equal (type-of v1) (type-of v2))
+;;        (every #'eql v1 v2)))
+
 (defun vector-equal (v1 v2)
-  (and (typep v1 'vector)
-       (equal (type-of v1) (type-of v2))
+  (and (equal (length v1) (length v2))
        (every #'eql v1 v2)))
 
 (defmethod netaddr= ((addr1 ipv4addr) (addr2 ipv4addr))

@@ -104,7 +104,9 @@
         (format stream " connected to ~A/~A"
                 (netaddr->presentation (socket-address socket))
                 (socket-port socket))
-        (format stream ", unconnected"))))
+        (if (slot-boundp socket 'fd)
+            (format stream ", unconnected")
+            (format stream ", closed")))))
 
 (defmethod print-object ((socket socket-stream-internet-passive) stream)
   (print-unreadable-object (socket stream :type nil :identity t)
@@ -116,7 +118,9 @@
                     "bound to")
                 (netaddr->presentation (socket-address socket))
                 (socket-port socket))
-        (format stream ", unbound"))))
+        (if (slot-boundp socket 'fd)
+            (format stream ", unbound")
+            (format stream ", closed")))))
 
 (defmethod print-object ((socket socket-stream-local-active) stream)
   (print-unreadable-object (socket stream :type nil :identity t)
@@ -124,7 +128,9 @@
     (if (slot-boundp socket 'address)
         (format stream " connected to ~S"
                 (netaddr->presentation (socket-address socket)))
-        (format stream ", unconnected"))))
+        (if (slot-boundp socket 'fd)
+            (format stream ", unconnected")
+            (format stream ", closed")))))
 
 (defmethod print-object ((socket socket-stream-local-passive) stream)
   (print-unreadable-object (socket stream :type nil :identity t)
@@ -135,7 +141,9 @@
                     "waiting for connections @"
                     "bound to")
                 (netaddr->presentation (socket-address socket)))
-        (format stream ", unbound"))))
+        (if (slot-boundp socket 'fd)
+            (format stream ", unbound")
+            (format stream ", closed")))))
 
 (defmethod print-object ((socket socket-datagram-local-active) stream)
   (print-unreadable-object (socket stream :type nil :identity t)
@@ -143,7 +151,9 @@
     (if (slot-boundp socket 'address)
         (format stream " connected to ~S"
                 (netaddr->presentation (socket-address socket)))
-        (format stream ", unconnected"))))
+        (if (slot-boundp socket 'fd)
+            (format stream ", unconnected")
+            (format stream ", closed")))))
 
 (defmethod print-object ((socket socket-datagram-internet-active) stream)
   (print-unreadable-object (socket stream :type nil :identity t)
@@ -152,21 +162,23 @@
         (format stream " connected to ~A/~A"
                 (netaddr->presentation (socket-address socket))
                 (socket-port socket))
-        (format stream ", unconnected"))))
+        (if (slot-boundp socket 'fd)
+            (format stream ", unconnected")
+            (format stream ", closed")))))
 
 ;;;;;;;;;;;;;
 ;;  CLOSE  ;;
 ;;;;;;;;;;;;;
 
 (defmethod socket-close progn ((socket socket))
+  (sb-ext:cancel-finalization socket)
   (when (slot-boundp socket 'fd)
     (with-socket-error-filter
       (et:close (socket-fd socket))))
-  (sb-ext:cancel-finalization socket)
   (mapc #'(lambda (slot)
             (slot-makunbound socket slot))
         '(fd address family protocol))
-  socket)
+  (values socket))
 
 (defmethod socket-close progn ((socket stream-socket))
   (slot-makunbound socket 'lisp-stream))
@@ -206,7 +218,8 @@
   (with-slots (fd) socket
     (let ((file-flags (with-socket-error-filter
                         (et:fcntl fd et:f-getfl))))
-      (not (zerop (logand file-flags et:o-nonblock))))))
+      (not (zerop (logand file-flags et:o-nonblock)))))
+  (values socket))
 
 (defmethod (setf socket-non-blocking-mode) (value (socket socket))
   (check-type value boolean "a boolean value")
@@ -216,7 +229,7 @@
         (et:fcntl fd et:f-setfl
                   (logior file-flags
                           (if value et:o-nonblock 0))))))
-  value)
+  (values value))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;  GETSOCKNAME  ;;
@@ -234,6 +247,7 @@
         (values (sockaddr-storage->netaddr ssptr)
                 (ntohs (slot (cast ssptr (* et:sockaddr-in))
                              'et:port)))))))
+
 (defmethod local-name ((socket local-socket))
   (with-alien ((sun et:sockaddr-un)
                (size et:socklen-t
@@ -595,13 +609,11 @@
                                (addr ss) (addr size)))))
 
         (return-from socket-receive
-          (values-list
-           (nconc (list buffer bytes-received)
-                  ;; when socket is a datagram socket
-                  ;; return the sender's address
-                  (when (typep socket 'datagram-socket)
-                    (multiple-value-list
-                     (sockaddr-storage->netaddr (addr ss)))))))))))
+          ;; when socket is a datagram socket
+          ;; return the sender's address as 3rd value
+          (if (typep socket 'datagram-socket)
+              (values buffer bytes-received (sockaddr-storage->netaddr (addr ss)))
+              (values buffer bytes-received)))))))
 
 (defmethod socket-receive (buffer (socket passive-socket) &key)
   (error "You cannot receive data from a passive socket."))
