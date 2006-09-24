@@ -80,8 +80,8 @@
         ((nil) (eql len 4))
         (otherwise t)))))
 
-(defun search-etc-hosts-ip (ip ipv6)
-  (let ((line (search-in-etc-file "/etc/hosts"
+(defun search-etc-hosts-ip (file ip ipv6)
+  (let ((line (search-in-etc-file file
                                   #'(lambda (col1 col2 other-cols)
                                       (let ((vector (string-address->vector col1)))
                                         (when (and (vector-ipv6-good-p vector ipv6)
@@ -118,8 +118,8 @@
             (map-host-ipv4-addresses-to-ipv6 host)
             host)))))
 
-(defun search-etc-hosts-name (name ipv6)
-  (let ((lines (search-in-etc-file "/etc/hosts"
+(defun search-etc-hosts-name (file name ipv6)
+  (let ((lines (search-in-etc-file file
                                    #'(lambda (col1 col2 other-cols)
                                        (let ((vector (string-address->vector col1)))
                                          (when (and (vector-ipv6-good-p vector ipv6)

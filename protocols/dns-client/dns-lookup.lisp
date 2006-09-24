@@ -24,12 +24,14 @@
 
 (in-package #:net.sockets)
 
+(defvar *hosts-file* "/etc/hosts")
+
 (defmethod dns-lookup-host ((host string) &key (ipv6 *ipv6*))
-  (or (search-etc-hosts-name host ipv6)
+  (or (search-etc-hosts-name *hosts-file* host ipv6)
       (dns-query host :type :a)))
 
 (defun dns-lookup-host-ip (vector ipv6)
-  (or (search-etc-hosts-ip vector ipv6)
+  (or (search-etc-hosts-ip *hosts-file* vector ipv6)
       (dns-query vector :type :ptr)))
 
 (defmethod dns-lookup-host ((host ipv4addr) &key (ipv6 *ipv6*))
