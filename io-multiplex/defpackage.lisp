@@ -22,8 +22,16 @@
 (in-package #:common-lisp-user)
 
 (defpackage #:io.multiplex
-  (:nicknames #:iom)
-  (:use #:common-lisp #:sb-alien)
-  (:import-from #:iolib-alien-ng
-                #:system-error #:unix-error #:message)
-  (:export #:select))
+  (:nicknames #:iomux)
+  (:use #:common-lisp)
+  (:export
+   ;; classes
+   #:multiplex-interface
+   #:select-multiplex-interface
+
+   ;; available interface
+   #:*multiplex-available-interfaces*
+   #:*multiplex-best-interface*
+
+   #:set-fd-handlers #:remove-fd-handlers
+   #:serve-fd-events))
