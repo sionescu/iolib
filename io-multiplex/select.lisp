@@ -28,20 +28,19 @@
 
 (defconstant +select-priority+ 3)
 
-(pushnew (cons +select-priority+ 'select-multiplex-interface)
-         *multiplex-available-interfaces*)
+(define-iomux-interface select-multiplex-interface +select-priority+)
 
 (defun fd-open-p (fd)
   (sb-alien:with-alien ((stat et:stat))
     (handler-case
-        (progn (et:stat fd (addr stat)) t)
+        (progn (et:stat fd (sb-alien:addr stat)) t)
       (et:unix-error-badf (err)
         (declare (ignore err))
         nil))))
 
 (defmethod select-setup-masks ((interface select-multiplex-interface)
                                read-fds write-fds except-fds)
-  (declare (type system-area-pointer
+  (declare (type sb-alien:system-area-pointer
                  read-fds write-fds except-fds))
 
   (et:fd-zero read-fds)
@@ -67,23 +66,25 @@
                 (error "Handlers for bad fd(s) are present !!")))))
       (incf max-fd))))
 
-(defmethod serve-events ((interface select-multiplex-interface))
+(defmethod serve-fd-events ((interface select-multiplex-interface) &key)
   (sb-alien:with-alien ((read-fds et:fd-set)
                         (write-fds et:fd-set)
                         (except-fds et:fd-set))
 
     (let ((max-fd (select-setup-masks
                    interface
-                   (alien-sap read-fds)
-                   (alien-sap write-fds)
-                   (alien-sap except-fds))))
+                   (sb-alien:alien-sap read-fds)
+                   (sb-alien:alien-sap write-fds)
+                   (sb-alien:alien-sap except-fds))))
 
       (with-slots (fd-handlers) interface
         (tagbody
          :start
            (handler-case
                (et:select max-fd
-                          (addr read-fds) (addr write-fds) (addr except-fds)
+                          (sb-alien:addr read-fds)
+                          (sb-alien:addr write-fds)
+                          (sb-alien:addr except-fds)
                           nil)
              (et:unix-error-intr (err)
                (declare (ignore err))
@@ -94,14 +95,14 @@
             (when item-p
               (if (fd-open-p fd)
                   (progn
-                    (when (and (et:fd-isset fd (alien-sap except-fds))
+                    (when (and (et:fd-isset fd (sb-alien:alien-sap except-fds))
                                (handler-except-func handler))
-                      (funcall (handler-except-func handler) fd))
-                    (when (and (et:fd-isset fd (alien-sap read-fds))
+                      (funcall (handler-except-func handler) fd :read))
+                    (when (and (et:fd-isset fd (sb-alien:alien-sap read-fds))
                                (handler-read-func handler))
-                      (funcall (handler-read-func handler) fd))
-                    (when (and (et:fd-isset fd (alien-sap write-fds))
+                      (funcall (handler-read-func handler) fd :write))
+                    (when (and (et:fd-isset fd (sb-alien:alien-sap write-fds))
                                (handler-write-func handler))
-                      (funcall (handler-write-func handler) fd)))
+                      (funcall (handler-write-func handler) fd :except)))
                   ;; TODO: add better error handling
                   (error "Handler for bad fd is present !!")))))))))

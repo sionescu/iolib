@@ -25,11 +25,11 @@
 (in-package #:io.multiplex)
 
 ;;; TODO: do real detecting here
-(setf *multiplex-active-interface*
-      (make-instance 'select-multiplex-interface))
+(setf *multiplex-best-interface*
+      'select-multiplex-interface)
 
-(defmethod set-handlers progn ((interface multiplex-interface) fd
-                               &key read-handler write-handler except-handler)
+(defmethod set-fd-handlers progn ((interface multiplex-interface) fd
+                                  &key read-handler write-handler except-handler)
   (assert (or read-handler write-handler except-handler))
 
   (with-slots (fd-handlers) interface
@@ -46,15 +46,8 @@
           (setf current-handler (make-handler fd read-handler write-handler except-handler)))
       (setf (gethash fd fd-handlers) current-handler))))
 
-(defun set-fd-handlers (fd &key read-handler write-handler except-handler)
-  (set-handlers *multiplex-active-interface*
-                fd
-                :read-handler read-handler
-                :write-handler write-handler
-                :except-handler except-handler))
-
-(defmethod remove-handlers progn ((interface multiplex-interface) fd
-                                  &key read write except all)
+(defmethod remove-fd-handlers progn ((interface multiplex-interface) fd
+                                     &key read write except all)
   (unless all
     (assert (or read write except)))
 
@@ -72,17 +65,6 @@
                       (handler-except-func current-handler))
                   (setf (gethash fd fd-handlers) current-handler)
                   (remhash fd fd-handlers))))))))
-
-(defun remove-fd-handlers (fd &key read-handler write-handler except-handler all)
-  (remove-handlers *multiplex-active-interface*
-                   fd
-                   :read-handler read-handler
-                   :write-handler write-handler
-                   :except-handler except-handler
-                   :all all))
-
-(defun serve-fd-events ()
-  (serve-events *multiplex-active-interface*))
 
 ;; if there are handlers installed save them and restore them at the end
 ;; (defmacro with-fd-handlers ((fd &key read-handler write-handler except-handler) &body body)

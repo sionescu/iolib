@@ -35,14 +35,18 @@
 (defclass multiplex-interface ()
   ((fd-handlers :initform (make-hash-table :test 'eql))))
 
-(defgeneric set-handlers (multiplex-interface fd &key &allow-other-keys)
+(defgeneric set-fd-handlers (multiplex-interface fd &key &allow-other-keys)
   (:method-combination progn :most-specific-last))
 
-(defgeneric remove-handlers (multiplex-interface fd &key &allow-other-keys)
+(defgeneric remove-fd-handlers (multiplex-interface fd &key &allow-other-keys)
   (:method-combination progn :most-specific-first))
 
-(defgeneric serve-events (multiplex-interface))
+(defgeneric serve-fd-events (multiplex-interface &key))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-    (defvar *multiplex-available-interfaces* nil)
-    (defvar *multiplex-active-interface* nil))
+  (defvar *multiplex-available-interfaces* nil)
+  (defvar *multiplex-best-interface* nil))
+
+(defmacro define-iomux-interface (name priority)
+  `(pushnew (cons ,priority ',name)
+            *multiplex-available-interfaces*))
