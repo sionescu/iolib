@@ -30,14 +30,6 @@
 
 (define-iomux-interface select-multiplex-interface +select-priority+)
 
-(defun fd-open-p (fd)
-  (sb-alien:with-alien ((stat et:stat))
-    (handler-case
-        (progn (et:stat fd (sb-alien:addr stat)) t)
-      (et:unix-error-badf (err)
-        (declare (ignore err))
-        nil))))
-
 (defmethod select-setup-masks ((interface select-multiplex-interface)
                                read-fds write-fds except-fds)
   (declare (type sb-alien:system-area-pointer
@@ -105,4 +97,4 @@
                                (handler-write-func handler))
                       (funcall (handler-write-func handler) fd :except)))
                   ;; TODO: add better error handling
-                  (error "Handler for bad fd is present !!")))))))))
+                  (error "Handler for bad fd is present: ~A " fd)))))))))

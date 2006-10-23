@@ -17,4 +17,6 @@
   ((:file "defpackage")
    (:file "common" :depends-on ("defpackage"))
    (:file "select" :depends-on ("defpackage" "common"))
-   (:file "event-loop" :depends-on ("defpackage" "common" "select"))))
+   #+linux (:file "epoll" :depends-on ("defpackage" "common"))
+   (:file "detect" :depends-on ("defpackage" "common" "select"
+                                #+linux "epoll"))))
