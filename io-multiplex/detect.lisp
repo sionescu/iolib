@@ -26,4 +26,5 @@
 
 ;;; TODO: do real detecting here
 (setf *multiplex-best-interface*
-      'select-multiplex-interface)
+      #-linux 'select-multiplex-interface
+      #+linux 'epoll-multiplex-interface)
