@@ -23,7 +23,7 @@
 
 (defpackage #:io.multiplex
   (:nicknames #:iomux)
-  (:use #:common-lisp #:sb-alien)
+  (:use #:common-lisp)
   (:export
    ;; classes
    #:multiplex-interface
