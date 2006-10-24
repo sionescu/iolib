@@ -86,15 +86,15 @@
           (multiple-value-bind (item-p fd handler) (next-item)
             (when item-p
               (if (fd-open-p fd)
-                  (progn
-                    (when (and (et:fd-isset fd (sb-alien:alien-sap except-fds))
-                               (handler-except-func handler))
-                      (funcall (handler-except-func handler) fd :read))
-                    (when (and (et:fd-isset fd (sb-alien:alien-sap read-fds))
-                               (handler-read-func handler))
-                      (funcall (handler-read-func handler) fd :write))
-                    (when (and (et:fd-isset fd (sb-alien:alien-sap write-fds))
-                               (handler-write-func handler))
-                      (funcall (handler-write-func handler) fd :except)))
+                  (cond
+                    ((and (et:fd-isset fd (sb-alien:alien-sap except-fds))
+                          (handler-except-func handler))
+                     (funcall (handler-except-func handler) fd :except))
+                    ((and (et:fd-isset fd (sb-alien:alien-sap read-fds))
+                          (handler-read-func handler))
+                     (funcall (handler-read-func handler) fd :read))
+                    ((and (et:fd-isset fd (sb-alien:alien-sap write-fds))
+                          (handler-write-func handler))
+                     (funcall (handler-write-func handler) fd :write)))
                   ;; TODO: add better error handling
                   (error "Handler for bad fd is present: ~A " fd)))))))))
