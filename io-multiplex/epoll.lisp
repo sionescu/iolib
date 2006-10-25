@@ -99,3 +99,7 @@
          :do (epoll-serve-single-fd (fd-handler interface fd)
                                     event-mask))))
   (values interface))
+
+(defmethod close-multiplex-interface ((interface epoll-multiplex-interface))
+  (sb-ext:cancel-finalization interface)
+  (et:close (epoll-fd interface)))

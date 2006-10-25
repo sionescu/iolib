@@ -68,6 +68,10 @@
 
 (defgeneric serve-fd-events (multiplex-interface &key))
 
+(defgeneric close-multiplex-interface (multiplex-interface fd)
+  (:method ((interface multiplex-interface))
+    t))
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *multiplex-available-interfaces* nil)
   (defvar *multiplex-best-interface* nil))
