@@ -96,14 +96,16 @@
 
 (defmethod monitor-fd progn ((interface multiplex-interface) handler)
   (setf (gethash (handler-fd handler) (fd-handlers interface))
-        handler))
+        handler)
+  (values interface))
 
 (defmethod modify-fd progn ((interface multiplex-interface) fd
                             &key read-handler write-handler except-handler)
   (let ((handler (fd-handler interface fd)))
     (setf (handler-read-func   handler) read-handler)
     (setf (handler-write-func  handler) write-handler)
-    (setf (handler-except-func handler) except-handler)))
+    (setf (handler-except-func handler) except-handler))
+  (values interface))
 
 (defmethod add-fd-handlers progn ((interface multiplex-interface) fd
                                   &key read-handler write-handler except-handler)
@@ -121,10 +123,12 @@
                                          (handler-except-func current-handler))))
         (progn
           (setf current-handler (make-handler fd read-handler write-handler except-handler))
-          (monitor-fd interface current-handler)))))
+          (monitor-fd interface current-handler))))
+  (values interface))
 
 (defmethod unmonitor-fd progn ((interface multiplex-interface) handler)
-  (remhash (handler-fd handler) (fd-handlers interface)))
+  (remhash (handler-fd handler) (fd-handlers interface))
+  (values interface))
 
 (defmethod remove-fd-handlers progn ((interface multiplex-interface) fd
                                      &key read write except all)
@@ -146,7 +150,8 @@
                            :read-handler   (handler-read-func current-handler)
                            :write-handler  (handler-except-func current-handler)
                            :except-handler (handler-except-func current-handler))
-                (unmonitor-fd interface current-handler)))))))
+                (unmonitor-fd interface current-handler))))))
+  (values interface))
 
 ;; if there are handlers installed save them and restore them at the end
 ;; (defmacro with-fd-handlers ((fd &key read-handler write-handler except-handler) &body body)

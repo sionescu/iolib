@@ -97,4 +97,5 @@
                                (handler-write-func handler))
                       (funcall (handler-write-func handler) fd :write)))
                   ;; TODO: add better error handling
-                  (error "Handler for bad fd is present: ~A " fd)))))))))
+                  (error "Handler for bad fd is present: ~A " fd))))))))
+  (values interface))

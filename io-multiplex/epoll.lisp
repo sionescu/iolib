@@ -50,7 +50,8 @@
       (et:memset (sb-alien:addr ev) 0 et::size-of-epoll-event)
       (setf (sb-alien:slot ev 'et:events) flags)
       (setf (sb-alien:slot (sb-alien:slot ev 'et:data) 'et:fd) fd)
-      (et:epoll-ctl (epoll-fd interface) et:epoll-ctl-add fd (sb-alien:addr ev)))))
+      (et:epoll-ctl (epoll-fd interface) et:epoll-ctl-add fd (sb-alien:addr ev)))
+    (values interface)))
 
 (defmethod modify-fd progn ((interface epoll-multiplex-interface) fd
                             &key read-handler write-handler except-handler)
@@ -61,13 +62,15 @@
       (et:memset (sb-alien:addr ev) 0 et::size-of-epoll-event)
       (setf (sb-alien:slot ev 'et:events) flags)
       (setf (sb-alien:slot (sb-alien:slot ev 'et:data) 'et:fd) fd)
-      (et:epoll-ctl (epoll-fd interface) et:epoll-ctl-mod fd (sb-alien:addr ev)))))
+      (et:epoll-ctl (epoll-fd interface) et:epoll-ctl-mod fd (sb-alien:addr ev)))
+    (values interface)))
 
 (defmethod unmonitor-fd progn ((interface epoll-multiplex-interface) handler)
   (et:epoll-ctl (epoll-fd interface)
                 et:epoll-ctl-del
                 (handler-fd handler)
-                nil))
+                nil)
+  (values interface))
 
 (defun epoll-serve-single-fd (handler events)
   (let ((except-func (handler-except-func handler))
@@ -94,4 +97,5 @@
          :for fd := (sb-alien:slot (sb-alien:slot (sb-alien:deref events i) 'et:data) 'et:fd)
          :for event-mask := (sb-alien:slot (sb-alien:deref events i) 'et:events)
          :do (epoll-serve-single-fd (fd-handler interface fd)
-                                    event-mask)))))
+                                    event-mask))))
+  (values interface))
