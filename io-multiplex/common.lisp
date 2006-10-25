@@ -85,6 +85,10 @@
         (declare (ignore err))
         nil))))
 
+(defun finalize-object-closing-fd (object fd)
+  (sb-ext:finalize object #'(lambda () (et:close fd))))
+
+
 
 ;;;
 ;;; Base methods

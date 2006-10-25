@@ -35,4 +35,6 @@
    #:*multiplex-best-interface*
 
    #:add-fd-handlers #:remove-fd-handlers
-   #:modify-fd #:serve-fd-events))
+   #:modify-fd #:serve-fd-events
+
+   #:finalize-object-closing-fd))

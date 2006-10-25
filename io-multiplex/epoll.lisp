@@ -35,14 +35,11 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *epoll-max-events* 200))
 
-(defun set-finalizer-on-epoll-interface (epoll-interface fd)
-  (sb-ext:finalize epoll-interface #'(lambda () (et:close fd))))
-
 (defmethod initialize-instance :after ((interface epoll-multiplex-interface)
                                        &key (size +epoll-default-size-hint+))
   (let ((epoll-fd (et:epoll-create size)))
     (setf (slot-value interface 'epoll-fd) epoll-fd)
-    (set-finalizer-on-epoll-interface interface epoll-fd)))
+    (finalize-object-closing-fd interface epoll-fd)))
 
 (defmethod monitor-fd progn ((interface epoll-multiplex-interface) handler)
   (let ((flags (logior (if (handler-read-func handler) et:epollin 0)

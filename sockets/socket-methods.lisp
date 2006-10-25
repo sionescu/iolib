@@ -61,9 +61,6 @@
                                        (string protocol))))))))
     (values sf st sp)))
 
-(defun set-finalizer-on-socket (socket fd)
-  (sb-ext:finalize socket #'(lambda () (et:close fd))))
-
 (defmethod shared-initialize :after ((socket socket) slot-names
                                      &key file-descriptor family
                                      type (protocol :default))
@@ -78,7 +75,7 @@
                      (et:socket sf st sp))))
       (setf fam family)
       (setf proto protocol)
-      (set-finalizer-on-socket socket fd))))
+      (iomux:finalize-object-closing-fd socket fd))))
 
 (defmethod shared-initialize :after ((socket stream-socket) slot-names &key)
   (setf (slot-value socket 'lisp-stream)
