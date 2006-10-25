@@ -36,5 +36,6 @@
 
    #:add-fd-handlers #:remove-fd-handlers
    #:modify-fd #:serve-fd-events
+   #:close-multiplex-interface
 
    #:finalize-object-closing-fd))
