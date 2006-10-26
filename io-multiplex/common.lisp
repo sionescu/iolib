@@ -68,7 +68,7 @@
 
 (defgeneric serve-fd-events (multiplex-interface &key))
 
-(defgeneric close-multiplex-interface (multiplex-interface fd)
+(defgeneric close-multiplex-interface (multiplex-interface)
   (:method ((interface multiplex-interface))
     t))
 
