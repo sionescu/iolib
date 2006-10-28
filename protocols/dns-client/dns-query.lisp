@@ -47,12 +47,14 @@
 (defmacro define-flags-bitfield (name offset length &optional (type :integer))
   (let ((method-name (et::symbolicate name :-field)))
     `(progn
+       (defgeneric ,method-name (message))
        (defmethod ,method-name ((message dns-message))
          ,(ecase type
            (:integer `(ldb (byte ,length ,offset) (dns-message-flags message)))
            (:boolean `(logbitp ,offset (dns-message-flags message)))
            (:rcode `(rcode-id
                      (ldb (byte ,length ,offset) (dns-message-flags message))))))
+       (defgeneric (setf ,method-name) (value message))
        (defmethod (setf ,method-name) (value (message dns-message))
          ,(ecase type
            (:integer `(setf (ldb (byte ,length ,offset) (dns-message-flags message))
@@ -70,6 +72,7 @@
 (define-flags-bitfield recursion-available 7 1 :boolean)
 (define-flags-bitfield rcode 0 4 :rcode)
 
+(defgeneric decode-flags (message))
 (defmethod decode-flags ((msg dns-message))
   (let (flags)
     (push (if (response-field msg) :response :query) flags)
@@ -139,6 +142,7 @@
 ;;;                 ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 
+(defgeneric write-dns-string (buffer string))
 (defmethod write-dns-string ((buffer dynamic-output-buffer)
                              (string simple-string))
   (write-unsigned-8 buffer (length string))
@@ -158,10 +162,12 @@
          :when (>= end-off vector-length) :do (loop-finish)))
     tmp-vec))
 
+(defgeneric write-domain-name (buffer name))
 (defmethod write-domain-name ((buffer dynamic-output-buffer)
                               (domain-name simple-string))
   (write-vector buffer (domain-name-to-dns-format domain-name)))
 
+(defgeneric write-record (buffer record))
 (defmethod write-record ((buffer dynamic-output-buffer)
                          (record dns-question))
   (with-slots (name type class) record
@@ -169,6 +175,7 @@
     (write-unsigned-16 buffer (query-type-number type))
     (write-unsigned-16 buffer (query-class-number class))))
 
+(defgeneric write-message-header (buffer message))
 (defmethod write-message-header ((buffer dynamic-output-buffer)
                                  (message dns-message))
   (with-slots (id flags question answer authority additional)
@@ -180,6 +187,7 @@
     (write-unsigned-16 buffer (length authority))
     (write-unsigned-16 buffer (length additional))))
 
+(defgeneric write-dns-message (message))
 (defmethod write-dns-message ((message dns-message))
   (with-slots (question) message
     (with-output-buffer buffer

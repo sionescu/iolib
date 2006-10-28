@@ -201,6 +201,8 @@
     (with-slots (name abstract) address
       (format stream "Unix socket address: ~A. Abstract: ~:[no~;yes~]" name abstract))))
 
+(defgeneric netaddr->presentation (addr))
+
 (defmethod netaddr->presentation ((addr ipv4addr))
   (vector-to-dotted (name addr)))
 
@@ -224,6 +226,8 @@
   (and (equal (length v1) (length v2))
        (every #'eql v1 v2)))
 
+(defgeneric netaddr= (addr1 addr2))
+
 (defmethod netaddr= ((addr1 ipv4addr) (addr2 ipv4addr))
   (vector-equal (name addr1) (name addr2)))
 
@@ -238,6 +242,8 @@
 ;;; Copy methods
 ;;;
 
+(defgeneric copy-netaddr (addr))
+
 (defmethod copy-netaddr ((addr ipv4addr))
   (make-instance 'ipv4addr
                  :name (copy-seq (name addr))))
@@ -251,6 +257,7 @@
                  :name (copy-seq (name addr))
                  :abstract (abstract-p addr)))
 
+(defgeneric map-ipv4-address->ipv6 (addr))
 (defmethod map-ipv4-address->ipv6 ((addr ipv4addr))
   (make-instance 'ipv6addr
                  :name (map-ipv4-vector-to-ipv6 (name addr))))
@@ -309,17 +316,23 @@
 ;;;
 
 ;; General predicates
+(defgeneric ipv4-address-p (addr))
+
 (defmethod ipv4-address-p ((addr ipv4addr))
   t)
 
 (defmethod ipv4-address-p (addr)
   nil)
 
+(defgeneric ipv6-address-p (addr))
+
 (defmethod ipv6-address-p ((addr ipv6addr))
   t)
 
 (defmethod ipv6-address-p (addr)
   nil)
+
+(defgeneric local-address-p (addr))
 
 (defmethod local-address-p ((addr localaddr))
   t)
@@ -341,17 +354,21 @@
 
 ;; IPv4 predicates
 
+(defgeneric netaddr-unspecified-p (addr))
 (defmethod netaddr-unspecified-p ((addr ipv4addr))
   (netaddr= addr +ipv4-unspecified+))
 
+(defgeneric netaddr-loopback-p (addr))
 (defmethod netaddr-loopback-p ((addr ipv4addr))
   (netaddr= addr +ipv4-loopback+))
 
+(defgeneric netaddr-multicast-p (addr))
 (defmethod netaddr-multicast-p ((addr ipv4addr))
   (eql (logand (aref (name addr) 0)
                #xE0)
        #xE0))
 
+(defgeneric netaddr-unicast-p (addr))
 (defmethod netaddr-unicast-p ((addr ipv4addr))
   (and (not (netaddr-unspecified-p addr))
        (not (netaddr-loopback-p addr))
@@ -366,6 +383,7 @@
 (defmethod netaddr-loopback-p ((addr ipv6addr))
   (netaddr= addr +ipv6-loopback+))
 
+(defgeneric ipv6-ipv4-mapped-p (addr))
 (defmethod ipv6-ipv4-mapped-p ((addr ipv6addr))
   (with-slots (name) addr
     (and (zerop (aref name 0))
@@ -388,51 +406,61 @@
                #xFF00)
        #xFF00))
 
+(defgeneric ipv6-interface-local-multicast-p (addr))
 (defmethod ipv6-interface-local-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF0F)
        #xFF01))
 
+(defgeneric ipv6-link-local-multicast-p (addr))
 (defmethod ipv6-link-local-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF0F)
        #xFF02))
 
+(defgeneric ipv6-admin-local-multicast-p (addr))
 (defmethod ipv6-admin-local-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF0F)
        #xFF04))
 
+(defgeneric ipv6-site-local-multicast-p (addr))
 (defmethod ipv6-site-local-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF0F)
        #xFF05))
 
+(defgeneric ipv6-organization-local-multicast-p (addr))
 (defmethod ipv6-organization-local-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF0F)
        #xFF08))
 
+(defgeneric ipv6-global-multicast-p (addr))
 (defmethod ipv6-global-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF0F)
        #xFF0E))
 
+(defgeneric ipv6-reserved-multicast-p (addr))
 (defmethod ipv6-reserved-multicast-p ((addr ipv6addr))
   (member (logand (aref (name addr) 0)
                   #xFF0F)
           (list #xFF00 #xFF03 #xFF0F)))
 
+(defgeneric ipv6-unassigned-multicast-p (addr))
 (defmethod ipv6-unassigned-multicast-p ((addr ipv6addr))
   (member (logand (aref (name addr) 0)
                   #xFF0F)
           (list #xFF06 #xFF07 #xFF09 #xFF0A #xFF0B #xFF0C #xFF0D)))
 
+(defgeneric ipv6-transient-multicast-p (addr))
 (defmethod ipv6-transient-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF10)
        #xFF10))
 
+(defgeneric ipv6-solicited-node-multicast-p (addr))
 (defmethod ipv6-solicited-node-multicast-p ((addr ipv6addr))
   (let ((vec (name addr)))
     (and (eql (aref vec 0) #xFF02) ; link-local permanent multicast
@@ -441,12 +469,15 @@
                       #xFF00)
               #xFF00))))
 
+(defgeneric ipv6-link-local-unicast-p (addr))
 (defmethod ipv6-link-local-unicast-p ((addr ipv6addr))
   (eql (aref (name addr) 0) #xFE80))
 
+(defgeneric ipv6-site-local-unicast-p (addr))
 (defmethod ipv6-site-local-unicast-p ((addr ipv6addr))
   (eql (aref (name addr) 0) #xFEC0))
 
+(defgeneric ipv6-global-unicast-p (addr))
 (defmethod ipv6-global-unicast-p ((addr ipv6addr))
   (and (not (netaddr-unspecified-p addr))
        (not (netaddr-loopback-p addr))
@@ -459,6 +490,7 @@
            (not (netaddr-loopback-p addr))
            (not (netaddr-multicast-p addr)))))
 
+(defgeneric ipv6-multicast-type (addr))
 (defmethod ipv6-multicast-type ((addr ipv6addr))
   (cond
     ((ipv6-interface-local-multicast-p addr)    :interface-local)
@@ -469,6 +501,8 @@
     ((ipv6-global-multicast-p addr)             :global)
     ((ipv6-reserved-multicast-p addr)           :reserved)
     ((ipv6-unassigned-multicast-p addr)         :unassigned)))
+
+(defgeneric netaddr-type (addr))
 
 (defmethod netaddr-type ((addr ipv6addr))
   (cond

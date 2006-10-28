@@ -49,6 +49,8 @@
           (ldb (byte 8 8) value)
           (ldb (byte 8 0) value)))
 
+(defgeneric write-vector (buffer vector))
+
 (defmethod write-vector :before ((buffer dynamic-output-buffer)
                                  (vector array))
   (with-slots (sequence length size) buffer
@@ -67,14 +69,17 @@
       (incf length vector-length)))
   buffer)
 
+(defgeneric write-unsigned-8 (buffer vector))
 (defmethod write-unsigned-8 ((buffer dynamic-output-buffer)
                              (value integer))
   (write-vector buffer (vector value)))
 
+(defgeneric write-unsigned-16 (buffer vector))
 (defmethod write-unsigned-16 ((buffer dynamic-output-buffer)
                               (value integer))
   (write-vector buffer (ub16-to-vector value)))
 
+(defgeneric write-unsigned-32 (buffer vector))
 (defmethod write-unsigned-32 ((buffer dynamic-output-buffer)
                               (value integer))
   (write-vector buffer (ub32-to-vector value)))
@@ -116,6 +121,7 @@
 (define-condition input-buffer-index-out-of-bounds (input-buffer-error) ()
   (:documentation "Signals that BUFFER-SEEK on an INPUT-BUFFER was passed an invalid offset."))
 
+(defgeneric buffer-seek (buffer offset))
 (defmethod buffer-seek ((buffer dynamic-input-buffer) offset)
   (check-type offset unsigned-byte "a non-negative value")
   (with-slots (sequence size position) buffer
@@ -123,6 +129,7 @@
         (error 'input-buffer-index-out-of-bounds)
         (setf position offset))))
 
+(defgeneric buffer-append (buffer vector))
 (defmethod buffer-append ((buffer dynamic-input-buffer)
                           vector)
   (with-slots (sequence size) buffer
@@ -134,10 +141,12 @@
         (replace sequence vector :start1 oldsize)
         (setf size newsize)))))
 
+(defgeneric bytes-unread (buffer))
 (defmethod bytes-unread ((buffer dynamic-input-buffer))
   (with-slots (position size) buffer
     (- size position)))
 
+(defgeneric check-if-enough-bytes (buffer length &key check-all))
 (defmethod check-if-enough-bytes ((buffer dynamic-input-buffer)
                                   length &key (check-all t))
   (let ((bytes-unread (bytes-unread buffer)))
@@ -164,6 +173,7 @@
      (ash (aref vector (+ position 2)) 8)
      (aref vector (+ position 3))))
 
+(defgeneric read-vector (buffer length &key read-all))
 (defmethod read-vector ((buffer dynamic-input-buffer)
                         length &key (read-all t))
   (let* ((bytes-to-read
@@ -176,6 +186,7 @@
       (incf position bytes-to-read))
     newvector))
 
+(defgeneric read-unsigned-8 (buffer))
 (defmethod read-unsigned-8 ((buffer dynamic-input-buffer))
   (check-if-enough-bytes buffer 1)
   (with-slots (sequence position) buffer
@@ -183,6 +194,7 @@
         (aref sequence position)
       (incf position))))
 
+(defgeneric read-unsigned-16 (buffer))
 (defmethod read-unsigned-16 ((buffer dynamic-input-buffer))
   (check-if-enough-bytes buffer 2)
   (with-slots (sequence position) buffer
@@ -190,6 +202,7 @@
         (read-ub16-from-vector sequence position)
       (incf position 2))))
 
+(defgeneric read-unsigned-32 (buffer))
 (defmethod read-unsigned-32 ((buffer dynamic-input-buffer))
   (check-if-enough-bytes buffer 4)
   (with-slots (sequence position) buffer

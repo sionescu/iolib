@@ -26,6 +26,8 @@
 
 (defvar *hosts-file* "/etc/hosts")
 
+(defgeneric dns-lookup-host (host &key ipv6))
+
 (defmethod dns-lookup-host ((host string) &key (ipv6 *ipv6*))
   (or (search-etc-hosts-name *hosts-file* host ipv6)
       (dns-query host :type :a)))

@@ -32,19 +32,22 @@
   (with-slots (ttl) rr
     (check-type ttl (unsigned-byte 32) "a valid TTL")))
 
-
+(defgeneric add-question (message question))
 (defmethod add-question ((message dns-message)
                          (question dns-question))
   (vector-push-extend question (dns-message-question message)))
 
+(defgeneric add-answer-rr (message record))
 (defmethod add-answer-rr ((message dns-message)
                           (record dns-rr))
   (vector-push-extend record (dns-message-answer message)))
 
+(defgeneric add-authority-rr (message record))
 (defmethod add-authority-rr ((message dns-message)
                              (record dns-rr))
   (vector-push-extend record (dns-message-authority message)))
 
+(defgeneric add-additional-rr (message record))
 (defmethod add-additional-rr ((message dns-message)
                               (record dns-rr))
   (vector-push-extend record (dns-message-additional message)))
@@ -53,6 +56,7 @@
 (define-condition dns-message-error (error) ()
   (:documentation "Signaled when a format error is encountered while parsing a DNS message"))
 
+(defgeneric read-dns-string (buffer))
 (defmethod read-dns-string ((buffer dynamic-input-buffer))
   (let ((length (read-unsigned-8 buffer)))
     (sb-ext:octets-to-string (read-vector buffer length))))
@@ -89,6 +93,7 @@
                        (cdr strings)
                        :initial-value "")))
 
+(defgeneric dns-domain-name-to-string (buffer))
 (defmethod dns-domain-name-to-string ((buffer dynamic-input-buffer))
   (let (string offset pointer-seen)
     (values
@@ -109,6 +114,7 @@
                   :until (string= string "")))
      offset)))
 
+(defgeneric read-domain-name (buffer))
 (defmethod read-domain-name ((buffer dynamic-input-buffer))
   (with-slots (sequence position) buffer
     (multiple-value-bind (string offset)
@@ -116,12 +122,14 @@
       (setf position offset)
       string)))
 
-
+(defgeneric read-question (buffer))
 (defmethod read-question ((buffer dynamic-input-buffer))
   (let ((name (read-domain-name buffer))
         (type (query-type-id (read-unsigned-16 buffer)))
         (class (query-class-id (read-unsigned-16 buffer))))
     (make-question name type class)))
+
+(defgeneric read-rr-data (buffer type class length))
 
 (defmethod read-rr-data ((buffer dynamic-input-buffer)
                          (type (eql :a)) (class (eql :in))
@@ -199,6 +207,7 @@
                          type class resource-length)
   (error 'dns-message-error))
 
+(defgeneric read-dns-rr (buffer))
 (defmethod read-dns-rr ((buffer dynamic-input-buffer))
   (let* ((name (read-domain-name buffer))
          (type (query-type-id (read-unsigned-16 buffer)))
@@ -213,6 +222,7 @@
                    :ttl ttl
                    :data rdata)))
 
+(defgeneric read-message-header (buffer))
 (defmethod read-message-header ((buffer dynamic-input-buffer))
   (let ((id (read-unsigned-16 buffer))
         (flags (read-unsigned-16 buffer))
@@ -225,6 +235,7 @@
                    :qdcount qdcount :ancount ancount
                    :nscount nscount :arcount arcount)))
 
+(defgeneric read-dns-message (buffer))
 (defmethod read-dns-message ((buffer dynamic-input-buffer))
   (let ((msg (read-message-header buffer)))
     (with-slots (qdcount ancount nscount arcount) msg

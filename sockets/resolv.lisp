@@ -146,6 +146,7 @@
     (unless (consp addresses)
       (setf addresses (list addresses)))))
 
+(defgeneric random-address (host))
 (defmethod random-address ((host host))
   (with-slots (addresses) host
     (nth (random (length addresses))
@@ -231,6 +232,8 @@
                           address))
                   addresses)))
   hostobj)
+
+(defgeneric lookup-host (host &key &allow-other-keys))
 
 (defmethod lookup-host :before (host &key (ipv6 *ipv6*))
   (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration"))

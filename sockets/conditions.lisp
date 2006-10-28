@@ -24,12 +24,15 @@
 
 (in-package #:net.sockets)
 
+(defgeneric error-code (err))
 (defmethod error-code ((err system-error))
   (et:system-error-code err))
 
+(defgeneric error-identifier (err))
 (defmethod error-identifier ((err system-error))
   (et:system-error-identifier err))
 
+(defgeneric error-message (err))
 (defmethod error-message ((err system-error))
   (et:message err))
 
