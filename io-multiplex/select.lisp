@@ -30,8 +30,7 @@
 
 (define-iomux-interface select-multiplex-interface +select-priority+)
 
-(defmethod select-setup-masks ((interface select-multiplex-interface)
-                               read-fds write-fds except-fds)
+(defun select-setup-masks (select-iface read-fds write-fds except-fds)
   (declare (type sb-alien:system-area-pointer
                  read-fds write-fds except-fds))
 
@@ -40,23 +39,21 @@
   (et:fd-zero except-fds)
 
   (let ((max-fd 0))
-    (with-slots (fd-handlers) interface
-      (with-hash-table-iterator (next-item fd-handlers)
-        (multiple-value-bind (item-p fd handler) (next-item)
-          (when item-p
-            (if (fd-open-p fd)
-                (progn
-                  (when (> fd max-fd)
-                    (setf max-fd fd))
-                  (when (handler-read-func handler)
-                    (et:fd-set fd read-fds))
-                  (when (handler-write-func handler)
-                    (et:fd-set fd write-fds))
-                  (when (handler-except-func handler)
-                    (et:fd-set fd except-fds)))
-                ;; TODO: add better error handling
-                (error "Handlers for bad fd(s) are present !!")))))
-      (incf max-fd))))
+    (with-hash-table-iterator (next-item (fd-handlers select-iface))
+      (multiple-value-bind (item-p fd handler) (next-item)
+        (when item-p
+          (if (fd-open-p fd)
+              (progn
+                (when (> fd max-fd)
+                  (setf max-fd fd))
+                (when (handler-read-func handler)
+                  (et:fd-set fd read-fds))
+                (when (handler-write-func handler)
+                  (et:fd-set fd write-fds))
+                (when (handler-except-func handler)
+                  (et:fd-set fd except-fds)))
+              ;; TODO: add better error handling
+              (error "Handlers for bad fd(s) are present !!")))))))
 
 (defmethod serve-fd-events ((interface select-multiplex-interface) &key)
   (sb-alien:with-alien ((read-fds et:fd-set)
