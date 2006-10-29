@@ -82,4 +82,10 @@
    ;; network interface lookup
    #:interface #:make-interface #:lookup-interface #:get-network-interfaces
    #:interface-name #:interface-index
+
+   ;; socket methods
+   #:socket-type #:make-socket #:socket-close #:socket-open-p
+   #:socket-non-blocking-mode #:local-name #:remote-name
+   #:bind-address #:socket-listen #:accept-connection #:connect
+   #:shutdown #:socket-send  #:socket-receive #:unconnect
 ))
