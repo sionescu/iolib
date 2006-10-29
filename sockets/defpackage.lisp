@@ -83,7 +83,20 @@
    #:interface #:make-interface #:lookup-interface #:get-network-interfaces
    #:interface-name #:interface-index
 
+   ;; classes
+   #:socket #:stream-socket #:datagram-socket
+   #:internet-socket #:local-socket
+   #:active-socket #:passive-socket
+   #:socket-stream-internet-active
+   #:socket-stream-internet-passive
+   #:socket-stream-local-active
+   #:socket-stream-local-passive
+   #:socket-datagram-local-active
+   #:socket-datagram-internet-active
+
    ;; socket methods
+   #:socket-fd #:socket-address #:socket-family #:socket-protocol
+   #:get-socket-option #:set-socket-option
    #:socket-type #:make-socket #:socket-close #:socket-open-p
    #:socket-non-blocking-mode #:local-name #:remote-name
    #:bind-address #:socket-listen #:accept-connection #:connect
