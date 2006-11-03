@@ -96,7 +96,7 @@
 
    ;; socket methods
    #:socket-fd #:socket-address #:socket-family #:socket-protocol
-   #:get-socket-option #:set-socket-option
+   #:socket-lisp-stream #:get-socket-option #:set-socket-option
    #:socket-type #:make-socket #:socket-close #:socket-open-p
    #:socket-non-blocking-mode #:local-name #:remote-name
    #:bind-address #:socket-listen #:accept-connection #:connect
