@@ -42,18 +42,15 @@
     (with-hash-table-iterator (next-item (fd-handlers select-iface))
       (multiple-value-bind (item-p fd handler) (next-item)
         (when item-p
-          (if (fd-open-p fd)
-              (progn
-                (when (> fd max-fd)
-                  (setf max-fd fd))
-                (when (handler-read-func handler)
-                  (et:fd-set fd read-fds))
-                (when (handler-write-func handler)
-                  (et:fd-set fd write-fds))
-                (when (handler-except-func handler)
-                  (et:fd-set fd except-fds)))
-              ;; TODO: add better error handling
-              (error "Handlers for bad fd(s) are present !!")))))))
+          (when (> fd max-fd)
+            (setf max-fd fd))
+          (when (handler-read-func handler)
+            (et:fd-set fd read-fds))
+          (when (handler-write-func handler)
+            (et:fd-set fd write-fds))
+          (when (handler-except-func handler)
+            (et:fd-set fd except-fds)))))
+    max-fd))
 
 (defmethod serve-fd-events ((interface select-multiplex-interface) &key)
   (sb-alien:with-alien ((read-fds et:fd-set)
@@ -70,7 +67,7 @@
         (tagbody
          :start
            (handler-case
-               (et:select max-fd
+               (et:select (1+ max-fd)
                           (sb-alien:addr read-fds)
                           (sb-alien:addr write-fds)
                           (sb-alien:addr except-fds)
