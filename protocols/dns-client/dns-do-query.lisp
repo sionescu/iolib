@@ -107,6 +107,109 @@
       (:ipv4 (ipv4-dns-ptr-name vector))
       (:ipv6 (ipv6-dns-ptr-name vector)))))
 
+
+;;
+;; RESOURCE RECORD decoding
+;;
+(defgeneric do-decode-rr (rr type class))
+
+(defmethod do-decode-rr ((rr dns-rr) (type (eql :cname)) class)
+  (declare (ignore class))
+  (let ((cname (dns-rr-data rr)))
+    (cons (dns-rr-ttl rr)
+          (subseq cname 0 (1- (length cname))))))
+
+(defmethod do-decode-rr ((rr dns-rr) (type (eql :a)) (class (eql :in)))
+  (let ((address (dns-rr-data rr)))
+    (cons (dns-rr-ttl rr)
+          (make-address address))))
+
+(defmethod do-decode-rr ((rr dns-rr) (type (eql :aaaa)) (class (eql :in)))
+  (let ((address (dns-rr-data rr)))
+    (cons (dns-rr-ttl rr)
+          (make-address address))))
+
+(defmethod do-decode-rr ((rr dns-rr) (type (eql :ptr)) class)
+  (declare (ignore class))
+  (let ((name (dns-rr-data rr)))
+    (cons (dns-rr-ttl rr)
+          (subseq name 0 (1- (length name))))))
+
+(defmethod do-decode-rr ((rr dns-rr) (type (eql :mx)) class)
+  (declare (ignore class))
+  (destructuring-bind (preference name) (dns-rr-data rr)
+    (cons (dns-rr-ttl rr)
+          (cons preference
+                (subseq name 0 (1- (length name)))))))
+
+(defmethod do-decode-rr ((rr dns-rr) (type (eql :txt)) class)
+  (declare (ignore class))
+  (cons (dns-rr-ttl rr) (dns-rr-data rr)))
+
+(defun decode-rr (rr)
+  (do-decode-rr rr (dns-record-type rr) (dns-record-class rr)))
+
+;;
+;; RESPONSE decoding
+;;
+(defgeneric do-decode-response (dns-message question-type))
+
+(defmethod do-decode-response :around ((msg dns-message) question-type)
+  (let ((return-code (rcode-field msg)))
+    (if (eql return-code :no-error) ; no error
+        (call-next-method)
+        (values return-code))))
+
+(defun decode-a-or-aaaa-response (msg)
+  (declare (type dns-message msg))
+  (let ((answer (dns-message-answer msg))
+        (answer-count (dns-message-answer-count msg))
+        (cname nil)
+        (first-address-place 0)
+        (first-address nil)
+        (other-addresses nil))
+    ;; when the address is valid(we have at least one answer)
+    (when (plusp answer-count)
+      ;; we have a CNAME
+      (when (eql (dns-record-type (aref answer 0))
+                 :cname)
+        (setf cname (decode-rr (aref answer 0)))
+        (incf first-address-place))
+      ;; this means the message actually contains addresses
+      (when (> (dns-message-answer-count msg) first-address-place)
+        (setf first-address (decode-rr (aref answer first-address-place))))
+      (setf other-addresses
+            (loop
+               :for i :from (1+ first-address-place) :below (dns-message-answer-count msg)
+               :collect (decode-rr (aref answer i)))))
+    (values cname first-address other-addresses)))
+
+(defmethod do-decode-response ((msg dns-message) (question-type (eql :a)))
+  (decode-a-or-aaaa-response msg))
+
+(defmethod do-decode-response ((msg dns-message) (question-type (eql :aaaa)))
+  (decode-a-or-aaaa-response msg))
+
+(defmethod do-decode-response ((msg dns-message) (question-type (eql :ptr)))
+  (decode-rr (aref (dns-message-answer msg) 0)))
+
+;; TODO: got a lot to do here
+(defmethod do-decode-response ((msg dns-message) (question-type (eql :mx)))
+  (let ((rr (aref (dns-message-answer msg) 0)))
+    (decode-rr rr)))
+
+(defmethod do-decode-response ((msg dns-message) (question-type (eql :txt)))
+  (decode-rr (aref (dns-message-answer msg) 0)))
+
+(defmethod do-decode-response ((msg dns-message) question-type)
+  msg)
+
+(defun decode-response (message)
+  (do-decode-response message (dns-record-type (aref (dns-message-question message) 0))))
+
+;;
+;; DNS-QUERY
+;;
 (defun dns-query (name &key (type :a) (nameserver *dns-nameservers*)
                   (repeat *dns-repeat*) (timeout *dns-timeout*)
                   (decode nil) (search nil))
@@ -181,7 +284,9 @@
 
      :return-response
        (when response
-         (return-from dns-query response))
+         (return-from dns-query (if decode
+                                    (decode-response response)
+                                    response)))
 
      :raise-error
        (error "Could not query nameserver !!"))))
