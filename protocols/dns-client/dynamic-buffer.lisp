@@ -210,7 +210,7 @@
         (read-ub32-from-vector sequence position)
       (incf position 4))))
 
-(defmacro with-input-buffer ((var buffer &key size) &body body)
+(defmacro with-input-buffer ((var) &body body)
   `(let ((,var (make-instance 'dynamic-input-buffer)))
      ,@body
      ,var))

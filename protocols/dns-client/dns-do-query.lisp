@@ -213,6 +213,9 @@
 (defun dns-query (name &key (type :a) (nameserver *dns-nameservers*)
                   (repeat *dns-repeat*) (timeout *dns-timeout*)
                   (decode nil) (search nil))
+  ;; TODO: implement search
+  (declare (ignore search))
+
   (when (eq type :ptr)
     (setf name (dns-ptr-name name)))
   (let* ((query (prepare-query name type))
