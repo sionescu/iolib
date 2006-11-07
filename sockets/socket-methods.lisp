@@ -293,14 +293,14 @@
   (when reuse-address
     (set-socket-option socket :reuse-address :value t)))
 
-(defun ipv4-bind (fd address port)
+(defun bind-ipv4-address (fd address port)
   (with-alien ((sin et:sockaddr-in))
     (make-sockaddr-in (addr sin) address port)
     (with-socket-error-filter
       (et:bind fd (addr sin)
                et::size-of-sockaddr-in))))
 
-(defun ipv6-bind (fd address port)
+(defun bind-ipv6-address (fd address port)
   (with-alien ((sin6 et:sockaddr-in6))
     (make-sockaddr-in6 (addr sin6) address port)
     (with-socket-error-filter
@@ -309,18 +309,18 @@
 
 (defmethod bind-address ((socket internet-socket)
                          (address ipv4addr)
-                         &key (port 0) interface)
+                         &key (port 0))
   (if (eql (socket-family socket) :ipv6)
-      (ipv6-bind (socket-fd socket)
-                 (map-ipv4-vector-to-ipv6 (name address))
-                 port)
-      (ipv4-bind (socket-fd socket) (name address) port))
+      (bind-ipv6-address (socket-fd socket)
+                         (map-ipv4-vector-to-ipv6 (name address))
+                         port)
+      (bind-ipv4-address (socket-fd socket) (name address) port))
   (values socket))
 
 (defmethod bind-address ((socket internet-socket)
                          (address ipv6addr)
-                         &key (port 0) interface)
-  (ipv6-bind (socket-fd socket) (name address) port)
+                         &key (port 0))
+  (bind-ipv6-address (socket-fd socket) (name address) port)
   (values socket))
 
 (defmethod bind-address :before ((socket local-socket)
