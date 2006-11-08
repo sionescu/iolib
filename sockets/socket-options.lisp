@@ -30,7 +30,7 @@
   (error "Sockopt error !"))
 
 ;;
-;; Set Options
+;; Set option helpers
 ;;
 
 (defun set-socket-option-bool (fd level option value)
@@ -47,7 +47,7 @@
 
 (defun set-socket-option-linger (fd level option onoff linger)
   (with-alien ((optval et:linger))
-    (setf (slot optval 'et:onoff) onoff)
+    (setf (slot optval 'et:onoff) (lisp->c-bool onoff))
     (setf (slot optval 'et:linger) linger)
     (et:setsockopt fd level option (addr optval) et::size-of-linger)
     (values)))
@@ -60,31 +60,43 @@
     (values)))
 
 ;;
-;; Get Options
+;; Get option helpers
 ;;
 
 (defun get-socket-option-bool (fd level option)
-  (with-alien ((optval int))
-    (et:setsockopt fd level option (addr optval) et::size-of-int)
-    (c->lisp-bool optval)))
+  (with-alien ((optval int)
+               (optlen et:socklen-t))
+    (setf optlen et::size-of-int)
+    (et:getsockopt fd level option (addr optval) (addr optlen))
+    (values (c->lisp-bool optval))))
 
 (defun get-socket-option-int (fd level option)
-  (with-alien ((optval int))
-    (et:setsockopt fd level option (addr optval) et::size-of-int)
-    optval))
+  (with-alien ((optval int)
+               (optlen et:socklen-t))
+    (setf optlen et::size-of-int)
+    (et:getsockopt fd level option (addr optval) (addr optlen))
+    (values optval)))
 
 (defun get-socket-option-linger (fd level option)
-  (with-alien ((optval et:linger))
-    (et:setsockopt fd level option (addr optval) et::size-of-linger)
-    (values (slot optval 'et:onoff)
+  (with-alien ((optval et:linger)
+               (optlen et:socklen-t))
+    (setf optlen et::size-of-linger)
+    (et:getsockopt fd level option (addr optval) (addr optlen))
+    (values (c->lisp-bool (slot optval 'et:onoff))
             (slot optval 'et:linger))))
 
 (defun get-socket-option-timeval (fd level option)
-  (with-alien ((optval et:timeval))
-    (et:setsockopt fd level option (addr optval) et::size-of-timeval)
+  (with-alien ((optval et:timeval)
+               (optlen et:socklen-t))
+    (setf optlen et::size-of-timeval)
+    (et:getsockopt fd level option (addr optval) (addr optlen))
     (values (slot optval 'et:tv-sec)
             (slot optval 'et:tv-usec))))
 
+
+;;
+;; Option definitions
+;;
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun make-keyword (sym)
@@ -128,6 +140,9 @@
                         (,helper-set (socket-fd socket) ,level ,optname ,@args))
                      `(error 'option-not-available option-name)))))))))
 
+;;;;;;;;;;;;;;;;;;;;;
+;; Generic options ;;
+;;;;;;;;;;;;;;;;;;;;;
 (define-socket-option accept-connections :get         et::so-acceptconn   et::sol-socket :bool    :unix)
 (define-socket-option broadcast          :get-and-set et::so-broadcast    et::sol-socket :bool    :unix)
 (define-socket-option debug              :get-and-set et::so-debug        et::sol-socket :bool    :unix)
@@ -155,7 +170,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FreeBSD-specific options ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (define-socket-option reuse-port         :get-and-set et::so-reuseport    et::sol-socket :bool    :freebsd)
 (define-socket-option use-loopback       :get-and-set et::so-useloopback  et::sol-socket :bool    :freebsd)
 (define-socket-option no-sigpipe         :get-and-set et::so-nosigpipe    et::sol-socket :bool    :freebsd)
