@@ -64,7 +64,7 @@
 (defgeneric unconnect (socket))
 
 (defclass internet-socket (socket)
-  ((port :initarg :port :reader socket-port :type '(unsigned-byte 16)))
+  ((port :initarg :port :reader socket-port :type (unsigned-byte 16)))
   (:default-initargs :family (if *ipv6* :ipv6 :ipv4)))
 
 (defclass local-socket (socket) ()
