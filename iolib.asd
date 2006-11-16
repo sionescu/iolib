@@ -17,7 +17,7 @@
               (error "Your machine seems to be neither little-endian nor big-endian. Please report this to the maintainer(s).")))
            *features*))
 
-(defsystem iolib
+(defsystem :iolib
   :description "I/O library for SBCL."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"

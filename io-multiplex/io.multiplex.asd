@@ -15,7 +15,7 @@
     (let ((*compile-print* nil))
       (call-next-method))))
 
-(defsystem io.multiplex
+(defsystem :io.multiplex
   :description "I/O multiplexing library for SBCL."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"

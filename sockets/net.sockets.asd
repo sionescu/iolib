@@ -15,7 +15,7 @@
     (let ((*compile-print* nil))
       (call-next-method))))
 
-(defsystem net.sockets
+(defsystem :net.sockets
   :description "Socket library for SBCL."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"

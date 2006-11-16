@@ -15,7 +15,7 @@
     (let ((*compile-print* nil))
       (call-next-method))))
 
-(defsystem net.dns-client
+(defsystem :net.dns-client
   :description "DNS client library."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
