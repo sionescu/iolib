@@ -114,6 +114,21 @@
       (:int (value))
       (:linger (onoff linger))
       (:timeval (sec usec)))))
+  
+(defmacro define-get-sockopt (os eql-name helper-get level optname)
+  `(defmethod get-socket-option ((socket socket) (option-name (eql ,eql-name)))
+     ,(if (member os *features*)
+          `(with-socket-error-filter
+             (,helper-get (socket-fd socket) ,level ,optname))
+          `(error 'option-not-available option-name))))
+
+(defmacro define-set-sockopt (os eql-name args helper-set level optname)
+  `(defmethod set-socket-option ((socket socket) (option-name (eql ,eql-name)) &key ,@args)
+     ,@(if (member os *features*)
+           `((with-socket-error-filter
+               (,helper-set (socket-fd socket) ,level ,optname ,@args)))
+           `((declare (ignore ,@args))
+             (error 'option-not-available option-name)))))
 
 (defmacro define-socket-option (name action optname level argtype os)
   (declare (type symbol action)
@@ -124,21 +139,12 @@
         (helper-get (make-sockopt-helper-name :get argtype))
         (helper-set (make-sockopt-helper-name :set argtype)))
     `(progn
-       ,@(remove-if
-          #'null
-          (list
-           (when (member action (list :get :get-and-set))
-             `(defmethod get-socket-option ((socket socket) (option-name (eql ,eql-name)))
-                ,(if (member os *features*)
-                     `(with-socket-error-filter
-                        (,helper-get (socket-fd socket) ,level ,optname))
-                     `(error 'option-not-available option-name))))
-           (when (member action (list :set :get-and-set))
-             `(defmethod set-socket-option ((socket socket) (option-name (eql ,eql-name)) &key ,@args)
-                ,(if (member os *features*)
-                     `(with-socket-error-filter
-                        (,helper-set (socket-fd socket) ,level ,optname ,@args))
-                     `(error 'option-not-available option-name)))))))))
+       ,@(remove-if #'null
+           (list
+            (when (member action (list :get :get-and-set))
+              `(define-get-sockopt ,os ,eql-name ,helper-get ,level ,optname))
+            (when (member action (list :set :get-and-set))
+              `(define-set-sockopt ,os ,eql-name ,args ,helper-set ,level ,optname)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Generic options ;;
