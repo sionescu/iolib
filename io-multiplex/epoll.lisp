@@ -22,7 +22,7 @@
 ;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 (declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
-(in-package #:io.multiplex)
+(in-package :io.multiplex)
 
 (defclass epoll-multiplex-interface (multiplex-interface)
   ((epoll-fd :reader epoll-fd)))
@@ -46,11 +46,13 @@
                        (if (handler-write-func handler) et:epollout 0)
                        (if (handler-except-func handler) et:epollpri 0)))
         (fd (handler-fd handler)))
-    (sb-alien:with-alien ((ev et:epoll-event))
-      (et:memset (sb-alien:addr ev) 0 et::size-of-epoll-event)
-      (setf (sb-alien:slot ev 'et:events) flags)
-      (setf (sb-alien:slot (sb-alien:slot ev 'et:data) 'et:fd) fd)
-      (et:epoll-ctl (epoll-fd interface) et:epoll-ctl-add fd (sb-alien:addr ev)))
+    (with-foreign-object (ev 'et:epoll-event)
+      (et:memset ev 0 #.(foreign-type-size 'et:epoll-event))
+      (setf (foreign-slot-value ev 'et:epoll-event 'et:events) flags)
+      (setf (foreign-slot-value (foreign-slot-value ev 'et:epoll-event 'et:data)
+                                'et:epoll-data 'et:fd)
+            fd)
+      (et:epoll-ctl (epoll-fd interface) et:epoll-ctl-add fd ev))
     (values interface)))
 
 (defmethod modify-fd progn ((interface epoll-multiplex-interface) fd
@@ -58,18 +60,20 @@
   (let ((flags (logior (if read-handler et:epollin 0)
                        (if write-handler et:epollout 0)
                        (if except-handler et:epollpri 0))))
-    (sb-alien:with-alien ((ev et:epoll-event))
-      (et:memset (sb-alien:addr ev) 0 et::size-of-epoll-event)
-      (setf (sb-alien:slot ev 'et:events) flags)
-      (setf (sb-alien:slot (sb-alien:slot ev 'et:data) 'et:fd) fd)
-      (et:epoll-ctl (epoll-fd interface) et:epoll-ctl-mod fd (sb-alien:addr ev)))
+    (with-foreign-object (ev 'et:epoll-event)
+      (et:memset ev 0 #.(foreign-type-size 'et:epoll-event))
+      (setf (foreign-slot-value ev 'et:epoll-event 'et:events) flags)
+      (setf (foreign-slot-value (foreign-slot-value ev 'et:epoll-event 'et:data)
+                                'et:epoll-data 'et:fd)
+            fd)
+      (et:epoll-ctl (epoll-fd interface) et:epoll-ctl-mod fd ev))
     (values interface)))
 
 (defmethod unmonitor-fd progn ((interface epoll-multiplex-interface) handler)
   (et:epoll-ctl (epoll-fd interface)
                 et:epoll-ctl-del
                 (handler-fd handler)
-                nil)
+                (null-pointer))
   (values interface))
 
 (defun epoll-serve-single-fd (handler events)
@@ -87,19 +91,22 @@
       (funcall write-func fd :write))))
 
 (defmethod serve-fd-events ((interface epoll-multiplex-interface) &key)
-  (sb-alien:with-alien ((events (sb-alien:array et:epoll-event #.*epoll-max-events*)))
-    (et:memset (sb-alien:addr events) 0 (* #.*epoll-max-events* #.et::size-of-epoll-event))
+  (with-foreign-object (events 'et:epoll-event #.*epoll-max-events*)
+    (et:memset events 0 #.(* *epoll-max-events* (foreign-type-size 'et:epoll-event)))
     (let ((ready-fds
-           (et:epoll-wait (epoll-fd interface) (sb-alien:alien-sap events)
+           (et:epoll-wait (epoll-fd interface) events
                           #.*epoll-max-events* -1)))
       (loop
          :for i :below ready-fds
-         :for fd := (sb-alien:slot (sb-alien:slot (sb-alien:deref events i) 'et:data) 'et:fd)
-         :for event-mask := (sb-alien:slot (sb-alien:deref events i) 'et:events)
+         :for fd := (foreign-slot-value (foreign-slot-value (mem-aref events 'et:epoll-event i)
+                                                            'et:epoll-event 'et:data)
+                                        'et:epoll-data 'et:fd)
+         :for event-mask := (foreign-slot-value (mem-aref events 'et:epoll-event i)
+                                                'et:epoll-event 'et:events)
          :do (epoll-serve-single-fd (fd-handler interface fd)
                                     event-mask))))
   (values interface))
 
 (defmethod close-multiplex-interface ((interface epoll-multiplex-interface))
-  (sb-ext:cancel-finalization interface)
+  (cancel-finalization interface)
   (et:close (epoll-fd interface)))

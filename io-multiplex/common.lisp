@@ -22,7 +22,7 @@
 ;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 (declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
-(in-package #:io.multiplex)
+(in-package :io.multiplex)
 
 ;;;
 ;;; Class definitions
@@ -82,15 +82,15 @@
 
 ;; small utility
 (defun fd-open-p (fd)
-  (sb-alien:with-alien ((stat et:stat))
+  (with-foreign-object (stat 'et:stat)
     (handler-case
-        (progn (et:stat fd (sb-alien:addr stat)) t)
+        (progn (et:stat fd stat) t)
       (et:unix-error-badf (err)
         (declare (ignore err))
         nil))))
 
 (defun finalize-object-closing-fd (object fd)
-  (sb-ext:finalize object #'(lambda () (et:close fd))))
+  (finalize object #'(lambda () (et:close fd))))
 
 
 

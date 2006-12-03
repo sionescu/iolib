@@ -22,7 +22,7 @@
 ;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 (declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
-(in-package #:io.multiplex)
+(in-package :io.multiplex)
 
 (defclass select-multiplex-interface (multiplex-interface) ())
 
@@ -31,7 +31,7 @@
 (define-iomux-interface select-multiplex-interface +select-priority+)
 
 (defun select-setup-masks (select-iface read-fds write-fds except-fds)
-  (declare (type sb-alien:system-area-pointer
+  (declare (type et:foreign-pointer
                  read-fds write-fds except-fds))
 
   (et:fd-zero read-fds)
@@ -53,25 +53,25 @@
     max-fd))
 
 (defmethod serve-fd-events ((interface select-multiplex-interface) &key)
-  (sb-alien:with-alien ((read-fds et:fd-set)
-                        (write-fds et:fd-set)
-                        (except-fds et:fd-set))
+  (with-foreign-objects ((read-fds 'et:fd-set)
+                         (write-fds 'et:fd-set)
+                         (except-fds 'et:fd-set))
 
     (let ((max-fd (select-setup-masks
                    interface
-                   (sb-alien:alien-sap read-fds)
-                   (sb-alien:alien-sap write-fds)
-                   (sb-alien:alien-sap except-fds))))
+                   read-fds
+                   write-fds
+                   except-fds)))
 
       (with-slots (fd-handlers) interface
         (tagbody
          :start
            (handler-case
                (et:select (1+ max-fd)
-                          (sb-alien:addr read-fds)
-                          (sb-alien:addr write-fds)
-                          (sb-alien:addr except-fds)
-                          nil)
+                          read-fds
+                          write-fds
+                          except-fds
+                          (null-pointer))
              (et:unix-error-intr (err)
                (declare (ignore err))
                (go :start))))
@@ -81,13 +81,13 @@
             (when item-p
               (if (fd-open-p fd)
                   (progn
-                    (when (and (et:fd-isset fd (sb-alien:alien-sap except-fds))
+                    (when (and (et:fd-isset fd except-fds)
                                (handler-except-func handler))
                       (funcall (handler-except-func handler) fd :except))
-                    (when (and (et:fd-isset fd (sb-alien:alien-sap read-fds))
+                    (when (and (et:fd-isset fd read-fds)
                                (handler-read-func handler))
                       (funcall (handler-read-func handler) fd :read))
-                    (when (and (et:fd-isset fd (sb-alien:alien-sap write-fds))
+                    (when (and (et:fd-isset fd write-fds)
                                (handler-write-func handler))
                       (funcall (handler-write-func handler) fd :write)))
                   ;; TODO: add better error handling

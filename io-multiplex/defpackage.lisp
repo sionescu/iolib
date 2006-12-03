@@ -19,11 +19,11 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(in-package #:common-lisp-user)
+(in-package :common-lisp-user)
 
-(defpackage #:io.multiplex
+(defpackage :io.multiplex
   (:nicknames #:iomux)
-  (:use #:common-lisp)
+  (:use #:common-lisp #:cffi)
   (:export
    ;; classes
    #:multiplex-interface
