@@ -22,7 +22,7 @@
 ;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 (declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
-(in-package #:io.multiplex)
+(in-package :io.multiplex)
 
 ;;; TODO: do real detecting here
 (setf *multiplex-best-interface*

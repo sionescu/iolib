@@ -18,6 +18,5 @@
    (:file "common" :depends-on ("defpackage"))
    (:file "select" :depends-on ("defpackage" "common"))
    #+linux (:file "epoll" :depends-on ("defpackage" "common"))
-;;    (:file "detect" :depends-on ("defpackage" "common" "select"
-;;                                 #+linux "epoll"))
-   ))
+   (:file "detect" :depends-on ("defpackage" "common" "select"
+                                #+linux "epoll"))))
