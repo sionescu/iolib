@@ -22,7 +22,7 @@
 ;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 (declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
-(in-package #:net.sockets)
+(in-package :net.sockets)
 
 (defclass dns-rr (dns-record)
   ((ttl  :initarg :ttl  :accessor dns-rr-ttl)
@@ -59,7 +59,7 @@
 (defgeneric read-dns-string (buffer))
 (defmethod read-dns-string ((buffer dynamic-input-buffer))
   (let ((length (read-unsigned-8 buffer)))
-    (sb-ext:octets-to-string (read-vector buffer length))))
+    (flexi-streams:octets-to-string (read-vector buffer length))))
 
 (defun read-dns-pointer-recursively (sequence position
                                      &optional (depth 5))

@@ -22,7 +22,7 @@
 ;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 (declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
-(in-package #:net.sockets)
+(in-package :net.sockets)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                     ;;;
@@ -146,10 +146,10 @@
 (defmethod write-dns-string ((buffer dynamic-output-buffer)
                              (string simple-string))
   (write-unsigned-8 buffer (length string))
-  (write-vector buffer (sb-ext:string-to-octets string)))
+  (write-vector buffer (flexi-streams:string-to-octets string)))
 
 (defun domain-name-to-dns-format (domain-name)
-  (let* ((octets (sb-ext:string-to-octets domain-name))
+  (let* ((octets (flexi-streams:string-to-octets domain-name))
          (tmp-vec (make-array (1+ (length octets))
                               :element-type 'octet)))
     (replace tmp-vec octets :start1 1)
