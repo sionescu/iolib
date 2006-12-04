@@ -72,7 +72,7 @@
 
 (defun get-socket-option-int (fd level option)
   (with-foreign-objects ((optval :int)
-<                         (optlen :socklen))
+                         (optlen :socklen))
     (setf (mem-ref optlen :int) et:size-of-int)
     (et:getsockopt fd level option optval optlen)
     (values optval)))

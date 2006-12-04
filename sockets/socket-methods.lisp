@@ -77,6 +77,7 @@
       (setf proto protocol)
       (iomux:finalize-object-closing-fd socket fd))))
 
+;; TODO: find out how to make an FD-STREAM on other implementations
 (defun make-fd-stream (fd)
   #+sbcl
   (sb-sys:make-fd-stream fd
@@ -563,7 +564,7 @@
               (et:sendto (socket-fd socket)
                          buff-sap bufflen
                          flags
-                         (if remote-address ss nil)
+                         (if remote-address ss (null-pointer))
                          (if remote-address #.(foreign-type-size 'et:sockaddr-storage) 0)))))))))
 
 (defmethod socket-send (buffer (socket passive-socket) &key)
@@ -583,7 +584,7 @@
       ((simple-array ub8 (*)) (values buff start (- end start)))
       (simple-base-string (values buff start (- end start))))))
 
-(defmethod socket-receive :before ((buffer simple-array)
+(defmethod socket-receive :before ((buffer array)
                                    (socket active-socket)
                                    &key start end)
   (check-type start (or unsigned-byte null)
@@ -591,7 +592,7 @@
   (check-type end (or unsigned-byte null)
               "a non-negative value or NIL"))
 
-(defmethod socket-receive ((buffer simple-array)
+(defmethod socket-receive ((buffer array)
                            (socket active-socket) &key start end
                            out-of-band peek wait-all
                            dont-wait (no-signal *no-sigpipe*))

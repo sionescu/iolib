@@ -72,7 +72,7 @@ values, et caetera)."))
      (define-condition ,name (socket-error) ()
        (:default-initargs :code (unixerr-value ,identifier)
                           :identifier ,identifier)
-       (:documentation ,documentation))))
+       (:documentation ,(or documentation "")))))
 
 (define-socket-error socket-address-in-use-error          :eaddrinuse)
 (define-socket-error socket-address-not-available-error   :eaddrnotavail)
