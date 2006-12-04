@@ -5,6 +5,9 @@
 (defpackage #:io.multiplex-system
   (:use #:common-lisp #:asdf))
 
+#+cffi-features:no-finalizers
+(error "IO.MULTIPLEX needs an implementation that has support for finalizers.")
+
 (in-package #:io.multiplex-system)
 
 (defsystem :io.multiplex
