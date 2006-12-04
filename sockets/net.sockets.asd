@@ -1,19 +1,14 @@
 ;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
 
-(in-package #:cl-user)
+(in-package :common-lisp-user)
 
 (defpackage #:net.sockets-system
   (:use #:common-lisp #:asdf))
 
-(in-package #:net.sockets-system)
+#+cffi-features:no-finalizers
+(error "NET.SOCKETS needs an implementation that has support for finalizers.")
 
-(defclass iolib-source-file (cl-source-file) ())
-  
-(defmethod perform :around ((o compile-op) (s iolib-source-file))
-  ;; shut up already.  Correctness first.
-  (handler-bind ((sb-ext:compiler-note #'muffle-warning))
-    (let ((*compile-print* nil))
-      (call-next-method))))
+(in-package #:net.sockets-system)
 
 (defsystem :net.sockets
   :description "Socket library for SBCL."
@@ -21,8 +16,8 @@
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "GPL-2.1"
   :depends-on (:iolib-alien-ng
-               :io.multiplex)
-  :default-component-class iolib-source-file
+               :io.multiplex
+               :flexi-streams)
   :components
   ((:file "defpackage")
    (:file "common" :depends-on ("defpackage"))

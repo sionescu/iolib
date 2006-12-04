@@ -22,7 +22,7 @@
 ;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 (declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
-(in-package #:net.sockets)
+(in-package :net.sockets)
 
 ;;;;;;;;;;;;;;;;
 ;;;  ERRORS  ;;;
@@ -65,19 +65,19 @@
                  :message (format nil "The vector: ~A is not a string or contains non-ASCII characters." string))
           (return-from dotted-to-vector nil))))
 
-  (with-alien ((in-addr et:in-addr-t))
-    (sb-sys:with-pinned-objects (string)
-      (setf in-addr 0)
+  (with-foreign-pointer (in-addr #.(foreign-type-size :in-addr))
+    (with-pointer-to-vector-data (string-pointer string)
+      (setf (mem-ref in-addr :in-addr) 0)
       (handler-case
           (et:inet-pton et:af-inet        ; address family
-                        string            ; name
-                        (addr in-addr))   ; pointer to struct in6_addr
+                        string-pointer    ; name
+                        in-addr)          ; pointer to struct in6_addr
         (unix-error (err)
           (declare (ignore err))
           (if error-p
               (error 'invalid-address :address string :type :ipv4)
               (return-from dotted-to-vector nil)))))
-    (make-vector-u8-4-from-in-addr in-addr)))
+    (make-vector-u8-4-from-in-addr (mem-ref in-addr :in-addr))))
 
 (defun dotted-to-ipaddr (string)
   (vector-to-ipaddr (dotted-to-vector string)))
@@ -100,19 +100,19 @@
                  :message (format nil "The vector: ~A is not a string or contains non-ASCII characters." string))
           (return-from colon-separated-to-vector nil))))
 
-  (with-alien ((in6-addr et:in6-addr))
-    (sb-sys:with-pinned-objects (string)
-      (et:memset (addr in6-addr) 0 et::size-of-in6-addr)
+  (with-foreign-object (in6-addr :uint16 8)
+    (with-pointer-to-vector-data (string-pointer string)
+      (et:memset in6-addr 0 16)
       (handler-case
           (et:inet-pton et:af-inet6        ; address family
-                        string             ; name
-                        (addr in6-addr)) ; pointer to struct in6_addr
+                        string-pointer     ; name
+                        in6-addr)          ; pointer to struct in6_addr
         (unix-error (err)
           (declare (ignore err))
           (if error-p
               (error 'invalid-address :address string :type :ipv4)
               (return-from colon-separated-to-vector nil)))))
-    (make-vector-u16-8-from-in6-addr (addr in6-addr))))
+    (make-vector-u16-8-from-in6-addr in6-addr)))
 
 (defun vector-to-colon-separated (vector &key (case :downcase) (error-p t))
   (handler-case
@@ -124,19 +124,19 @@
                  :message (format nil "The vector: ~A does not contain only 16-bit positive integers or has not length 8." vector))
           (return-from vector-to-colon-separated nil))))
 
-  (with-alien
-      ((sin6 et:sockaddr-in6)
-       (namebuff (array (unsigned 8) #.et:inet6-addrstrlen)))
-    (make-sockaddr-in6 (addr sin6) vector)
-    (et:inet-ntop et:af-inet6                    ; address family
-                  (addr (slot sin6 'et:address)) ; pointer to struct in6_addr
-                  (alien-sap namebuff)           ; destination buffer
-                  et:inet6-addrstrlen)           ; INET6_ADDRSTRLEN
-    (return-from vector-to-colon-separated
-      (let ((str (cast namebuff c-ascii-string)))
-        (ecase case
-          (:downcase str)
-          (:upcase (nstring-upcase str)))))))
+  (with-foreign-object (sin6 'et:sockaddr-in6)
+    (with-foreign-pointer (namebuf et:inet6-addrstrlen bufsize)
+      (make-sockaddr-in6 sin6 vector)
+      (et:inet-ntop et:af-inet6                          ; address family
+                    (foreign-slot-pointer
+                      sin6 'et:sockaddr-in6 'et:address) ; pointer to struct in6_addr
+                    namebuf                              ; destination buffer
+                    bufsize)                             ; INET6_ADDRSTRLEN
+      (return-from vector-to-colon-separated
+        (let ((str (foreign-string-to-lisp namebuf bufsize)))
+          (ecase case
+            (:downcase str)
+            (:upcase (nstring-upcase str))))))))
 
 (defun string-address->vector (address)
   (or (dotted-to-vector address :error-p nil)

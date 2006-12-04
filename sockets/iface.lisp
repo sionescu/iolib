@@ -22,7 +22,7 @@
 ;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 (declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
-(in-package #:net.sockets)
+(in-package :net.sockets)
 
 (defclass interface ()
   ((name  :initarg :name
@@ -55,15 +55,16 @@
   (:documentation "Condition raised when a network interface is not found."))
 
 (defun get-network-interfaces ()
-  (with-alien ((ifptr (* (array (struct et:if-nameindex) 0))))
+  (with-foreign-object (ifptr :pointer)
     (setf ifptr (et:if-nameindex))
-    (unless (null-alien ifptr)
-      (let* ((ifarr (deref ifptr))
-             (iflist
+    (unless (null-pointer-p ifptr)
+      (let* ((iflist
               (loop
                  :for i :from 0
-                 :for name := (slot (deref ifarr i) 'et:name)
-                 :for index := (slot (deref ifarr i) 'et:index)
+                 :for name := (foreign-slot-value (mem-aref ifptr 'et:if-nameindex i)
+                                                  'et:if-nameindex 'et:name)
+                 :for index := (foreign-slot-value (mem-aref ifptr 'et:if-nameindex i)
+                                                   'et:if-nameindex 'et:index)
                  :while (plusp index)
                  :collect (make-interface name index)
                  :finally (et:if-freenameindex ifptr))))
@@ -71,31 +72,28 @@
 
 (defun get-interface-by-index (index)
   (check-type index unsigned-byte "an unsigned integer")
-  (with-alien ((buff (array char #.et:ifnamesize)))
-    (with-alien-saps ((buff-sap buff))
-      (let (retval)
-        (handler-case
-            (setf retval (et::if-indextoname index buff-sap))
-          (unix-error (err)
-            (error 'unknown-interface
-                   :code (error-code err)
-                   :identifier (error-identifier err)
-                   :index index)))
-        (return-from get-interface-by-index
-          (make-interface (copy-seq retval) index))))))
-
-(defun get-interface-by-name (name)
-  (check-type name string "a string")
-  (sb-sys:with-pinned-objects (name)
+  (with-foreign-object (buff :uint8 et:ifnamesize)
     (let (retval)
       (handler-case
-          (setf retval (et::if-nametoindex name))
-        (unix-error (err)
+          (setf retval (et:if-indextoname index buff))
+        (et:unix-error-nxio (err)
           (error 'unknown-interface
                  :code (error-code err)
                  :identifier (error-identifier err)
-                 :name name)))
-      (make-interface (copy-seq name) retval))))
+                 :index index)))
+      (make-interface (copy-seq retval) index))))
+
+(defun get-interface-by-name (name)
+  (check-type name string "a string")
+  (let (retval)
+    (handler-case
+        (setf retval (et:if-nametoindex name))
+      (et:unix-error-nodev (err)
+        (error 'unknown-interface
+               :code (error-code err)
+               :identifier (error-identifier err)
+               :name name)))
+    (make-interface (copy-seq name) retval)))
 
 (defun lookup-interface (iface)
   (multiple-value-bind (iface-type iface-val)

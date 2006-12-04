@@ -22,7 +22,7 @@
 ;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 (declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
-(in-package #:net.sockets)
+(in-package :net.sockets)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                     ;;;
@@ -107,34 +107,32 @@
 ;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;
 
-(defun get-address-info (&key node service
+(defun get-address-info (&key (node (null-pointer)) (service (null-pointer))
                          (hint-flags 0) (hint-family 0)
                          (hint-type 0) (hint-protocol 0))
-  (with-alien ((hints et:addrinfo)
-               (res (* et:addrinfo)))
-    (et:memset (addr hints) 0 et::size-of-addrinfo)
-    (setf (slot hints 'et:flags) hint-flags)
-    (setf (slot hints 'et:family) hint-family)
-    (setf (slot hints 'et:socktype) hint-type)
-    (setf (slot hints 'et:protocol) hint-protocol)
-    (et:getaddrinfo node service (addr hints) (addr res))
-    (sap-alien (alien-sap res) (* et:addrinfo))))
+  (with-foreign-objects ((hints 'et:addrinfo)
+                         (res :pointer))
+    (et:memset hints 0 (foreign-type-size 'et:addrinfo))
+    (with-foreign-slots ((flags family socktype protocol)
+                         hints et:addrinfo)
+      (setf flags hint-flags)
+      (setf family hint-family)
+      (setf socktype hint-type)
+      (setf protocol hint-protocol)
+      (et:getaddrinfo node service hints res)
+      (make-pointer (pointer-address (mem-ref res :pointer))))))
 
 (defun get-name-info (sockaddr &key (want-host t) want-service (flags 0))
   (assert (or want-host want-service))
-  (let ((salen (etypecase sockaddr
-                 ((alien (* et:sockaddr-in)) et::size-of-sockaddr-in)
-                 ((alien (* et:sockaddr-in6)) et::size-of-sockaddr-in6)
-                 ((alien (* et:sockaddr-storage)) et::size-of-sockaddr-storage))))
-    (with-alien ((host (array char #.et:ni-maxhost))
-                 (service (array char #.et:ni-maxserv)))
-      (sb-sys:with-pinned-objects (host service)
-        (et:getnameinfo sockaddr salen
-                        (alien-sap host) (if want-host et:ni-maxhost 0)
-                        (alien-sap service) (if want-service et:ni-maxserv 0)
-                        flags))
-      (values (and want-host (cast host c-ascii-string))
-              (and want-service (cast service c-ascii-string))))))
+  (let ((salen #.(foreign-type-size 'et:sockaddr-storage)))
+    (with-foreign-objects ((host :char et:ni-maxhost)
+                           (service :char et:ni-maxserv))
+      (et:getnameinfo sockaddr salen
+                      host (if want-host et:ni-maxhost 0)
+                      service (if want-service et:ni-maxserv 0)
+                      flags)
+      (values (and want-host (foreign-string-to-lisp host et:ni-maxhost))
+              (and want-service (foreign-string-to-lisp service et:ni-maxserv))))))
 
 (defclass host ()
   ((truename  :initarg :truename  :reader host-truename)
@@ -175,19 +173,23 @@
   (handler-case
       (ecase ipv6
         ((nil)
-         (with-alien ((sin et:sockaddr-in))
-           (make-sockaddr-in (addr sin) host)
+         (with-foreign-object (sin 'et:sockaddr-storage)
+           (make-sockaddr-in sin host)
            (return-from lookup-host-u8-vector-4
-             (make-host (get-name-info (addr sin) :flags et:ni-namereqd)
+             (make-host (get-name-info sin :flags et:ni-namereqd)
                         (list (make-address (copy-seq host)))))))
 
-        ((:ipv6 t)
-         (with-alien ((sin6 et:sockaddr-in6))
+        ((t)
+         (with-foreign-object (sin6 'et:sockaddr-storage)
            (let ((ipv6addr (map-ipv4-vector-to-ipv6 host)))
-             (make-sockaddr-in6 (addr sin6) ipv6addr)
+             (make-sockaddr-in6 sin6 ipv6addr)
              (return-from lookup-host-u8-vector-4
-               (make-host (get-name-info (addr sin6) :flags et:ni-namereqd)
-                          (list (make-address ipv6addr))))))))
+               (make-host (get-name-info sin6 :flags et:ni-namereqd)
+                          (list (make-address ipv6addr)))))))
+        ((:ipv6)
+         (resolver-error :eai-fail
+                         :data host
+                         :message "Received IPv4 address but IPv6-only was requested.")))
     (et:resolv-error (err)
       (resolver-error (et:system-error-identifier err) :data host))))
 
@@ -202,25 +204,27 @@
                          :message "Received IPv6 address but IPv4-only was requested."))
 
         ((:ipv6 t)
-         (with-alien ((sin6 et::sockaddr-in6))
-           (make-sockaddr-in6 (addr sin6) host)
+         (with-foreign-object (sin6 'et:sockaddr-storage)
+           (make-sockaddr-in6 sin6 host)
            (return-from lookup-host-u16-vector-8
-             (make-host (get-name-info (addr sin6) :flags et:ni-namereqd)
+             (make-host (get-name-info sin6 :flags et:ni-namereqd)
                         (list (make-address (copy-seq host))))))))
     (et:resolv-error (err)
       (resolver-error (et:system-error-identifier err) :data host))))
 
 (defun make-host-from-addrinfo (addrinfo)
-  (declare (type (alien (* et:addrinfo)) addrinfo))
-  (let ((canonname (slot addrinfo 'et:canonname))
+  (let ((canonname (foreign-slot-value addrinfo 'et:addrinfo 'et:canonname))
         (addrlist
          (loop
-            :for addrptr :of-type (alien (* et:addrinfo)) := addrinfo
-            :then (slot addrptr 'et:next)
-            :while (not (null-alien addrptr))
+            :for addrptr := addrinfo
+                         :then (foreign-slot-value addrptr 'et:addrinfo 'et:next)
+            :while (not (null-pointer-p addrptr))
             :collect (sockaddr-storage->netaddr
-                      (slot addrptr 'et:addr)))))
-    (make-host canonname addrlist)))
+                      (foreign-slot-value addrptr 'et:addrinfo 'et:addr)))))
+    (make-host (if (null-pointer-p canonname)
+                   nil
+                   (foreign-string-to-lisp canonname))
+               addrlist)))
 
 (defun map-host-ipv4-addresses-to-ipv6 (hostobj)
   (declare (type host hostobj))
@@ -345,14 +349,16 @@
 
 (defun lookup-service-number (port-number protocol &key name-required)
   (declare (type ub32 port-number))
-  (with-alien ((sin et:sockaddr-in))
+  (with-foreign-object (sin 'et:sockaddr-in)
     (let ((service
            (nth-value 1
             (progn
-              (et:memset (addr sin) 0 et::size-of-sockaddr-in)
-              (setf (slot sin 'et:family) et:af-inet)
-              (setf (slot sin 'et:port) (htons port-number))
-              (get-name-info (addr sin)
+              (et:memset sin 0 #.(foreign-type-size 'et:sockaddr-in))
+              (setf (foreign-slot-value sin 'et:sockaddr-in 'et:family)
+                    et:af-inet)
+              (setf (foreign-slot-value sin 'et:sockaddr-in 'et:port)
+                    (htons port-number))
+              (get-name-info sin
                              :flags (logior
                                      (case protocol
                                        (:udp et:ni-dgram)
@@ -364,20 +370,17 @@
 
 (defun lookup-service-name (port protocol)
   (let* ((addrinfo
-          (the (alien (* et:addrinfo))
-            (get-address-info :service port
-                              :hint-type (case protocol
-                                           (:tcp et:sock-stream)
-                                           (:udp et:sock-dgram)
-                                           (:any 0)))))
+          (get-address-info :service port
+                            :hint-type (case protocol
+                                         (:tcp et:sock-stream)
+                                         (:udp et:sock-dgram)
+                                         (:any 0))))
          (port-number
-          (ntohs (slot (cast (slot addrinfo 'et:addr)
-                             (* et:sockaddr-in))
-                       'et:port)))
+          (ntohs (foreign-slot-value (foreign-slot-value addrinfo 'et:addrinfo 'et:addr)
+                                     'et:sockaddr-in 'et:port)))
          (true-protocol
-          (socket-type-from-int (slot addrinfo 'et:socktype))))
-    (sb-sys:with-pinned-objects (addrinfo)
-      (et:freeaddrinfo addrinfo))
+          (socket-type-from-int (foreign-slot-value addrinfo 'et:addrinfo 'et:socktype))))
+    (et:freeaddrinfo addrinfo)
     (return-from lookup-service-name
       (make-service port port-number true-protocol))))
 
@@ -433,13 +436,12 @@
   (:documentation "Condition raised when a network protocol is not found."))
 
 (defun make-protocol-from-protoent (protoent)
-  (declare (type (alien (* et:protoent)) protoent))
-  (let* ((name (slot protoent 'et:name))
-         (number (slot protoent 'et:proto))
-         (aliasptr (slot protoent 'et:aliases))
+  (let* ((name (foreign-slot-value protoent 'et:protoent 'et:name))
+         (number (foreign-slot-value protoent 'et:protoent 'et:proto))
+         (aliasptr (foreign-slot-value protoent 'et:protoent 'et:aliases))
          (aliases (loop
                      :for i :from 0
-                     :for alias := (deref aliasptr i)
+                     :for alias := (mem-aref aliasptr :string i)
                      :while alias :collect alias)))
     (make-protocol name number aliases)))
 
@@ -447,8 +449,7 @@
   (make-protocol-from-protoent (et:getprotobynumber protonum)))
 
 (defun get-protocol-by-name (protoname)
-  (make-protocol-from-protoent (sb-sys:with-pinned-objects (protoname)
-                                 (et:getprotobyname protoname))))
+  (make-protocol-from-protoent (et:getprotobyname protoname)))
 
 (defun lookup-protocol (proto)
   (multiple-value-bind (proto-type proto-val)

@@ -19,11 +19,11 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(in-package #:common-lisp-user)
+(in-package :common-lisp-user)
 
-(defpackage #:net.sockets
+(defpackage :net.sockets
   (:nicknames #:sockets)
-  (:use #:common-lisp #:sb-alien)
+  (:use #:common-lisp #:cffi)
   (:import-from #:iolib-alien-ng
                 #:system-error #:unix-error #:message)
   (:export

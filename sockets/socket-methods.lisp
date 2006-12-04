@@ -22,7 +22,7 @@
 ;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 (declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
-(in-package #:net.sockets)
+(in-package :net.sockets)
 
 (defparameter *socket-type-map*
   '(((:ipv4  :stream   :active  :default) . socket-stream-internet-active)
@@ -77,12 +77,21 @@
       (setf proto protocol)
       (iomux:finalize-object-closing-fd socket fd))))
 
+(defun make-fd-stream (fd)
+  #+sbcl
+  (sb-sys:make-fd-stream fd
+                         :name (format nil "Socket stream, fd: ~A" fd)
+                         :input t :output t :buffering :full :dual-channel-p t
+                         :element-type :default :auto-close nil)
+  #+cmucl
+  (system:make-fd-stream fd
+                         :name (format nil "Socket stream, fd: ~A" fd)
+                         :input t :output t :buffering :full
+                         :binary-stream-p t :auto-close nil))
+
 (defmethod shared-initialize :after ((socket stream-socket) slot-names &key)
   (setf (slot-value socket 'lisp-stream)
-        (sb-sys:make-fd-stream (socket-fd socket)
-                               :name (format nil "Socket stream, fd: ~A" (socket-fd socket))
-                               :input t :output t :buffering :none :dual-channel-p t
-                               :element-type :default :auto-close nil)))
+        (make-fd-stream (socket-fd socket))))
 
 (defmethod socket-type ((socket stream-socket))
   :stream)
@@ -168,7 +177,7 @@
 ;;;;;;;;;;;;;
 
 (defmethod socket-close progn ((socket socket))
-  (sb-ext:cancel-finalization socket)
+  (cancel-finalization socket)
   (when (slot-boundp socket 'fd)
     (with-socket-error-filter
       (et:close (socket-fd socket))))
@@ -191,13 +200,13 @@
     (return-from socket-open-p nil))
   (with-socket-error-filter
     (handler-case
-        (with-alien ((ss et:sockaddr-storage)
-                     (size et:socklen-t
-                           #.et::size-of-sockaddr-storage))
-          (let ((ssptr (addr ss)))
-            (et:getsockname (socket-fd socket)
-                            ssptr (addr size))
-            t))
+        (with-foreign-objects ((ss 'et:sockaddr-storage)
+                               (size :socklen
+                                     #.(foreign-type-size 'et:sockaddr-storage)))
+          (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
+          (et:getsockname (socket-fd socket)
+                          ss size)
+          t)
       (unix-error (err)
         (case (error-identifier err)
           ((:ebadf
@@ -233,56 +242,56 @@
 ;;;;;;;;;;;;;;;;;;;
 
 (defmethod local-name ((socket internet-socket))
-  (with-alien ((ss et:sockaddr-storage)
-               (size et:socklen-t
-                     #.et::size-of-sockaddr-storage))
-    (let ((ssptr (addr ss)))
-      (with-socket-error-filter
-        (et:getsockname (socket-fd socket)
-                        ssptr (addr size)))
-      (return-from local-name
-        (values (sockaddr-storage->netaddr ssptr)
-                (ntohs (slot (cast ssptr (* et:sockaddr-in))
-                             'et:port)))))))
+  (with-foreign-objects ((ss 'et:sockaddr-storage)
+                         (size :socklen
+                               #.(foreign-type-size 'et:sockaddr-storage)))
+    (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
+    (with-socket-error-filter
+      (et:getsockname (socket-fd socket)
+                      ss size))
+    (return-from local-name
+      (values (sockaddr-storage->netaddr ss)
+              (ntohs (foreign-slot-value ss 'et:sockaddr-in
+                                         'et:port))))))
 
 (defmethod local-name ((socket local-socket))
-  (with-alien ((sun et:sockaddr-un)
-               (size et:socklen-t
-                     #.et::size-of-sockaddr-un))
-    (let ((sunptr (addr sun)))
-      (with-socket-error-filter
-        (et:getsockname (socket-fd socket)
-                        sunptr (addr size)))
-      (return-from local-name
-        (values (sockaddr-un->netaddr sunptr))))))
+  (with-foreign-objects ((sun 'et:sockaddr-un)
+                         (size :socklen
+                               #.(foreign-type-size 'et:sockaddr-un)))
+    (et:memset sun 0 #.(foreign-type-size 'et:sockaddr-un))
+    (with-socket-error-filter
+      (et:getsockname (socket-fd socket)
+                      sun size))
+    (return-from local-name
+      (values (sockaddr-un->netaddr sun)))))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;  GETPEERNAME  ;;
 ;;;;;;;;;;;;;;;;;;;
 
 (defmethod remote-name ((socket internet-socket))
-  (with-alien ((ss et:sockaddr-storage)
-               (size et:socklen-t
-                     #.et::size-of-sockaddr-storage))
-    (let ((ssptr (addr ss)))
-      (with-socket-error-filter
-        (et:getpeername (socket-fd socket)
-                        ssptr (addr size)))
-      (return-from remote-name
-        (values (sockaddr-storage->netaddr ssptr)
-                (ntohs (slot (cast ssptr (* et:sockaddr-in))
-                             'et:port)))))))
+  (with-foreign-objects ((ss 'et:sockaddr-storage)
+                         (size :socklen
+                               #.(foreign-type-size 'et:sockaddr-storage)))
+    (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
+    (with-socket-error-filter
+      (et:getpeername (socket-fd socket)
+                      ss size))
+    (return-from remote-name
+      (values (sockaddr-storage->netaddr ss)
+              (ntohs (foreign-slot-value ss 'et:sockaddr-in
+                                         'et:port))))))
 
 (defmethod remote-name ((socket local-socket))
-  (with-alien ((sun et:sockaddr-un)
-               (size et:socklen-t
-                     #.et::size-of-sockaddr-un))
-    (let ((sunptr (addr sun)))
-      (with-socket-error-filter
-        (et:getpeername (socket-fd socket)
-                        sunptr (addr size)))
-      (return-from remote-name
-        (values (sockaddr-un->netaddr sunptr))))))
+  (with-foreign-objects ((sun 'et:sockaddr-un)
+                         (size :socklen
+                               #.(foreign-type-size 'et:sockaddr-un)))
+    (et:memset sun 0 #.(foreign-type-size 'et:sockaddr-un))
+    (with-socket-error-filter
+      (et:getpeername (socket-fd socket)
+                      sun size))
+    (return-from remote-name
+      (values (sockaddr-un->netaddr sun)))))
 
 ;;;;;;;;;;;;
 ;;  BIND  ;;
@@ -294,18 +303,18 @@
     (set-socket-option socket :reuse-address :value t)))
 
 (defun bind-ipv4-address (fd address port)
-  (with-alien ((sin et:sockaddr-in))
-    (make-sockaddr-in (addr sin) address port)
+  (with-foreign-object (sin 'et:sockaddr-in)
+    (make-sockaddr-in sin address port)
     (with-socket-error-filter
-      (et:bind fd (addr sin)
-               et::size-of-sockaddr-in))))
+      (et:bind fd sin
+               #.(foreign-type-size 'et:sockaddr-in)))))
 
 (defun bind-ipv6-address (fd address port)
-  (with-alien ((sin6 et:sockaddr-in6))
-    (make-sockaddr-in6 (addr sin6) address port)
+  (with-foreign-object (sin6 'et:sockaddr-in6)
+    (make-sockaddr-in6 sin6 address port)
     (with-socket-error-filter
-      (et:bind fd (addr sin6)
-               et::size-of-sockaddr-in6))))
+      (et:bind fd sin6
+               #.(foreign-type-size 'et:sockaddr-in6)))))
 
 (defmethod bind-address ((socket internet-socket)
                          (address ipv4addr)
@@ -330,12 +339,12 @@
 
 (defmethod bind-address ((socket local-socket)
                          (address localaddr) &key)
-  (with-alien ((sun et:sockaddr-un))
-    (make-sockaddr-un (addr sun) (name address))
+  (with-foreign-object (sun 'et:sockaddr-un)
+    (make-sockaddr-un sun (name address))
     (with-socket-error-filter
       (et:bind (socket-fd socket)
-               (addr sun)
-               et::size-of-sockaddr-un)))
+               sun
+               #.(foreign-type-size 'et:sockaddr-un))))
   (values socket))
 
 (defmethod bind-address :after ((socket socket)
@@ -376,9 +385,10 @@
 
 (defmethod accept-connection ((socket passive-socket)
                               &key (wait t))
-  (with-alien ((ss et:sockaddr-storage)
-               (size et:socklen-t
-                     #.et::size-of-sockaddr-storage))
+  (with-foreign-objects ((ss 'et:sockaddr-storage)
+                         (size :socklen
+                               #.(foreign-type-size 'et:sockaddr-storage)))
+    (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
     (let (non-blocking-state
           client-fd)
       (with-socket-error-filter
@@ -387,7 +397,7 @@
                 ;; do a "normal" accept
                 ;; Note: the socket may already be in non-blocking mode
                 (setf client-fd (et:accept (socket-fd socket)
-                                           (addr ss) (addr size)))
+                                           ss size))
                 ;; set the socket to non-blocking mode before calling accept()
                 ;; if there's no new connection return NIL
                 (unwind-protect
@@ -395,7 +405,7 @@
                        ;; saving the current non-blocking state
                        (setf non-blocking-state (socket-non-blocking-mode socket))
                        (setf client-fd (et:accept (socket-fd socket)
-                                                  (addr ss) (addr size))))
+                                                  ss size)))
                   ;; restoring the socket's non-blocking state
                   (setf (socket-non-blocking-mode socket) non-blocking-state)))
           ;; the socket is marked non-blocking and there's no new connection
@@ -428,18 +438,18 @@
     (set-socket-option socket :no-sigpipe :value t)))
 
 (defun ipv4-connect (fd address port)
-  (with-alien ((sin et:sockaddr-in))
-    (make-sockaddr-in (addr sin) address port)
+  (with-foreign-object (sin 'et:sockaddr-in)
+    (make-sockaddr-in sin address port)
     (with-socket-error-filter
-      (et:connect fd (addr sin)
-                  et::size-of-sockaddr-in))))
+      (et:connect fd sin
+                  #.(foreign-type-size 'et:sockaddr-in)))))
 
 (defun ipv6-connect (fd address port)
-  (with-alien ((sin6 et:sockaddr-in6))
-    (make-sockaddr-in6 (addr sin6) address port)
+  (with-foreign-object (sin6 'et:sockaddr-in6)
+    (make-sockaddr-in6 sin6 address port)
     (with-socket-error-filter
-      (et:connect fd (addr sin6)
-                  et::size-of-sockaddr-in6))))
+      (et:connect fd sin6
+                  (foreign-type-size 'et:sockaddr-in6)))))
 
 (defmethod connect ((socket internet-socket)
                     (address ipv4addr) &key (port 0))
@@ -459,12 +469,12 @@
 
 (defmethod connect ((socket local-socket)
                     (address localaddr) &key)
-  (with-alien ((sun et:sockaddr-un))
-    (make-sockaddr-un (addr sun) (name address))
+  (with-foreign-object (sun 'et:sockaddr-un)
+    (make-sockaddr-un sun (name address))
     (with-socket-error-filter
       (et:connect (socket-fd socket)
-                  (addr sun)
-                  et::size-of-sockaddr-un)))
+                  sun
+                  #.(foreign-type-size 'et:sockaddr-un))))
   (values socket))
 
 (defmethod connect :after ((socket active-socket)
@@ -508,7 +518,7 @@
       ((vector ub8) (values (coerce buff '(simple-array ub8 (*)))
                             start (- end start)))
       (simple-base-string (values buff start (- end start)))
-      (string (values (sb-ext:string-to-octets buff :start start :end end)
+      (string (values (flexi-streams:string-to-octets buff :start start :end end)
                       0 (- end start))))))
 
 (defmethod socket-send :before ((buffer array)
@@ -542,18 +552,19 @@
       (setf remote-address (map-ipv4-address->ipv6 remote-address)))
     (multiple-value-bind (buff start-offset bufflen)
         (normalize-send-buffer buffer start end)
-      (with-alien ((ss et:sockaddr-storage))
+      (with-foreign-object (ss 'et:sockaddr-storage)
+        (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
         (when remote-address
-          (netaddr->sockaddr-storage (addr ss) remote-address remote-port))
-        (with-vector-saps ((buff-sap buff))
-          (setf buff-sap (sb-sys:sap+ buff-sap start-offset))
+          (netaddr->sockaddr-storage ss remote-address remote-port))
+        (with-pointer-to-vector-data (buff-sap buff)
+          (incf-pointer buff-sap start-offset)
           (with-socket-error-filter
             (return-from socket-send
               (et:sendto (socket-fd socket)
                          buff-sap bufflen
                          flags
-                         (if remote-address (addr ss) nil)
-                         (if remote-address et::size-of-sockaddr-storage 0)))))))))
+                         (if remote-address ss nil)
+                         (if remote-address #.(foreign-type-size 'et:sockaddr-storage) 0)))))))))
 
 (defmethod socket-send (buffer (socket passive-socket) &key)
   (error "You cannot send data on a passive socket."))
@@ -594,22 +605,23 @@
 
     (multiple-value-bind (buff start-offset bufflen)
         (normalize-receive-buffer buffer start end)
-      (with-alien ((ss et:sockaddr-storage)
-                   (size et:socklen-t #.et::size-of-sockaddr-storage))
-        (with-vector-saps ((buff-sap buff))
-          (setf buff-sap (sb-sys:sap+ buff-sap start-offset))
+      (with-foreign-objects ((ss 'et:sockaddr-storage)
+                             (size :socklen #.(foreign-type-size 'et:sockaddr-storage)))
+        (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
+        (with-pointer-to-vector-data (buff-sap buff)
+          (incf-pointer buff-sap start-offset)
           (with-socket-error-filter
             (setf bytes-received
                   (et:recvfrom (socket-fd socket)
                                buff-sap bufflen
                                flags
-                               (addr ss) (addr size)))))
+                               ss size))))
 
         (return-from socket-receive
           ;; when socket is a datagram socket
           ;; return the sender's address as 3rd value
           (if (typep socket 'datagram-socket)
-              (values buffer bytes-received (sockaddr-storage->netaddr (addr ss)))
+              (values buffer bytes-received (sockaddr-storage->netaddr ss))
               (values buffer bytes-received)))))))
 
 (defmethod socket-receive (buffer (socket passive-socket) &key)
@@ -626,12 +638,12 @@
 
 (defmethod unconnect ((socket datagram-socket))
   (with-socket-error-filter
-    (with-alien ((sin et:sockaddr-in))
-      (et:memset (addr sin) 0 et::size-of-sockaddr-in)
-      (setf (slot sin 'et:address) et:af-unspec)
+    (with-foreign-object (sin 'et:sockaddr-in)
+      (et:memset sin 0 #.(foreign-type-size 'et:sockaddr-in))
+      (setf (foreign-slot-value sin 'et:sockaddr-in 'et:address) et:af-unspec)
       (et:connect (socket-fd socket)
-                  (addr sin)
-                  et::size-of-sockaddr-in)
+                  sin
+                  #.(foreign-type-size 'et:sockaddr-in))
       (slot-makunbound socket 'address))))
 
 (defmethod unconnect :after ((socket internet-socket))

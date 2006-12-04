@@ -22,7 +22,7 @@
 ;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
 (declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
-(in-package #:net.sockets)
+(in-package :net.sockets)
 
 ;; TODO: manage socket options errors
 (defun sockopt-error (retval level option action &optional val1 val2)
@@ -34,29 +34,29 @@
 ;;
 
 (defun set-socket-option-bool (fd level option value)
-  (with-alien ((optval int))
-    (setf optval (lisp->c-bool value))
-    (et:setsockopt fd level option (addr optval) et::size-of-int)
+  (with-foreign-object (optval :int)
+    (setf (mem-ref optval :int) (lisp->c-bool value))
+    (et:setsockopt fd level option optval et:size-of-int)
     (values)))
 
 (defun set-socket-option-int (fd level option value)
-  (with-alien ((optval int))
-    (setf optval value)
-    (et:setsockopt fd level option (addr optval) et::size-of-int)
+  (with-foreign-object (optval :int)
+    (setf (mem-ref optval :int) value)
+    (et:setsockopt fd level option optval et:size-of-int)
     (values)))
 
 (defun set-socket-option-linger (fd level option onoff linger)
-  (with-alien ((optval et:linger))
-    (setf (slot optval 'et:onoff) (lisp->c-bool onoff))
-    (setf (slot optval 'et:linger) linger)
-    (et:setsockopt fd level option (addr optval) et::size-of-linger)
+  (with-foreign-object (optval 'et:linger)
+    (setf (foreign-slot-value optval 'et:linger 'et:onoff) (lisp->c-bool onoff))
+    (setf (foreign-slot-value optval 'et:linger 'et:linger) linger)
+    (et:setsockopt fd level option optval #.(foreign-type-size 'et:linger))
     (values)))
 
 (defun set-socket-option-timeval (fd level option sec usec)
-  (with-alien ((optval et:timeval))
-    (setf (slot optval 'et:tv-sec) sec)
-    (setf (slot optval 'et:tv-usec) usec)
-    (et:setsockopt fd level option (addr optval) et::size-of-timeval)
+  (with-foreign-object (optval 'et:timeval)
+    (setf (foreign-slot-value optval 'et:timeval 'et:tv-sec) sec)
+    (setf (foreign-slot-value optval 'et:timeval 'et:tv-usec) usec)
+    (et:setsockopt fd level option optval #.(foreign-type-size 'et:timeval))
     (values)))
 
 ;;
@@ -64,34 +64,34 @@
 ;;
 
 (defun get-socket-option-bool (fd level option)
-  (with-alien ((optval int)
-               (optlen et:socklen-t))
-    (setf optlen et::size-of-int)
-    (et:getsockopt fd level option (addr optval) (addr optlen))
+  (with-foreign-objects ((optval :int)
+                         (optlen :socklen))
+    (setf (mem-ref optlen :int) et:size-of-int)
+    (et:getsockopt fd level option optval optlen)
     (values (c->lisp-bool optval))))
 
 (defun get-socket-option-int (fd level option)
-  (with-alien ((optval int)
-               (optlen et:socklen-t))
-    (setf optlen et::size-of-int)
-    (et:getsockopt fd level option (addr optval) (addr optlen))
+  (with-foreign-objects ((optval :int)
+<                         (optlen :socklen))
+    (setf (mem-ref optlen :int) et:size-of-int)
+    (et:getsockopt fd level option optval optlen)
     (values optval)))
 
 (defun get-socket-option-linger (fd level option)
-  (with-alien ((optval et:linger)
-               (optlen et:socklen-t))
-    (setf optlen et::size-of-linger)
-    (et:getsockopt fd level option (addr optval) (addr optlen))
-    (values (c->lisp-bool (slot optval 'et:onoff))
-            (slot optval 'et:linger))))
+  (with-foreign-objects ((optval 'et:linger)
+                         (optlen :socklen))
+    (setf (mem-ref optlen :int) #.(foreign-type-size 'et:linger))
+    (et:getsockopt fd level option optval optlen)
+    (values (c->lisp-bool (foreign-slot-value optval 'et:linger 'et:onoff))
+            (foreign-slot-value optval 'et:linger 'et:linger))))
 
 (defun get-socket-option-timeval (fd level option)
-  (with-alien ((optval et:timeval)
-               (optlen et:socklen-t))
-    (setf optlen et::size-of-timeval)
-    (et:getsockopt fd level option (addr optval) (addr optlen))
-    (values (slot optval 'et:tv-sec)
-            (slot optval 'et:tv-usec))))
+  (with-foreign-objects ((optval 'et:timeval)
+                         (optlen :socklen))
+    (setf (mem-ref optlen :int) #.(foreign-type-size 'et:timeval))
+    (et:getsockopt fd level option optval optlen)
+    (values (foreign-slot-value optval 'et:timeval 'et:tv-sec)
+            (foreign-slot-value optval 'et:timeval 'et:tv-usec))))
 
 
 ;;

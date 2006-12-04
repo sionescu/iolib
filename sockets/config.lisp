@@ -21,7 +21,7 @@
 
 (declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
 
-(in-package #:net.sockets)
+(in-package :net.sockets)
 
 (defvar *ipv6* t
   "Specifies the default behaviour with respect to IPv6:

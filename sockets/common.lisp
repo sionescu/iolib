@@ -22,21 +22,7 @@
 ;; (declaim (optimize (speed 3) (safety 1) (space 1) (debug 1)))
 (declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
 
-(in-package #:net.sockets)
-
-(defmacro with-alien-saps ((&rest vars) &body body)
-  `(sb-sys:with-pinned-objects ,(mapcar #'second vars)
-     (let (,@(mapcar #'(lambda (pair)
-                         `(,(first pair) (sb-alien:alien-sap ,(second pair))))
-                     vars))
-       ,@body)))
-
-(defmacro with-vector-saps ((&rest vars) &body body)
-  `(sb-sys:with-pinned-objects ,(mapcar #'second vars)
-     (let (,@(mapcar #'(lambda (pair)
-                         `(,(first pair) (sb-sys:vector-sap ,(second pair))))
-                     vars))
-       ,@body)))
+(in-package :net.sockets)
 
 (defmacro define-constant (name value &optional doc)
   `(defconstant ,name (if (boundp ',name) (symbol-value ',name) ,value)
@@ -72,11 +58,11 @@
 (defun lisp->c-bool (val)
   (if val 1 0))
 
-(defmacro addrerr-value (keyword)
-  `(et:alien-enum-value et:addrinfo-errors ,keyword))
+(defun addrerr-value (keyword)
+  (foreign-enum-value 'et:addrinfo-errors keyword))
 
-(defmacro unixerr-value (keyword)
-  `(et:alien-enum-value et:errno-values ,keyword))
+(defun unixerr-value (keyword)
+  (foreign-enum-value 'et:errno-values keyword))
 
 (defun xor (x1 x2)
   (not (eql (not x1) (not x2))))
@@ -114,10 +100,9 @@
   (htonl long))
 
 (defun copy-simple-array-ub16-to-alien-vector (lisp-vec alien-vec)
-  (declare (type (simple-array ub16 (8)) lisp-vec)
-           (type (alien (array et:uint16-t 8)) alien-vec))
+  (declare (type (simple-array ub16 (8)) lisp-vec))
   (dotimes (i 8)
-    (setf (deref alien-vec i)
+    (setf (mem-aref alien-vec :uint16 i)
           (htons (aref lisp-vec i)))))
 
 (defun map-ipv4-vector-to-ipv6 (addr)
@@ -144,110 +129,98 @@
      (aref vector 3)))
 
 (defun make-sockaddr-in (sin ub8-vector &optional (port 0))
-  (declare (type (alien (* et:sockaddr-in)) sin))
-  (et:memset sin 0 et::size-of-sockaddr-in)
-  (setf (slot sin 'et:family) et:af-inet)
-  (setf (slot sin 'et:address) (htonl (vector-to-ipaddr ub8-vector)))
-  (setf (slot sin 'et:port) (htons port))
+  (et:memset sin 0 #.(foreign-type-size 'et:sockaddr-in))
+  (let ((tmp port))
+    (with-foreign-slots ((family address port) sin et:sockaddr-in)
+      (setf family et:af-inet)
+      (setf address (htonl (vector-to-ipaddr ub8-vector)))
+      (setf port (htons tmp))))
   sin)
 
 (defun make-sockaddr-in6 (sin6 ub16-vector &optional (port 0))
-  (declare (type (alien (* et:sockaddr-in6)) sin6))
-  (et:memset sin6 0 et::size-of-sockaddr-in6)
-  (setf (slot sin6 'et:family) et:af-inet6)
-  (let ((u16-vector (slot (slot (slot sin6 'et:address)
-                                'et:in6-u)
-                          'et::addr16)))
-    (copy-simple-array-ub16-to-alien-vector ub16-vector u16-vector)
-    (setf (slot sin6 'et:port) (htons port)))
+  (et:memset sin6 0 #.(foreign-type-size 'et:sockaddr-in6))
+  (let ((tmp port))
+    (with-foreign-slots ((family address port) sin6 et:sockaddr-in6)
+      (setf family et:af-inet6)
+      (copy-simple-array-ub16-to-alien-vector ub16-vector address)
+      (setf port (htons tmp))))
   sin6)
 
 (defun make-sockaddr-un (sun string)
-  (declare (type (alien (* et:sockaddr-un)) sun)
-           (type string string))
-  (et:memset sun 0 et::size-of-sockaddr-un)
-  (setf (slot sun 'et:family) et:af-local)
-  (let ((buff (sb-ext:string-to-octets string))
-        (path (slot sun 'et:path)))
-    (loop
-       :for off :below (min (length buff)
-                            (1- et:unix-path-max))
-       :do (setf (deref path off) (aref buff off))))
+  (check-type string string)
+  (et:memset sun 0 (foreign-type-size 'et:sockaddr-un))
+  (with-foreign-slots ((family path) sun et:sockaddr-un)
+    (setf family et:af-local)
+    (with-foreign-string (c-string string)
+      (loop
+         :for off :below (1- et:unix-path-max)
+         :do (setf (mem-aref path :uint8 off)
+                   (mem-aref c-string :uint8 off)))))
   sun)
 
 (defun make-vector-u8-4-from-in-addr (in-addr)
-  (declare (type ub32 in-addr))
+  (check-type in-addr ub32)
   (let ((vector (make-array 4 :element-type 'ub8)))
     (setf in-addr (ntohl in-addr))
     (setf (aref vector 0) (ldb (byte 8 24) in-addr))
     (setf (aref vector 1) (ldb (byte 8 16) in-addr))
     (setf (aref vector 2) (ldb (byte 8  8) in-addr))
     (setf (aref vector 3) (ldb (byte 8  0) in-addr))
-
     vector))
 
 (defun make-vector-u16-8-from-in6-addr (in6-addr)
-  (declare (type (alien (* et:in6-addr)) in6-addr))
-  (let ((newvector (make-array 8 :element-type 'ub16))
-        (u16-vector (slot (slot in6-addr 'et:in6-u)
-                          'et::addr16)))
+  (let ((newvector (make-array 8 :element-type 'ub16)))
     (dotimes (i 8)
-      (setf (aref newvector i) (ntohs (deref u16-vector i))))
-
+      (setf (aref newvector i)
+            (ntohs (mem-aref in6-addr :uint16 i))))
     newvector))
 
 (defun sockaddr-in->netaddr (sin)
-  (declare (type (alien (* et:sockaddr-in)) sin))
-  (values (make-address (make-vector-u8-4-from-in-addr
-                         (slot sin 'et:address)))
-          (slot sin 'et:port)))
+  (with-foreign-slots ((address port) sin et:sockaddr-in)
+    (values (make-instance 'ipv4addr
+                           :name (make-vector-u8-4-from-in-addr address))
+            port)))
 
 (defun sockaddr-in6->netaddr (sin6)
-  (declare (type (alien (* et:sockaddr-in6)) sin6))
-  (values (make-address (make-vector-u16-8-from-in6-addr
-                         (addr (slot sin6 'et:address))))
-          (slot sin6 'et:port)))
+  (with-foreign-slots ((address port) sin6 et:sockaddr-in6)
+    (values (make-instance 'ipv6addr
+                           :name (make-vector-u16-8-from-in6-addr address))
+            port)))
 
 (defun sockaddr-un->netaddr (sun)
-  (declare (type (alien (* et:sockaddr-un)) sun))
-  (let ((path (slot sun 'et:path))
-        (name (make-string (1- et:unix-path-max)))
-        (abstract nil))
-    (if (zerop (deref path 0))
-        ;; abstract address
-        (progn
-          (setf path (cast path (array (unsigned 8) 0)))
-          (setf abstract t)
-          (loop
-             :for sindex :from 0 :below (1- et:unix-path-max)
-             :for pindex :from 1 :below et:unix-path-max
-             :do (setf (schar name sindex)
-                       (code-char (deref path pindex)))))
-        ;; address is in the filesystem
-        (setf name (cast path c-ascii-string)))
-    (make-instance 'localaddr
-                   :name name
-                   :abstract abstract)))
+  (with-foreign-slots ((path) sun et:sockaddr-un)
+    (let ((name (make-string (1- et:unix-path-max)))
+          (abstract nil))
+      (if (zerop (mem-aref path :uint8 0))
+          ;; abstract address
+          (progn
+            (setf abstract t)
+            (loop
+               :for sindex :from 0 :below (1- et:unix-path-max)
+               :for pindex :from 1 :below et:unix-path-max
+               :do (setf (schar name sindex)
+                         (code-char (mem-aref path :uint8 pindex)))))
+          ;; address is in the filesystem
+          (setf name (foreign-string-to-lisp path)))
+      (make-instance 'unixaddr
+                     :name name
+                     :abstract abstract))))
 
 (defun sockaddr-storage->netaddr (sa)
-  (declare (type (alien (* et:sockaddr-storage)) sa))
-  (ecase (slot sa 'et:family)
-    (#.et:af-inet
-     (sockaddr-in->netaddr (cast sa (* et:sockaddr-in))))
-    (#.et:af-inet6
-     (sockaddr-in6->netaddr (cast sa (* et:sockaddr-in6))))
-    (#.et:af-local
-     (sockaddr-un->netaddr (cast sa (* et:sockaddr-un))))))
+  (with-foreign-slots ((family) sa et:sockaddr-storage)
+    (ecase family
+      (#.et:af-inet
+       (sockaddr-in->netaddr sa))
+      (#.et:af-inet6
+       (sockaddr-in6->netaddr sa))
+      (#.et:af-local
+       (sockaddr-un->netaddr sa)))))
 
 (defun netaddr->sockaddr-storage (sa netaddr &optional (port 0))
-  (declare (type (alien (* et:sockaddr-storage)) sa))
   (etypecase netaddr
     (ipv4addr
-     (make-sockaddr-in (cast sa (* et:sockaddr-in))
-                       (name netaddr) port))
+     (make-sockaddr-in sa (name netaddr) port))
     (ipv6addr
-     (make-sockaddr-in6 (cast sa (* et:sockaddr-in6))
-                        (name netaddr) port))
+     (make-sockaddr-in6 sa (name netaddr) port))
     (localaddr
-     (make-sockaddr-un (cast sa (* et:sockaddr-un))
-                       (name netaddr)))))
+     (make-sockaddr-un sa (name netaddr)))))
