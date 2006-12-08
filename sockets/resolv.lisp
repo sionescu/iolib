@@ -113,7 +113,7 @@
   (with-foreign-objects ((hints 'et:addrinfo)
                          (res :pointer))
     (et:memset hints 0 (foreign-type-size 'et:addrinfo))
-    (with-foreign-slots ((flags family socktype protocol)
+    (with-foreign-slots ((et:flags et:family et:socktype et:protocol)
                          hints et:addrinfo)
       (setf flags hint-flags)
       (setf family hint-family)
