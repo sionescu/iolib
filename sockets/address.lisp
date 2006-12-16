@@ -189,17 +189,20 @@
 (defmethod print-object ((address ipv4addr) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
     (with-slots (name) address
-      (format stream "IPv4 address: ~A" (vector-to-dotted name)))))
+      (format stream "IPv4 address: ~A"
+              (netaddr->presentation address)))))
 
 (defmethod print-object ((address ipv6addr) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
     (with-slots (name) address
-      (format stream "IPv6 address: ~A" (vector-to-colon-separated name)))))
+      (format stream "IPv6 address: ~A"
+              (netaddr->presentation address)))))
 
 (defmethod print-object ((address localaddr) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
     (with-slots (name abstract) address
-      (format stream "Unix socket address: ~A. Abstract: ~:[no~;yes~]" name abstract))))
+      (format stream "Unix socket address: ~A. Abstract: ~:[no~;yes~]"
+              (netaddr->presentation address) abstract))))
 
 (defgeneric netaddr->presentation (addr))
 
@@ -210,7 +213,9 @@
   (vector-to-colon-separated (name addr)))
 
 (defmethod netaddr->presentation ((addr localaddr))
-  (name addr))
+  (if (abstract-p addr)
+      "unknown socket"
+      (name addr)))
 
 
 ;;;

@@ -500,7 +500,7 @@
             (et:getpeername (socket-fd socket)
                             ss size)
             t))
-      (unix-error-notconn (err)
+      (et:unix-error-notconn (err)
         (declare (ignore err))
         nil))))
 
