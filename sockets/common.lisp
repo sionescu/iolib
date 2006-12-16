@@ -202,7 +202,7 @@
                          (code-char (mem-aref et:path :uint8 pindex)))))
           ;; address is in the filesystem
           (setf name (foreign-string-to-lisp et:path)))
-      (make-instance 'unixaddr
+      (make-instance 'localaddr
                      :name name
                      :abstract abstract))))
 

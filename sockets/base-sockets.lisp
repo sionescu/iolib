@@ -32,7 +32,6 @@
 
 (defclass socket ()
   ((fd       :reader socket-fd)
-   (address  :initarg :address  :reader socket-address :type netaddr)
    (family   :initarg :family   :reader socket-family)
    (protocol :initarg :protocol :reader socket-protocol)))
 
@@ -47,6 +46,10 @@
 (defgeneric socket-open-p (socket))
 
 (defgeneric local-name (socket))
+
+(defgeneric socket-address (socket))
+
+(defgeneric socket-port (socket))
 
 (defgeneric remote-name (socket))
 
@@ -63,8 +66,7 @@
 
 (defgeneric unconnect (socket))
 
-(defclass internet-socket (socket)
-  ((port :initarg :port :reader socket-port :type (unsigned-byte 16)))
+(defclass internet-socket (socket) ()
   (:default-initargs :family (if *ipv6* :ipv6 :ipv4)))
 
 (defclass local-socket (socket) ()
@@ -74,6 +76,8 @@
 
 (defgeneric connect (socket address &key &allow-other-keys))
 
+(defgeneric socket-connected-p (socket))
+
 (defgeneric shutdown (socket direction))
 
 (defgeneric socket-send (buffer socket &key &allow-other-keys))
@@ -81,7 +85,8 @@
 (defgeneric socket-receive (buffer socket &key &allow-other-keys))
 
 (defclass passive-socket (socket)
-  ((listening :initform nil :reader socket-listening-p :type boolean)
+  ((bound     :initform nil :reader socket-bound-p     :type boolean)
+   (listening :initform nil :reader socket-listening-p :type boolean)
    (active-class :initarg :active-class :reader active-class
                  :type symbol :allocation :class)))
 
