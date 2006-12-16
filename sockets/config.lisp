@@ -34,7 +34,7 @@ Default value is T.")
   "Maximum length of the pending connections queue(hard limit).")
 
 (defvar *default-backlog-size* 5
-  #.(format nil "Default length of the pending connections queue(soft limit). Default value is 5 and maximum value is ~A." +max-backlog-size+))
+  "Default length of the pending connections queue(soft limit).")
 
 (defvar *no-sigpipe* t
   "When T an EOF received on a stream socket won't raise a SIGPIPE. Default value it T.")

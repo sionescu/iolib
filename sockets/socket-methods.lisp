@@ -201,13 +201,14 @@
     (return-from socket-open-p nil))
   (with-socket-error-filter
     (handler-case
-        (with-foreign-objects ((ss 'et:sockaddr-storage)
-                               (size :socklen
-                                     #.(foreign-type-size 'et:sockaddr-storage)))
+        (with-foreign-object (ss 'et:sockaddr-storage)
           (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
-          (et:getsockname (socket-fd socket)
-                          ss size)
-          t)
+          (with-foreign-pointer (size #.(foreign-type-size :socklen))
+            (setf (mem-ref size :socklen)
+                  #.(foreign-type-size 'et:sockaddr-storage))
+            (et:getsockname (socket-fd socket)
+                            ss size)
+            t))
       (unix-error (err)
         (case (error-identifier err)
           ((:ebadf
@@ -243,56 +244,56 @@
 ;;;;;;;;;;;;;;;;;;;
 
 (defmethod local-name ((socket internet-socket))
-  (with-foreign-objects ((ss 'et:sockaddr-storage)
-                         (size :socklen
-                               #.(foreign-type-size 'et:sockaddr-storage)))
+  (with-foreign-object (ss 'et:sockaddr-storage)
     (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
-    (with-socket-error-filter
-      (et:getsockname (socket-fd socket)
-                      ss size))
-    (return-from local-name
-      (values (sockaddr-storage->netaddr ss)
-              (ntohs (foreign-slot-value ss 'et:sockaddr-in
-                                         'et:port))))))
+    (with-foreign-pointer (size #.(foreign-type-size :socklen))
+      (setf (mem-ref size :socklen)
+            #.(foreign-type-size 'et:sockaddr-storage))
+     (with-socket-error-filter
+       (et:getsockname (socket-fd socket)
+                       ss size))
+     (return-from local-name
+       (sockaddr-storage->netaddr ss)))))
 
 (defmethod local-name ((socket local-socket))
-  (with-foreign-objects ((sun 'et:sockaddr-un)
-                         (size :socklen
-                               #.(foreign-type-size 'et:sockaddr-un)))
+  (with-foreign-object (sun 'et:sockaddr-un)
     (et:memset sun 0 #.(foreign-type-size 'et:sockaddr-un))
-    (with-socket-error-filter
-      (et:getsockname (socket-fd socket)
-                      sun size))
-    (return-from local-name
-      (values (sockaddr-un->netaddr sun)))))
+    (with-foreign-pointer (size #.(foreign-type-size :socklen))
+      (setf (mem-ref size :socklen)
+            #.(foreign-type-size 'et:sockaddr-storage))
+      (with-socket-error-filter
+        (et:getsockname (socket-fd socket)
+                        sun size))
+      (return-from local-name
+        (sockaddr-un->netaddr sun)))))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;  GETPEERNAME  ;;
 ;;;;;;;;;;;;;;;;;;;
 
 (defmethod remote-name ((socket internet-socket))
-  (with-foreign-objects ((ss 'et:sockaddr-storage)
-                         (size :socklen
-                               #.(foreign-type-size 'et:sockaddr-storage)))
+  (with-foreign-object (ss 'et:sockaddr-storage)
     (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
-    (with-socket-error-filter
-      (et:getpeername (socket-fd socket)
-                      ss size))
-    (return-from remote-name
-      (values (sockaddr-storage->netaddr ss)
-              (ntohs (foreign-slot-value ss 'et:sockaddr-in
-                                         'et:port))))))
+    (with-foreign-pointer (size #.(foreign-type-size :socklen))
+      (setf (mem-ref size :socklen)
+            #.(foreign-type-size 'et:sockaddr-storage))
+      (with-socket-error-filter
+        (et:getpeername (socket-fd socket)
+                        ss size))
+      (return-from remote-name
+        (sockaddr-storage->netaddr ss)))))
 
 (defmethod remote-name ((socket local-socket))
-  (with-foreign-objects ((sun 'et:sockaddr-un)
-                         (size :socklen
-                               #.(foreign-type-size 'et:sockaddr-un)))
+  (with-foreign-object (sun 'et:sockaddr-un)
     (et:memset sun 0 #.(foreign-type-size 'et:sockaddr-un))
-    (with-socket-error-filter
-      (et:getpeername (socket-fd socket)
-                      sun size))
-    (return-from remote-name
-      (values (sockaddr-un->netaddr sun)))))
+    (with-foreign-pointer (size #.(foreign-type-size :socklen))
+      (setf (mem-ref size :socklen)
+            #.(foreign-type-size 'et:sockaddr-storage))
+      (with-socket-error-filter
+        (et:getpeername (socket-fd socket)
+                        sun size))
+      (return-from remote-name
+        (sockaddr-un->netaddr sun)))))
 
 ;;;;;;;;;;;;
 ;;  BIND  ;;
@@ -386,46 +387,49 @@
 
 (defmethod accept-connection ((socket passive-socket)
                               &key (wait t))
-  (with-foreign-objects ((ss 'et:sockaddr-storage)
-                         (size :socklen
-                               #.(foreign-type-size 'et:sockaddr-storage)))
+  (with-foreign-object (ss 'et:sockaddr-storage)
     (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
-    (let (non-blocking-state
-          client-fd)
-      (with-socket-error-filter
-        (handler-case
-            (if wait
-                ;; do a "normal" accept
-                ;; Note: the socket may already be in non-blocking mode
-                (setf client-fd (et:accept (socket-fd socket)
-                                           ss size))
-                ;; set the socket to non-blocking mode before calling accept()
-                ;; if there's no new connection return NIL
-                (unwind-protect
-                     (progn
-                       ;; saving the current non-blocking state
-                       (setf non-blocking-state (socket-non-blocking-mode socket))
-                       (setf client-fd (et:accept (socket-fd socket)
-                                                  ss size)))
-                  ;; restoring the socket's non-blocking state
-                  (setf (socket-non-blocking-mode socket) non-blocking-state)))
-          ;; the socket is marked non-blocking and there's no new connection
-          (et:unix-error-wouldblock (err)
-            (declare (ignore err))
-            (return-from accept-connection nil))))
+    (with-foreign-pointer (size #.(foreign-type-size :socklen))
+      (setf (mem-ref size :socklen)
+            #.(foreign-type-size 'et:sockaddr-storage))
+      (let (non-blocking-state
+            client-fd)
+        (with-socket-error-filter
+          (handler-case
+              (if wait
+                  ;; do a "normal" accept
+                  ;; Note: the socket may already be in non-blocking mode
+                  (setf client-fd (et:accept (socket-fd socket)
+                                             ss size))
+                  ;; set the socket to non-blocking mode before calling accept()
+                  ;; if there's no new connection return NIL
+                  (unwind-protect
+                       (progn
+                         ;; saving the current non-blocking state
+                         (setf non-blocking-state (socket-non-blocking-mode socket))
+                         ;; switch the socket to non-blocking mode
+                         (setf (socket-non-blocking-mode socket) t)
+                         (setf client-fd (et:accept (socket-fd socket)
+                                                    ss size)))
+                    ;; restoring the socket's non-blocking state
+                    (setf (socket-non-blocking-mode socket) non-blocking-state)))
+            ;; the socket is marked non-blocking and there's no new connection
+            (et:unix-error-wouldblock (err)
+              (declare (ignore err))
+              (return-from accept-connection nil))))
 
-      (let ((client-socket
-             ;; create the client socket object
-             (make-instance (active-class socket)
-                            :file-descriptor client-fd)))
-        ;; setting the socket's remote address and port
-        (multiple-value-bind (remote-address remote-port)
-            (remote-name client-socket)
-          (setf (slot-value client-socket 'address) remote-address)
-          ;; when it's an internet socket
-          (when remote-port
-            (setf (slot-value client-socket 'port) remote-port)))
-        (return-from accept-connection client-socket)))))
+        (let ((client-socket
+               ;; create the client socket object
+               (make-instance (active-class socket)
+                              :file-descriptor client-fd)))
+          ;; setting the socket's remote address and port
+          (multiple-value-bind (remote-address remote-port)
+              (remote-name client-socket)
+            (setf (slot-value client-socket 'address) remote-address)
+            ;; when it's an internet socket
+            (when remote-port
+              (setf (slot-value client-socket 'port) remote-port)))
+          (return-from accept-connection client-socket))))))
 
 
 ;;;;;;;;;;;;;;;
@@ -519,7 +523,8 @@
       ((vector ub8) (values (coerce buff '(simple-array ub8 (*)))
                             start (- end start)))
       (simple-base-string (values buff start (- end start)))
-      (string (values (flexi-streams:string-to-octets buff :start start :end end)
+      (string (values (flexi-streams:string-to-octets buff :external-format :latin1
+                                                      :start start :end end)
                       0 (- end start))))))
 
 (defmethod socket-send :before ((buffer array)
@@ -606,23 +611,27 @@
 
     (multiple-value-bind (buff start-offset bufflen)
         (normalize-receive-buffer buffer start end)
-      (with-foreign-objects ((ss 'et:sockaddr-storage)
-                             (size :socklen #.(foreign-type-size 'et:sockaddr-storage)))
+      (with-foreign-object (ss 'et:sockaddr-storage)
         (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
-        (with-pointer-to-vector-data (buff-sap buff)
-          (incf-pointer buff-sap start-offset)
-          (with-socket-error-filter
-            (setf bytes-received
-                  (et:recvfrom (socket-fd socket)
-                               buff-sap bufflen
-                               flags
-                               ss size))))
+        (with-foreign-pointer (size #.(foreign-type-size :socklen))
+          (setf (mem-ref size :socklen)
+                #.(foreign-type-size 'et:sockaddr-storage))
+          (with-pointer-to-vector-data (buff-sap buff)
+            (incf-pointer buff-sap start-offset)
+            (with-socket-error-filter
+              (setf bytes-received
+                    (et:recvfrom (socket-fd socket)
+                                 buff-sap bufflen
+                                 flags
+                                 ss size)))))
 
         (return-from socket-receive
           ;; when socket is a datagram socket
           ;; return the sender's address as 3rd value
           (if (typep socket 'datagram-socket)
-              (values buffer bytes-received (sockaddr-storage->netaddr ss))
+              (multiple-value-bind (remote-address remote-port)
+                  (sockaddr-storage->netaddr ss)
+                (values buffer bytes-received remote-address remote-port))
               (values buffer bytes-received)))))))
 
 (defmethod socket-receive (buffer (socket passive-socket) &key)
