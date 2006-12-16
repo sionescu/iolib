@@ -2,6 +2,9 @@
 
 (in-package :common-lisp-user)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (asdf:operate 'asdf:load-op :cffi))
+
 (defpackage #:net.sockets-system
   (:use #:common-lisp #:asdf))
 
