@@ -55,9 +55,9 @@
           (ldb (byte 8 8)  ipaddr)
           (ldb (byte 8 0)  ipaddr)))
 
-(defun dotted-to-vector (string &key (error-p t))
+(defun dotted-to-vector (string &key (errorp t))
   (when (not (stringp string))
-    (if error-p
+    (if errorp
         (error 'type-error :datum string
                :expected-type 'string)
         (return-from dotted-to-vector nil)))
@@ -71,7 +71,7 @@
                         in-addr)          ; pointer to struct in6_addr
         (unix-error (err)
           (declare (ignore err))
-          (if error-p
+          (if errorp
               (error 'invalid-address :address string :type :ipv4)
               (return-from dotted-to-vector nil)))))
     (make-vector-u8-4-from-in-addr (mem-ref in-addr :in-addr))))
@@ -87,9 +87,9 @@
           (aref vector 2)
           (aref vector 3)))
 
-(defun colon-separated-to-vector (string &key (error-p t))
+(defun colon-separated-to-vector (string &key (errorp t))
   (when (not (stringp string))
-    (if error-p
+    (if errorp
         (error 'type-error :datum string
                :expected-type 'string)
         (return-from colon-separated-to-vector nil)))
@@ -103,17 +103,17 @@
                         in6-addr)          ; pointer to struct in6_addr
         (unix-error (err)
           (declare (ignore err))
-          (if error-p
+          (if errorp
               (error 'invalid-address :address string :type :ipv6)
               (return-from colon-separated-to-vector nil)))))
     (make-vector-u16-8-from-in6-addr in6-addr)))
 
-(defun vector-to-colon-separated (vector &key (case :downcase) (error-p t))
+(defun vector-to-colon-separated (vector &key (case :downcase) (errorp t))
   (handler-case
       (setf vector (coerce vector '(simple-array ub16 (8))))
     (type-error (err)
       (declare (ignore err))
-      (if error-p
+      (if errorp
           (error 'type-error :datum vector
                  :expected-type '(simple-array (unsigned-byte 16) (8)))
           (return-from vector-to-colon-separated nil))))
@@ -133,16 +133,16 @@
             (:upcase (nstring-upcase str))))))))
 
 (defun string-address->vector (address)
-  (or (dotted-to-vector address :error-p nil)
-      (colon-separated-to-vector address :error-p nil)))
+  (or (dotted-to-vector address :errorp nil)
+      (colon-separated-to-vector address :errorp nil)))
 
 (defun vector-address-or-nil (address)
   (let (vector addr-type)
     (typecase address
       (string (cond
-                ((setf vector (dotted-to-vector address :error-p nil))
+                ((setf vector (dotted-to-vector address :errorp nil))
                  (setf addr-type :ipv4))
-                ((setf vector (colon-separated-to-vector address :error-p nil))
+                ((setf vector (colon-separated-to-vector address :errorp nil))
                  (setf addr-type :ipv6))))
       ((array * (4)) (cond ((setf vector (ignore-errors
                                            (coerce address '(simple-array octet (4)))))

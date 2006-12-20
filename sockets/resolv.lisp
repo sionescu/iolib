@@ -260,11 +260,11 @@
 
     (let (parsed)
       (cond
-        ((setf parsed (dotted-to-vector host :error-p nil))
+        ((setf parsed (dotted-to-vector host :errorp nil))
          (return-from lookup-host
            (lookup-host-u8-vector-4 parsed ipv6)))
 
-        ((setf parsed (colon-separated-to-vector host :error-p nil))
+        ((setf parsed (colon-separated-to-vector host :errorp nil))
          (return-from lookup-host
            (lookup-host-u16-vector-8 parsed ipv6)))
 
