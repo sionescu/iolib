@@ -144,7 +144,7 @@
 
 (defgeneric write-dns-string (buffer string))
 (defmethod write-dns-string ((buffer dynamic-output-buffer)
-                             (string simple-string))
+                             (string string))
   (write-unsigned-8 buffer (length string))
   (write-vector buffer (flexi-streams:string-to-octets string)))
 
@@ -164,7 +164,7 @@
 
 (defgeneric write-domain-name (buffer name))
 (defmethod write-domain-name ((buffer dynamic-output-buffer)
-                              (domain-name simple-string))
+                              (domain-name string))
   (write-vector buffer (domain-name-to-dns-format domain-name)))
 
 (defgeneric write-record (buffer record))

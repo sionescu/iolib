@@ -46,17 +46,6 @@
       (when (eql eof-place :after)
         (fresh-line stream)))))
 
-(define-condition invalid-argument (system-error)
-  ((argument :initarg :argument :reader invalid-argument))
-  (:report (lambda (condition stream)
-             (declare (type stream stream))
-             (format stream "Invalid argument: ~A"
-                     (invalid-argument condition))
-             (print-message-if-not-null condition stream)))
-  (:documentation "Signaled when one or more of a function's arguments are considered
-not valid(wrong type or good type but not within a certain range of
-values, et caetera)."))
-
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;;;  SOCKET ERRORS  ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;

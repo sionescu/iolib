@@ -80,6 +80,7 @@
 
 ;; TODO: find out how to make an FD-STREAM on other implementations
 (defun make-fd-stream (fd)
+  (check-type fd unsigned-byte)
   #+sbcl
   (sb-sys:make-fd-stream fd
                          :name (format nil "Socket stream, fd: ~A" fd)
@@ -89,11 +90,7 @@
   (system:make-fd-stream fd
                          :name (format nil "Socket stream, fd: ~A" fd)
                          :input t :output t :buffering :full
-                         :binary-stream-p nil :auto-close nil)
-  #+clisp
-  (ext:make-stream fd
-                   :direction :io :buffered t
-                   :element-type 'character))
+                         :binary-stream-p nil :auto-close nil))
 
 (defmethod shared-initialize :after ((socket stream-socket) slot-names &key)
   (setf (slot-value socket 'lisp-stream)
@@ -538,9 +535,9 @@
       ((simple-array ub8 (*)) (values buff start (- end start)))
       ((vector ub8) (values (coerce buff '(simple-array ub8 (*)))
                             start (- end start)))
-      (simple-base-string (values buff start (- end start)))
-      (string (values (flexi-streams:string-to-octets buff :external-format :latin1
-                                                      :start start :end end)
+      (string (values (coerce (flexi-streams:string-to-octets buff :external-format :latin1
+                                                              :start start :end end)
+                              '(simple-array ub8 (*)))
                       0 (- end start))))))
 
 (defmethod socket-send :before ((buffer array)

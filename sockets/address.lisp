@@ -56,17 +56,14 @@
           (ldb (byte 8 0)  ipaddr)))
 
 (defun dotted-to-vector (string &key (error-p t))
-  (handler-case
-      (setf string (coerce string '(vector base-char)))
-    (type-error (err)
-      (declare (ignore err))
-      (if error-p
-          (error 'invalid-argument :argument string
-                 :message (format nil "The vector: ~A is not a string or contains non-ASCII characters." string))
-          (return-from dotted-to-vector nil))))
+  (when (not (stringp string))
+    (if error-p
+        (error 'type-error :datum string
+               :expected-type 'string)
+        (return-from dotted-to-vector nil)))
 
   (with-foreign-pointer (in-addr #.(foreign-type-size :in-addr))
-    (with-pointer-to-vector-data (string-pointer string)
+    (with-foreign-string (string-pointer string)
       (setf (mem-ref in-addr :in-addr) 0)
       (handler-case
           (et:inet-pton et:af-inet        ; address family
@@ -91,17 +88,14 @@
           (aref vector 3)))
 
 (defun colon-separated-to-vector (string &key (error-p t))
-  (handler-case
-      (setf string (coerce string '(simple-array base-char (*))))
-    (type-error (err)
-      (declare (ignore err))
-      (if error-p
-          (error 'invalid-argument :argument string
-                 :message (format nil "The vector: ~A is not a string or contains non-ASCII characters." string))
-          (return-from colon-separated-to-vector nil))))
+  (when (not (stringp string))
+    (if error-p
+        (error 'type-error :datum string
+               :expected-type 'string)
+        (return-from colon-separated-to-vector nil)))
 
   (with-foreign-object (in6-addr :uint16 8)
-    (with-pointer-to-vector-data (string-pointer string)
+    (with-foreign-string (string-pointer string)
       (et:memset in6-addr 0 16)
       (handler-case
           (et:inet-pton et:af-inet6        ; address family
@@ -110,7 +104,7 @@
         (unix-error (err)
           (declare (ignore err))
           (if error-p
-              (error 'invalid-address :address string :type :ipv4)
+              (error 'invalid-address :address string :type :ipv6)
               (return-from colon-separated-to-vector nil)))))
     (make-vector-u16-8-from-in6-addr in6-addr)))
 
@@ -120,8 +114,8 @@
     (type-error (err)
       (declare (ignore err))
       (if error-p
-          (error 'invalid-argument :argument vector
-                 :message (format nil "The vector: ~A does not contain only 16-bit positive integers or has not length 8." vector))
+          (error 'type-error :datum vector
+                 :expected-type '(simple-array (unsigned-byte 16) (8)))
           (return-from vector-to-colon-separated nil))))
 
   (with-foreign-object (sin6 'et:sockaddr-in6)

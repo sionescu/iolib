@@ -28,12 +28,12 @@
                 #:system-error #:unix-error #:message)
   (:export
    ;; conditions
-   #:possible-bug #:invalid-argument
+   #:possible-bug
    #:system-error #:unix-error #:resolver-error
    #:unknown-interface #:unknown-protocol
    #:invalid-address
    ; condition accessors
-   #:bug-data #:invalid-argument
+   #:bug-data
    #:error-code #:error-identifier #:error-message
    #:interface-name #:interface-index #:protocol-name #:protocol-number
    #:address #:address-type

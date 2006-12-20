@@ -268,14 +268,8 @@
          (return-from lookup-host
            (lookup-host-u16-vector-8 parsed ipv6)))
 
+        ;; FIXME: check for ASCII-only strings or implement IDN
         (t
-         (handler-case
-             (setf host (coerce host '(simple-array base-char (*))))
-           (type-error (err)
-             (declare (ignore err))
-             (error 'invalid-argument :argument host
-                    :message (format nil "The string ~S contains non-ASCII characters." host))))
-
          (multiple-value-bind (family flags)
              (decide-family-and-flags)
            (setf flags (logior flags et:ai-canonname et:ai-addrconfig))
