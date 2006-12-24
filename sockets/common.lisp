@@ -72,29 +72,23 @@
 ;;;
 
 (defun htons (short)
-#+little-endian
-  (let ((newshort 0))
-    (declare (type ub16 newshort)
-             (type ub16 short))
-    (setf (ldb (byte 8 0) newshort) (ldb (byte 8 8) short))
-    (setf (ldb (byte 8 8) newshort) (ldb (byte 8 0) short))
-    newshort)
-#+big-endian short)
+  (check-type short ub16 "a 16-bit unsigned number")
+  #+little-endian
+  (logior (ash (logand (the ub16 short) #x00FF) 8)
+          (ash (logand (the ub16 short) #xFF00) -8))
+  #+big-endian short)
 
 (defun ntohs (short)
   (htons short))
 
 (defun htonl (long)
-#+little-endian
-  (let ((newlong 0))
-    (declare (type ub32 newlong)
-             (type ub32 long))
-    (setf (ldb (byte 8  0) newlong) (ldb (byte 8 24) long))
-    (setf (ldb (byte 8 24) newlong) (ldb (byte 8  0) long))
-    (setf (ldb (byte 8  8) newlong) (ldb (byte 8 16) long))
-    (setf (ldb (byte 8 16) newlong) (ldb (byte 8  8) long))
-    newlong)
-#+big-endian long)
+  (check-type long ub32 "a 32-bit unsigned number")
+  #+little-endian
+  (logior (ash (logand (the ub32 long) #x000000FF) 24)
+          (ash (logand (the ub32 long) #x0000FF00) 8)
+          (ash (logand (the ub32 long) #x00FF0000) -8)
+          (ash (logand (the ub32 long) #xFF000000) -24))
+  #+big-endian long)
 
 (defun ntohl (long)
   (htonl long))
