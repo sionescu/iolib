@@ -2,6 +2,9 @@
 
 (in-package :common-lisp-user)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (asdf:operate 'asdf:load-op :asdf-additions))
+
 (defpackage #:net.dns-client.system
   (:use #:common-lisp #:asdf))
 
@@ -14,6 +17,7 @@
   :licence "GPL-2.1"
   :depends-on (:net.sockets
                :flexi-streams)
+  :default-component-class muffled-source-file
   :components
   ((:file "export")
    (:file "dns-constants")

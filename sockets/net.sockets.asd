@@ -21,6 +21,7 @@
   :depends-on (:iolib-alien-ng
                :io.multiplex
                :flexi-streams)
+  :default-component-class muffled-source-file
   :components
   ((:file "defpackage")
    (:file "common" :depends-on ("defpackage"))
