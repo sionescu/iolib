@@ -248,7 +248,7 @@
              ((nil) (values et:af-inet 0))
              ;; the freebsd I use rejects AI_V4MAPPED and AI_ALL(weird thing)
              ;; therefore I'll use AF_UNSPEC and do the mappings myself
-             (t     (values
+             ((t)   (values
                      #-freebsd et:af-inet6
                      #+freebsd et:af-unspec
                      #+freebsd 0
