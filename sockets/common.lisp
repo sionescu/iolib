@@ -36,12 +36,11 @@
 (deftype sb32 () `(signed-byte 32))
 
 (defun parse-number-or-nil (value &optional (type :any) (radix 10))
-  (let (parsed)
-    (setf parsed
-          (if (stringp value)
-              (ignore-errors (parse-integer value :radix radix
-                                            :junk-allowed nil))
-              value))
+  (let ((parsed
+         (if (stringp value)
+             (ignore-errors (parse-integer value :radix radix
+                                           :junk-allowed nil))
+             value)))
     (if parsed
         ;; if it's a number and its type is ok return it
         (and (ecase type
