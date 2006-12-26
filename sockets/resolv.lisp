@@ -383,15 +383,12 @@
     ((:tcp :udp :any) t)
     (t                (setf protocol :any)))
 
-  (multiple-value-bind (port-type port-number)
-      (string-or-parsed-number port)
+  (let ((parsed-number (parse-number-or-nil port :ub16)))
     (handler-case
-        (case port-type
-          (:number
-           (lookup-service-number port-number protocol
-                                  :name-required name-required))
-          (:string
-           (lookup-service-name port protocol)))
+        (if parsed-number
+            (lookup-service-number parsed-number protocol
+                                   :name-required name-required)
+            (lookup-service-name port protocol))
       (et:resolv-error (err)
         (resolver-error (et:system-error-identifier err) :data port)))))
 
@@ -446,15 +443,11 @@
   (make-protocol-from-protoent (et:getprotobyname protoname)))
 
 (defun lookup-protocol (proto)
-  (multiple-value-bind (proto-type proto-val)
-      (string-or-parsed-number proto)
+  (let ((parsed-number (parse-number-or-nil proto)))
     (handler-case
-        (ecase proto-type
-          (:number
-           (get-protocol-by-number proto-val))
-
-          (:string
-           (get-protocol-by-name proto-val)))
+        (if parsed-number
+            (get-protocol-by-number parsed-number)
+            (get-protocol-by-name proto-val))
       (unix-error (err)
         (declare (ignore err))
         (error 'unknown-protocol :name proto)))))

@@ -96,11 +96,7 @@
     (make-interface (copy-seq name) retval)))
 
 (defun lookup-interface (iface)
-  (multiple-value-bind (iface-type iface-val)
-      (string-or-parsed-number iface)
-    (ecase iface-type
-      (:number
-       (get-interface-by-index iface-val))
-
-      (:string
-       (get-interface-by-name iface-val)))))
+  (let ((parsed-number (parse-number-or-nil iface)))
+    (if parsed-number
+        (get-interface-by-index parsed-number)
+        (get-interface-by-name iface))))

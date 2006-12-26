@@ -35,22 +35,22 @@
 (deftype sb16 () `(signed-byte 16))
 (deftype sb32 () `(signed-byte 32))
 
-(defun string-or-parsed-number (val)
-  (let ((tmpval val)
-        type)
-    (etypecase val
-      (ub16
-       (values :number val))
-      (string
-       (multiple-value-bind (parsed pos)
-           (parse-integer val :junk-allowed t)
-         (if (and parsed
-                  (eql pos (length val))) ; the entire string is a number
-             (progn
-               (setf type :number)
-               (setf tmpval parsed))
-             (setf type :string))
-         (values type tmpval))))))
+(defun parse-number-or-nil (value &optional (type :any) (radix 10))
+  (let (parsed)
+    (when (stringp value)
+      (setf parsed
+            (ignore-errors (parse-integer value :radix radix
+                                          :junk-allowed nil))))
+    (if parsed
+        ;; if it's a number and its type is ok return it
+        (and (ecase type
+               (:any parsed)
+               (:ub8  (typep parsed 'ub8))
+               (:ub16 (typep parsed 'ub16))
+               (:ub32 (typep parsed 'ub32)))
+             parsed)
+        ;; otherwise nil
+        nil)))
 
 (defun c->lisp-bool (val)
   (if (zerop val) nil t))
