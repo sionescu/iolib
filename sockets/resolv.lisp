@@ -447,7 +447,7 @@
     (handler-case
         (if parsed-number
             (get-protocol-by-number parsed-number)
-            (get-protocol-by-name proto-val))
+            (get-protocol-by-name proto))
       (unix-error (err)
         (declare (ignore err))
         (error 'unknown-protocol :name proto)))))
