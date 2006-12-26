@@ -20,7 +20,8 @@
   :licence "GPL-2.1"
   :depends-on (:iolib-alien-ng
                :io.multiplex
-               :flexi-streams)
+               :flexi-streams
+               :split-sequence)
   :default-component-class muffled-source-file
   :components
   ((:file "defpackage")

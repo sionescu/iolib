@@ -23,7 +23,7 @@
 
 (defpackage :net.sockets
   (:nicknames #:sockets)
-  (:use #:common-lisp #:cffi)
+  (:use #:common-lisp #:cffi #:split-sequence)
   (:import-from #:iolib-alien-ng
                 #:system-error #:unix-error #:message)
   (:export

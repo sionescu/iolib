@@ -62,19 +62,25 @@
                :expected-type 'string)
         (return-from dotted-to-vector nil)))
 
-  (with-foreign-pointer (in-addr #.(foreign-type-size :in-addr))
-    (with-foreign-string (string-pointer string)
-      (setf (mem-ref in-addr :in-addr) 0)
-      (handler-case
-          (et:inet-pton et:af-inet        ; address family
-                        string-pointer    ; name
-                        in-addr)          ; pointer to struct in6_addr
-        (unix-error (err)
-          (declare (ignore err))
-          (if errorp
-              (error 'invalid-address :address string :type :ipv4)
-              (return-from dotted-to-vector nil)))))
-    (make-vector-u8-4-from-in-addr (mem-ref in-addr :in-addr))))
+  (let ((addr (make-array 4 :element-type 'ub8))
+        parsed)
+    (multiple-value-bind (split len)
+        (split-sequence #\. string :count 5)
+      (tagbody
+         ;; must have exactly 4 tokens
+         (when (/= 4 (length split))
+           (go :error))
+         (loop
+            :for element :in split
+            :for index :below 4 :do
+            (setf parsed (parse-number-or-nil element :ub8))
+            (if parsed
+                (setf (aref addr index) parsed)
+                (go :error)))
+         (return-from dotted-to-vector addr)
+       :error (if errorp
+                  (error 'invalid-address :address string :type :ipv4)
+                  (return-from dotted-to-vector nil))))))
 
 (defun dotted-to-ipaddr (string)
   (vector-to-ipaddr (dotted-to-vector string)))
