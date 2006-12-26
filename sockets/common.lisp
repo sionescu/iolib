@@ -37,14 +37,15 @@
 
 (defun parse-number-or-nil (value &optional (type :any) (radix 10))
   (let (parsed)
-    (when (stringp value)
-      (setf parsed
-            (ignore-errors (parse-integer value :radix radix
-                                          :junk-allowed nil))))
+    (setf parsed
+          (if (stringp value)
+              (ignore-errors (parse-integer value :radix radix
+                                            :junk-allowed nil))
+              value))
     (if parsed
         ;; if it's a number and its type is ok return it
         (and (ecase type
-               (:any parsed)
+               (:any  t)
                (:ub8  (typep parsed 'ub8))
                (:ub16 (typep parsed 'ub16))
                (:ub32 (typep parsed 'ub32)))
