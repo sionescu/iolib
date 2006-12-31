@@ -16,7 +16,8 @@
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "GPL-2.1"
   :depends-on (:net.sockets
-               :flexi-streams)
+               :flexi-streams
+               :iolib-utils-symbols)
   :default-component-class muffled-source-file
   :components
   ((:file "export")
