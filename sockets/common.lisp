@@ -36,6 +36,7 @@
 (deftype sb32 () `(signed-byte 32))
 
 (defun parse-number-or-nil (value &optional (type :any) (radix 10))
+  (check-type value (or string unsigned-byte))
   (let ((parsed
          (if (stringp value)
              (ignore-errors (parse-integer value :radix radix
