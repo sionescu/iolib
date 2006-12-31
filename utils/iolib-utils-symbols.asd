@@ -15,7 +15,7 @@
   :author "Kevin M. Rosenberg"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
-  :depends-on (:iolib-utils)
+  :depends-on (:iolib-utils-package)
   :default-component-class muffled-source-file
   :components
   ((:file "symbols")))

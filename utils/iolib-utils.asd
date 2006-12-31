@@ -8,4 +8,6 @@
 (in-package #:iolib-utils.system)
 
 (defsystem :iolib-utils
-  :components ((:file "defpackage")))
+  :description "Metapackage that depends on all IOLIB-UTILS-* packages."
+  :depends-on (:iolib-utils-symbols
+               :iolib-utils-misc))

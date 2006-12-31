@@ -14,7 +14,7 @@
   :description "Miscellaneous utils."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "GPL-2.1"
-  :depends-on (:iolib-utils)
+  :depends-on (:iolib-utils-package)
   :default-component-class muffled-source-file
   :components
   ((:file "misc")))
