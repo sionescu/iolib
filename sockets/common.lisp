@@ -24,10 +24,6 @@
 
 (in-package :net.sockets)
 
-(defmacro define-constant (name value &optional doc)
-  `(defconstant ,name (if (boundp ',name) (symbol-value ',name) ,value)
-     ,@(when doc (list doc))))
-
 (deftype ub8 () `(unsigned-byte 8))
 (deftype ub16 () `(unsigned-byte 16))
 (deftype ub32 () `(unsigned-byte 32))

@@ -19,6 +19,8 @@
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "GPL-2.1"
   :depends-on (:iolib-alien-ng
+               :iolib-utils-symbols
+               :iolib-utils-misc
                :io.multiplex
                :flexi-streams
                :split-sequence)
