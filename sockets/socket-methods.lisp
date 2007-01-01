@@ -112,7 +112,7 @@
     (format stream "internet stream socket" )
     (if (socket-connected-p socket)
         (format stream " connected to ~A/~A"
-                (netaddr->presentation (socket-address socket))
+                (sockaddr->presentation (socket-address socket))
                 (socket-port socket))
         (if (slot-boundp socket 'fd)
             (format stream ", unconnected")
@@ -126,7 +126,7 @@
                 (if (socket-listening-p socket)
                     "waiting for connections @"
                     "bound to")
-                (netaddr->presentation (socket-address socket))
+                (sockaddr->presentation (socket-address socket))
                 (socket-port socket))
         (if (slot-boundp socket 'fd)
             (format stream ", unbound")
@@ -137,7 +137,7 @@
     (format stream "local stream socket" )
     (if (socket-connected-p socket)
         (format stream " connected to ~S"
-                (netaddr->presentation (socket-address socket)))
+                (sockaddr->presentation (socket-address socket)))
         (if (slot-boundp socket 'fd)
             (format stream ", unconnected")
             (format stream ", closed")))))
@@ -150,7 +150,7 @@
                 (if (socket-listening-p socket)
                     "waiting for connections @"
                     "bound to")
-                (netaddr->presentation (socket-address socket)))
+                (sockaddr->presentation (socket-address socket)))
         (if (slot-boundp socket 'fd)
             (format stream ", unbound")
             (format stream ", closed")))))
@@ -160,7 +160,7 @@
     (format stream "local datagram socket" )
     (if (socket-connected-p socket)
         (format stream " connected to ~S"
-                (netaddr->presentation (socket-address socket)))
+                (sockaddr->presentation (socket-address socket)))
         (if (slot-boundp socket 'fd)
             (format stream ", unconnected")
             (format stream ", closed")))))
@@ -170,7 +170,7 @@
     (format stream "internet stream socket" )
     (if (socket-connected-p socket)
         (format stream " connected to ~A/~A"
-                (netaddr->presentation (socket-address socket))
+                (sockaddr->presentation (socket-address socket))
                 (socket-port socket))
         (if (slot-boundp socket 'fd)
             (format stream ", unconnected")
@@ -255,7 +255,7 @@
        (et:getsockname (socket-fd socket)
                        ss size))
      (return-from local-name
-       (sockaddr-storage->netaddr ss)))))
+       (sockaddr-storage->sockaddr ss)))))
 
 (defmethod local-name ((socket local-socket))
   (with-foreign-object (sun 'et:sockaddr-un)
@@ -267,7 +267,7 @@
         (et:getsockname (socket-fd socket)
                         sun size))
       (return-from local-name
-        (sockaddr-un->netaddr sun)))))
+        (sockaddr-un->sockaddr sun)))))
 
 (defmethod socket-address ((socket socket))
   (nth-value 0 (local-name socket)))
@@ -290,7 +290,7 @@
         (et:getpeername (socket-fd socket)
                         ss size))
       (return-from remote-name
-        (sockaddr-storage->netaddr ss)))))
+        (sockaddr-storage->sockaddr ss)))))
 
 (defmethod remote-name ((socket local-socket))
   (with-foreign-object (sun 'et:sockaddr-un)
@@ -302,7 +302,7 @@
         (et:getpeername (socket-fd socket)
                         sun size))
       (return-from remote-name
-        (sockaddr-un->netaddr sun)))))
+        (sockaddr-un->sockaddr sun)))))
 
 
 ;;;;;;;;;;;;
@@ -360,7 +360,7 @@
   (values socket))
 
 (defmethod bind-address :after ((socket socket)
-                                (address netaddr) &key)
+                                (address sockaddr) &key)
   (setf (slot-value socket 'bound) t))
 
 
@@ -438,7 +438,7 @@
 
 #+freebsd
 (defmethod connect :before ((socket active-socket)
-                            netaddr &key)
+                            sockaddr &key)
   (when *no-sigpipe*
     (set-socket-option socket :no-sigpipe :value t)))
 
@@ -549,7 +549,7 @@
   (check-type end (or unsigned-byte null)
               "a non-negative value or NIL")
   (when (or remote-port remote-address)
-    (check-type remote-address netaddr "a network address")
+    (check-type remote-address sockaddr "a network address")
     (check-type remote-port (unsigned-byte 16) "a valid IP port number")))
 
 (defmethod socket-send ((buffer array)
@@ -574,7 +574,7 @@
       (with-foreign-object (ss 'et:sockaddr-storage)
         (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
         (when remote-address
-          (netaddr->sockaddr-storage ss remote-address remote-port))
+          (sockaddr->sockaddr-storage ss remote-address remote-port))
         (with-pointer-to-vector-data (buff-sap buff)
           (incf-pointer buff-sap start-offset)
           (with-socket-error-filter
@@ -644,7 +644,7 @@
           ;; return the sender's address as 3rd value
           (if (typep socket 'datagram-socket)
               (multiple-value-bind (remote-address remote-port)
-                  (sockaddr-storage->netaddr ss)
+                  (sockaddr-storage->sockaddr ss)
                 (values buffer bytes-received remote-address remote-port))
               (values buffer bytes-received)))))))
 

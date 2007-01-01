@@ -166,19 +166,19 @@
             (ntohs (mem-aref in6-addr :uint16 i))))
     newvector))
 
-(defun sockaddr-in->netaddr (sin)
+(defun sockaddr-in->sockaddr (sin)
   (with-foreign-slots ((et:address et:port) sin et:sockaddr-in)
     (values (make-instance 'ipv4addr
                            :name (make-vector-u8-4-from-in-addr et:address))
             (ntohs et:port))))
 
-(defun sockaddr-in6->netaddr (sin6)
+(defun sockaddr-in6->sockaddr (sin6)
   (with-foreign-slots ((et:address et:port) sin6 et:sockaddr-in6)
     (values (make-instance 'ipv6addr
                            :name (make-vector-u16-8-from-in6-addr et:address))
             (ntohs et:port))))
 
-(defun sockaddr-un->netaddr (sun)
+(defun sockaddr-un->sockaddr (sun)
   (with-foreign-slots ((et:path) sun et:sockaddr-un)
     (let ((name (make-string (1- et:unix-path-max)))
           (abstract nil))
@@ -197,21 +197,21 @@
                      :name name
                      :abstract abstract))))
 
-(defun sockaddr-storage->netaddr (ss)
+(defun sockaddr-storage->sockaddr (ss)
   (with-foreign-slots ((et:family) ss et:sockaddr-storage)
     (ecase et:family
       (#.et:af-inet
-       (sockaddr-in->netaddr ss))
+       (sockaddr-in->sockaddr ss))
       (#.et:af-inet6
-       (sockaddr-in6->netaddr ss))
+       (sockaddr-in6->sockaddr ss))
       (#.et:af-local
-       (sockaddr-un->netaddr ss)))))
+       (sockaddr-un->sockaddr ss)))))
 
-(defun netaddr->sockaddr-storage (ss netaddr &optional (port 0))
-  (etypecase netaddr
+(defun sockaddr->sockaddr-storage (ss sockaddr &optional (port 0))
+  (etypecase sockaddr
     (ipv4addr
-     (make-sockaddr-in ss (name netaddr) port))
+     (make-sockaddr-in ss (name sockaddr) port))
     (ipv6addr
-     (make-sockaddr-in6 ss (name netaddr) port))
+     (make-sockaddr-in6 ss (name sockaddr) port))
     (localaddr
-     (make-sockaddr-un ss (name netaddr)))))
+     (make-sockaddr-un ss (name sockaddr)))))

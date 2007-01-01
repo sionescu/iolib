@@ -167,17 +167,20 @@
 ;;; Class definitions
 ;;;
 
-(defclass netaddr ()
+(defclass sockaddr ()
   ((name :initarg :name :reader name :type vector))
-  (:documentation "Base class for the internet addresses."))
+  (:documentation "Base class for all socket address classes."))
 
-(defclass ipv4addr (netaddr) ()
+(defclass inetaddr (sockaddr) ()
+  (:documentation "IP addresses."))
+
+(defclass ipv4addr (inetaddr) ()
   (:documentation "IPv4 address."))
 
-(defclass ipv6addr (netaddr) ()
+(defclass ipv6addr (inetaddr) ()
   (:documentation "IPv6 address."))
 
-(defclass localaddr (netaddr)
+(defclass localaddr (sockaddr)
   ((abstract :initform nil :initarg :abstract :reader abstract-p :type boolean))
   (:documentation "UNIX socket address."))
 
@@ -190,29 +193,30 @@
   (print-unreadable-object (address stream :type nil :identity nil)
     (with-slots (name) address
       (format stream "IPv4 address: ~A"
-              (netaddr->presentation address)))))
+              (sockaddr->presentation address)))))
 
 (defmethod print-object ((address ipv6addr) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
     (with-slots (name) address
       (format stream "IPv6 address: ~A"
-              (netaddr->presentation address)))))
+              (sockaddr->presentation address)))))
 
 (defmethod print-object ((address localaddr) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
     (with-slots (name abstract) address
       (format stream "Unix socket address: ~A. Abstract: ~:[no~;yes~]"
-              (netaddr->presentation address) abstract))))
+              (sockaddr->presentation address) abstract))))
 
-(defgeneric netaddr->presentation (addr))
+(defgeneric sockaddr->presentation (addr)
+  (:documentation "Returns a textual presentation of ADDR."))
 
-(defmethod netaddr->presentation ((addr ipv4addr))
+(defmethod sockaddr->presentation ((addr ipv4addr))
   (vector-to-dotted (name addr)))
 
-(defmethod netaddr->presentation ((addr ipv6addr))
+(defmethod sockaddr->presentation ((addr ipv6addr))
   (vector-to-colon-separated (name addr)))
 
-(defmethod netaddr->presentation ((addr localaddr))
+(defmethod sockaddr->presentation ((addr localaddr))
   (if (abstract-p addr)
       "unknown socket"
       (name addr)))
@@ -222,24 +226,17 @@
 ;;; Equality methods
 ;;;
 
-;; (defun vector-equal (v1 v2)
-;;   (and (typep v1 'vector)
-;;        (equal (type-of v1) (type-of v2))
-;;        (every #'eql v1 v2)))
-
 (defun vector-equal (v1 v2)
   (and (equal (length v1) (length v2))
        (every #'eql v1 v2)))
 
-(defgeneric netaddr= (addr1 addr2))
+(defgeneric sockaddr= (addr1 addr2)
+  (:documentation "Returns T if both arguments are the same socket address."))
 
-(defmethod netaddr= ((addr1 ipv4addr) (addr2 ipv4addr))
+(defmethod sockaddr= ((addr1 inetaddr) (addr2 inetaddr))
   (vector-equal (name addr1) (name addr2)))
 
-(defmethod netaddr= ((addr1 ipv6addr) (addr2 ipv6addr))
-  (vector-equal (name addr1) (name addr2)))
-
-(defmethod netaddr= ((addr1 localaddr) (addr2 localaddr))
+(defmethod sockaddr= ((addr1 localaddr) (addr2 localaddr))
   (equal (name addr1) (name addr2)))
 
 
@@ -247,22 +244,24 @@
 ;;; Copy methods
 ;;;
 
-(defgeneric copy-netaddr (addr))
+(defgeneric copy-sockaddr (addr)
+  (:documentation "Returns a copy of ADDR which is SOCKADDR= to the original."))
 
-(defmethod copy-netaddr ((addr ipv4addr))
+(defmethod copy-sockaddr ((addr ipv4addr))
   (make-instance 'ipv4addr
                  :name (copy-seq (name addr))))
 
-(defmethod copy-netaddr ((addr ipv6addr))
+(defmethod copy-sockaddr ((addr ipv6addr))
   (make-instance 'ipv6addr
                  :name (copy-seq (name addr))))
 
-(defmethod copy-netaddr ((addr localaddr))
+(defmethod copy-sockaddr ((addr localaddr))
   (make-instance 'localaddr
                  :name (copy-seq (name addr))
                  :abstract (abstract-p addr)))
 
-(defgeneric map-ipv4-address->ipv6 (addr))
+(defgeneric map-ipv4-address->ipv6 (addr)
+  (:documentation "Returns an IPv6 address by mapping ADDR onto it."))
 (defmethod map-ipv4-address->ipv6 ((addr ipv4addr))
   (make-instance 'ipv6addr
                  :name (map-ipv4-vector-to-ipv6 (name addr))))
@@ -321,7 +320,8 @@
 ;;;
 
 ;; General predicates
-(defgeneric ipv4-address-p (addr))
+(defgeneric ipv4-address-p (addr)
+  (:documentation "Returns T if ADDR is an IPv4 address object."))
 
 (defmethod ipv4-address-p ((addr ipv4addr))
   t)
@@ -329,7 +329,8 @@
 (defmethod ipv4-address-p (addr)
   nil)
 
-(defgeneric ipv6-address-p (addr))
+(defgeneric ipv6-address-p (addr)
+  (:documentation "Returns T if ADDR is an IPv6 address object."))
 
 (defmethod ipv6-address-p ((addr ipv6addr))
   t)
@@ -337,7 +338,8 @@
 (defmethod ipv6-address-p (addr)
   nil)
 
-(defgeneric local-address-p (addr))
+(defgeneric local-address-p (addr)
+  (:documentation "Returns T if ADDR is local address object."))
 
 (defmethod local-address-p ((addr localaddr))
   t)
@@ -359,36 +361,41 @@
 
 ;; IPv4 predicates
 
-(defgeneric netaddr-unspecified-p (addr))
-(defmethod netaddr-unspecified-p ((addr ipv4addr))
-  (netaddr= addr +ipv4-unspecified+))
+(defgeneric inetaddr-unspecified-p (addr)
+  (:documentation "Returns T if ADDR is an \"unspecified\" internet address."))
+(defmethod inetaddr-unspecified-p ((addr ipv4addr))
+  (sockaddr= addr +ipv4-unspecified+))
 
-(defgeneric netaddr-loopback-p (addr))
-(defmethod netaddr-loopback-p ((addr ipv4addr))
-  (netaddr= addr +ipv4-loopback+))
+(defgeneric inetaddr-loopback-p (addr)
+  (:documentation "Returns T if ADDR is a loopback internet address."))
+(defmethod inetaddr-loopback-p ((addr ipv4addr))
+  (sockaddr= addr +ipv4-loopback+))
 
-(defgeneric netaddr-multicast-p (addr))
-(defmethod netaddr-multicast-p ((addr ipv4addr))
+(defgeneric inetaddr-multicast-p (addr)
+  (:documentation "Returns T if ADDR is an multicast internet address."))
+(defmethod inetaddr-multicast-p ((addr ipv4addr))
   (eql (logand (aref (name addr) 0)
                #xE0)
        #xE0))
 
-(defgeneric netaddr-unicast-p (addr))
-(defmethod netaddr-unicast-p ((addr ipv4addr))
-  (and (not (netaddr-unspecified-p addr))
-       (not (netaddr-loopback-p addr))
-       (not (netaddr-multicast-p addr))))
+(defgeneric inetaddr-unicast-p (addr)
+  (:documentation "Returns T if ADDR is an unicast internet address."))
+(defmethod inetaddr-unicast-p ((addr ipv4addr))
+  (and (not (inetaddr-unspecified-p addr))
+       (not (inetaddr-loopback-p addr))
+       (not (inetaddr-multicast-p addr))))
 
 ;; IPv6 predicates
 ;; definitions taken from RFC 2460
 
-(defmethod netaddr-unspecified-p ((addr ipv6addr))
-  (netaddr= addr +ipv6-unspecified+))
+(defmethod inetaddr-unspecified-p ((addr ipv6addr))
+  (sockaddr= addr +ipv6-unspecified+))
 
-(defmethod netaddr-loopback-p ((addr ipv6addr))
-  (netaddr= addr +ipv6-loopback+))
+(defmethod inetaddr-loopback-p ((addr ipv6addr))
+  (sockaddr= addr +ipv6-loopback+))
 
-(defgeneric ipv6-ipv4-mapped-p (addr))
+(defgeneric ipv6-ipv4-mapped-p (addr)
+  (:documentation "Returns T if ADDR is an IPv6 address representing an IPv4 mapped address."))
 (defmethod ipv6-ipv4-mapped-p ((addr ipv6addr))
   (with-slots (name) addr
     (and (zerop (aref name 0))
@@ -406,66 +413,76 @@
          (< (ldb (byte 8 8) (aref name 7))
             255))))
 
-(defmethod netaddr-multicast-p ((addr ipv6addr))
+(defmethod inetaddr-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF00)
        #xFF00))
 
-(defgeneric ipv6-interface-local-multicast-p (addr))
+(defgeneric ipv6-interface-local-multicast-p (addr)
+  (:documentation "Returns T if ADDR is an interface-local IPv6 address."))
 (defmethod ipv6-interface-local-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF0F)
        #xFF01))
 
-(defgeneric ipv6-link-local-multicast-p (addr))
+(defgeneric ipv6-link-local-multicast-p (addr)
+  (:documentation "Returns T if ADDR is a link-local IPv6 address."))
 (defmethod ipv6-link-local-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF0F)
        #xFF02))
 
-(defgeneric ipv6-admin-local-multicast-p (addr))
+(defgeneric ipv6-admin-local-multicast-p (addr)
+  (:documentation "Returns T if ADDR is a admin-local multicast IPv6 address."))
 (defmethod ipv6-admin-local-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF0F)
        #xFF04))
 
-(defgeneric ipv6-site-local-multicast-p (addr))
+(defgeneric ipv6-site-local-multicast-p (addr)
+  (:documentation "Returns T if ADDR is an site-local multicast IPv6 address."))
 (defmethod ipv6-site-local-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF0F)
        #xFF05))
 
-(defgeneric ipv6-organization-local-multicast-p (addr))
+(defgeneric ipv6-organization-local-multicast-p (addr)
+  (:documentation "Returns T if ADDR is an organization-local multicast IPv6 address."))
 (defmethod ipv6-organization-local-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF0F)
        #xFF08))
 
-(defgeneric ipv6-global-multicast-p (addr))
+(defgeneric ipv6-global-multicast-p (addr)
+  (:documentation "Returns T if ADDR is a global multicast IPv6 address."))
 (defmethod ipv6-global-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF0F)
        #xFF0E))
 
-(defgeneric ipv6-reserved-multicast-p (addr))
+(defgeneric ipv6-reserved-multicast-p (addr)
+  (:documentation "Returns T if ADDR is a reserved multicast IPv6 address."))
 (defmethod ipv6-reserved-multicast-p ((addr ipv6addr))
   (member (logand (aref (name addr) 0)
                   #xFF0F)
           (list #xFF00 #xFF03 #xFF0F)))
 
-(defgeneric ipv6-unassigned-multicast-p (addr))
+(defgeneric ipv6-unassigned-multicast-p (addr)
+  (:documentation "Returns T if ADDR is an unassigned multicast IPv6 address."))
 (defmethod ipv6-unassigned-multicast-p ((addr ipv6addr))
   (member (logand (aref (name addr) 0)
                   #xFF0F)
           (list #xFF06 #xFF07 #xFF09 #xFF0A #xFF0B #xFF0C #xFF0D)))
 
-(defgeneric ipv6-transient-multicast-p (addr))
+(defgeneric ipv6-transient-multicast-p (addr)
+  (:documentation "Returns T if ADDR is a transient multicast IPv6 address."))
 (defmethod ipv6-transient-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
                #xFF10)
        #xFF10))
 
-(defgeneric ipv6-solicited-node-multicast-p (addr))
+(defgeneric ipv6-solicited-node-multicast-p (addr)
+  (:documentation "Returns T if ADDR is an solicited-node multicast IPv6 address."))
 (defmethod ipv6-solicited-node-multicast-p ((addr ipv6addr))
   (let ((vec (name addr)))
     (and (eql (aref vec 0) #xFF02) ; link-local permanent multicast
@@ -474,28 +491,32 @@
                       #xFF00)
               #xFF00))))
 
-(defgeneric ipv6-link-local-unicast-p (addr))
+(defgeneric ipv6-link-local-unicast-p (addr)
+  (:documentation "Returns T if ADDR is an link-local unicast IPv6 address."))
 (defmethod ipv6-link-local-unicast-p ((addr ipv6addr))
   (eql (aref (name addr) 0) #xFE80))
 
-(defgeneric ipv6-site-local-unicast-p (addr))
+(defgeneric ipv6-site-local-unicast-p (addr)
+  (:documentation "Returns T if ADDR is an site-local unicast IPv6 address."))
 (defmethod ipv6-site-local-unicast-p ((addr ipv6addr))
   (eql (aref (name addr) 0) #xFEC0))
 
-(defgeneric ipv6-global-unicast-p (addr))
+(defgeneric ipv6-global-unicast-p (addr)
+  (:documentation "Returns T if ADDR is an global unicasst IPv6 address."))
 (defmethod ipv6-global-unicast-p ((addr ipv6addr))
-  (and (not (netaddr-unspecified-p addr))
-       (not (netaddr-loopback-p addr))
-       (not (netaddr-multicast-p addr))
+  (and (not (inetaddr-unspecified-p addr))
+       (not (inetaddr-loopback-p addr))
+       (not (inetaddr-multicast-p addr))
        (not (ipv6-link-local-unicast-p addr))))
 
-(defmethod netaddr-unicast-p ((addr ipv6addr))
+(defmethod inetaddr-unicast-p ((addr ipv6addr))
   (or (ipv6-link-local-unicast-p addr)
-      (and (not (netaddr-unspecified-p addr))
-           (not (netaddr-loopback-p addr))
-           (not (netaddr-multicast-p addr)))))
+      (and (not (inetaddr-unspecified-p addr))
+           (not (inetaddr-loopback-p addr))
+           (not (inetaddr-multicast-p addr)))))
 
-(defgeneric ipv6-multicast-type (addr))
+(defgeneric ipv6-multicast-type (addr)
+  (:documentation "Returns the multicast type of ADDR(which must be IPv6)."))
 (defmethod ipv6-multicast-type ((addr ipv6addr))
   (cond
     ((ipv6-interface-local-multicast-p addr)    :interface-local)
@@ -507,19 +528,20 @@
     ((ipv6-reserved-multicast-p addr)           :reserved)
     ((ipv6-unassigned-multicast-p addr)         :unassigned)))
 
-(defgeneric netaddr-type (addr))
+(defgeneric inetaddr-type (addr)
+  (:documentation "Returns the address type of ADDR."))
 
-(defmethod netaddr-type ((addr ipv6addr))
+(defmethod inetaddr-type ((addr ipv6addr))
   (cond
-    ((netaddr-unspecified-p addr)        (values :ipv6 :unspecified))
-    ((netaddr-loopback-p addr)           (values :ipv6 :loopback))
-    ((netaddr-multicast-p addr)          (values :ipv6 :multicast (ipv6-multicast-type addr)))
-    ((ipv6-link-local-unicast-p addr)    (values :ipv6 :unicast :link-local))
-    (t                                   (values :ipv6 :unicast :global))))
+    ((inetaddr-unspecified-p addr)    (values :ipv6 :unspecified))
+    ((inetaddr-loopback-p addr)       (values :ipv6 :loopback))
+    ((inetaddr-multicast-p addr)      (values :ipv6 :multicast (ipv6-multicast-type addr)))
+    ((ipv6-link-local-unicast-p addr) (values :ipv6 :unicast :link-local))
+    (t                                (values :ipv6 :unicast :global))))
 
-(defmethod netaddr-type ((addr ipv4addr))
+(defmethod inetaddr-type ((addr ipv4addr))
   (cond
-    ((netaddr-unspecified-p addr)        (values :ipv4 :unspecified))
-    ((netaddr-loopback-p addr)           (values :ipv4 :loopback))
-    ((netaddr-multicast-p addr)          (values :ipv4 :multicast))
-    ((netaddr-unicast-p addr)            (values :ipv4 :unicast))))
+    ((inetaddr-unspecified-p addr) (values :ipv4 :unspecified))
+    ((inetaddr-loopback-p addr)    (values :ipv4 :loopback))
+    ((inetaddr-multicast-p addr)   (values :ipv4 :multicast))
+    ((inetaddr-unicast-p addr)     (values :ipv4 :unicast))))

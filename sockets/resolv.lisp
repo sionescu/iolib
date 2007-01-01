@@ -219,7 +219,7 @@
             :for addrptr := addrinfo
                          :then (foreign-slot-value addrptr 'et:addrinfo 'et:next)
             :while (not (null-pointer-p addrptr))
-            :collect (sockaddr-storage->netaddr
+            :collect (sockaddr-storage->sockaddr
                       (foreign-slot-value addrptr 'et:addrinfo 'et:addr)))))
     (make-host (if (null-pointer-p canonname)
                    nil

@@ -44,8 +44,8 @@
    #:colon-separated-to-vector #:vector-to-colon-separated
 
    ;; addresses
-   #:netaddr #:ipv4addr #:ipv6addr #:localaddr
-   #:make-address #:netaddr= #:netaddr->presentation #:copy-netaddr
+   #:sockaddr #:inetaddr #:ipv4addr #:ipv6addr #:localaddr
+   #:make-address #:sockaddr= #:sockaddr->presentation #:copy-sockaddr
    #:name #:abstract-p
 
    ;; well-known addresses and important values
@@ -58,8 +58,8 @@
 
    ;; address predicates
    #:ipv4-address-p #:ipv6-address-p #:local-address-p
-   #:netaddr-unspecified-p #:netaddr-loopback-p
-   #:netaddr-multicast-p #:netaddr-unicast-p
+   #:inetaddr-unspecified-p #:inetaddr-loopback-p
+   #:inetaddr-multicast-p #:inetaddr-unicast-p
    #:ipv6-ipv4-mapped-p #:ipv6-interface-local-multicast-p
    #:ipv6-link-local-multicast-p #:ipv6-admin-local-multicast-p
    #:ipv6-site-local-multicast-p #:ipv6-organization-local-multicast-p
@@ -68,7 +68,7 @@
    #:ipv6-solicited-node-multicast-p
    #:ipv6-link-local-unicast-p #:ipv6-site-local-unicast-p
    #:ipv6-global-unicast-p
-   #:ipv6-multicast-type #:netaddr-type
+   #:ipv6-multicast-type #:inetaddr-type
 
    ;; hostname, service and protocol lookup
    #:*ipv6*
@@ -83,7 +83,7 @@
    #:interface #:make-interface #:lookup-interface #:get-network-interfaces
    #:interface-name #:interface-index
 
-   ;; classes
+   ;; socket classes
    #:socket #:stream-socket #:datagram-socket
    #:internet-socket #:local-socket
    #:active-socket #:passive-socket
