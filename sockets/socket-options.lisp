@@ -68,14 +68,14 @@
                          (optlen :socklen))
     (setf (mem-ref optlen :int) et:size-of-int)
     (et:getsockopt fd level option optval optlen)
-    (values (c->lisp-bool optval))))
+    (values (c->lisp-bool (mem-ref optval :int)))))
 
 (defun get-socket-option-int (fd level option)
   (with-foreign-objects ((optval :int)
                          (optlen :socklen))
     (setf (mem-ref optlen :int) et:size-of-int)
     (et:getsockopt fd level option optval optlen)
-    (values optval)))
+    (values (mem-ref optval :int))))
 
 (defun get-socket-option-linger (fd level option)
   (with-foreign-objects ((optval 'et:linger)
