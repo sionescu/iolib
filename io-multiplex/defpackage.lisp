@@ -26,6 +26,7 @@
   (:use #:common-lisp #:cffi)
   (:export
    ;; classes
+   #:handler
    #:multiplex-interface
    #:select-multiplex-interface
    #:epoll-multiplex-interface
