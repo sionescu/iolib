@@ -1,7 +1,7 @@
 ;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;   Copyright (C) 2006 by Stelian Ionescu                                 ;
+;   Copyright (C) 2006,2007 by Stelian Ionescu                            ;
 ;                                                                         ;
 ;   This program is free software; you can redistribute it and/or modify  ;
 ;   it under the terms of the GNU General Public License as published by  ;
@@ -24,63 +24,107 @@
 
 (in-package :io.multiplex)
 
-;;;
-;;; Class definitions
-;;;
+;;;;
+;;;; Type definitions
+;;;;
 
-(defstruct (handler
-             (:constructor make-handler (fd read-func write-func except-func))
+(deftype event-type ()
+  '(member :read :write :except :error))
+
+;;;
+;;; FD Entry
+;;;
+(defstruct (fd-entry
+             (:constructor make-fd-entry (fd read-handlers write-handlers
+                                          except-handlers error-handlers))
              (:copier nil))
-  (fd            0 :type et:select-file-descriptor)
-  (read-func   nil :type (or function null))
-  (write-func  nil :type (or function null))
-  (except-func nil :type (or function null)))
+  (fd 0 :type et:select-file-descriptor)
+  (read-handlers   nil :type list)
+  (write-handlers  nil :type list)
+  (except-handlers nil :type list)
+  (error-handlers  nil :type list))
 
-(defclass multiplex-interface ()
-  ((fd-handlers :initform (make-hash-table :test 'eql) :reader fd-handlers)
+(defun fd-entry-handler-list (fd-entry event-type)
+  (check-type fd-entry fd-entry)
+  (check-type event-type event-type)
+  (case event-type
+    (:read (fd-entry-read-handlers fd-entry))
+    (:write (fd-entry-write-handlers fd-entry))
+    (:except (fd-entry-except-handlers fd-entry))
+    (:error (fd-entry-error-handlers fd-entry))))
+
+(defun (setf fd-entry-handler-list) (handler-list fd-entry event-type)
+  (check-type fd-entry fd-entry)
+  (check-type event-type event-type)
+  (case event-type
+    (:read (setf (fd-entry-read-handlers fd-entry) handler-list))
+    (:write (setf (fd-entry-write-handlers fd-entry) handler-list))
+    (:except (setf (fd-entry-except-handlers fd-entry) handler-list))
+    (:error (setf (fd-entry-error-handlers fd-entry) handler-list))))
+
+(defun fd-entry-empty-p (fd-entry)
+  (not (or (fd-entry-read-handlers fd-entry)
+           (fd-entry-write-handlers fd-entry)
+           (fd-entry-except-handlers fd-entry)
+           (fd-entry-error-handlers fd-entry))))
+
+;;;
+;;; Handler
+;;;
+(defstruct (handler
+             (:constructor make-handler (event-type function))
+             (:copier nil))
+  (event-type nil :type (or null event-type))
+  (function   nil :type (or null function)))
+
+;;;
+;;; Multiplexer
+;;;
+(defclass multiplexer ()
+  ((fd-entries :initform (make-hash-table :test 'eql) :reader fd-entries)
    (fd-set-size :initform 0)))
 
-(defmethod initialize-instance :after ((interface multiplex-interface)
+(defmethod initialize-instance :after ((mux multiplexer)
                                        &key size)
-  (setf (slot-value interface 'fd-set-size) size))
+  (setf (slot-value mux 'fd-set-size) size))
 
-(defgeneric fd-handler (multiplex-interface fd)
-  (:method ((interface multiplex-interface) fd)
-    (gethash fd (fd-handlers interface))))
+(defgeneric fd-entry (mux fd)
+  (:method ((mux multiplexer) fd)
+    (gethash fd (fd-entries mux))))
 
-(defgeneric monitor-fd (multiplex-interface handler)
+(defgeneric monitor-fd (mux fd-entry)
   (:method-combination progn :most-specific-last))
 
-(defgeneric modify-fd (multiplex-interface fd
-                       &key read-handler write-handler except-handler)
+(defgeneric update-fd (mux fd-entry)
+  (:method-combination progn :most-specific-last)
+  (:method progn ((mux multiplexer) fd-entry)
+    t))
+
+(defgeneric add-fd-handler (mux fd event-type function)
   (:method-combination progn :most-specific-last))
 
-(defgeneric add-fd-handlers (multiplex-interface fd
-                             &key read-handler write-handler except-handler)
-  (:method-combination progn :most-specific-last))
-
-(defgeneric unmonitor-fd (multiplex-interface handler)
+(defgeneric unmonitor-fd (mux fd)
   (:method-combination progn :most-specific-first))
 
-(defgeneric remove-fd-handlers (multiplex-interface fd
-                                &key read write except all)
+(defgeneric remove-fd-handler (mux fd handler)
   (:method-combination progn :most-specific-first))
 
-(defgeneric serve-fd-events (multiplex-interface &key))
+(defgeneric serve-fd-events (mux &key timeout))
 
-(defgeneric close-multiplex-interface (multiplex-interface)
-  (:method ((interface multiplex-interface))
+(defgeneric close-multiplexer (mux)
+  (:method ((mux multiplexer))
     t))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *multiplex-available-interfaces* nil)
-  (defvar *multiplex-best-interface* nil))
+  (defvar *available-multiplexers* nil)
+  (defvar *best-multiplexer* nil))
 
-(defmacro define-iomux-interface (name priority)
-  `(pushnew (cons ,priority ',name)
-            *multiplex-available-interfaces*))
+(defmacro define-multiplexer (name priority superclasses slots &rest options)
+  `(progn
+     (defclass ,name ,superclasses ,slots ,@options)
+     (pushnew (cons ,priority ',name)
+              *available-multiplexers*)))
 
-;; small utility
 (defun fd-open-p (fd)
   (with-foreign-object (stat 'et:stat)
     (handler-case
@@ -94,81 +138,84 @@
 
 
 
-;;;
-;;; Base methods
-;;;
+;;;;
+;;;; Base methods
+;;;;
 
-(defmethod monitor-fd progn ((interface multiplex-interface) handler)
-  (setf (gethash (handler-fd handler) (fd-handlers interface))
-        handler)
-  (values interface))
+(defmethod monitor-fd progn ((mux multiplexer) fd-entry)
+  (let ((fd (fd-entry-fd fd-entry)))
+    (setf (gethash fd (fd-entries mux)) fd-entry)
+    (values fd)))
 
-(defmethod modify-fd progn ((interface multiplex-interface) fd
-                            &key read-handler write-handler except-handler)
-  (let ((handler (fd-handler interface fd)))
-    (setf (handler-read-func   handler) read-handler)
-    (setf (handler-write-func  handler) write-handler)
-    (setf (handler-except-func handler) except-handler))
-  (values interface))
+(defmethod add-fd-handler progn ((mux multiplexer)
+                                 fd event-type function)
+  (check-type event-type event-type)
 
-(defmethod add-fd-handlers progn ((interface multiplex-interface) fd
-                                  &key read-handler write-handler except-handler)
-  (assert (or read-handler write-handler except-handler))
-
-  (let ((current-handler (fd-handler interface fd)))
-    (if current-handler
+  (let ((current-entry (fd-entry mux fd))
+        (handler (make-handler event-type function)))
+    (if current-entry
+        (push handler (fd-entry-handler-list current-entry event-type))
         (progn
-          (modify-fd interface fd
-                     :read-handler   (or read-handler
-                                         (handler-read-func current-handler))
-                     :write-handler  (or write-handler
-                                         (handler-except-func current-handler))
-                     :except-handler (or except-handler
-                                         (handler-except-func current-handler))))
-        (progn
-          (setf current-handler (make-handler fd read-handler write-handler except-handler))
-          (monitor-fd interface current-handler))))
-  (values interface))
+          (setf current-entry (make-fd-entry fd nil nil nil nil))
+          (push handler (fd-entry-handler-list current-entry event-type))
+          (monitor-fd mux current-entry)))
+    (values handler)))
 
-(defmethod unmonitor-fd progn ((interface multiplex-interface) handler)
-  (remhash (handler-fd handler) (fd-handlers interface))
-  (values interface))
+(defmethod unmonitor-fd progn ((mux multiplexer) fd)
+  (remhash fd (fd-entries mux))
+  (values fd))
 
-(defmethod remove-fd-handlers progn ((interface multiplex-interface) fd
-                                     &key read write except all)
-  (unless all
-    (assert (or read write except)))
+(defmethod remove-fd-handler progn ((mux multiplexer)
+                                    fd handler)
+  (check-type (handler-event-type handler) event-type)
 
-  (let ((current-handler (fd-handler interface fd)))
-    (when current-handler
-      (if all
-          (unmonitor-fd interface current-handler)
-          (progn
-            (when read   (setf (handler-read-func   current-handler) nil))
-            (when write  (setf (handler-write-func  current-handler) nil))
-            (when except (setf (handler-except-func current-handler) nil))
-            (if (or (handler-read-func   current-handler)
-                    (handler-write-func  current-handler)
-                    (handler-except-func current-handler))
-                (modify-fd interface fd
-                           :read-handler   (handler-read-func current-handler)
-                           :write-handler  (handler-except-func current-handler)
-                           :except-handler (handler-except-func current-handler))
-                (unmonitor-fd interface current-handler))))))
-  (values interface))
+  (let ((event-type (handler-event-type handler))
+        (current-entry (fd-entry mux fd)))
+    (when current-entry
+      (setf (fd-entry-handler-list current-entry event-type)
+            (delete handler (fd-entry-handler-list current-entry event-type) :test 'eq))
+      (when (fd-entry-empty-p current-entry)
+        (unmonitor-fd mux fd))))
+  (values mux))
 
 ;; if there are handlers installed save them and restore them at the end
-;; (defmacro with-fd-handlers ((fd &key read-handler write-handler except-handler) &body body)
-;;   (let ((tmp-handler (gensym)))
-;;     `(let ((,tmp-handler (gethash ,fd fd-handlers)))
-;;        (unwind-protect
-;;             (progn
-;;               (when ,tmp-handler
-;;                 (remove-fd-handlers ,fd :all t))
-;;               (add-fd-handlers ,fd :read-handler ,read-handler
-;;                                    :write-handler ,write-handler
-;;                                    :except-handler ,except-handler)
-;;               ,@body)
-;;          (if ,tmp-handler
-;;              (setf (gethash ,fd fd-handlers) ,tmp-handler)
-;;              (remove-fd-handlers ,fd :all t))))))
+(defmacro with-fd-handler ((mux fd event-type function)
+                           &body body)
+  (let ((handler (gensym "HANDLER-")))
+    `(let (,handler)
+       (unwind-protect
+            (progn
+              (setf ,handler (add-fd-handler ,mux ,fd ,event-type ,function))
+              ,@body)
+         (when ,handler
+           (remove-fd-handler ,mux ,fd ,handler))))))
+
+
+;;;;
+;;;; Other utilities
+;;;;
+
+;;; Break a real timeout into seconds and microseconds.
+(defun decode-timeout (timeout)
+  (typecase timeout
+    (integer (values timeout 0))
+    (null (values 0 0))
+    (real
+     (multiple-value-bind (q r) (truncate (coerce timeout 'single-float))
+       (declare (type unsigned-byte q) (single-float r))
+       (values q (the (values unsigned-byte t) (truncate (* r 1f6))))))
+    (t
+     (error "Timeout is not a real number or NIL: ~S" timeout))))
+
+(defun wait-until-fd-usable (mux fd event-type &optional timeout)
+  (let (status)
+    (flet ((callback (fd type)
+             (cond ((member type '(:error :except))
+                    (setf status :except))
+                   ((eql type event-type)
+                    (setf status :ok)))))
+      (with-fd-handler (mux fd event-type #'callback)
+        (loop
+           (serve-fd-events mux :timeout timeout)
+           (when status
+             (return-from wait-until-fd-usable status)))))))

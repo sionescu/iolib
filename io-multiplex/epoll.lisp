@@ -1,7 +1,7 @@
 ;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;   Copyright (C) 2006 by Stelian Ionescu                                 ;
+;   Copyright (C) 2006,2007 by Stelian Ionescu                            ;
 ;                                                                         ;
 ;   This program is free software; you can redistribute it and/or modify  ;
 ;   it under the terms of the GNU General Public License as published by  ;
@@ -24,78 +24,92 @@
 
 (in-package :io.multiplex)
 
-(defclass epoll-multiplex-interface (multiplex-interface)
-  ((epoll-fd :reader epoll-fd)))
-
 (defconstant +epoll-priority+ 1)
 
-(define-iomux-interface epoll-multiplex-interface +epoll-priority+)
+(define-multiplexer epoll-multiplexer +epoll-priority+
+  (multiplexer)
+  ((epoll-fd :reader epoll-fd)))
 
 (defconstant +epoll-default-size-hint+ 25)
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *epoll-max-events* 200))
 
-(defmethod initialize-instance :after ((interface epoll-multiplex-interface)
+(defmethod initialize-instance :after ((mux epoll-multiplexer)
                                        &key (size +epoll-default-size-hint+))
   (let ((epoll-fd (et:epoll-create size)))
-    (setf (slot-value interface 'epoll-fd) epoll-fd)
-    (finalize-object-closing-fd interface epoll-fd)))
+    (setf (slot-value mux 'epoll-fd) epoll-fd)
+    (finalize-object-closing-fd mux epoll-fd)))
 
-(defmethod monitor-fd progn ((interface epoll-multiplex-interface) handler)
-  (let ((flags (logior (if (handler-read-func handler) et:epollin 0)
-                       (if (handler-write-func handler) et:epollout 0)
-                       (if (handler-except-func handler) et:epollpri 0)))
-        (fd (handler-fd handler)))
+(defun calc-epoll-flags (fd-entry)
+  (logior (if (fd-entry-read-handlers fd-entry) et:epollin 0)
+          (if (fd-entry-write-handlers fd-entry) et:epollout 0)
+          (if (fd-entry-except-handlers fd-entry) et:epollpri 0)))
+
+(defmethod monitor-fd progn ((mux epoll-multiplexer) fd-entry)
+  (assert fd-entry)
+  (let ((flags (calc-epoll-flags fd-entry))
+        (fd (fd-entry-fd fd-entry)))
     (with-foreign-object (ev 'et:epoll-event)
       (et:memset ev 0 #.(foreign-type-size 'et:epoll-event))
       (setf (foreign-slot-value ev 'et:epoll-event 'et:events) flags)
       (setf (foreign-slot-value (foreign-slot-value ev 'et:epoll-event 'et:data)
                                 'et:epoll-data 'et:fd)
             fd)
-      (et:epoll-ctl (epoll-fd interface) et:epoll-ctl-add fd ev))
-    (values interface)))
+      (et:epoll-ctl (epoll-fd mux) et:epoll-ctl-add fd ev))
+    (values fd)))
 
-(defmethod modify-fd progn ((interface epoll-multiplex-interface) fd
-                            &key read-handler write-handler except-handler)
-  (let ((flags (logior (if read-handler et:epollin 0)
-                       (if write-handler et:epollout 0)
-                       (if except-handler et:epollpri 0))))
+(defmethod update-fd progn ((mux epoll-multiplexer) fd-entry)
+  (assert fd-entry)
+  (let ((flags (calc-epoll-flags fd-entry))
+        (fd (fd-entry-fd fd-entry)))
     (with-foreign-object (ev 'et:epoll-event)
       (et:memset ev 0 #.(foreign-type-size 'et:epoll-event))
       (setf (foreign-slot-value ev 'et:epoll-event 'et:events) flags)
       (setf (foreign-slot-value (foreign-slot-value ev 'et:epoll-event 'et:data)
                                 'et:epoll-data 'et:fd)
             fd)
-      (et:epoll-ctl (epoll-fd interface) et:epoll-ctl-mod fd ev))
-    (values interface)))
+      (et:epoll-ctl (epoll-fd mux) et:epoll-ctl-mod fd ev))
+    (values fd-entry)))
 
-(defmethod unmonitor-fd progn ((interface epoll-multiplex-interface) handler)
-  (et:epoll-ctl (epoll-fd interface)
+(defmethod unmonitor-fd progn ((mux epoll-multiplexer) fd)
+  (et:epoll-ctl (epoll-fd mux)
                 et:epoll-ctl-del
-                (handler-fd handler)
+                fd
                 (null-pointer))
-  (values interface))
+  (values fd))
 
-(defun epoll-serve-single-fd (handler events)
-  (let ((except-func (handler-except-func handler))
-        (read-func (handler-read-func handler))
-        (write-func (handler-write-func handler))
-        (fd (handler-fd handler)))
-    (when (and except-func (plusp (logand et:epollerr events)))
-      (funcall except-func fd :error))
-    (when (and except-func (plusp (logand et:epollpri events)))
-      (funcall except-func fd :except))
-    (when (and read-func (plusp (logand et:epollin events)))
-      (funcall read-func fd :read))
-    (when (and write-func (plusp (logand et:epollout events)))
-      (funcall write-func fd :write))))
+(defun epoll-serve-single-fd (fd-entry events)
+  (assert fd-entry)
+  (let ((error-handlers (handler-error-handlers fd-entry))
+        (except-handlers (handler-except-handlers fd-entry))
+        (read-handlers (handler-read-handlers fd-entry))
+        (write-handlers (handler-write-handlers fd-entry))
+        (fd (fd-entry-fd fd-entry)))
+    (when (and error-handlers (logtest et:epollerr events))
+      (dolist (error-handler error-handlers)
+        (funcall (handler-function error-handler) fd :error)))
+    (when (and except-handlers (logtest et:epollpri events))
+      (dolist (except-handler (fd-entry-except-handlers fd-entry))
+        (funcall (handler-function except-handler) fd :except)))
+    (when (and read-handlers (logtest et:epollin events))
+      (dolist (read-handler (fd-entry-read-handlers fd-entry))
+        (funcall (handler-function read-handler) fd :read)))
+    (when (and write-handlers (logtest et:epollout events))
+      (dolist (write-handler (fd-entry-write-handlers fd-entry))
+        (funcall (handler-function write-handler) fd :write)))))
 
-(defmethod serve-fd-events ((interface epoll-multiplex-interface) &key)
+(defmethod serve-fd-events ((mux epoll-multiplexer)
+                            &key timeout)
   (with-foreign-object (events 'et:epoll-event #.*epoll-max-events*)
     (et:memset events 0 #.(* *epoll-max-events* (foreign-type-size 'et:epoll-event)))
+    (if timeout
+        (multiple-value-bind
+              (to-sec to-usec) (decode-timeout timeout)
+          (setf timeout (+ to-sec (* to-usec 1000))))
+        (setf timeout -1))
     (let ((ready-fds
-           (et:epoll-wait (epoll-fd interface) events
-                          #.*epoll-max-events* -1)))
+           (et:epoll-wait (epoll-fd mux) events
+                          #.*epoll-max-events* timeout)))
       (loop
          :for i :below ready-fds
          :for fd := (foreign-slot-value (foreign-slot-value (mem-aref events 'et:epoll-event i)
@@ -103,10 +117,10 @@
                                         'et:epoll-data 'et:fd)
          :for event-mask := (foreign-slot-value (mem-aref events 'et:epoll-event i)
                                                 'et:epoll-event 'et:events)
-         :do (epoll-serve-single-fd (fd-handler interface fd)
-                                    event-mask))))
-  (values interface))
+         :do (epoll-serve-single-fd (fd-entry mux fd)
+                                    event-mask))
+      (return-from serve-fd-events ready-fds))))
 
-(defmethod close-multiplex-interface ((interface epoll-multiplex-interface))
-  (cancel-finalization interface)
-  (et:close (epoll-fd interface)))
+(defmethod close-multiplexer ((mux epoll-multiplexer))
+  (cancel-finalization mux)
+  (et:close (epoll-fd mux)))
