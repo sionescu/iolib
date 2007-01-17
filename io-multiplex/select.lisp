@@ -29,7 +29,7 @@
 (define-multiplexer select-multiplexer +select-priority+
   (multiplexer) ())
 
-(defun select-setup-masks (select-iface read-fds write-fds except-fds)
+(defun select-setup-masks (mux read-fds write-fds except-fds)
   (declare (type et:foreign-pointer
                  read-fds write-fds except-fds))
 
@@ -38,7 +38,7 @@
   (et:fd-zero except-fds)
 
   (let ((max-fd 0))
-    (with-hash-table-iterator (next-item (fd-entries select-iface))
+    (with-hash-table-iterator (next-item (fd-entries mux))
       (multiple-value-bind (item-p fd fd-entry) (next-item)
         (when item-p
           (when (> fd max-fd)
@@ -51,8 +51,8 @@
             (et:fd-set fd except-fds)))))
     max-fd))
 
-(defun handle-select-fd-errors (select-iface)
-  (let ((current-entries (fd-entries select-iface))
+(defun handle-select-fd-errors (mux)
+  (let ((current-entries (fd-entries mux))
         invalid-fd-entries)
     (with-hash-table-iterator (next-item current-entries)
       (multiple-value-bind (item-p fd fd-entry) (next-item)
@@ -61,10 +61,11 @@
     (dolist (fd-entry invalid-fd-entries)
       (let ((fd (fd-entry-fd fd-entry))
             (error-handlers (fd-entry-error-handlers fd-entry)))
-        (if error-handlers
-            (dolist (error-handler error-handlers)
-              (funcall (handler-function error-handler) fd :error))
-            (remhash fd current-entries))))))
+        (when error-handlers
+          (dolist (error-handler error-handlers)
+            (funcall (handler-function error-handler) fd :error)))
+        (warn "Removing bad FD: ~A from ~A" fd mux)
+        (unmonitor-fd mux fd :base-only t)))))
 
 (defmethod serve-fd-events ((mux select-multiplexer)
                             &key timeout)
@@ -92,10 +93,10 @@
                  (when timeout
                    (progn
                      (et:memset to 0 #.(foreign-type-size 'et:timeval))
-                     (multiple-value-bind
-                           (to-sec to-usec) (decode-timeout timeout)
-                       (setf (foreign-slot-value to 'et:timeval 'et:tv-sec) to-sec)
-                       (setf (foreign-slot-value to 'et:timeval 'et:tv-usec) to-usec))))
+                     (setf (foreign-slot-value to 'et:timeval 'et:tv-sec)
+                           (timeout-sec timeout))
+                     (setf (foreign-slot-value to 'et:timeval 'et:tv-usec)
+                           (timeout-usec timeout))))
                  (et:select (1+ max-fd)
                             read-fds
                             write-fds
@@ -111,21 +112,17 @@
         (with-hash-table-iterator (next-item fd-entries)
           (multiple-value-bind (item-p fd fd-entry) (next-item)
             (when item-p
-              (if (fd-open-p fd)
-                  (progn
-                    (incf count)
-                    (when (and (et:fd-isset fd except-fds)
-                               (fd-entry-except-handlers fd-entry))
-                      (dolist (except-handler (fd-entry-except-handlers fd-entry))
-                        (funcall (handler-function except-handler) fd :except)))
-                    (when (and (et:fd-isset fd read-fds)
-                               (fd-entry-read-handlers fd-entry))
-                      (dolist (read-handler (fd-entry-read-handlers fd-entry))
-                        (funcall (handler-function read-handler) fd :read)))
-                    (when (and (et:fd-isset fd write-fds)
-                               (fd-entry-write-handlers fd-entry))
-                      (dolist (write-handler (fd-entry-write-handlers fd-entry))
-                        (funcall (handler-function write-handler) fd :write))))
-                  ;; TODO: add better error handling
-                  (error "Handler for bad fd is present: ~A " fd)))))
+              (incf count)
+              (when (and (et:fd-isset fd except-fds)
+                         (fd-entry-except-handlers fd-entry))
+                (dolist (except-handler (fd-entry-except-handlers fd-entry))
+                  (funcall (handler-function except-handler) fd :except)))
+              (when (and (et:fd-isset fd read-fds)
+                         (fd-entry-read-handlers fd-entry))
+                (dolist (read-handler (fd-entry-read-handlers fd-entry))
+                  (funcall (handler-function read-handler) fd :read)))
+              (when (and (et:fd-isset fd write-fds)
+                         (fd-entry-write-handlers fd-entry))
+                (dolist (write-handler (fd-entry-write-handlers fd-entry))
+                  (funcall (handler-function write-handler) fd :write))))))
         (return-from serve-fd-events count)))))

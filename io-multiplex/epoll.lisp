@@ -45,7 +45,7 @@
           (if (fd-entry-write-handlers fd-entry) et:epollout 0)
           (if (fd-entry-except-handlers fd-entry) et:epollpri 0)))
 
-(defmethod monitor-fd progn ((mux epoll-multiplexer) fd-entry)
+(defmethod monitor-fd ((mux epoll-multiplexer) fd-entry)
   (assert fd-entry)
   (let ((flags (calc-epoll-flags fd-entry))
         (fd (fd-entry-fd fd-entry)))
@@ -55,10 +55,19 @@
       (setf (foreign-slot-value (foreign-slot-value ev 'et:epoll-event 'et:data)
                                 'et:epoll-data 'et:fd)
             fd)
-      (et:epoll-ctl (epoll-fd mux) et:epoll-ctl-add fd ev))
-    (values fd)))
+      (handler-case
+          (et:epoll-ctl (epoll-fd mux) et:epoll-ctl-add fd ev)
+        (et:unix-error-badf (err)
+          (declare (ignore err))
+          (warn "FD ~A is invalid, cannot monitor it." fd)
+          (return-from monitor-fd nil))
+        (et:unix-error-exist (err)
+          (declare (ignore err))
+          (warn "FD ~A is already monitored." fd)
+          (return-from monitor-fd nil))))
+    t))
 
-(defmethod update-fd progn ((mux epoll-multiplexer) fd-entry)
+(defmethod update-fd ((mux epoll-multiplexer) fd-entry)
   (assert fd-entry)
   (let ((flags (calc-epoll-flags fd-entry))
         (fd (fd-entry-fd fd-entry)))
@@ -68,22 +77,38 @@
       (setf (foreign-slot-value (foreign-slot-value ev 'et:epoll-event 'et:data)
                                 'et:epoll-data 'et:fd)
             fd)
-      (et:epoll-ctl (epoll-fd mux) et:epoll-ctl-mod fd ev))
+      (handler-case
+          (et:epoll-ctl (epoll-fd mux) et:epoll-ctl-mod fd ev)
+        (et:unix-error-badf (err)
+          (declare (ignore err))
+          (warn "FD ~A is invalid, cannot update its status." fd)
+          (return-from update-fd nil))
+        (et:unix-error-noent (err)
+          (declare (ignore err))
+          (warn "FD ~A was not monitored, cannot update its status." fd)
+          (return-from update-fd nil))))
     (values fd-entry)))
 
-(defmethod unmonitor-fd progn ((mux epoll-multiplexer) fd)
-  (et:epoll-ctl (epoll-fd mux)
-                et:epoll-ctl-del
-                fd
-                (null-pointer))
-  (values fd))
+(defmethod unmonitor-fd ((mux epoll-multiplexer) fd &key)
+  (handler-case
+      (et:epoll-ctl (epoll-fd mux)
+                    et:epoll-ctl-del
+                    fd
+                    (null-pointer))
+    (et:unix-error-badf (err)
+      (declare (ignore err))
+      (warn "FD ~A is invalid, cannot unmonitor it." fd))
+    (et:unix-error-noent (err)
+      (declare (ignore err))
+      (warn "FD ~A was not monitored, cannot unmonitor it." fd)))
+  t)
 
 (defun epoll-serve-single-fd (fd-entry events)
   (assert fd-entry)
-  (let ((error-handlers (handler-error-handlers fd-entry))
-        (except-handlers (handler-except-handlers fd-entry))
-        (read-handlers (handler-read-handlers fd-entry))
-        (write-handlers (handler-write-handlers fd-entry))
+  (let ((error-handlers (fd-entry-error-handlers fd-entry))
+        (except-handlers (fd-entry-except-handlers fd-entry))
+        (read-handlers (fd-entry-read-handlers fd-entry))
+        (write-handlers (fd-entry-write-handlers fd-entry))
         (fd (fd-entry-fd fd-entry)))
     (when (and error-handlers (logtest et:epollerr events))
       (dolist (error-handler error-handlers)
@@ -100,26 +125,26 @@
 
 (defmethod serve-fd-events ((mux epoll-multiplexer)
                             &key timeout)
-  (with-foreign-object (events 'et:epoll-event #.*epoll-max-events*)
-    (et:memset events 0 #.(* *epoll-max-events* (foreign-type-size 'et:epoll-event)))
-    (if timeout
-        (multiple-value-bind
-              (to-sec to-usec) (decode-timeout timeout)
-          (setf timeout (+ to-sec (* to-usec 1000))))
-        (setf timeout -1))
-    (let ((ready-fds
-           (et:epoll-wait (epoll-fd mux) events
-                          #.*epoll-max-events* timeout)))
-      (loop
-         :for i :below ready-fds
-         :for fd := (foreign-slot-value (foreign-slot-value (mem-aref events 'et:epoll-event i)
-                                                            'et:epoll-event 'et:data)
-                                        'et:epoll-data 'et:fd)
-         :for event-mask := (foreign-slot-value (mem-aref events 'et:epoll-event i)
-                                                'et:epoll-event 'et:events)
-         :do (epoll-serve-single-fd (fd-entry mux fd)
-                                    event-mask))
-      (return-from serve-fd-events ready-fds))))
+  (let ((milisec-timeout
+         (if timeout
+             (+ (* (timeout-sec timeout) 1000)
+                (truncate (timeout-usec timeout) 1000))
+             -1)))
+    (with-foreign-object (events 'et:epoll-event #.*epoll-max-events*)
+      (et:memset events 0 #.(* *epoll-max-events* (foreign-type-size 'et:epoll-event)))
+      (let ((ready-fds
+             (et:epoll-wait (epoll-fd mux) events
+                            #.*epoll-max-events* milisec-timeout)))
+        (loop
+           :for i :below ready-fds
+           :for fd := (foreign-slot-value (foreign-slot-value (mem-aref events 'et:epoll-event i)
+                                                              'et:epoll-event 'et:data)
+                                          'et:epoll-data 'et:fd)
+           :for event-mask := (foreign-slot-value (mem-aref events 'et:epoll-event i)
+                                                  'et:epoll-event 'et:events)
+           :do (epoll-serve-single-fd (fd-entry mux fd)
+                                      event-mask))
+        (return-from serve-fd-events ready-fds)))))
 
 (defmethod close-multiplexer ((mux epoll-multiplexer))
   (cancel-finalization mux)

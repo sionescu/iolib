@@ -93,18 +93,19 @@
     (gethash fd (fd-entries mux))))
 
 (defgeneric monitor-fd (mux fd-entry)
-  (:method-combination progn :most-specific-last))
+  (:method ((mux multiplexer) fd-entry)
+    t))
 
 (defgeneric update-fd (mux fd-entry)
-  (:method-combination progn :most-specific-last)
-  (:method progn ((mux multiplexer) fd-entry)
+  (:method ((mux multiplexer) fd-entry)
+    t))
+
+(defgeneric unmonitor-fd (mux fd &key)
+  (:method ((mux multiplexer) fd &key)
     t))
 
 (defgeneric add-fd-handler (mux fd event-type function)
   (:method-combination progn :most-specific-last))
-
-(defgeneric unmonitor-fd (mux fd)
-  (:method-combination progn :most-specific-first))
 
 (defgeneric remove-fd-handler (mux fd handler)
   (:method-combination progn :most-specific-first))
@@ -142,10 +143,20 @@
 ;;;; Base methods
 ;;;;
 
-(defmethod monitor-fd progn ((mux multiplexer) fd-entry)
+(defmethod monitor-fd :around ((mux multiplexer) fd-entry)
   (let ((fd (fd-entry-fd fd-entry)))
     (setf (gethash fd (fd-entries mux)) fd-entry)
+    (unless (call-next-method)
+      (unmonitor-fd fd :base-only t)
+      (error "FD monitoring failed."))
     (values fd)))
+
+(defmethod unmonitor-fd :around ((mux multiplexer) fd &key base-only)
+  (remhash fd (fd-entries mux))
+  (unless base-only
+    (unless (call-next-method)
+      (error "FD unmonitoring failed.")))
+  (values fd))
 
 (defmethod add-fd-handler progn ((mux multiplexer)
                                  fd event-type function)
@@ -154,16 +165,14 @@
   (let ((current-entry (fd-entry mux fd))
         (handler (make-handler event-type function)))
     (if current-entry
-        (push handler (fd-entry-handler-list current-entry event-type))
+        (progn
+          (push handler (fd-entry-handler-list current-entry event-type))
+          (update-fd mux current-entry))
         (progn
           (setf current-entry (make-fd-entry fd nil nil nil nil))
           (push handler (fd-entry-handler-list current-entry event-type))
           (monitor-fd mux current-entry)))
     (values handler)))
-
-(defmethod unmonitor-fd progn ((mux multiplexer) fd)
-  (remhash fd (fd-entries mux))
-  (values fd))
 
 (defmethod remove-fd-handler progn ((mux multiplexer)
                                     fd handler)
@@ -174,8 +183,9 @@
     (when current-entry
       (setf (fd-entry-handler-list current-entry event-type)
             (delete handler (fd-entry-handler-list current-entry event-type) :test 'eq))
-      (when (fd-entry-empty-p current-entry)
-        (unmonitor-fd mux fd))))
+      (if (fd-entry-empty-p current-entry)
+          (unmonitor-fd mux fd)
+          (update-fd mux current-entry))))
   (values mux))
 
 ;; if there are handlers installed save them and restore them at the end
@@ -199,13 +209,26 @@
 (defun decode-timeout (timeout)
   (typecase timeout
     (integer (values timeout 0))
-    (null (values 0 0))
+    (null    nil)
     (real
      (multiple-value-bind (q r) (truncate (coerce timeout 'single-float))
        (declare (type unsigned-byte q) (single-float r))
        (values q (the (values unsigned-byte t) (truncate (* r 1f6))))))
     (t
      (error "Timeout is not a real number or NIL: ~S" timeout))))
+
+(defun timeout (sec usec)
+  (when sec (cons sec usec)))
+
+(defun timeout-sec (timeout)
+  (car timeout))
+
+(defun timeout-usec (timeout)
+  (cdr timeout))
+
+(defmethod serve-fd-events :around ((mux multiplexer) &key timeout)
+  (multiple-value-bind (sec usec) (decode-timeout timeout)
+    (call-next-method mux :timeout (timeout sec usec))))
 
 (defun wait-until-fd-usable (mux fd event-type &optional timeout)
   (let (status)
