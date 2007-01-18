@@ -111,9 +111,9 @@
   (print-unreadable-object (socket stream :type nil :identity t)
     (format stream "internet stream socket" )
     (if (socket-connected-p socket)
-        (format stream " connected to ~A/~A"
-                (sockaddr->presentation (socket-address socket))
-                (socket-port socket))
+        (multiple-value-bind (addr port) (remote-name socket)
+          (format stream " connected to ~A/~A"
+                  (sockaddr->presentation addr) port))
         (if (slot-boundp socket 'fd)
             (format stream ", unconnected")
             (format stream ", closed")))))
@@ -136,8 +136,7 @@
   (print-unreadable-object (socket stream :type nil :identity t)
     (format stream "local stream socket" )
     (if (socket-connected-p socket)
-        (format stream " connected to ~S"
-                (sockaddr->presentation (socket-address socket)))
+        (format stream " connected")
         (if (slot-boundp socket 'fd)
             (format stream ", unconnected")
             (format stream ", closed")))))
@@ -159,8 +158,7 @@
   (print-unreadable-object (socket stream :type nil :identity t)
     (format stream "local datagram socket" )
     (if (socket-connected-p socket)
-        (format stream " connected to ~S"
-                (sockaddr->presentation (socket-address socket)))
+        (format stream " connected")
         (if (slot-boundp socket 'fd)
             (format stream ", unconnected")
             (format stream ", closed")))))
@@ -169,9 +167,9 @@
   (print-unreadable-object (socket stream :type nil :identity t)
     (format stream "internet stream socket" )
     (if (socket-connected-p socket)
-        (format stream " connected to ~A/~A"
-                (sockaddr->presentation (socket-address socket))
-                (socket-port socket))
+        (multiple-value-bind (addr port) (remote-name socket)
+          (format stream " connected to ~A/~A"
+                  (sockaddr->presentation addr) port))
         (if (slot-boundp socket 'fd)
             (format stream ", unconnected")
             (format stream ", closed")))))
@@ -508,7 +506,7 @@
 
 (defmethod shutdown ((socket active-socket) direction)
   (check-type direction (member :read :write :read-write)
-              "valid shutdown specifier")
+              "valid direction specifier")
   (with-socket-error-filter
     (et:shutdown (socket-fd socket)
                  (ecase direction
