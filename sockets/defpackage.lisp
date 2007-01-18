@@ -99,6 +99,7 @@
    #:socket-lisp-stream #:get-socket-option #:set-socket-option
    #:socket-type #:make-socket #:socket-close #:socket-open-p
    #:socket-non-blocking-mode #:local-name #:remote-name
-   #:bind-address #:socket-listen #:accept-connection #:connect
-   #:shutdown #:socket-send  #:socket-receive #:unconnect
+   #:bind-address #:socket-listen #:accept-connection
+   #:connect  #:unconnect #:socket-connected-p
+   #:shutdown #:socket-send  #:socket-receive
 ))
