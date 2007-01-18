@@ -86,28 +86,23 @@
         (return-from serve-fd-events 0))
 
       (with-accessors ((fd-entries fd-entries)) mux
-        (tagbody
-         :start
-           (handler-case
-               (with-foreign-object (to 'et:timeval)
-                 (when timeout
-                   (progn
-                     (et:memset to 0 #.(foreign-type-size 'et:timeval))
-                     (setf (foreign-slot-value to 'et:timeval 'et:tv-sec)
-                           (timeout-sec timeout))
-                     (setf (foreign-slot-value to 'et:timeval 'et:tv-usec)
-                           (timeout-usec timeout))))
-                 (et:select (1+ max-fd)
-                            read-fds
-                            write-fds
-                            except-fds
-                            (if timeout to (null-pointer))))
-             (et:unix-error-intr (err)
-               (declare (ignore err))
-               (go :start))
-             (et:unix-error-badf (err)
-               (declare (ignore err))
-               (handle-select-fd-errors mux))))
+        (handler-case
+            (with-foreign-object (to 'et:timeval)
+              (when timeout
+                (progn
+                  (et:memset to 0 #.(foreign-type-size 'et:timeval))
+                  (setf (foreign-slot-value to 'et:timeval 'et:tv-sec)
+                        (timeout-sec timeout))
+                  (setf (foreign-slot-value to 'et:timeval 'et:tv-usec)
+                        (timeout-usec timeout))))
+              (et:select (1+ max-fd)
+                         read-fds
+                         write-fds
+                         except-fds
+                         (if timeout to (null-pointer))))
+          (et:unix-error-badf (err)
+            (declare (ignore err))
+            (handle-select-fd-errors mux)))
 
         (with-hash-table-iterator (next-item fd-entries)
           (multiple-value-bind (item-p fd fd-entry) (next-item)
