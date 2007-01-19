@@ -98,7 +98,7 @@
    #:socket-fd #:socket-address #:socket-family #:socket-protocol
    #:socket-lisp-stream #:get-socket-option #:set-socket-option
    #:socket-type #:make-socket #:socket-close #:socket-open-p
-   #:socket-non-blocking-mode #:local-name #:remote-name
+   #:socket-non-blocking #:local-name #:remote-name
    #:bind-address #:socket-listen #:accept-connection
    #:connect  #:unconnect #:socket-connected-p
    #:shutdown #:socket-send  #:socket-receive

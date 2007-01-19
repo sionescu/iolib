@@ -37,8 +37,8 @@
 
 (defgeneric socket-type (socket))
 
-(defgeneric socket-non-blocking-mode (socket))
-(defgeneric (setf socket-non-blocking-mode) (value socket))
+(defgeneric socket-non-blocking (socket))
+(defgeneric (setf socket-non-blocking) (value socket))
 
 (defgeneric socket-close (socket)
   (:method-combination progn :most-specific-last))
