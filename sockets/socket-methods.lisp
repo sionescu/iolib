@@ -201,10 +201,10 @@
   (with-socket-error-filter
     (handler-case
         (with-foreign-object (ss 'et:sockaddr-storage)
-          (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
-          (with-foreign-pointer (size #.(foreign-type-size :socklen))
+          (et:memset ss 0 et:size-of-sockaddr-storage)
+          (with-foreign-pointer (size et:size-of-socklen)
             (setf (mem-ref size :socklen)
-                  #.(foreign-type-size 'et:sockaddr-storage))
+                  et:size-of-sockaddr-storage)
             (et:getsockname (socket-fd socket)
                             ss size)
             t))
@@ -246,10 +246,10 @@
 
 (defmethod local-name ((socket internet-socket))
   (with-foreign-object (ss 'et:sockaddr-storage)
-    (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
-    (with-foreign-pointer (size #.(foreign-type-size :socklen))
+    (et:memset ss 0 et:size-of-sockaddr-storage)
+    (with-foreign-pointer (size et:size-of-socklen)
       (setf (mem-ref size :socklen)
-            #.(foreign-type-size 'et:sockaddr-storage))
+            et:size-of-sockaddr-storage)
      (with-socket-error-filter
        (et:getsockname (socket-fd socket)
                        ss size))
@@ -258,10 +258,10 @@
 
 (defmethod local-name ((socket local-socket))
   (with-foreign-object (sun 'et:sockaddr-un)
-    (et:memset sun 0 #.(foreign-type-size 'et:sockaddr-un))
-    (with-foreign-pointer (size #.(foreign-type-size :socklen))
+    (et:memset sun 0 et:size-of-sockaddr-un)
+    (with-foreign-pointer (size et:size-of-socklen)
       (setf (mem-ref size :socklen)
-            #.(foreign-type-size 'et:sockaddr-storage))
+            et:size-of-sockaddr-storage)
       (with-socket-error-filter
         (et:getsockname (socket-fd socket)
                         sun size))
@@ -281,10 +281,10 @@
 
 (defmethod remote-name ((socket internet-socket))
   (with-foreign-object (ss 'et:sockaddr-storage)
-    (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
-    (with-foreign-pointer (size #.(foreign-type-size :socklen))
+    (et:memset ss 0 et:size-of-sockaddr-storage)
+    (with-foreign-pointer (size et:size-of-socklen)
       (setf (mem-ref size :socklen)
-            #.(foreign-type-size 'et:sockaddr-storage))
+            et:size-of-sockaddr-storage)
       (with-socket-error-filter
         (et:getpeername (socket-fd socket)
                         ss size))
@@ -293,10 +293,10 @@
 
 (defmethod remote-name ((socket local-socket))
   (with-foreign-object (sun 'et:sockaddr-un)
-    (et:memset sun 0 #.(foreign-type-size 'et:sockaddr-un))
-    (with-foreign-pointer (size #.(foreign-type-size :socklen))
+    (et:memset sun 0 et:size-of-sockaddr-un)
+    (with-foreign-pointer (size et:size-of-socklen)
       (setf (mem-ref size :socklen)
-            #.(foreign-type-size 'et:sockaddr-storage))
+            et:size-of-sockaddr-storage)
       (with-socket-error-filter
         (et:getpeername (socket-fd socket)
                         sun size))
@@ -317,15 +317,13 @@
   (with-foreign-object (sin 'et:sockaddr-in)
     (make-sockaddr-in sin address port)
     (with-socket-error-filter
-      (et:bind fd sin
-               #.(foreign-type-size 'et:sockaddr-in)))))
+      (et:bind fd sin et:size-of-sockaddr-in))))
 
 (defun bind-ipv6-address (fd address port)
   (with-foreign-object (sin6 'et:sockaddr-in6)
     (make-sockaddr-in6 sin6 address port)
     (with-socket-error-filter
-      (et:bind fd sin6
-               #.(foreign-type-size 'et:sockaddr-in6)))))
+      (et:bind fd sin6 et:size-of-sockaddr-in6))))
 
 (defmethod bind-address ((socket internet-socket)
                          (address ipv4addr)
@@ -353,9 +351,7 @@
   (with-foreign-object (sun 'et:sockaddr-un)
     (make-sockaddr-un sun (name address))
     (with-socket-error-filter
-      (et:bind (socket-fd socket)
-               sun
-               #.(foreign-type-size 'et:sockaddr-un))))
+      (et:bind (socket-fd socket) sun et:size-of-sockaddr-un)))
   (values socket))
 
 (defmethod bind-address :after ((socket socket)
@@ -394,10 +390,10 @@
 (defmethod accept-connection ((socket passive-socket)
                               &key (wait t))
   (with-foreign-object (ss 'et:sockaddr-storage)
-    (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
-    (with-foreign-pointer (size #.(foreign-type-size :socklen))
+    (et:memset ss 0 et:size-of-sockaddr-storage)
+    (with-foreign-pointer (size et:size-of-socklen)
       (setf (mem-ref size :socklen)
-            #.(foreign-type-size 'et:sockaddr-storage))
+            et:size-of-sockaddr-storage)
       (let (non-blocking-state
             client-fd)
         (with-socket-error-filter
@@ -445,15 +441,13 @@
   (with-foreign-object (sin 'et:sockaddr-in)
     (make-sockaddr-in sin address port)
     (with-socket-error-filter
-      (et:connect fd sin
-                  #.(foreign-type-size 'et:sockaddr-in)))))
+      (et:connect fd sin et:size-of-sockaddr-in))))
 
 (defun ipv6-connect (fd address port)
   (with-foreign-object (sin6 'et:sockaddr-in6)
     (make-sockaddr-in6 sin6 address port)
     (with-socket-error-filter
-      (et:connect fd sin6
-                  (foreign-type-size 'et:sockaddr-in6)))))
+      (et:connect fd sin6 et:size-of-sockaddr-in6))))
 
 (defmethod connect ((socket internet-socket)
                     (address ipv4addr) &key (port 0))
@@ -474,9 +468,7 @@
   (with-foreign-object (sun 'et:sockaddr-un)
     (make-sockaddr-un sun (name address))
     (with-socket-error-filter
-      (et:connect (socket-fd socket)
-                  sun
-                  #.(foreign-type-size 'et:sockaddr-un))))
+      (et:connect (socket-fd socket) sun et:size-of-sockaddr-un)))
   (values socket))
 
 (defmethod connect ((socket passive-socket)
@@ -489,10 +481,10 @@
   (with-socket-error-filter
     (handler-case
         (with-foreign-object (ss 'et:sockaddr-storage)
-          (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
-          (with-foreign-pointer (size #.(foreign-type-size :socklen))
+          (et:memset ss 0 et:size-of-sockaddr-storage)
+          (with-foreign-pointer (size et:size-of-socklen)
             (setf (mem-ref size :socklen)
-                  #.(foreign-type-size 'et:sockaddr-storage))
+                  et:size-of-sockaddr-storage)
             (et:getpeername (socket-fd socket)
                             ss size)
             t))
@@ -571,7 +563,7 @@
     (multiple-value-bind (buff start-offset bufflen)
         (normalize-send-buffer buffer start end)
       (with-foreign-object (ss 'et:sockaddr-storage)
-        (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
+        (et:memset ss 0 et:size-of-sockaddr-storage)
         (when remote-address
           (sockaddr->sockaddr-storage ss remote-address remote-port))
         (with-pointer-to-vector-data (buff-sap buff)
@@ -582,7 +574,7 @@
                          buff-sap bufflen
                          flags
                          (if remote-address ss (null-pointer))
-                         (if remote-address #.(foreign-type-size 'et:sockaddr-storage) 0)))))))))
+                         (if remote-address et:size-of-sockaddr-storage 0)))))))))
 
 (defmethod socket-send (buffer (socket passive-socket) &key)
   (error "You cannot send data on a passive socket."))
@@ -625,10 +617,10 @@
     (multiple-value-bind (buff start-offset bufflen)
         (normalize-receive-buffer buffer start end)
       (with-foreign-object (ss 'et:sockaddr-storage)
-        (et:memset ss 0 #.(foreign-type-size 'et:sockaddr-storage))
-        (with-foreign-pointer (size #.(foreign-type-size :socklen))
+        (et:memset ss 0 et:size-of-sockaddr-storage)
+        (with-foreign-pointer (size et:size-of-socklen)
           (setf (mem-ref size :socklen)
-                #.(foreign-type-size 'et:sockaddr-storage))
+                et:size-of-sockaddr-storage)
           (with-pointer-to-vector-data (buff-sap buff)
             (incf-pointer buff-sap start-offset)
             (with-socket-error-filter
@@ -662,8 +654,6 @@
 (defmethod unconnect ((socket datagram-socket))
   (with-socket-error-filter
     (with-foreign-object (sin 'et:sockaddr-in)
-      (et:memset sin 0 #.(foreign-type-size 'et:sockaddr-in))
+      (et:memset sin 0 et:size-of-sockaddr-in)
       (setf (foreign-slot-value sin 'et:sockaddr-in 'et:address) et:af-unspec)
-      (et:connect (socket-fd socket)
-                  sin
-                  #.(foreign-type-size 'et:sockaddr-in)))))
+      (et:connect (socket-fd socket) sin et:size-of-sockaddr-in))))

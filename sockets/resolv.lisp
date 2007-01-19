@@ -112,7 +112,7 @@
                          (hint-type 0) (hint-protocol 0))
   (with-foreign-objects ((hints 'et:addrinfo)
                          (res :pointer))
-    (et:memset hints 0 (foreign-type-size 'et:addrinfo))
+    (et:memset hints 0 et:size-of-addrinfo)
     (with-foreign-slots ((et:flags et:family et:socktype et:protocol)
                          hints et:addrinfo)
       (setf et:flags hint-flags)
@@ -124,7 +124,7 @@
 
 (defun get-name-info (sockaddr &key (want-host t) want-service (flags 0))
   (assert (or want-host want-service))
-  (let ((salen #.(foreign-type-size 'et:sockaddr-storage)))
+  (let ((salen et:size-of-sockaddr-storage))
     (with-foreign-objects ((host :char et:ni-maxhost)
                            (service :char et:ni-maxserv))
       (et:getnameinfo sockaddr salen
@@ -347,7 +347,7 @@
     (let ((service
            (nth-value 1
             (progn
-              (et:memset sin 0 #.(foreign-type-size 'et:sockaddr-in))
+              (et:memset sin 0 et:size-of-sockaddr-in)
               (setf (foreign-slot-value sin 'et:sockaddr-in 'et:family)
                     et:af-inet)
               (setf (foreign-slot-value sin 'et:sockaddr-in 'et:port)

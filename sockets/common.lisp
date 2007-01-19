@@ -120,7 +120,7 @@
      (aref vector 3)))
 
 (defun make-sockaddr-in (sin ub8-vector &optional (port 0))
-  (et:memset sin 0 #.(foreign-type-size 'et:sockaddr-in))
+  (et:memset sin 0 et:size-of-sockaddr-in)
   (let ((tmp port))
     (with-foreign-slots ((et:family et:address et:port) sin et:sockaddr-in)
       (setf et:family et:af-inet)
@@ -129,7 +129,7 @@
   sin)
 
 (defun make-sockaddr-in6 (sin6 ub16-vector &optional (port 0))
-  (et:memset sin6 0 #.(foreign-type-size 'et:sockaddr-in6))
+  (et:memset sin6 0 et:size-of-sockaddr-in6)
   (let ((tmp port))
     (with-foreign-slots ((et:family et:address et:port) sin6 et:sockaddr-in6)
       (setf et:family et:af-inet6)
@@ -139,7 +139,7 @@
 
 (defun make-sockaddr-un (sun string)
   (check-type string string)
-  (et:memset sun 0 (foreign-type-size 'et:sockaddr-un))
+  (et:memset sun 0 et:size-of-sockaddr-un)
   (with-foreign-slots ((et:family et:path) sun et:sockaddr-un)
     (setf et:family et:af-local)
     (with-foreign-string (c-string string)
