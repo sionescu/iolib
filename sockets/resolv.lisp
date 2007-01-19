@@ -112,7 +112,7 @@
                          (hint-type 0) (hint-protocol 0))
   (with-foreign-objects ((hints 'et:addrinfo)
                          (res :pointer))
-    (et:memset hints 0 et:size-of-addrinfo)
+    (et:bzero hints et:size-of-addrinfo)
     (with-foreign-slots ((et:flags et:family et:socktype et:protocol)
                          hints et:addrinfo)
       (setf et:flags hint-flags)
@@ -347,7 +347,7 @@
     (let ((service
            (nth-value 1
             (progn
-              (et:memset sin 0 et:size-of-sockaddr-in)
+              (et:bzero sin et:size-of-sockaddr-in)
               (setf (foreign-slot-value sin 'et:sockaddr-in 'et:family)
                     et:af-inet)
               (setf (foreign-slot-value sin 'et:sockaddr-in 'et:port)

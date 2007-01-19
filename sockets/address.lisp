@@ -102,7 +102,7 @@
 
   (with-foreign-object (in6-addr :uint16 8)
     (with-foreign-string (string-pointer string)
-      (et:memset in6-addr 0 16)
+      (et:bzero in6-addr 16)
       (handler-case
           (et:inet-pton et:af-inet6        ; address family
                         string-pointer     ; name
