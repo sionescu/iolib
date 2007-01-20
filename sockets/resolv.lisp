@@ -361,13 +361,16 @@
                              :want-host nil :want-service t)))))
       (make-service service port-number protocol))))
 
+(defun protocol-type-from-int (protocol)
+  (case protocol
+    (:tcp et:sock-stream)
+    (:udp et:sock-dgram)
+    (:any 0)))
+
 (defun lookup-service-name (port protocol)
   (let* ((addrinfo
           (get-address-info :service port
-                            :hint-type (case protocol
-                                         (:tcp et:sock-stream)
-                                         (:udp et:sock-dgram)
-                                         (:any 0))))
+                            :hint-type (protocol-type-from-int protocol)))
          (port-number
           (ntohs (foreign-slot-value (foreign-slot-value addrinfo 'et:addrinfo 'et:addr)
                                      'et:sockaddr-in 'et:port)))
@@ -378,9 +381,7 @@
       (make-service port port-number true-protocol))))
 
 (defun lookup-service (port &key (protocol :tcp) (name-required nil))
-  (case protocol
-    ((:tcp :udp :any) t)
-    (t                (setf protocol :any)))
+  (check-type protocol (member :tcp :udp :any))
 
   (let ((parsed-number (parse-number-or-nil port :ub16)))
     (handler-case
