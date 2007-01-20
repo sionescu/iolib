@@ -348,10 +348,9 @@
            (nth-value 1
             (progn
               (et:bzero sin et:size-of-sockaddr-in)
-              (setf (foreign-slot-value sin 'et:sockaddr-in 'et:family)
-                    et:af-inet)
-              (setf (foreign-slot-value sin 'et:sockaddr-in 'et:port)
-                    (htons port-number))
+              (with-foreign-slots ((et:family et:port) sin et:sockaddr-in)
+                (setf et:family et:af-inet
+                      et:port (htons port-number)))
               (get-name-info sin
                              :flags (logior
                                      (case protocol
@@ -427,14 +426,13 @@
   (:documentation "Condition raised when a network protocol is not found."))
 
 (defun make-protocol-from-protoent (protoent)
-  (let* ((name (foreign-slot-value protoent 'et:protoent 'et:name))
-         (number (foreign-slot-value protoent 'et:protoent 'et:proto))
-         (aliasptr (foreign-slot-value protoent 'et:protoent 'et:aliases))
-         (aliases (loop
-                     :for i :from 0
-                     :for alias := (mem-aref aliasptr :string i)
-                     :while alias :collect alias)))
-    (make-protocol name number aliases)))
+  (with-foreign-slots ((et:name et:proto et:aliases) protoent et:protoent)
+    (let ((alias-strings
+           (loop
+              :for i :from 0
+              :for alias := (mem-aref et:aliases :string i)
+              :while alias :collect alias)))
+      (make-protocol et:name et:proto alias-strings))))
 
 (defun get-protocol-by-number (protonum)
   (make-protocol-from-protoent (et:getprotobynumber protonum)))

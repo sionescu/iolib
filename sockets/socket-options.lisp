@@ -47,15 +47,17 @@
 
 (defun set-socket-option-linger (fd level option onoff linger)
   (with-foreign-object (optval 'et:linger)
-    (setf (foreign-slot-value optval 'et:linger 'et:onoff) (lisp->c-bool onoff))
-    (setf (foreign-slot-value optval 'et:linger 'et:linger) linger)
+    (with-foreign-slots ((et:linger et:onoff) optval et:linger)
+      (setf et:onoff (lisp->c-bool onoff)
+            et:linger linger))
     (et:setsockopt fd level option optval et:size-of-linger)
     (values)))
 
 (defun set-socket-option-timeval (fd level option sec usec)
   (with-foreign-object (optval 'et:timeval)
-    (setf (foreign-slot-value optval 'et:timeval 'et:tv-sec) sec)
-    (setf (foreign-slot-value optval 'et:timeval 'et:tv-usec) usec)
+    (with-foreign-slots ((et:tv-sec et:tv-usec) optval et:timeval)
+      (setf et:tv-sec sec
+            et:tv-usec usec))
     (et:setsockopt fd level option optval et:size-of-timeval)
     (values)))
 
@@ -82,16 +84,16 @@
                          (optlen :socklen))
     (setf (mem-ref optlen :socklen) et:size-of-linger)
     (et:getsockopt fd level option optval optlen)
-    (values (c->lisp-bool (foreign-slot-value optval 'et:linger 'et:onoff))
-            (foreign-slot-value optval 'et:linger 'et:linger))))
+    (with-foreign-slots ((et:linger et:onoff) optval et:linger)
+      (values (c->lisp-bool et:onoff) et:linger))))
 
 (defun get-socket-option-timeval (fd level option)
   (with-foreign-objects ((optval 'et:timeval)
                          (optlen :socklen))
     (setf (mem-ref optlen :socklen) et:size-of-timeval)
     (et:getsockopt fd level option optval optlen)
-    (values (foreign-slot-value optval 'et:timeval 'et:tv-sec)
-            (foreign-slot-value optval 'et:timeval 'et:tv-usec))))
+    (with-foreign-slots ((et:tv-sec et:tv-usec) optval et:timeval)
+      (values et:tv-sec et:tv-usec))))
 
 
 ;;
