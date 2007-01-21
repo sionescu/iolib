@@ -1,7 +1,7 @@
 ;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;   Copyright (C) 2006 by Stelian Ionescu                                 ;
+;   Copyright (C) 2006,2007 by Stelian Ionescu                            ;
 ;                                                                         ;
 ;   This program is free software; you can redistribute it and/or modify  ;
 ;   it under the terms of the GNU General Public License as published by  ;
