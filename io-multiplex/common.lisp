@@ -35,6 +35,8 @@
         :reader fds-of)
    (timeouts :initform (make-queue)
              :reader timeouts-of)
+   (main-timeout :initform nil
+                 :accessor main-timeout-of)
    (exit :initform nil
          :accessor exit-p)))
 
@@ -73,11 +75,12 @@
 
 (defgeneric exit-event-loop (event-base &key delay)
   (:method ((event-base event-base) &key delay)
-    (add-timeout event-base
-                 #'(lambda (fd event-type)
-                     (declare (ignore fd event-type))
-                     (setf (exit-p event-base) t))
-                 delay :persistent nil)))
+    (setf (main-timeout-of event-base)
+          (add-timeout event-base
+                       #'(lambda (fd event-type)
+                           (declare (ignore fd event-type))
+                           (setf (exit-p event-base) t))
+                       delay :persistent nil))))
 
 
 (defgeneric event-base-empty-p (event-base)
@@ -167,10 +170,10 @@
 
 (defun calc-possible-edge-change-when-removing (fd-entry event-type)
   (cond ((and (eql event-type :read)
-              (queue-empty-p (fd-entry-read-events fd-entry)))
+              (not (queue-empty-p (fd-entry-read-events fd-entry))))
          :read-del)
         ((and (eql event-type :write)
-              (queue-empty-p (fd-entry-write-events fd-entry)))
+              (not (queue-empty-p (fd-entry-write-events fd-entry))))
          :write-del)))
 
 
@@ -182,7 +185,7 @@
          (edge-change nil))
     (if current-entry
         (progn
-          (setf edge-change (calc-possible-edge-change-when-adding
+          (setf edge-change (calc-possible-edge-change-when-removing
                              current-entry (event-type event)))
           (%remove-event event-base event)
           (if (fd-entry-empty-p current-entry)
@@ -198,12 +201,6 @@
 (defmethod remove-events ((event-base event-base) event-list)
   (dolist (ev event-list)
     (remove-event event-base ev)))
-
-
-(defun calc-edge-change (event-type change)
-  (case event-type
-    (:read  (if (eql change :add) :read-add  :read-del))
-    (:write (if (eql change :add) :write-add :write-del))))
 
 
 (defmacro with-fd-handler ((event-base fd event-type function
@@ -223,6 +220,7 @@
 
 (defmethod event-dispatch :around ((event-base event-base) &key timeout only-once)
   (setf (exit-p event-base) nil)
+  (setf (main-timeout-of event-base) nil)
   (when timeout
     (exit-event-loop event-base :delay timeout)
     (setf only-once t))
@@ -235,19 +233,33 @@
   (with-accessors ((mux mux-of) (exit-p exit-p)
                    (fds fds-of) (timeouts timeouts-of)) event-base
     (let* ((min-event-timeout (events-calc-min-rel-timeout timeouts))
-           (actual-timeout (calc-min-timeout min-event-timeout timeout)))
+           (actual-timeout (calc-min-timeout min-event-timeout timeout))
+           (before nil)
+           (after nil))
       (loop
          :with deletion-list := ()
          :with dispatch-list := ()
-         :for before := (gettime)
-         :for _ := (dispatch-fd-events-once event-base actual-timeout)
-         :for after := (gettime)
          :do
+
+         (setf before (gettime))
+         (mapc #'(lambda (ev)
+                   (event-recalc-abs-timeout ev before))
+               (queue-head timeouts))
+         (dispatch-fd-events-once event-base actual-timeout)
+         (setf after (gettime))
+
+         (let ((main-timeout (main-timeout-of event-base)))
+           (when main-timeout
+             (remove-event event-base main-timeout)
+             (setf (main-timeout-of event-base) nil)))
+
          (multiple-value-setq (deletion-list dispatch-list)
            (filter-expired-events (expired-events timeouts after)))
          (dispatch-timeouts dispatch-list)
          (remove-events event-base deletion-list)
+
          (queue-sort timeouts #'< #'event-abs-timeout)
+
          :when (or only-once
                    exit-p
                    (event-base-empty-p event-base))
@@ -263,19 +275,20 @@
         (destructuring-bind (fd ev-types) ev
           (let ((fd-entry (fd-entry-of event-base fd)))
             (if fd-entry
-                (cond ((member :error ev-types)
-                       (dispatch-error-events fd-entry)
-                       (setf deletion-list (fd-entry-all-events fd-entry)))
-                      ((member :read ev-types)
-                       (dispatch-read-events fd-entry)
-                       (setf deletion-list
-                             (nconc deletion-list
-                                    (fd-entry-one-shot-events fd-entry :read))))
-                      ((member :write ev-types)
-                       (dispatch-write-events fd-entry)
-                       (setf deletion-list
-                             (nconc deletion-list
-                                    (fd-entry-one-shot-events fd-entry :write)))))
+                (progn
+                  (when (member :error ev-types)
+                    (dispatch-error-events fd-entry)
+                    (setf deletion-list (fd-entry-all-events fd-entry)))
+                  (when (member :read ev-types)
+                    (dispatch-read-events fd-entry)
+                    (setf deletion-list
+                          (nconc deletion-list
+                                 (fd-entry-one-shot-events fd-entry :read))))
+                  (when (member :write ev-types)
+                    (dispatch-write-events fd-entry)
+                    (setf deletion-list
+                          (nconc deletion-list
+                                 (fd-entry-one-shot-events fd-entry :write)))))
                 (warn "Got spurious event for non-monitored FD: ~A" fd)))))
       (dolist (ev deletion-list)
         (remove-event event-base ev)))))
@@ -293,9 +306,8 @@
         (dispatch-list ()))
     (dolist (ev events)
       (push ev dispatch-list)
-      (if (event-persistent-p ev)
-          (event-recalc-abs-timeout ev)
-          (push ev deletion-list)))
+      (unless (event-persistent-p ev)          
+        (push ev deletion-list)))
     (values deletion-list dispatch-list)))
 
 
@@ -306,10 +318,13 @@
 
 (defun events-calc-min-rel-timeout (timeouts)
   (let* ((now (gettime))
-         (first-event (queue-first-element timeouts)))
-    (when (and first-event
-               (event-abs-timeout first-event))
-      (- (event-abs-timeout first-event) now))))
+         (first-valid-event (find-if #'(lambda (to)
+                                         (or (null to) (< now to)))
+                                     (queue-head timeouts)
+                                     :key #'event-abs-timeout)))
+    (when (and first-valid-event
+               (event-abs-timeout first-valid-event))
+      (- (event-abs-timeout first-valid-event) now))))
 
 
 (defun dispatch-error-events (fd-entry)
@@ -415,9 +430,9 @@
       (< timeout ev-to))))
 
 
-(defun event-recalc-abs-timeout (event)
+(defun event-recalc-abs-timeout (event now)
   (setf (event-abs-timeout event)
-        (+ (gettime) (event-timeout event))))
+        (+ now (event-timeout event))))
 
 ;;;
 ;;; Multiplexer

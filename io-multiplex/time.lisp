@@ -58,8 +58,6 @@
 
 
 (defun calc-min-timeout (t1 t2)
-  (when (and t1 (minusp t1)) (setf t1 0.0d0))
-  (when (and t2 (minusp t2)) (setf t2 0.0d0))
   (if t1
       (if t2
           (min t1 t2)

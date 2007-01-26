@@ -38,13 +38,13 @@
 (defmacro flags-case (mask &body clauses)
   (let ((newm (gensym "MASK")))
     `(let ((,newm ,mask))
-       (cond ,@(loop :for clause :in clauses
-                  :collect `((logtest ,(let ((flags (first clause)))
-                                            (if (listp flags)
-                                                `(logand ,@flags)
-                                                flags))
-                                      ,newm)
-                             ,(second clause)))))))
+       (progn ,@(loop :for clause :in clauses
+                   :collect `(when (logtest ,(let ((flags (first clause)))
+                                                  (if (listp flags)
+                                                      `(logior ,@flags)
+                                                      flags))
+                                            ,newm)
+                              ,(second clause)))))))
 
 
 (defmacro ignore-and-print-errors (&body body)
