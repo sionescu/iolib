@@ -19,113 +19,128 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
-(declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
-
 (in-package :io.multiplex)
 
 (defconstant +kqueue-priority+ 1)
 
-(define-multiplexer kqueue-multiplexer +kqueue-priority+
-  (multiplexer)
-  ((kqueue-fd :reader kqueue-fd)))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *kqueue-max-events* 200))
+(define-multiplexer kqueue-multiplexer +kqueue-priority+ (multiplexer)
+  ())
+
+
+(defmethod print-object ((mux kqueue-multiplexer) stream)
+  (print-unreadable-object (mux stream :type nil :identity nil)
+    (format stream "kqueue(2) multiplexer")))
+
+
+(defvar *kqueue-max-events* 200)
+
 
 (defmethod initialize-instance :after ((mux kqueue-multiplexer) &key)
   (let ((kqueue-fd (et:kqueue)))
-    (setf (slot-value mux 'kqueue-fd) kqueue-fd)
-    (finalize-object-closing-fd mux kqueue-fd)))
+    (setf (slot-value mux 'fd) kqueue-fd)
+    (et:finalize-object-closing-fd mux kqueue-fd)))
 
-(defun calc-kqueue-filter (fd-entry)
-  (logior (if (fd-entry-read-handlers fd-entry) et:evfilt-read 0)
-          (if (fd-entry-write-handlers fd-entry) et:evfilt-write 0)))
 
-(defun do-kqueue-event-request (kqueue-fd fd-entry request-type)
-  (let ((filter (calc-kqueue-filter fd-entry))
-        (fd (fd-entry-fd fd-entry)))
+(defun do-kqueue-event-request (kqueue-fd fd-entry filter request-type)
+  (let ((fd (fd-entry-fd fd-entry)))
     (with-foreign-object (kev 'et:kevent)
-      (et:memset kev 0 #.(foreign-type-size 'et:kevent))
+      (et:memset kev 0 et:size-of-kevent)
       (et:ev-set kev fd filter request-type 0 0 (null-pointer))
       (et:kevent kqueue-fd
                  kev 1
                  (null-pointer) 0
                  (null-pointer)))))
 
+
+(defun calc-kqueue-monitor-filter (fd-entry)
+  (if (queue-empty-p (fd-entry-read-events fd-entry))
+      et:evfilt-write
+      et:evfilt-read))
+
+
 (defmethod monitor-fd ((mux kqueue-multiplexer) fd-entry)
   (assert fd-entry)
   (handler-case
-      (do-kqueue-event-request (kqueue-fd mux) fd-entry et:ev-add)
+      (do-kqueue-event-request (fd-of mux) fd-entry
+                               (calc-kqueue-monitor-filter fd-entry)
+                               et:ev-add)
     (et:unix-error-badf (err)
       (declare (ignore err))
-      (warn "FD ~A is invalid, cannot monitor it." (fd-entry-fd fd-entry))
-      (return-from monitor-fd nil))))
+      (warn "FD ~A is invalid, cannot monitor it." (fd-entry-fd fd-entry)))))
+
+
+(defun calc-kqueue-update-filter-and-flags (edge-change)
+  (case edge-change
+    (:read-add  (values et:evfilt-read et:ev-add))
+    (:read-del  (values et:evfilt-read et:ev-delete))
+    (:write-add (values et:evfilt-write et:ev-add))
+    (:write-del (values et:evfilt-write et:ev-delete))))
+
 
 (defmethod update-fd ((mux kqueue-multiplexer) fd-entry)
   (assert fd-entry)
   (handler-case
-      (do-kqueue-event-request (kqueue-fd mux) fd-entry et:ev-add)
+      (multiple-value-bind (filter change)
+          (calc-kqueue-update-filter-and-flags (fd-entry-edge-change fd-entry))
+        (do-kqueue-event-request (fd-of mux) fd-entry filter change))
     (et:unix-error-badf (err)
       (declare (ignore err))
-      (warn "FD ~A is invalid, cannot update its status." (fd-entry-fd fd-entry))
-      (return-from update-fd nil))
+      (warn "FD ~A is invalid, cannot update its status." (fd-entry-fd fd-entry)))
     (et:unix-error-noent (err)
       (declare (ignore err))
-      (warn "FD ~A was not monitored, cannot update its status." (fd-entry-fd fd-entry))
-      (return-from update-fd nil)))
-  t)
+      (warn "FD ~A was not monitored, cannot update its status." (fd-entry-fd fd-entry)))))
 
-(defmethod unmonitor-fd ((mux kqueue-multiplexer) fd &key)
+
+(defun calc-kqueue-unmonitor-filter (fd-entry)
+  (if (queue-empty-p (fd-entry-read-events fd-entry))
+      et:evfilt-read
+      et:evfilt-write))
+
+
+(defmethod unmonitor-fd ((mux kqueue-multiplexer) fd-entry)
   (handler-case
-      (do-kqueue-event-request (kqueue-fd mux) (fd-entry mux fd) et:ev-delete)
+      (do-kqueue-event-request (fd-of mux) fd-entry
+                               (calc-kqueue-unmonitor-filter fd-entry)
+                               et:ev-delete)
     (et:unix-error-badf (err)
       (declare (ignore err))
-      (warn "FD ~A is invalid, cannot unmonitor it." fd))
+      (warn "FD ~A is invalid, cannot unmonitor it." (fd-entry-fd fd-entry)))
     (et:unix-error-noent (err)
       (declare (ignore err))
-      (warn "FD ~A was not monitored, cannot unmonitor it." fd)))
-  t)
+      (warn "FD ~A was not monitored, cannot unmonitor it." (fd-entry-fd fd-entry)))))
 
-(defun kqueue-serve-single-fd (fd-entry flags events data)
-  (assert fd-entry)
-  (let ((error-handlers (fd-entry-error-handlers fd-entry))
-        (read-handlers (fd-entry-read-handlers fd-entry))
-        (write-handlers (fd-entry-write-handlers fd-entry))
-        (fd (fd-entry-fd fd-entry)))
-    (when (and error-handlers (logtest et:ev-error flags))
-      (dolist (error-handler error-handlers)
-        (funcall (handler-function error-handler) fd :error)))
-    (when (and read-handlers (logtest et:evfilt-read events))
-      (dolist (read-handler (fd-entry-read-handlers fd-entry))
-        (funcall (handler-function read-handler) fd :read)))
-    (when (and write-handlers (logtest et:evfilt-write events))
-      (dolist (write-handler (fd-entry-write-handlers fd-entry))
-        (funcall (handler-function write-handler) fd :write)))))
 
-;; (defmethod serve-fd-events ((mux kqueue-multiplexer)
-;;                             &key timeout)
-;;   (with-foreign-objects ((events 'et:kevent #.*kqueue-max-events*)
-;;                          (ts 'et:timespec))
-;;     (et:memset events 0 #.(* *kqueue-max-events* (foreign-type-size 'et:kevent)))
-;;     (when timeout
-;;       (with-foreign-slots ((et:tv-sec et:tv-nsec) ts et:timespec)
-;;         (setf et:tv-sec (timeout-sec timeout)
-;;               et:tv-nsec (* 1000 (timeout-usec timeout)))))
-;;     (let ((ready-fds
-;;            (et:kevent (kqueue-fd mux) (null-pointer) 0
-;;                       events #.*kqueue-max-events* (if timeout ts (null-pointer)))))
-;;       (loop
-;;          :for i :below ready-fds
-;;          :for fd := (foreign-slot-value (foreign-slot-value (mem-aref events 'et:kevent i)
-;;                                                             'et:epoll-event 'et:data)
-;;                                         'et:epoll-data 'et:fd)
-;;          :for event-mask := (foreign-slot-value (mem-aref events 'et:epoll-event i)
-;;                                                 'et:epoll-event 'et:events)
-;;          :do (epoll-serve-single-fd (fd-entry mux fd)
-;;                                     event-mask))
-;;       (return-from serve-fd-events ready-fds))))
+(defmethod harvest-events ((mux kqueue-multiplexer) timeout)
+  (with-foreign-objects ((events 'et:kevent *kqueue-max-events*)
+                         (ts 'et:timespec))
+    (et:memset events 0 (* *kqueue-max-events* et:size-of-kevent))
+    (when timeout
+      (timeout->timespec timeout ts))
+    (let ((ready-fds
+           (et:kevent (fd-of mux) (null-pointer) 0
+                      events *kqueue-max-events* (if timeout ts (null-pointer)))))
+      (macrolet ((kevent-slot (slot-name)
+                   `(foreign-slot-value (mem-aref events 'et:kevent i)
+                                        'et:kevent ',slot-name)))
+        (loop
+           :for i :below ready-fds
+           :for fd := (kevent-slot et:ident)
+           :for flags := (kevent-slot et:flags)
+           :for filter := (kevent-slot et:filter)
+           :for data := (kevent-slot et:data)
+           :for kqueue-event := (make-kqueue-event fd flags filter data)
+           :when kqueue-event :collect kqueue-event)))))
 
-(defmethod close-multiplexer ((mux kqueue-multiplexer))
-  (cancel-finalization mux)
-  (et:close (kqueue-fd mux)))
+
+(defun make-kqueue-event (fd flags filter data)
+  (let ((event ()))
+    (case filter
+      (#.et:evfilt-write (push :write event))
+      (#.et:evfilt-read  (push :read event)))
+    (flags-case flags
+;; TODO: check what exactly EV_EOF means
+;;       (et:ev-eof   (pushnew :read event))
+      (et:ev-error (push :error event)))
+    (when event
+      (list fd event))))

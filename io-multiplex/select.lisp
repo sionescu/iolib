@@ -19,105 +19,136 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
-(declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
-
 (in-package :io.multiplex)
 
 (defconstant +select-priority+ 3)
 
-(define-multiplexer select-multiplexer +select-priority+
-  (multiplexer) ())
 
-(defun select-setup-masks (mux read-fds write-fds except-fds)
-  (declare (type et:foreign-pointer
-                 read-fds write-fds except-fds))
+(define-multiplexer select-multiplexer +select-priority+ (multiplexer)
+  ((max-fd :initform 0
+           :accessor max-fd-of)
+   (read-fd-set :initform (allocate-fd-set)
+                :reader read-fd-set-of)
+   (write-fd-set :initform (allocate-fd-set)
+                 :reader write-fd-set-of)
+   (except-fd-set :initform (allocate-fd-set)
+                  :reader except-fd-set-of))
+  (:default-initargs :fd-limit (1- et:fd-setsize)))
 
-  (et:fd-zero read-fds)
-  (et:fd-zero write-fds)
-  (et:fd-zero except-fds)
 
-  (let ((max-fd 0))
-    (with-hash-table-iterator (next-item (fd-entries mux))
-      (multiple-value-bind (item-p fd fd-entry) (next-item)
-        (when item-p
-          (when (> fd max-fd)
-            (setf max-fd fd))
-          (when (fd-entry-read-handlers fd-entry)
-            (et:fd-set fd read-fds))
-          (when (fd-entry-write-handlers fd-entry)
-            (et:fd-set fd write-fds))
-          (when (fd-entry-except-handlers fd-entry)
-            (et:fd-set fd except-fds)))))
-    max-fd))
+(defun allocate-fd-set ()
+  (et:fd-zero (foreign-alloc 'et:fd-set)))
 
-(defun handle-select-fd-errors (mux)
-  (let ((current-entries (fd-entries mux))
-        invalid-fd-entries)
-    (with-hash-table-iterator (next-item current-entries)
-      (multiple-value-bind (item-p fd fd-entry) (next-item)
-        (when (and item-p (not (fd-open-p fd)))
-          (push fd-entry invalid-fd-entries))))
-    (dolist (fd-entry invalid-fd-entries)
-      (let ((fd (fd-entry-fd fd-entry))
-            (error-handlers (fd-entry-error-handlers fd-entry)))
-        (when error-handlers
-          (dolist (error-handler error-handlers)
-            (funcall (handler-function error-handler) fd :error)))
-        (warn "Removing bad FD: ~A from ~A" fd mux)
-        (unmonitor-fd mux fd :base-only t)))))
 
-(defmethod serve-fd-events ((mux select-multiplexer)
-                            &key timeout)
-  (with-foreign-objects ((read-fds 'et:fd-set)
-                         (write-fds 'et:fd-set)
-                         (except-fds 'et:fd-set))
+(defmethod print-object ((mux select-multiplexer) stream)
+  (print-unreadable-object (mux stream :type nil :identity nil)
+    (format stream "select(2) multiplexer")))
 
-    (let ((max-fd (select-setup-masks
-                   mux
-                   read-fds
-                   write-fds
-                   except-fds))
-          (count 0))
 
-      ;; this means there are no valid fds to serve
-      ;; but with no fds active select() blocks forever(at least on Linux)
-      (when (zerop max-fd)
-        (return-from serve-fd-events 0))
+(defmethod close-multiplexer progn ((mux select-multiplexer))
+  (foreign-free (read-fd-set-of mux))
+  (foreign-free (write-fd-set-of mux))
+  (foreign-free (except-fd-set-of mux))
+  (mapc #'(lambda (slot)
+            (slot-makunbound mux slot))
+        '(max-fd read-fd-set write-fd-set except-fd-set)))
 
-      (with-accessors ((fd-entries fd-entries)) mux
-        (handler-case
-            (with-foreign-object (to 'et:timeval)
-              (when timeout
-                (progn
-                  (et:memset to 0 #.(foreign-type-size 'et:timeval))
-                  (setf (foreign-slot-value to 'et:timeval 'et:tv-sec)
-                        (timeout-sec timeout))
-                  (setf (foreign-slot-value to 'et:timeval 'et:tv-usec)
-                        (timeout-usec timeout))))
-              (et:select (1+ max-fd)
-                         read-fds
-                         write-fds
-                         except-fds
-                         (if timeout to (null-pointer))))
-          (et:unix-error-badf (err)
-            (declare (ignore err))
-            (handle-select-fd-errors mux)))
 
-        (with-hash-table-iterator (next-item fd-entries)
-          (multiple-value-bind (item-p fd fd-entry) (next-item)
-            (when item-p
-              (incf count)
-              (when (and (et:fd-isset fd except-fds)
-                         (fd-entry-except-handlers fd-entry))
-                (dolist (except-handler (fd-entry-except-handlers fd-entry))
-                  (funcall (handler-function except-handler) fd :except)))
-              (when (and (et:fd-isset fd read-fds)
-                         (fd-entry-read-handlers fd-entry))
-                (dolist (read-handler (fd-entry-read-handlers fd-entry))
-                  (funcall (handler-function read-handler) fd :read)))
-              (when (and (et:fd-isset fd write-fds)
-                         (fd-entry-write-handlers fd-entry))
-                (dolist (write-handler (fd-entry-write-handlers fd-entry))
-                  (funcall (handler-function write-handler) fd :write))))))
-        (return-from serve-fd-events count)))))
+(defun find-max-fd (fd-set end)
+  (loop :for i :downfrom end :to 0
+     :do (when (et:fd-isset i fd-set)
+           (return-from find-max-fd i)))
+  ;; this means no fd <= end is set
+  -1)
+
+
+(defun recalc-fd-masks (mux fd read write)
+  (with-accessors ((rs read-fd-set-of) (ws write-fd-set-of)
+                   (es except-fd-set-of) (max-fd max-fd-of)) mux
+    (if read
+        (progn
+          (et:fd-set fd rs)
+          (et:fd-set fd es))
+        (progn
+          (et:fd-clr fd rs)
+          (et:fd-clr fd es)))
+    (if write
+        (et:fd-set fd ws)
+        (et:fd-clr fd ws))
+    (setf max-fd (max (find-max-fd rs fd)
+                      (find-max-fd ws fd)))
+    t))
+
+
+(defmethod monitor-fd ((mux select-multiplexer) fd-entry)
+  (recalc-fd-masks mux (fd-entry-fd fd-entry)
+                   (not (queue-empty-p (fd-entry-read-events fd-entry)))
+                   (not (queue-empty-p (fd-entry-write-events fd-entry)))))
+
+
+(defmethod update-fd ((mux select-multiplexer) fd-entry)
+  (recalc-fd-masks mux (fd-entry-fd fd-entry)
+                   (not (queue-empty-p (fd-entry-read-events fd-entry)))
+                   (not (queue-empty-p (fd-entry-write-events fd-entry)))))
+
+
+(defmethod unmonitor-fd ((mux select-multiplexer) fd-entry)
+  (recalc-fd-masks mux (fd-entry-fd fd-entry) nil nil))
+
+
+(defmethod harvest-events ((mux select-multiplexer) timeout)
+  (with-accessors ((rs read-fd-set-of) (ws write-fd-set-of)
+                   (es except-fd-set-of) (max-fd max-fd-of)) mux
+    ;; if there are no fds set and timeout is NULL
+    ;; select() blocks forever
+    (when (and (minusp max-fd)
+               (null timeout))
+      (warn "Non fds to monitor and no timeout set !")
+      (return-from harvest-events nil))
+
+    (with-foreign-objects ((read-fds 'et:fd-set)
+                           (write-fds 'et:fd-set)
+                           (except-fds 'et:fd-set))
+      (et:copy-fd-set rs read-fds)
+      (et:copy-fd-set ws write-fds)
+      (et:copy-fd-set es except-fds)
+
+      (handler-case
+          (with-foreign-object (tv 'et:timeval)
+            (when timeout
+              (timeout->timeval timeout tv))
+            (et:select (1+ max-fd)
+                       read-fds
+                       write-fds
+                       except-fds
+                       (if timeout tv (null-pointer))))
+        (et:unix-error-badf (err)
+          (declare (ignore err))
+          (return-from harvest-events
+            (harvest-select-fd-errors rs ws max-fd))))
+
+      (harvest-select-events max-fd read-fds write-fds except-fds))))
+
+
+(defun harvest-select-events (max-fd read-fds write-fds except-fds)
+  (loop :for fd :upto max-fd
+     :for event := () :then ()
+     :when (or (et:fd-isset fd read-fds)
+               (et:fd-isset fd except-fds)) :do (push :read event)
+     :when (et:fd-isset fd write-fds) :do (push :write event)
+     :when event :collect (list fd event)))
+
+
+;; FIXME: I don't know whether on all *nix systems select()
+;; returns EBADF only when a given FD present in some fd-set
+;; is closed(as the POSIX docs say) or if some other kinds of
+;; errors are reported too(as the Linux manpages seem to suggest)
+(defun fd-error-p (fd)
+  (not (et:fd-open-p fd)))
+
+(defun harvest-select-fd-errors (read-fds write-fds max-fd)
+  (loop :for fd :upto max-fd
+     :when (and (or (et:fd-isset fd read-fds)
+                    (et:fd-isset fd write-fds))
+                (fd-error-p fd))
+     :collect (cons fd :error)))

@@ -19,226 +19,496 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
-(declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
-
 (in-package :io.multiplex)
-
-;;;;
-;;;; Type definitions
-;;;;
-
-(deftype event-type ()
-  '(member :read :write :except :error))
-
-;;;
-;;; FD Entry
-;;;
-(defstruct (fd-entry
-             (:constructor make-fd-entry (fd read-handlers write-handlers
-                                          except-handlers error-handlers))
-             (:copier nil))
-  (fd 0 :type et:select-file-descriptor)
-  (read-handlers   nil :type list)
-  (write-handlers  nil :type list)
-  (except-handlers nil :type list)
-  (error-handlers  nil :type list))
-
-(defun fd-entry-handler-list (fd-entry event-type)
-  (check-type fd-entry fd-entry)
-  (check-type event-type event-type)
-  (case event-type
-    (:read (fd-entry-read-handlers fd-entry))
-    (:write (fd-entry-write-handlers fd-entry))
-    (:except (fd-entry-except-handlers fd-entry))
-    (:error (fd-entry-error-handlers fd-entry))))
-
-(defun (setf fd-entry-handler-list) (handler-list fd-entry event-type)
-  (check-type fd-entry fd-entry)
-  (check-type event-type event-type)
-  (case event-type
-    (:read (setf (fd-entry-read-handlers fd-entry) handler-list))
-    (:write (setf (fd-entry-write-handlers fd-entry) handler-list))
-    (:except (setf (fd-entry-except-handlers fd-entry) handler-list))
-    (:error (setf (fd-entry-error-handlers fd-entry) handler-list))))
-
-(defun fd-entry-empty-p (fd-entry)
-  (not (or (fd-entry-read-handlers fd-entry)
-           (fd-entry-write-handlers fd-entry)
-           (fd-entry-except-handlers fd-entry)
-           (fd-entry-error-handlers fd-entry))))
-
-;;;
-;;; Handler
-;;;
-(defstruct (handler
-             (:constructor make-handler (event-type function))
-             (:copier nil))
-  (event-type nil :type (or null event-type))
-  (function   nil :type (or null function)))
-
-;;;
-;;; Multiplexer
-;;;
-(defclass multiplexer ()
-  ((fd-entries :initform (make-hash-table :test 'eql) :reader fd-entries)
-   (fd-set-size :initform 0)))
-
-(defmethod initialize-instance :after ((mux multiplexer)
-                                       &key size)
-  (setf (slot-value mux 'fd-set-size) size))
-
-(defgeneric fd-entry (mux fd)
-  (:method ((mux multiplexer) fd)
-    (gethash fd (fd-entries mux))))
-
-(defgeneric monitor-fd (mux fd-entry)
-  (:method ((mux multiplexer) fd-entry)
-    t))
-
-(defgeneric update-fd (mux fd-entry)
-  (:method ((mux multiplexer) fd-entry)
-    t))
-
-(defgeneric unmonitor-fd (mux fd &key)
-  (:method ((mux multiplexer) fd &key)
-    t))
-
-(defgeneric add-fd-handler (mux fd event-type function)
-  (:method-combination progn :most-specific-last))
-
-(defgeneric remove-fd-handler (mux fd handler)
-  (:method-combination progn :most-specific-first))
-
-(defgeneric serve-fd-events (mux &key timeout))
-
-(defgeneric close-multiplexer (mux)
-  (:method ((mux multiplexer))
-    t))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *available-multiplexers* nil)
-  (defvar *best-multiplexer* nil))
+  (defvar *best-available-multiplexer* nil))
+
+;;;
+;;; Event-Base
+;;;
+(defclass event-base ()
+  ((mux :initform (make-instance *best-available-multiplexer*)
+        :reader mux-of)
+   (fds :initform (make-hash-table :test 'eql)
+        :reader fds-of)
+   (timeouts :initform (make-queue)
+             :reader timeouts-of)
+   (exit :initform nil
+         :accessor exit-p)))
+
+
+(defmethod print-object ((base event-base) stream)
+  (print-unreadable-object (base stream :type nil :identity t)
+    (format stream "event base, ~A FDs monitored, using: ~A"
+            (hash-table-count (fds-of base))
+            (mux-of base))))
+
+
+(defgeneric close-event-base (event-base)
+  (:method ((event-base event-base))
+    (with-accessors ((mux mux-of)) event-base
+      (close-multiplexer mux)
+      (mapc #'(lambda (slot)
+                (slot-makunbound event-base slot))
+            '(fds timeouts exit))
+      event-base)))
+
+
+(defgeneric add-fd (base fd event-type function &key timeout persistent))
+
+
+(defgeneric add-timeout (event-base function timeout &key persistent))
+
+
+(defgeneric remove-event (event-base event))
+
+
+(defgeneric remove-events (event-base event-list))
+
+
+(defgeneric event-dispatch (event-base &key timeout only-once))
+
+
+(defgeneric exit-event-loop (event-base &key delay)
+  (:method ((event-base event-base) &key delay)
+    (add-timeout event-base
+                 #'(lambda (fd event-type)
+                     (declare (ignore fd event-type))
+                     (setf (exit-p event-base) t))
+                 delay :persistent nil)))
+
+
+(defgeneric event-base-empty-p (event-base)
+  (:method ((event-base event-base))
+    (and (zerop (hash-table-count (fds-of event-base)))
+         (queue-empty-p (timeouts-of event-base)))))
+
+
+(defgeneric fd-entry-of (event-base fd)
+  (:method ((event-base event-base) fd)
+    (gethash fd (fds-of event-base))))
+
+
+(defun %add-event (event-base event &optional fd-entry)
+  (with-accessors ((fds fds-of) (timeouts timeouts-of)) event-base
+    (when (event-timeout event)
+      ;; add the event to the timeout queue
+      (queue-sorted-insert timeouts event #'< #'event-abs-timeout))
+    (let ((fd (event-fd event)))
+      ;; if it's an FD event add it to its fd-entry int the FDs hash-table
+      ;; if there's no such fd-entry, create it
+      (when fd
+        (fd-entry-add-event fd-entry event)
+        (setf (gethash fd fds) fd-entry))
+      (values event))))
+
+
+(defun %remove-event (event-base event)
+  (with-accessors ((fds fds-of) (timeouts timeouts-of)) event-base
+    (when (event-timeout event)
+      ;; remove the event from the timeout queue
+      (queue-delete timeouts event))
+    (let ((fd (event-fd event)))
+      ;; if it's an FD event remove it from its fd-entry
+      ;; if the fd-emtry is then empty, remove it
+      (when fd
+        (let ((fd-entry (gethash fd fds)))
+          (assert fd-entry)
+          (fd-entry-del-event fd-entry event)
+          (when (fd-entry-empty-p fd-entry)
+            (remhash fd fds))))
+      (values event))))
+
+
+(defun calc-possible-edge-change-when-adding (fd-entry event-type)
+  (cond ((and (eql event-type :read)
+              (queue-empty-p (fd-entry-read-events fd-entry)))
+         :read-add)
+        ((and (eql event-type :write)
+              (queue-empty-p (fd-entry-write-events fd-entry)))
+         :write-add)))
+
+
+(defmethod add-fd ((event-base event-base) fd event-type function &key timeout persistent)
+  (check-type event-type fd-event)
+
+  (when (> fd (fd-limit-of (mux-of event-base)))
+    (error "Cannot add such a large FD: ~A" fd))
+  (let ((current-entry (fd-entry-of event-base fd))
+        (event (make-event fd event-type function persistent
+                           (abs-timeout timeout)
+                           (normalize-timeout timeout)))
+        (edge-change nil))
+    (if current-entry
+        (progn
+          (setf edge-change (calc-possible-edge-change-when-adding
+                             current-entry event-type))
+          (%add-event event-base event current-entry)
+          (when edge-change
+            (setf (fd-entry-edge-change current-entry) edge-change)
+            (update-fd (mux-of event-base) current-entry)
+            (setf (fd-entry-edge-change current-entry) nil)))
+        (progn
+          (setf current-entry (make-fd-entry fd))
+          (%add-event event-base event current-entry)
+          (unless (monitor-fd (mux-of event-base) current-entry)
+            (%remove-event event-base event))))
+    (values event)))
+
+
+(defmethod add-timeout ((event-base event-base) function timeout &key persistent)
+  (assert timeout)
+  (%add-event event-base (make-event nil :timeout function persistent
+                                     (abs-timeout timeout)
+                                     (normalize-timeout timeout))))
+
+
+(defun calc-possible-edge-change-when-removing (fd-entry event-type)
+  (cond ((and (eql event-type :read)
+              (queue-empty-p (fd-entry-read-events fd-entry)))
+         :read-del)
+        ((and (eql event-type :write)
+              (queue-empty-p (fd-entry-write-events fd-entry)))
+         :write-del)))
+
+
+(defmethod remove-event ((event-base event-base) event)
+  (check-type (event-type event) event-type)
+
+  (let* ((fd (event-fd event))
+         (current-entry (fd-entry-of event-base fd))
+         (edge-change nil))
+    (if current-entry
+        (progn
+          (setf edge-change (calc-possible-edge-change-when-adding
+                             current-entry (event-type event)))
+          (%remove-event event-base event)
+          (if (fd-entry-empty-p current-entry)
+              (unmonitor-fd (mux-of event-base) current-entry)
+              (when edge-change
+                (setf (fd-entry-edge-change current-entry) edge-change)
+                (update-fd (mux-of event-base) current-entry)
+                (setf (fd-entry-edge-change current-entry) nil))))
+        (%remove-event event-base event)))
+  (values event-base))
+
+
+(defmethod remove-events ((event-base event-base) event-list)
+  (dolist (ev event-list)
+    (remove-event event-base ev)))
+
+
+(defun calc-edge-change (event-type change)
+  (case event-type
+    (:read  (if (eql change :add) :read-add  :read-del))
+    (:write (if (eql change :add) :write-add :write-del))))
+
+
+(defmacro with-fd-handler ((event-base fd event-type function
+                            &optional timeout)
+                           &body body)
+  (let ((event (gensym "EVENT-")))
+    `(let (,event)
+       (unwind-protect
+            (progn
+              (setf ,event (add-fd ,event-base ,fd ,event-type ,function
+                                   :persistent t
+                                   :timeout ,timeout))
+              ,@body)
+         (when ,event
+           (remove-event ,event-base ,event))))))
+
+
+(defmethod event-dispatch :around ((event-base event-base) &key timeout only-once)
+  (setf (exit-p event-base) nil)
+  (when timeout
+    (exit-event-loop event-base :delay timeout)
+    (setf only-once t))
+  (unless (event-base-empty-p event-base)
+    (call-next-method event-base :timeout timeout
+                      :only-once only-once)))
+
+
+(defmethod event-dispatch ((event-base event-base) &key timeout only-once)
+  (with-accessors ((mux mux-of) (exit-p exit-p)
+                   (fds fds-of) (timeouts timeouts-of)) event-base
+    (let* ((min-event-timeout (events-calc-min-rel-timeout timeouts))
+           (actual-timeout (calc-min-timeout min-event-timeout timeout)))
+      (loop
+         :with deletion-list := ()
+         :with dispatch-list := ()
+         :for before := (gettime)
+         :for _ := (dispatch-fd-events-once event-base actual-timeout)
+         :for after := (gettime)
+         :do
+         (multiple-value-setq (deletion-list dispatch-list)
+           (filter-expired-events (expired-events timeouts after)))
+         (dispatch-timeouts dispatch-list)
+         (remove-events event-base deletion-list)
+         (queue-sort timeouts #'< #'event-abs-timeout)
+         :when (or only-once
+                   exit-p
+                   (event-base-empty-p event-base))
+         :do (loop-finish)))))
+
+
+(defun dispatch-fd-events-once (event-base timeout)
+  (with-accessors ((mux mux-of) (fds fds-of)
+                   (timeouts timeouts-of)) event-base
+    (let ((deletion-list ())
+          (fd-events (harvest-events mux timeout)))
+      (dolist (ev fd-events)
+        (destructuring-bind (fd ev-types) ev
+          (let ((fd-entry (fd-entry-of event-base fd)))
+            (if fd-entry
+                (cond ((member :error ev-types)
+                       (dispatch-error-events fd-entry)
+                       (setf deletion-list (fd-entry-all-events fd-entry)))
+                      ((member :read ev-types)
+                       (dispatch-read-events fd-entry)
+                       (setf deletion-list
+                             (nconc deletion-list
+                                    (fd-entry-one-shot-events fd-entry :read))))
+                      ((member :write ev-types)
+                       (dispatch-write-events fd-entry)
+                       (setf deletion-list
+                             (nconc deletion-list
+                                    (fd-entry-one-shot-events fd-entry :write)))))
+                (warn "Got spurious event for non-monitored FD: ~A" fd)))))
+      (dolist (ev deletion-list)
+        (remove-event event-base ev)))))
+
+
+(defun expired-events (queue now)
+  (queue-filter queue
+                #'(lambda (to)
+                    (and to (<= to now)))
+                #'event-abs-timeout))
+
+
+(defun filter-expired-events (events)
+  (let ((deletion-list ())
+        (dispatch-list ()))
+    (dolist (ev events)
+      (push ev dispatch-list)
+      (if (event-persistent-p ev)
+          (event-recalc-abs-timeout ev)
+          (push ev deletion-list)))
+    (values deletion-list dispatch-list)))
+
+
+(defun dispatch-timeouts (dispatch-list)
+  (dolist (ev dispatch-list)
+    (funcall (event-handler ev) nil :timeout)))
+
+
+(defun events-calc-min-rel-timeout (timeouts)
+  (let* ((now (gettime))
+         (first-event (queue-first-element timeouts)))
+    (when (and first-event
+               (event-abs-timeout first-event))
+      (- (event-abs-timeout first-event) now))))
+
+
+(defun dispatch-error-events (fd-entry)
+  (dolist (ev (queue-head (fd-entry-error-events fd-entry)))
+    (funcall (event-handler ev) (fd-entry-fd fd-entry) :error)))
+
+
+(defun dispatch-read-events (fd-entry)
+  (dolist (ev (queue-head (fd-entry-read-events fd-entry)))
+    (funcall (event-handler ev) (fd-entry-fd fd-entry) :read)))
+
+
+(defun dispatch-write-events (fd-entry)
+  (dolist (ev (queue-head (fd-entry-write-events fd-entry)))
+    (funcall (event-handler ev) (fd-entry-fd fd-entry) :write)))
+
+;;;
+;;; FD-Entry
+;;;
+(deftype fd-event ()
+  '(member :read :write :error))
+
+
+(deftype event-type ()
+  '(or fd-event (member :timeout)))
+
+
+(defstruct (fd-entry
+             (:constructor make-fd-entry (fd))
+             (:copier nil))
+  (fd 0 :type fixnum)
+  (edge-change nil :type symbol)
+  (read-events  (make-queue) :type queue)
+  (write-events (make-queue) :type queue)
+  (error-events (make-queue) :type queue))
+
+
+(defun fd-entry-event-list (fd-entry event-type)
+  (check-type fd-entry fd-entry)
+  (check-type event-type fd-event)
+  (case event-type
+    (:read (fd-entry-read-events fd-entry))
+    (:write (fd-entry-write-events fd-entry))
+    (:error (fd-entry-error-events fd-entry))))
+
+
+(defun (setf fd-entry-event-list) (fd-entry event-list event-type)
+  (check-type fd-entry fd-entry)
+  (check-type event-type fd-event)
+  (case event-type
+    (:read (setf (fd-entry-read-events fd-entry) event-list))
+    (:write (setf (fd-entry-write-events fd-entry) event-list))
+    (:error (setf (fd-entry-error-events fd-entry) event-list))))
+
+
+(defun fd-entry-empty-p (fd-entry)
+  (and (queue-empty-p (fd-entry-read-events fd-entry))
+       (queue-empty-p (fd-entry-write-events fd-entry))
+       (queue-empty-p (fd-entry-error-events fd-entry))))
+
+
+(defun fd-entry-add-event (fd-entry event)
+  (queue-enqueue (fd-entry-event-list fd-entry (event-type event))
+                 event))
+
+
+(defun fd-entry-del-event (fd-entry event)
+  (queue-delete (fd-entry-event-list fd-entry (event-type event))
+                event))
+
+
+(defun fd-entry-all-events (fd-entry)
+  (append (queue-head (fd-entry-read-events fd-entry))
+          (queue-head (fd-entry-write-events fd-entry))
+          (queue-head (fd-entry-error-events fd-entry))))
+
+
+(defun fd-entry-one-shot-events (fd-entry event-type)
+  (remove-if #'event-persistent-p
+             (queue-head (fd-entry-event-list fd-entry event-type))))
+
+;;;
+;;; Event
+;;;
+(defstruct (event
+             (:constructor make-event (fd type handler persistent-p
+                                       abs-timeout timeout))
+             (:copier nil))
+  ;; a file descriptor or nil in case of a timeout
+  (fd nil :type (or null fixnum))
+  (type nil :type (or null event-type))
+  (handler nil :type (or null function))
+  ;; if an event is not persistent it is removed
+  ;; after it occurs or if it times out
+  (persistent-p nil :type boolean)
+  (abs-timeout nil :type (or null timeout))
+  (timeout nil :type (or null timeout)))
+
+
+(defun event-timed-out-p (event timeout)
+  (let ((ev-to (event-abs-timeout event)))
+    (when (and ev-to timeout)
+      (< timeout ev-to))))
+
+
+(defun event-recalc-abs-timeout (event)
+  (setf (event-abs-timeout event)
+        (+ (gettime) (event-timeout event))))
+
+;;;
+;;; Multiplexer
+;;;
+
+(defun get-fd-limit ()
+  (let ((fd-limit (et:get-resource-limit et:rlimit-nofile)))
+    (unless (eql fd-limit et:rlim-infinity)
+      (1- fd-limit))))
+
+
+(defclass multiplexer ()
+  ((fd :reader fd-of)
+   (fd-limit :initform (get-fd-limit)
+             :initarg :fd-limit
+             :reader fd-limit-of)))
+
+
+(defgeneric monitor-fd (mux fd-entry)
+  (:method ((mux multiplexer) fd-entry)
+    (declare (ignore fd-entry))
+    t))
+
+
+(defgeneric update-fd (mux fd-entry)
+  (:method ((mux multiplexer) fd-entry)
+    (declare (ignore fd-entry))
+    t))
+
+
+(defgeneric unmonitor-fd (mux fd-entry)
+  (:method ((mux multiplexer) fd-entry)
+    (declare (ignore fd-entry))
+    t))
+
+
+(defgeneric harvest-events (mux timeout))
+
+
+(defgeneric close-multiplexer (mux)
+  (:method-combination progn :most-specific-last)
+  (:method progn ((mux multiplexer))
+    (cancel-finalization mux)
+    (when (slot-boundp mux 'fd)
+      (et:close (fd-of mux))
+      (slot-makunbound mux 'fd))
+    (slot-makunbound mux 'fd-limit)
+    mux))
+
+
+(defmethod monitor-fd :around ((mux multiplexer) fd-entry)
+  (if (ignore-and-print-errors (call-next-method))
+      t
+      (warn "FD monitoring failed for FD ~A."
+            (fd-entry-fd fd-entry))))
+
+
+(defmethod update-fd :around ((mux multiplexer) fd-entry)
+  (if (ignore-and-print-errors (call-next-method))
+      t
+      (warn "FD status update failed for FD ~A."
+            (fd-entry-fd fd-entry))))
+
+
+(defmethod unmonitor-fd :around ((mux multiplexer) fd-entry)
+  (if (ignore-and-print-errors (call-next-method))
+      t
+      (warn "FD unmonitoring failed for FD ~A."
+            (fd-entry-fd fd-entry))))
+
 
 (defmacro define-multiplexer (name priority superclasses slots &rest options)
   `(progn
      (defclass ,name ,superclasses ,slots ,@options)
      (pushnew (cons ,priority ',name)
               *available-multiplexers*)))
-
-(defun fd-open-p (fd)
-  (with-foreign-object (stat 'et:stat)
-    (handler-case
-        (progn (et:stat fd stat) t)
-      (et:unix-error-badf (err)
-        (declare (ignore err))
-        nil))))
-
-(defun finalize-object-closing-fd (object fd)
-  (finalize object #'(lambda () (et:close fd))))
-
-
-
+
 ;;;;
-;;;; Base methods
+;;;; Misc
 ;;;;
 
-(defmethod monitor-fd :around ((mux multiplexer) fd-entry)
-  (let ((fd (fd-entry-fd fd-entry)))
-    (setf (gethash fd (fd-entries mux)) fd-entry)
-    (unless (call-next-method)
-      (unmonitor-fd fd :base-only t)
-      (error "FD monitoring failed."))
-    (values fd)))
 
-(defmethod unmonitor-fd :around ((mux multiplexer) fd &key base-only)
-  (remhash fd (fd-entries mux))
-  (unless base-only
-    (unless (call-next-method)
-      (error "FD unmonitoring failed.")))
-  (values fd))
-
-(defmethod add-fd-handler progn ((mux multiplexer)
-                                 fd event-type function)
-  (check-type event-type event-type)
-
-  (let ((current-entry (fd-entry mux fd))
-        (handler (make-handler event-type function)))
-    (if current-entry
-        (progn
-          (push handler (fd-entry-handler-list current-entry event-type))
-          (update-fd mux current-entry))
-        (progn
-          (setf current-entry (make-fd-entry fd nil nil nil nil))
-          (push handler (fd-entry-handler-list current-entry event-type))
-          (monitor-fd mux current-entry)))
-    (values handler)))
-
-(defmethod remove-fd-handler progn ((mux multiplexer)
-                                    fd handler)
-  (check-type (handler-event-type handler) event-type)
-
-  (let ((event-type (handler-event-type handler))
-        (current-entry (fd-entry mux fd)))
-    (when current-entry
-      (setf (fd-entry-handler-list current-entry event-type)
-            (delete handler (fd-entry-handler-list current-entry event-type) :test 'eq))
-      (if (fd-entry-empty-p current-entry)
-          (unmonitor-fd mux fd)
-          (update-fd mux current-entry))))
-  (values mux))
-
-;; if there are handlers installed save them and restore them at the end
-(defmacro with-fd-handler ((mux fd event-type function)
-                           &body body)
-  (let ((handler (gensym "HANDLER-")))
-    `(let (,handler)
-       (unwind-protect
-            (progn
-              (setf ,handler (add-fd-handler ,mux ,fd ,event-type ,function))
-              ,@body)
-         (when ,handler
-           (remove-fd-handler ,mux ,fd ,handler))))))
-
-
-;;;;
-;;;; Other utilities
-;;;;
-
-;;; Break a real timeout into seconds and microseconds.
-(defun decode-timeout (timeout)
-  (typecase timeout
-    (integer (values timeout 0))
-    (null    nil)
-    (real
-     (multiple-value-bind (q r) (truncate (coerce timeout 'single-float))
-       (declare (type unsigned-byte q) (single-float r))
-       (values q (the (values unsigned-byte t) (truncate (* r 1f6))))))
-    (t
-     (error "Timeout is not a real number or NIL: ~S" timeout))))
-
-(defun timeout (sec usec)
-  (when sec (cons sec usec)))
-
-(defun timeout-sec (timeout)
-  (car timeout))
-
-(defun timeout-usec (timeout)
-  (cdr timeout))
-
-(defmethod serve-fd-events :around ((mux multiplexer) &key timeout)
-  (multiple-value-bind (sec usec) (decode-timeout timeout)
-    (call-next-method mux :timeout (timeout sec usec))))
-
-(defun wait-until-fd-usable (mux fd event-type &optional timeout)
-  (let (status)
-    (flet ((callback (fd type)
-             (cond ((member type '(:error :except))
-                    (setf status :except))
-                   ((eql type event-type)
-                    (setf status :ok)))))
-      (with-fd-handler (mux fd event-type #'callback)
-        (loop
-           (serve-fd-events mux :timeout timeout)
-           (when status
-             (return-from wait-until-fd-usable status)))))))
+;; (defun wait-until-fd-usable (event-base fd event-type &optional timeout)
+;;   (let (status)
+;;     (flet ((callback (fd type)
+;;              (cond ((eql type :error)
+;;                     (setf status :error))
+;;                    ((eql type event-type)
+;;                     (setf status :ok)))))
+;;       (with-fd-handler (mux fd event-type #'callback)
+;;         (loop
+;;            (serve-fd-events mux :timeout timeout)
+;;            (when status
+;;              (return-from wait-until-fd-usable status)))))))

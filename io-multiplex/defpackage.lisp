@@ -26,17 +26,15 @@
   (:use #:common-lisp #:cffi)
   (:export
    ;; classes
-   #:handler
+   #:event-base #:event
    #:multiplexer
    #:select-multiplexer
-   #:epoll-multiplexer
+   #+linux #:epoll-multiplexer
+   #+linux #:kqueue-multiplexer
 
-   ;; available interface
-   #:*available-multiplexers*
-   #:*best-multiplexer*
+   #:add-fd #:add-timeout #:remove-event
+   #:unmonitor-fd #:event-dispatch
 
-   #:add-fd-handler #:remove-fd-handler
-   #:unmonitor-fd #:serve-fd-events
-   #:close-multiplexer
-
-   #:finalize-object-closing-fd))
+   #:timeout #:timeout-sec #:timeout-usec
+   #:timeout-lessp
+   #:timeout-add #:timeout-sub))

@@ -21,6 +21,44 @@
 
 (in-package :io.multiplex)
 
-;;; TODO: do real detecting here
-(setf *best-available-multiplexer*
-      (cdar (sort *available-multiplexers* #'< :key #'car)))
+(defun timeout->timeval (timeout tv)
+  (with-foreign-slots ((et:tv-sec et:tv-usec) tv et:timeval)
+    (multiple-value-bind (sec usec) (decode-timeout timeout)
+     (setf et:tv-sec  sec
+           et:tv-usec usec))))
+
+
+(defun timeout->timespec (timeout ts)
+  (with-foreign-slots ((et:ts-sec et:ts-nsec) ts et:timespec)
+    (multiple-value-bind (sec usec) (decode-timeout timeout)
+      (setf et:ts-sec sec
+            et:ts-nsec (* 1000 usec)))))
+
+
+(defmacro flags-case (mask &body clauses)
+  (let ((newm (gensym "MASK")))
+    `(let ((,newm ,mask))
+       (cond ,@(loop :for clause :in clauses
+                  :collect `((logtest ,(let ((flags (first clause)))
+                                            (if (listp flags)
+                                                `(logand ,@flags)
+                                                flags))
+                                      ,newm)
+                             ,(second clause)))))))
+
+
+(defmacro ignore-and-print-errors (&body body)
+  `(handler-case (progn ,@body)
+     (error (error)
+       (warn "Caught a ~A: ~A, ignoring it."
+             (type-of error) error))))
+
+
+;; (defmacro with-restart-on-eintr (&body body)
+;;   `(loop :for exit-p
+;;       :while (not exit-p) :do
+;;       (handler-case
+;;           (progn ,@body)
+;;         (et:unix-error-intr (err)
+;;           (declare (ignore err))
+;;           (setf exit-p t)))))

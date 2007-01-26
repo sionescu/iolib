@@ -18,14 +18,18 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "GPL-2.1"
-  :depends-on (:iolib-alien-ng)
+  :depends-on (:iolib-posix)
   :default-component-class muffled-source-file
   :components
   ((:file "defpackage")
-   (:file "common" :depends-on ("defpackage"))
-   (:file "select" :depends-on ("defpackage" "common"))
-   #+linux (:file "epoll" :depends-on ("defpackage" "common"))
-   #+freebsd (:file "kqueue" :depends-on ("defpackage" "common"))
-   (:file "detect" :depends-on ("defpackage" "common" "select"
+   (:file "time" :depends-on ("defpackage"))
+   (:file "queue" :depends-on ("defpackage"))
+   (:file "utils" :depends-on ("defpackage"))
+   (:file "common" :depends-on ("defpackage" "time" "utils" "queue"))
+   (:file "select" :depends-on ("defpackage" "common" "utils" "queue"))
+   #+linux (:file "epoll" :depends-on ("defpackage" "common" "utils" "queue"))
+   #+freebsd (:file "kqueue" :depends-on ("defpackage" "common" "utils" "queue"))
+   (:file "detect" :depends-on ("defpackage" "common"
+                                "select"
                                 #+linux "epoll"
                                 #+freebsd "kqueue"))))
