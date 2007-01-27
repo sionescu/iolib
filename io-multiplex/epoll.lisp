@@ -64,13 +64,10 @@
           (et:epoll-ctl (fd-of mux) et:epoll-ctl-add fd ev)
         (et:unix-error-badf (err)
           (declare (ignore err))
-          (warn "FD ~A is invalid, cannot monitor it." fd)
-          (return-from monitor-fd nil))
+          (warn "FD ~A is invalid, cannot monitor it." fd))
         (et:unix-error-exist (err)
           (declare (ignore err))
-          (warn "FD ~A is already monitored." fd)
-          (return-from monitor-fd nil))))
-    t))
+          (warn "FD ~A is already monitored." fd))))))
 
 
 (defmethod update-fd ((mux epoll-multiplexer) fd-entry)
@@ -87,23 +84,19 @@
           (et:epoll-ctl (fd-of mux) et:epoll-ctl-mod fd ev)
         (et:unix-error-badf (err)
           (declare (ignore err))
-          (warn "FD ~A is invalid, cannot update its status." fd)
-          (return-from update-fd nil))
+          (warn "FD ~A is invalid, cannot update its status." fd))
         (et:unix-error-noent (err)
           (declare (ignore err))
-          (warn "FD ~A was not monitored, cannot update its status." fd)
-          (return-from update-fd nil))))
+          (warn "FD ~A was not monitored, cannot update its status." fd))))
     (values fd-entry)))
 
 
 (defmethod unmonitor-fd ((mux epoll-multiplexer) fd-entry)
   (handler-case
-      (progn
-        (et:epoll-ctl (fd-of mux)
-                      et:epoll-ctl-del
-                      (fd-entry-fd fd-entry)
-                      (null-pointer))
-        t)
+      (et:epoll-ctl (fd-of mux)
+                    et:epoll-ctl-del
+                    (fd-entry-fd fd-entry)
+                    (null-pointer))
     (et:unix-error-badf (err)
       (declare (ignore err))
       (warn "FD ~A is invalid, cannot unmonitor it." (fd-entry-fd fd-entry)))
