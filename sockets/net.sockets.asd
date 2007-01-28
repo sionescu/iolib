@@ -18,10 +18,9 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "GPL-2.1"
-  :depends-on (:iolib-alien-ng
+  :depends-on (:iolib-posix
                :iolib-utils-symbols
                :iolib-utils-misc
-               :io.multiplex
                :flexi-streams
                :split-sequence)
   :default-component-class muffled-source-file

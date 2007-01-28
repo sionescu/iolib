@@ -19,9 +19,6 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
-(declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
-
 (in-package :net.sockets)
 
 ;;;;;;;;;;;;;;;;
@@ -32,7 +29,8 @@
   ((address  :initarg :address  :initform nil :reader address)
    (addrtype :initarg :type     :initform nil :reader address-type))
   (:report (lambda (condition stream)
-             (format stream "Invalid ~A address: ~A" (address-type condition) (address condition))))
+             (format stream "Invalid ~A address: ~A"
+                     (address-type condition) (address condition))))
   (:documentation "Condition raised when an address designator is invalid."))
 
 ;;;
@@ -151,7 +149,7 @@
                 ((setf vector (colon-separated-to-vector address :errorp nil))
                  (setf addr-type :ipv6))))
       ((array * (4)) (cond ((setf vector (ignore-errors
-                                           (coerce address '(simple-array octet (4)))))
+                                           (coerce address '(simple-array ub8 (4)))))
                             (setf addr-type :ipv4))))
       ((array * (8)) (cond ((setf vector (ignore-errors
                                            (coerce address '(simple-array ub16 (8)))))

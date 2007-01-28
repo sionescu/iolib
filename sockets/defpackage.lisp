@@ -24,7 +24,7 @@
 (defpackage :net.sockets
   (:nicknames #:sockets)
   (:use #:common-lisp #:cffi #:split-sequence #:iolib-utils)
-  (:import-from #:iolib-alien-ng
+  (:import-from #:iolib-posix
                 #:system-error #:unix-error #:message)
   (:export
    ;; conditions

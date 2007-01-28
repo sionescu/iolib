@@ -1,7 +1,7 @@
 ;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;   Copyright (C) 2006 by <Your full name>                                ;
+;   Copyright (C) 2007 by <Your full name>                                ;
 ;                                                                         ;
 ;   This program is free software; you can redistribute it and/or modify  ;
 ;   it under the terms of the GNU General Public License as published by  ;
@@ -19,7 +19,5 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
-
-(in-package #:net.)
+(in-package #:)
 

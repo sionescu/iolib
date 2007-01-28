@@ -19,9 +19,6 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (declaim (optimize (speed 2) (safety 2) (space 1) (debug 2)))
-(declaim (optimize (speed 0) (safety 2) (space 0) (debug 2)))
-
 (in-package :net.sockets)
 
 (defparameter *socket-type-map*
@@ -76,7 +73,7 @@
                      (et:socket sf st sp))))
       (setf fam family)
       (setf proto protocol)
-      (iomux:finalize-object-closing-fd socket fd))))
+      (et:finalize-object-closing-fd socket fd))))
 
 ;; TODO: find out how to make an FD-STREAM on other implementations
 (defun make-fd-stream (fd)
@@ -122,12 +119,12 @@
   (print-unreadable-object (socket stream :type nil :identity t)
     (format stream "internet stream socket" )
     (if (socket-bound-p socket)
-        (format stream " ~A ~A/~A"
-                (if (socket-listening-p socket)
-                    "waiting for connections @"
-                    "bound to")
-                (sockaddr->presentation (socket-address socket))
-                (socket-port socket))
+        (multiple-value-bind (addr port) (local-name socket)
+          (format stream " ~A ~A/~A"
+                  (if (socket-listening-p socket)
+                      "waiting for connections @"
+                      "bound to")
+                  (sockaddr->presentation addr) port))
         (if (slot-boundp socket 'fd)
             (format stream ", unbound")
             (format stream ", closed")))))
@@ -250,11 +247,11 @@
     (with-foreign-pointer (size et:size-of-socklen)
       (setf (mem-ref size :socklen)
             et:size-of-sockaddr-storage)
-     (with-socket-error-filter
-       (et:getsockname (socket-fd socket)
-                       ss size))
-     (return-from local-name
-       (sockaddr-storage->sockaddr ss)))))
+      (with-socket-error-filter
+        (et:getsockname (socket-fd socket)
+                        ss size))
+      (return-from local-name
+        (sockaddr-storage->sockaddr ss)))))
 
 (defmethod local-name ((socket local-socket))
   (with-foreign-object (sun 'et:sockaddr-un)

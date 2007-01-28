@@ -19,8 +19,6 @@
 ;   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
-
 (in-package :net.sockets)
 
 (defvar *ipv6* t
