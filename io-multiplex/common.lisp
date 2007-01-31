@@ -515,15 +515,25 @@
 ;;;;
 
 
-;; (defun wait-until-fd-usable (event-base fd event-type &optional timeout)
-;;   (let (status)
-;;     (flet ((callback (fd type)
-;;              (cond ((eql type :error)
-;;                     (setf status :error))
-;;                    ((eql type event-type)
-;;                     (setf status :ok)))))
-;;       (with-fd-handler (mux fd event-type #'callback)
-;;         (loop
-;;            (serve-fd-events mux :timeout timeout)
-;;            (when status
-;;              (return-from wait-until-fd-usable status)))))))
+(defun wait-until-fd-usable (fd event-type &optional timeout)
+  (flet ((choose-poll-flags (type)
+           (ecase type
+             (:read (logior et:pollin et:pollrdhup et:pollpri))
+             (:write (logior et:pollout et:pollhup))
+             (:read-write (logior et:pollin et:pollrdhup et:pollpri
+                                  et:pollout et:pollhup)))))
+    (let ((status ()))
+      (with-foreign-object (pollfd 'et:pollfd)
+        (et:bzero pollfd et:size-of-pollfd)
+        (with-foreign-slots ((et:fd et:events et:revents) pollfd et:pollfd)
+          (setf et:fd fd
+                et:events (choose-poll-flags event-type))
+          (handler-case (et:poll pollfd 1 (timeout->milisec timeout))
+            (et:unix-error (err)
+              (declare (ignore err))
+              (return-from wait-until-fd-usable '(:error))))
+          (flags-case et:revents
+            ((et:pollout et:pollhup)             (push :write status))
+            ((et:pollin et:pollrdhup et:pollpri) (push :read  status))
+            ((et:pollerr et:pollnval)            (push :error status)))
+          (return-from wait-until-fd-usable status))))))
