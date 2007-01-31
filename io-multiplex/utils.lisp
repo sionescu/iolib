@@ -35,6 +35,14 @@
             et:ts-nsec (* 1000 usec)))))
 
 
+(defun timeout->milisec (timeout)
+  (if timeout
+      (multiple-value-bind (sec usec) (decode-timeout timeout)
+        (+ (* sec 1000)
+           (truncate usec 1000)))
+      -1))
+
+
 (defmacro flags-case (mask &body clauses)
   (let ((newm (gensym "MASK")))
     `(let ((,newm ,mask))

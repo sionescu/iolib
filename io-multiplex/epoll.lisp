@@ -135,11 +135,3 @@
        (push :error event)))
     (when event
       (list fd event))))
-
-
-(defun timeout->milisec (timeout)
-  (if timeout
-      (multiple-value-bind (sec usec) (decode-timeout timeout)
-        (+ (* sec 1000)
-           (truncate usec 1000)))
-      -1))
