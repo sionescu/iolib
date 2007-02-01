@@ -84,7 +84,8 @@
     (nreverse flags)))
 
 (defmethod initialize-instance :after ((msg dns-message) &key
-                                       qdcount ancount nscount arcount)
+                                       (qdcount 0) (ancount 0)
+                                       (nscount 0) (arcount 0))
   (with-slots (id flags decoded-flags question answer authority additional) msg
     (setf decoded-flags (decode-flags msg))
     (setf question (make-array qdcount :adjustable t :fill-pointer 0))

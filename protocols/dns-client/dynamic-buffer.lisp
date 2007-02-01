@@ -31,7 +31,7 @@
   (:default-initargs :size +dns-datagram-size+))
 
 (defmethod initialize-instance :after ((buffer dynamic-output-buffer)
-                                       &key size)
+                                       &key (size 50))
   (setf (slot-value buffer 'sequence)
         (make-array size :element-type 'octet
                     :adjustable t :fill-pointer 0)))
