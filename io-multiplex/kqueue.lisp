@@ -37,9 +37,7 @@
 
 
 (defmethod initialize-instance :after ((mux kqueue-multiplexer) &key)
-  (let ((kqueue-fd (et:kqueue)))
-    (setf (slot-value mux 'fd) kqueue-fd)
-    (et:finalize-object-closing-fd mux kqueue-fd)))
+  (setf (slot-value mux 'fd) (et:kqueue)))
 
 
 (defun do-kqueue-event-request (kqueue-fd fd-entry filter request-type)

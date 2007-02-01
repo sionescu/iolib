@@ -39,9 +39,7 @@
 
 (defmethod initialize-instance :after ((mux epoll-multiplexer)
                                        &key (size +epoll-default-size-hint+))
-  (let ((epoll-fd (et:epoll-create size)))
-    (setf (slot-value mux 'fd) epoll-fd)
-    (et:finalize-object-closing-fd mux epoll-fd)))
+  (setf (slot-value mux 'fd) (et:epoll-create size)))
 
 
 (defun calc-epoll-flags (fd-entry)

@@ -8,9 +8,6 @@
 (defpackage #:net.sockets-system
   (:use #:common-lisp #:asdf))
 
-#+cffi-features:no-finalizers
-(error "NET.SOCKETS needs an implementation that has support for finalizers.")
-
 (in-package #:net.sockets-system)
 
 (defsystem :net.sockets

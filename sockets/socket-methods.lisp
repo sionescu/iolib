@@ -71,9 +71,8 @@
           (setf fd file-descriptor)
           (setf fd (with-socket-error-filter
                      (et:socket sf st sp))))
-      (setf fam family)
-      (setf proto protocol)
-      (et:finalize-object-closing-fd socket fd))))
+      (setf fam family
+            proto protocol))))
 
 ;; TODO: find out how to make an FD-STREAM on other implementations
 (defun make-fd-stream (fd)
@@ -177,7 +176,6 @@
 ;;;;;;;;;;;;;
 
 (defmethod socket-close progn ((socket socket))
-  (cancel-finalization socket)
   (when (slot-boundp socket 'fd)
     (with-socket-error-filter
       (et:close (socket-fd socket))))

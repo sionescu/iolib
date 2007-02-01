@@ -475,7 +475,6 @@
 (defgeneric close-multiplexer (mux)
   (:method-combination progn :most-specific-last)
   (:method progn ((mux multiplexer))
-    (cancel-finalization mux)
     (when (slot-boundp mux 'fd)
       (et:close (fd-of mux))
       (slot-makunbound mux 'fd))
