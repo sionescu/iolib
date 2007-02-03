@@ -119,18 +119,18 @@
 (defun make-sockaddr-in (sin ub8-vector &optional (port 0))
   (et:bzero sin et:size-of-sockaddr-in)
   (let ((tmp port))
-    (with-foreign-slots ((et:family et:address et:port) sin et:sockaddr-in)
+    (with-foreign-slots ((et:family et:addr et:port) sin et:sockaddr-in)
       (setf et:family et:af-inet)
-      (setf et:address (htonl (vector-to-ipaddr ub8-vector)))
+      (setf et:addr (htonl (vector-to-ipaddr ub8-vector)))
       (setf et:port (htons tmp))))
   sin)
 
 (defun make-sockaddr-in6 (sin6 ub16-vector &optional (port 0))
   (et:bzero sin6 et:size-of-sockaddr-in6)
   (let ((tmp port))
-    (with-foreign-slots ((et:family et:address et:port) sin6 et:sockaddr-in6)
+    (with-foreign-slots ((et:family et:addr et:port) sin6 et:sockaddr-in6)
       (setf et:family et:af-inet6)
-      (copy-simple-array-ub16-to-alien-vector ub16-vector et:address)
+      (copy-simple-array-ub16-to-alien-vector ub16-vector et:addr)
       (setf et:port (htons tmp))))
   sin6)
 
@@ -164,15 +164,15 @@
     newvector))
 
 (defun sockaddr-in->sockaddr (sin)
-  (with-foreign-slots ((et:address et:port) sin et:sockaddr-in)
+  (with-foreign-slots ((et:addr et:port) sin et:sockaddr-in)
     (values (make-instance 'ipv4addr
-                           :name (make-vector-u8-4-from-in-addr et:address))
+                           :name (make-vector-u8-4-from-in-addr et:addr))
             (ntohs et:port))))
 
 (defun sockaddr-in6->sockaddr (sin6)
-  (with-foreign-slots ((et:address et:port) sin6 et:sockaddr-in6)
+  (with-foreign-slots ((et:addr et:port) sin6 et:sockaddr-in6)
     (values (make-instance 'ipv6addr
-                           :name (make-vector-u16-8-from-in6-addr et:address))
+                           :name (make-vector-u16-8-from-in6-addr et:addr))
             (ntohs et:port))))
 
 (defun sockaddr-un->sockaddr (sun)

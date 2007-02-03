@@ -127,7 +127,7 @@
       (make-sockaddr-in6 sin6 vector)
       (et:inet-ntop et:af-inet6                          ; address family
                     (foreign-slot-pointer
-                      sin6 'et:sockaddr-in6 'et:address) ; pointer to struct in6_addr
+                      sin6 'et:sockaddr-in6 'et:addr)    ; pointer to struct in6_addr
                     namebuf                              ; destination buffer
                     bufsize)                             ; INET6_ADDRSTRLEN
       (return-from vector-to-colon-separated

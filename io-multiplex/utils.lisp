@@ -22,17 +22,17 @@
 (in-package :io.multiplex)
 
 (defun timeout->timeval (timeout tv)
-  (with-foreign-slots ((et:tv-sec et:tv-usec) tv et:timeval)
+  (with-foreign-slots ((et:sec et:usec) tv et:timeval)
     (multiple-value-bind (sec usec) (decode-timeout timeout)
-     (setf et:tv-sec  sec
-           et:tv-usec usec))))
+     (setf et:sec  sec
+           et:usec usec))))
 
 
 (defun timeout->timespec (timeout ts)
-  (with-foreign-slots ((et:ts-sec et:ts-nsec) ts et:timespec)
+  (with-foreign-slots ((et:sec et:nsec) ts et:timespec)
     (multiple-value-bind (sec usec) (decode-timeout timeout)
-      (setf et:ts-sec sec
-            et:ts-nsec (* 1000 usec)))))
+      (setf et:sec sec
+            et:nsec (* 1000 usec)))))
 
 
 (defun timeout->milisec (timeout)

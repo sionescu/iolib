@@ -52,9 +52,9 @@
 
 (defun set-socket-option-timeval (fd level option sec usec)
   (with-foreign-object (optval 'et:timeval)
-    (with-foreign-slots ((et:tv-sec et:tv-usec) optval et:timeval)
-      (setf et:tv-sec sec
-            et:tv-usec usec))
+    (with-foreign-slots ((et:sec et:usec) optval et:timeval)
+      (setf et:sec sec
+            et:usec usec))
     (et:setsockopt fd level option optval et:size-of-timeval)
     (values)))
 
@@ -89,8 +89,8 @@
                          (optlen :socklen))
     (setf (mem-ref optlen :socklen) et:size-of-timeval)
     (et:getsockopt fd level option optval optlen)
-    (with-foreign-slots ((et:tv-sec et:tv-usec) optval et:timeval)
-      (values et:tv-sec et:tv-usec))))
+    (with-foreign-slots ((et:sec et:usec) optval et:timeval)
+      (values et:sec et:usec))))
 
 
 ;;

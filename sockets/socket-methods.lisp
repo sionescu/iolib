@@ -650,5 +650,5 @@
   (with-socket-error-filter
     (with-foreign-object (sin 'et:sockaddr-in)
       (et:bzero sin et:size-of-sockaddr-in)
-      (setf (foreign-slot-value sin 'et:sockaddr-in 'et:address) et:af-unspec)
+      (setf (foreign-slot-value sin 'et:sockaddr-in 'et:addr) et:af-unspec)
       (et:connect (socket-fd socket) sin et:size-of-sockaddr-in))))
