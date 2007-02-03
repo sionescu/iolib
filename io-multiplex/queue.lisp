@@ -13,7 +13,7 @@
 ;;;;    <PJB> Pascal J. Bourguignon <pjb@informatimago.com>
 ;;;;    <SI>  Stelian Ionescu <sionescu@common-lisp.net>
 ;;;;MODIFICATIONS
-;;;;    2007-01-23 <SI>  Added QUEUE-SORTED-INSERT, QUEUE-FILTER-AND-DELETE,
+;;;;    2007-02-03 <SI>  Added QUEUE-SORTED-INSERT, QUEUE-FILTER-AND-DELETE,
 ;;;;                     QUEUE-DELETE-IF and QUEUE-FILTER
 ;;;;    2005-08-31 <PJB> Added QUEUE-DELETE
 ;;;;    2004-02-26 <PJB> Formated for publication.
@@ -22,24 +22,29 @@
 ;;;;    2001-11-12 <PJB> Creation.
 ;;;;BUGS
 ;;;;LEGAL
-;;;;    GPL
+;;;;    LLGPL
 ;;;;    
 ;;;;    Copyright Pascal J. Bourguignon 2001 - 2005
 ;;;;              Stelian Ionescu 2007
 ;;;;    
-;;;;    This program is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU General Public License
-;;;;    as published by the Free Software Foundation; either version
-;;;;    2 of the License, or (at your option) any later version.
+;;;;    This library is licenced under the Lisp Lesser General Public
+;;;;    License.
 ;;;;    
-;;;;    This program is distributed in the hope that it will be
+;;;;    This library is free software; you can redistribute it and/or
+;;;;    modify it under the terms of the GNU Lesser General Public
+;;;;    License as published by the Free Software Foundation; either
+;;;;    version 2 of the License, or (at your option) any later
+;;;;    version.
+;;;;    
+;;;;    This library is distributed in the hope that it will be
 ;;;;    useful, but WITHOUT ANY WARRANTY; without even the implied
 ;;;;    warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-;;;;    PURPOSE.  See the GNU General Public License for more details.
+;;;;    PURPOSE.  See the GNU Lesser General Public License for more
+;;;;    details.
 ;;;;    
-;;;;    You should have received a copy of the GNU General Public
-;;;;    License along with this program; if not, write to the Free
-;;;;    Software Foundation, Inc., 59 Temple Place, Suite 330,
+;;;;    You should have received a copy of the GNU Lesser General
+;;;;    Public License along with this library; if not, write to the
+;;;;    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
 ;;;;    Boston, MA 02111-1307 USA
 ;;;;****************************************************************************
 
