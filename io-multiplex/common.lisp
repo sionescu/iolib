@@ -513,7 +513,6 @@
 ;;;; Misc
 ;;;;
 
-
 (defun wait-until-fd-usable (fd event-type &optional timeout)
   (flet ((choose-poll-flags (type)
            (ecase type

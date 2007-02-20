@@ -521,7 +521,7 @@
       ((simple-array ub8 (*)) (values buff start (- end start)))
       ((vector ub8) (values (coerce buff '(simple-array ub8 (*)))
                             start (- end start)))
-      (string (values (coerce (flexi-streams:string-to-octets buff :external-format :latin1
+      (string (values (coerce (flexi-streams:string-to-octets buff :external-format :iso-8859-1
                                                               :start start :end end)
                               '(simple-array ub8 (*)))
                       0 (- end start))))))
