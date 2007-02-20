@@ -21,6 +21,8 @@
                :flexi-streams
                :split-sequence)
   :default-component-class muffled-source-file
+  :pathname (merge-pathnames (make-pathname :directory '(:relative "sockets"))
+                             *load-truename*)
   :components
   ((:file "defpackage")
    (:file "common" :depends-on ("defpackage"))

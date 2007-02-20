@@ -19,6 +19,8 @@
                :flexi-streams
                :iolib-utils-symbols)
   :default-component-class muffled-source-file
+  :pathname (merge-pathnames (make-pathname :directory '(:relative "protocols" "dns-client"))
+                             *load-truename*)
   :components
   ((:file "export")
    (:file "dns-constants")

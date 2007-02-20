@@ -17,6 +17,8 @@
   :licence "GPL-2.1"
   :depends-on (:iolib-posix)
   :default-component-class muffled-source-file
+  :pathname (merge-pathnames (make-pathname :directory '(:relative "io-multiplex"))
+                             *load-truename*)
   :components
   ((:file "defpackage")
    (:file "time" :depends-on ("defpackage"))
