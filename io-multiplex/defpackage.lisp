@@ -35,6 +35,4 @@
    #:add-fd #:add-timeout #:remove-event
    #:unmonitor-fd #:event-dispatch
 
-   #:timeout #:timeout-sec #:timeout-usec
-   #:timeout-lessp
-   #:timeout-add #:timeout-sub))
+   #:wait-until-fd-ready #:fd-ready-p))

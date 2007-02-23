@@ -513,7 +513,7 @@
 ;;;; Misc
 ;;;;
 
-(defun wait-until-fd-usable (fd event-type &optional timeout)
+(defun wait-until-fd-ready (fd event-type &optional timeout)
   (flet ((choose-poll-flags (type)
            (ecase type
              (:read (logior et:pollin et:pollrdhup et:pollpri))
@@ -529,9 +529,12 @@
           (handler-case (et:poll pollfd 1 (timeout->milisec timeout))
             (et:unix-error (err)
               (declare (ignore err))
-              (return-from wait-until-fd-usable '(:error))))
+              (return-from wait-until-fd-ready '(:error))))
           (flags-case et:revents
             ((et:pollout et:pollhup)             (push :write status))
             ((et:pollin et:pollrdhup et:pollpri) (push :read  status))
             ((et:pollerr et:pollnval)            (push :error status)))
-          (return-from wait-until-fd-usable status))))))
+          (return-from wait-until-fd-ready status))))))
+
+(defun fd-ready-p (fd &optional (event-type :read))
+  (wait-until-fd-ready fd event-type 0))
