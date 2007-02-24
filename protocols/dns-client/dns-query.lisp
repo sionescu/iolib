@@ -144,10 +144,10 @@
 (defmethod write-dns-string ((buffer dynamic-output-buffer)
                              (string string))
   (write-unsigned-8 buffer (length string))
-  (write-vector buffer (flexi-streams:string-to-octets string)))
+  (write-vector buffer (io.encodings:string-to-octets string)))
 
 (defun domain-name-to-dns-format (domain-name)
-  (let* ((octets (flexi-streams:string-to-octets domain-name))
+  (let* ((octets (io.encodings:string-to-octets domain-name))
          (tmp-vec (make-array (1+ (length octets))
                               :element-type 'octet)))
     (replace tmp-vec octets :start1 1)

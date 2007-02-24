@@ -56,7 +56,7 @@
 (defgeneric read-dns-string (buffer))
 (defmethod read-dns-string ((buffer dynamic-input-buffer))
   (let ((length (read-unsigned-8 buffer)))
-    (flexi-streams:octets-to-string (read-vector buffer length))))
+    (io.encodings:octets-to-string (read-vector buffer length))))
 
 (defun read-dns-pointer-recursively (sequence position
                                      &optional (depth 5))

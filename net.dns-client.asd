@@ -16,7 +16,7 @@
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "GPL-2.1"
   :depends-on (:net.sockets
-               :flexi-streams
+               :io.encodings
                :iolib-utils-symbols)
   :default-component-class muffled-source-file
   :pathname (merge-pathnames (make-pathname :directory '(:relative "protocols" "dns-client"))
