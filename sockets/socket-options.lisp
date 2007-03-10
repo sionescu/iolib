@@ -23,7 +23,7 @@
 
 ;; TODO: manage socket options errors
 (defun sockopt-error (retval level option action &optional val1 val2)
-  (declare (type symbol action))
+  (declare (ignore retval level option action val1 val2))
   (error "Sockopt error !"))
 
 ;;

@@ -62,8 +62,7 @@
 
   (let ((addr (make-array 4 :element-type 'ub8))
         parsed)
-    (multiple-value-bind (split len)
-        (split-sequence #\. string :count 5)
+    (let ((split (split-sequence #\. string :count 5)))
       (tagbody
          ;; must have exactly 4 tokens
          (when (/= 4 (length split))
