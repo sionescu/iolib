@@ -5,7 +5,7 @@
 (defpackage :io.encodings
   (:nicknames #:ioenc)
   (:use #:common-lisp)
-  (:export ;; Stream classes
+  (:export
    ;; External-format handling
    #:external-format #:make-external-format #:find-external-format
    #:ef-name #:ef-line-terminator #:ef-octet-size

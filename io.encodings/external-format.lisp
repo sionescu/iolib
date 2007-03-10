@@ -30,6 +30,8 @@
 
 (define-condition octet-encoding-error (error)
   ((string :initarg :string :reader octets-encoding-error-string)
+   (start :initarg :start :accessor octet-encoding-error-start)
+   (end :initarg :end :accessor octet-encoding-error-end)
    (position :initarg :position :reader octets-encoding-error-position)
    (external-format :initarg :external-format
                     :reader octets-encoding-error-external-format))
@@ -73,7 +75,7 @@
 (deftype line-terminator ()
   '(member :unix :mac :dos))
 
-(defvar *default-external-format* :utf-8)
+(defvar *default-external-format* :ascii)
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *default-line-terminator* :unix))
 
@@ -122,7 +124,7 @@
   '(unsigned-byte 8))
 
 (deftype buffer-index ()
-  'fixnum)
+  '(unsigned-byte 24))
 
 (defmacro add-external-format (name aliases ef)
   (let (($alias$ (gensym "ALIAS")))
@@ -534,9 +536,8 @@
                              :element-type 'octet
                              :adjustable t))
          (adjust-threshold (length string))
-         (ptr start)
-         (pos -1)
-         oldpos oldptr)
+         (ptr start) oldptr
+         (pos -1) oldpos)
     (setf adjust-factor (if (and adjust-factor (<= 1 adjust-factor 4))
                             adjust-factor
                             (ef-octet-size ef))
@@ -551,7 +552,7 @@
                   (setf buffer (adjust-array buffer adjust-threshold))))
               (error-fn (symbol)
                 (restart-case
-                    (error symbol :array buffer
+                    (error symbol :string buffer
                            :start start :end end
                            :position oldptr
                            :external-format (ef-name ef))
@@ -567,7 +568,6 @@
                     (setf pos oldpos)
                     (go :exit)))))
          (loop :while (< ptr end)
-            :do (setf oldpos pos
-                      oldptr ptr)
+            :do (setf oldpos pos oldptr ptr)
             (char-to-octets ef #'input #'output #'error-fn (- end ptr))))
      :exit (return-from string-to-octets (shrink-vector buffer (1+ pos))))))

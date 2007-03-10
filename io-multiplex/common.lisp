@@ -355,7 +355,7 @@
 (defstruct (fd-entry
              (:constructor make-fd-entry (fd))
              (:copier nil))
-  (fd 0 :type fixnum)
+  (fd 0 :type unsigned-byte)
   (edge-change nil :type symbol)
   (read-events  (make-queue) :type queue)
   (write-events (make-queue) :type queue)
@@ -414,7 +414,7 @@
                                        abs-timeout timeout))
              (:copier nil))
   ;; a file descriptor or nil in case of a timeout
-  (fd nil :type (or null fixnum))
+  (fd nil :type (or null unsigned-byte))
   (type nil :type (or null event-type))
   (handler nil :type (or null function))
   ;; if an event is not persistent it is removed
@@ -512,6 +512,9 @@
 ;;;;
 ;;;; Misc
 ;;;;
+
+;; FIXME: Until a way to autodetect platform features is implemented
+(iolib-utils:define-constant et:pollrdhup 0)
 
 (defun wait-until-fd-ready (fd event-type &optional timeout)
   (flet ((choose-poll-flags (type)
