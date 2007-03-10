@@ -21,6 +21,49 @@
 
 (in-package :net.sockets)
 
+;;;;;;;;;;;;;;;;;;;;;;
+;;;                ;;;
+;;; Socket buffers ;;;
+;;;                ;;;
+;;;;;;;;;;;;;;;;;;;;;;
+
+(deftype stream-buffer ()
+  'et:foreign-pointer)
+
+(deftype buffer-index ()
+  '(unsigned-byte 24))
+
+(defstruct (iobuf
+             (:constructor %make-iobuf ()))
+  (data (cffi:null-pointer) :type stream-buffer)
+  (size 0 :type buffer-index)
+  (start 0 :type buffer-index)
+  (end 0 :type buffer-index))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                             ;;;
+;;; Bivalent socket Gray stream ;;;
+;;;                             ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(deftype stream-position ()
+  '(unsigned-byte 64))
+
+(defclass dual-channel-gray-stream (fundamental-binary-input-stream
+                                    fundamental-binary-output-stream
+                                    fundamental-character-input-stream
+                                    fundamental-character-output-stream)
+  ((external-format :initform (find-external-format :default))
+   ;; Input buffer.
+   (input-buffer :initform nil :type (or iobuf null))
+   ;; Output buffer.
+   (output-buffer :initform nil :type (or iobuf null))
+   ;; Input stream position
+   (istream-pos :initform 0 :type stream-position)
+   ;; Output stream position
+   (ostream-pos :initform 0 :type stream-position)))
+
+
 ;;;;;;;;;;;;;;;
 ;;;         ;;;
 ;;; Sockets ;;;
@@ -37,9 +80,6 @@
 (defgeneric socket-non-blocking (socket))
 (defgeneric (setf socket-non-blocking) (value socket))
 
-(defgeneric socket-close (socket)
-  (:method-combination progn :most-specific-last))
-
 (defgeneric socket-open-p (socket))
 
 (defgeneric local-name (socket))
@@ -54,8 +94,7 @@
 
 (defgeneric set-socket-option (socket option-name &key &allow-other-keys))
 
-(defclass stream-socket (socket)
-  ((lisp-stream :reader socket-lisp-stream))
+(defclass stream-socket (socket) ()
   (:default-initargs :type :stream))
 
 (defclass datagram-socket (socket) ()
@@ -69,7 +108,7 @@
 (defclass local-socket (socket) ()
   (:default-initargs :family :local))
 
-(defclass active-socket (socket) ())
+(defclass active-socket (socket dual-channel-gray-stream) ())
 
 (defgeneric connect (socket address &key &allow-other-keys))
 

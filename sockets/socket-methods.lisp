@@ -63,7 +63,7 @@
                                      &key file-descriptor family
                                      type (protocol :default))
   (when (socket-open-p socket)
-    (socket-close socket))
+    (close socket))
   (with-slots (fd (fam family) (proto protocol)) socket
     (multiple-value-bind (sf st sp)
         (translate-make-socket-keywords-to-constants family type protocol)
@@ -73,24 +73,6 @@
                      (et:socket sf st sp))))
       (setf fam family
             proto protocol))))
-
-;; TODO: find out how to make an FD-STREAM on other implementations
-(defun make-fd-stream (fd)
-  (check-type fd unsigned-byte)
-  #+sbcl
-  (sb-sys:make-fd-stream fd
-                         :name (format nil "Socket stream, fd: ~A" fd)
-                         :input t :output t :buffering :full :dual-channel-p t
-                         :element-type :default :auto-close nil)
-  #+cmucl
-  (system:make-fd-stream fd
-                         :name (format nil "Socket stream, fd: ~A" fd)
-                         :input t :output t :buffering :full
-                         :binary-stream-p nil :auto-close nil))
-
-(defmethod shared-initialize :after ((socket stream-socket) slot-names &key)
-  (setf (slot-value socket 'lisp-stream)
-        (make-fd-stream (socket-fd socket))))
 
 (defmethod socket-type ((socket stream-socket))
   :stream)
@@ -175,20 +157,22 @@
 ;;  CLOSE  ;;
 ;;;;;;;;;;;;;
 
-(defmethod socket-close progn ((socket socket))
+(defmethod close ((socket socket) &key abort)
+  (declare (ignore abort))
   (when (slot-boundp socket 'fd)
     (with-socket-error-filter
       (et:close (socket-fd socket))))
   (mapc #'(lambda (slot)
             (slot-makunbound socket slot))
         '(fd family protocol))
+  (call-next-method)
   (values socket))
 
-(defmethod socket-close progn ((socket stream-socket))
-  (slot-makunbound socket 'lisp-stream))
-
-(defmethod socket-close progn ((socket passive-socket))
-  (slot-makunbound socket 'listening))
+(defmethod close ((socket passive-socket) &key abort)
+  (declare (ignore abort))
+  (call-next-method)
+  (slot-makunbound socket 'listening)
+  (values socket))
 
 (defmethod socket-open-p ((socket socket))
   (unless (slot-boundp socket 'fd)
@@ -521,7 +505,7 @@
       ((simple-array ub8 (*)) (values buff start (- end start)))
       ((vector ub8) (values (coerce buff '(simple-array ub8 (*)))
                             start (- end start)))
-      (string (values (coerce (flexi-streams:string-to-octets buff :external-format :iso-8859-1
+      (string (values (coerce (io.encodings:string-to-octets buff :external-format :iso-8859-1
                                                               :start start :end end)
                               '(simple-array ub8 (*)))
                       0 (- end start))))))

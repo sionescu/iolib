@@ -21,11 +21,37 @@
 
 (in-package :common-lisp-user)
 
+#-(or sbcl cmu openmcl clisp allegro)
+(error "Your CL implementation is not suported.")
+
 (defpackage :net.sockets
   (:nicknames #:sockets)
-  (:use #:common-lisp #:cffi #:split-sequence #:iolib-utils)
+  (:use #:common-lisp #:cffi #:split-sequence
+        #:iolib-utils #:io.encodings)
   (:import-from #:iolib-posix
                 #:system-error #:unix-error #:message)
+  #+(or sbcl cmu openmcl clisp allegro)
+  (:import-from #+sbcl #:sb-gray
+                #+cmu #:ext
+                #+openmcl #:ccl
+                #+clisp #:gray
+                #+allegro #:excl
+     #:fundamental-binary-input-stream #:fundamental-binary-output-stream
+     #:fundamental-character-input-stream #:fundamental-character-output-stream
+     #-clisp #:stream-file-position #+clisp  #:stream-position
+     #:stream-clear-input #:stream-clear-output
+     #:stream-finish-output #:stream-force-output
+     #:stream-read-byte #:stream-write-byte
+     #:stream-peek-char #:stream-read-char #:stream-read-char-no-hang
+     #:stream-unread-char #:stream-read-line #:stream-listen
+     #-clisp #:stream-read-sequence
+     #+clisp #:stream-read-char-sequence #+clisp #:stream-read-byte-sequence
+     #-clisp #:stream-write-sequence
+     #+clisp #:stream-write-char-sequence #+clisp #:stream-write-byte-sequence
+     #:stream-advance-to-column #:stream-fresh-line
+     #:stream-line-column #:stream-start-line-p
+     #-clisp #:stream-line-length
+     #:stream-terpri #:stream-write-char #:stream-write-string)
   (:export
    ;; conditions
    #:possible-bug
@@ -96,7 +122,7 @@
 
    ;; socket methods
    #:socket-fd #:socket-address #:socket-family #:socket-protocol
-   #:socket-lisp-stream #:get-socket-option #:set-socket-option
+   #:get-socket-option #:set-socket-option
    #:socket-type #:make-socket #:socket-close #:socket-open-p
    #:socket-non-blocking #:local-name #:remote-name
    #:bind-address #:socket-listen #:accept-connection

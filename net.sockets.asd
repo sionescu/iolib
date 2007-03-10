@@ -18,7 +18,8 @@
   :depends-on (:iolib-posix
                :iolib-utils-symbols
                :iolib-utils-misc
-               :flexi-streams
+               :io.encodings
+               :io.multiplex
                :split-sequence)
   :default-component-class muffled-source-file
   :pathname (merge-pathnames (make-pathname :directory '(:relative "sockets"))
@@ -37,5 +38,9 @@
    (:file "socket-methods"
           :depends-on ("defpackage" "config" "common" "address"
                        "base-sockets" "socket-options"))
+   (:file "buffer" :depends-on ("defpackage" "common" "base-sockets"))
+   (:file "gray-stream-methods"
+          :depends-on ("defpackage" "common" "base-sockets"
+                       "socket-options" "socket-methods" "buffer"))
    (:file "make-socket"
           :depends-on ("defpackage" "config" "socket-methods"))))
