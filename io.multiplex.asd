@@ -15,7 +15,8 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "GPL-2.1"
-  :depends-on (:iolib-posix)
+  :depends-on (:iolib-posix
+               :iolib-utils)
   :default-component-class muffled-source-file
   :pathname (merge-pathnames (make-pathname :directory '(:relative "io-multiplex"))
                              *load-truename*)
