@@ -32,7 +32,7 @@
    #+linux #:epoll-multiplexer
    #+linux #:kqueue-multiplexer
 
-   #:add-fd #:add-timeout #:remove-event
-   #:unmonitor-fd #:event-dispatch
+   #:add-fd #:add-timeout
+   #:remove-event #:event-dispatch
 
    #:wait-until-fd-ready #:fd-ready-p))
