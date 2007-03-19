@@ -236,7 +236,7 @@
     (if (eq char :eof)
         :eof
         (progn
-          (stream-unread-char stream)
+          (stream-unread-char stream char)
           (values char)))))
 
 ;; (defmethod stream-read-line ((stream active-socket))
@@ -286,7 +286,7 @@
                     s)
                   (use-standard-unicode-replacement ()
                     :report "Use standard UCS replacement character"
-                    (code-char #xFFFD))
+                    (code-char ioenc::+replacement-char+))
                   (stop-decoding ()
                     :report "Stop decoding and return to last good offset."
                     (setf pos oldpos)
@@ -295,8 +295,7 @@
                            (/= (incf char-count) max-char-num))
             :do (setf oldpos pos oldptr ptr)
             (ioenc::char-to-octets ef #'input #'output #'error-fn (- end ptr))))
-     :exit (return-from buffer-string-to-octets
-             (ioenc::shrink-vector buffer (1+ pos))))))
+     :exit (return-from buffer-string-to-octets (1+ pos)))))
 
 ;; (defmethod stream-write-char ((stream active-socket) character)
 ;;   )

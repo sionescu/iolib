@@ -58,6 +58,13 @@
   (setf (iobuf-start iobuf) 0
         (iobuf-end iobuf) 0))
 
+(defun iobuf-copy-data-to-start (iobuf)
+  (declare (type iobuf iobuf))
+  (et:memmove (iobuf-data iobuf)
+              (cffi:inc-pointer (iobuf-data iobuf)
+                                (iobuf-start iobuf))
+              (iobuf-length iobuf)))
+
 ;; BREF, (SETF BREF) and BUFFER-COPY *DO NOT* check boundaries
 ;; that must be done in their callers
 (defun bref (iobuf index)
@@ -80,21 +87,21 @@
       (cffi:incf-pointer src-ptr soff)
       (cffi:incf-pointer dst-ptr doff)
       (et:memmove dst-ptr src-ptr length)
-      (incf (iobuf-length dst) length))))
+      (incf (iobuf-end dst) length))))
 
 (defun pop-byte (iobuf)
   (declare (type iobuf iobuf))
   (let ((length (iobuf-length iobuf)))
     (unless (>= length (iobuf-size iobuf))
       (prog1 (bref iobuf length)
-        (incf (iobuf-length iobuf))))))
+        (incf (iobuf-end iobuf))))))
 
 (defun push-byte (iobuf byte)
   (declare (type iobuf iobuf))
   (let ((length (iobuf-length iobuf)))
     (unless (>= length (iobuf-size iobuf))
       (prog1 (setf (bref iobuf length) byte)
-        (incf (iobuf-length iobuf))))))
+        (incf (iobuf-end iobuf))))))
 
 ;;;
 ;;; Buffer Pool

@@ -38,7 +38,7 @@
                 #+allegro #:excl
      #:fundamental-binary-input-stream #:fundamental-binary-output-stream
      #:fundamental-character-input-stream #:fundamental-character-output-stream
-     #-clisp #:stream-file-position #+clisp  #:stream-position
+     #-(or clisp cmu) #:stream-file-position #+clisp  #:stream-position
      #:stream-clear-input #:stream-clear-output
      #:stream-finish-output #:stream-force-output
      #:stream-read-byte #:stream-write-byte

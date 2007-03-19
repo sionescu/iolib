@@ -75,7 +75,8 @@
 (deftype line-terminator ()
   '(member :unix :mac :dos))
 
-(defvar *default-external-format* :ascii)
+(defvar *default-external-format* #+ucs-chars :utf-8
+                                  #-ucs-chars :iso-8859-1)
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *default-line-terminator* :unix))
 
@@ -217,6 +218,7 @@
          (funcall output code)
          (funcall output (char-code (funcall error-fn 'illegal-character)))))))
 
+#+ucs-chars
 (defmacro define-iso-8859-external-formats (indexes)
   (flet ((get-name-and-aliases (index)
            (if (endp index)
@@ -247,6 +249,7 @@
                                    (position (funcall error-fn 'illegal-character)
                                              ,table))))))))))))
 
+#+ucs-chars
 (define-iso-8859-external-formats
     (("2" :ISO_8859-2 :latin2 :l2 :csISOLatin2 :iso-ir-101)
      ("3" :ISO_8859-3 :latin3 :l3 :csISOLatin3 :iso-ir-109)
@@ -265,7 +268,8 @@
 
 (iolib-utils:define-constant +max-unicode-code-point+ #x10FFFF)
 
-(declaim (inline illegal-unicode-code-point))
+#+ucs-chars (declaim (inline illegal-unicode-code-point))
+#+ucs-chars
 (defun illegal-unicode-code-point (code)
   (declare (type (unsigned-byte 32) code))
   (or (<= #xD800 code #xDFFF)
@@ -273,6 +277,7 @@
       (= code #xFFFF)
       (> code +max-unicode-code-point+)))
 
+#+ucs-chars
 (define-external-format :utf-8 (:utf8) 2
   (to-char
    (declare (optimize (speed 3) (space 0) (safety 0) (debug 0)))
@@ -349,6 +354,7 @@
         (funcall output (logior #x80 (ldb (byte 6 6) code)))
         (funcall output (logior #x80 (ldb (byte 6 0) code))))))))
 
+#+ucs-chars
 (define-external-format :utf-16 (:utf16 :utf-16be :utf16be) 2
   (to-char
    (declare (optimize (speed 3) (space 0) (safety 0) (debug 0)))
@@ -391,6 +397,7 @@
                 (write-word (logior #xD800 (ldb (byte 10 10) code)))
                 (write-word (logior #xDC00 (ldb (byte 10 0) code)))))))))
 
+#+ucs-chars
 (define-external-format :utf-16le (:utf16le) 2
   (to-char
    (declare (optimize (speed 3) (space 0) (safety 0) (debug 0)))
@@ -439,6 +446,10 @@
 ;;;
 ;;;
 
+(iolib-utils:define-constant +replacement-char+
+    #+ucs-chars #xFFFD
+    #-ucs-chars (char-code #\?))
+
 ;;
 ;; OCTETS-TO-CHAR
 ;;
@@ -480,7 +491,7 @@
                     s)
                   (use-standard-unicode-replacement ()
                     :report "Use standard UCS replacement character"
-                    (code-char #xFFFD))
+                    (code-char +replacement-char+))
                   (stop-decoding ()
                     :report "Stop decoding and return to last good offset."
                     (setf pos oldpos)
@@ -562,7 +573,7 @@
                     s)
                   (use-standard-unicode-replacement ()
                     :report "Use standard UCS replacement character"
-                    (code-char #xFFFD))
+                    (code-char +replacement-char+))
                   (stop-decoding ()
                     :report "Stop decoding and return to last good offset."
                     (setf pos oldpos)

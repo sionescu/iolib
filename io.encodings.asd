@@ -5,6 +5,10 @@
 (defpackage #:io.encodings.system
   (:use #:common-lisp #:asdf))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (unless (<= char-code-limit 256)
+    (pushnew :ucs-chars *features*)))
+
 (in-package #:io.encodings.system)
 
 (defsystem :io.encodings
