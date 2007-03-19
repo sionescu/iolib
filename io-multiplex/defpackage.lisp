@@ -30,7 +30,7 @@
    #:multiplexer
    #:select-multiplexer
    #+linux #:epoll-multiplexer
-   #+linux #:kqueue-multiplexer
+   #+freebsd #:kqueue-multiplexer
 
    #:add-fd #:add-timeout
    #:remove-event #:event-dispatch

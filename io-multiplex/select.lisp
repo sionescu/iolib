@@ -50,7 +50,7 @@
   (foreign-free (write-fd-set-of mux))
   (foreign-free (except-fd-set-of mux))
   (mapc #'(lambda (slot)
-            (slot-makunbound mux slot))
+            (setf (slot-value mux slot) nil))
         '(max-fd read-fd-set write-fd-set except-fd-set)))
 
 

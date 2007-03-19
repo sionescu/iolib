@@ -71,7 +71,7 @@
 ;;;;;;;;;;;;;;;
 
 (defclass socket ()
-  ((fd       :reader socket-fd)
+  ((fd       :initform nil      :reader socket-fd)
    (family   :initarg :family   :reader socket-family)
    (protocol :initarg :protocol :reader socket-protocol)))
 

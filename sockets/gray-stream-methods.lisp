@@ -51,7 +51,7 @@
 
 ;; TODO: use abort
 ;; TODO: use the buffer pool
-(defmethod close ((stream active-socket) &key abort)
+(defmethod close :around ((stream active-socket) &key abort)
   (declare (ignore abort))
   (with-slots ((ib input-buffer)
                (ob output-buffer)) stream
@@ -60,6 +60,9 @@
     (setf ib nil ob nil))
   (call-next-method)
   (values stream))
+
+(defmethod close ((stream dual-channel-gray-stream) &key abort)
+  (declare (ignore stream abort)))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;               ;;

@@ -45,7 +45,7 @@
            (socket-send buffer socket)
            (set-socket-option socket :receive-timeout :sec timeout :usec 0)
            (socket-receive input-buffer socket))
-      (socket-close socket))))
+      (close socket))))
 
 (define-constant +max-16-bits+ (1- (expt 2 16)))
 

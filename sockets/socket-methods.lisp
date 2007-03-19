@@ -92,7 +92,7 @@
         (multiple-value-bind (addr port) (remote-name socket)
           (format stream " connected to ~A/~A"
                   (sockaddr->presentation addr) port))
-        (if (slot-boundp socket 'fd)
+        (if (slot-value socket 'fd)
             (format stream ", unconnected")
             (format stream ", closed")))))
 
@@ -106,7 +106,7 @@
                       "waiting for connections @"
                       "bound to")
                   (sockaddr->presentation addr) port))
-        (if (slot-boundp socket 'fd)
+        (if (slot-value socket 'fd)
             (format stream ", unbound")
             (format stream ", closed")))))
 
@@ -115,7 +115,7 @@
     (format stream "local stream socket" )
     (if (socket-connected-p socket)
         (format stream " connected")
-        (if (slot-boundp socket 'fd)
+        (if (slot-value socket 'fd)
             (format stream ", unconnected")
             (format stream ", closed")))))
 
@@ -128,7 +128,7 @@
                     "waiting for connections @"
                     "bound to")
                 (sockaddr->presentation (socket-address socket)))
-        (if (slot-boundp socket 'fd)
+        (if (slot-value socket 'fd)
             (format stream ", unbound")
             (format stream ", closed")))))
 
@@ -137,7 +137,7 @@
     (format stream "local datagram socket" )
     (if (socket-connected-p socket)
         (format stream " connected")
-        (if (slot-boundp socket 'fd)
+        (if (slot-value socket 'fd)
             (format stream ", unconnected")
             (format stream ", closed")))))
 
@@ -148,7 +148,7 @@
         (multiple-value-bind (addr port) (remote-name socket)
           (format stream " connected to ~A/~A"
                   (sockaddr->presentation addr) port))
-        (if (slot-boundp socket 'fd)
+        (if (slot-value socket 'fd)
             (format stream ", unconnected")
             (format stream ", closed")))))
 
@@ -157,25 +157,27 @@
 ;;  CLOSE  ;;
 ;;;;;;;;;;;;;
 
-(defmethod close ((socket socket) &key abort)
+(defmethod close :around ((socket socket) &key abort)
   (declare (ignore abort))
-  (when (slot-boundp socket 'fd)
+  (when (slot-value socket 'fd)
     (with-socket-error-filter
       (et:close (socket-fd socket))))
-  (mapc #'(lambda (slot)
-            (slot-makunbound socket slot))
-        '(fd family protocol))
+  (setf (slot-value socket 'fd) nil)
   (call-next-method)
   (values socket))
 
-(defmethod close ((socket passive-socket) &key abort)
+(defmethod close :around ((socket passive-socket) &key abort)
   (declare (ignore abort))
   (call-next-method)
-  (slot-makunbound socket 'listening)
+  (setf (slot-value socket 'bound) nil)
+  (setf (slot-value socket 'listening) nil)
   (values socket))
 
+(defmethod close ((socket socket) &key abort)
+  (declare (ignore socket abort)))
+
 (defmethod socket-open-p ((socket socket))
-  (unless (slot-boundp socket 'fd)
+  (unless (slot-value socket 'fd)
     (return-from socket-open-p nil))
   (with-socket-error-filter
     (handler-case
@@ -455,7 +457,7 @@
   (error "You cannot connect passive sockets."))
 
 (defmethod socket-connected-p ((socket socket))
-  (unless (slot-boundp socket 'fd)
+  (unless (slot-value socket 'fd)
     (return-from socket-connected-p nil))
   (with-socket-error-filter
     (handler-case

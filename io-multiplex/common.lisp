@@ -53,7 +53,7 @@
     (with-accessors ((mux mux-of)) event-base
       (close-multiplexer mux)
       (mapc #'(lambda (slot)
-                (slot-makunbound event-base slot))
+                (setf (slot-value event-base slot) nil))
             '(fds timeouts exit))
       event-base)))
 
@@ -475,10 +475,9 @@
 (defgeneric close-multiplexer (mux)
   (:method-combination progn :most-specific-last)
   (:method progn ((mux multiplexer))
-    (when (slot-boundp mux 'fd)
+    (when (slot-value mux 'fd)
       (et:close (fd-of mux))
-      (slot-makunbound mux 'fd))
-    (slot-makunbound mux 'fd-limit)
+      (setf (slot-value mux 'fd) nil))
     mux))
 
 
