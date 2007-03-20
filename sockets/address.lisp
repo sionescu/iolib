@@ -54,30 +54,30 @@
           (ldb (byte 8 0)  ipaddr)))
 
 (defun dotted-to-vector (string &key (errorp t))
-  (when (not (stringp string))
-    (if errorp
-        (error 'type-error :datum string
-               :expected-type 'string)
-        (return-from dotted-to-vector nil)))
+  (labels ((err (&rest args)
+             (if errorp
+                 (apply #'error args)
+                 (return-from dotted-to-vector nil)))
+           (type-error ()
+             (err 'type-error :datum string :expected-type 'string))
+           (invalid-address ()
+             (err 'invalid-address :address string :type :ipv4)))
+    (unless (stringp string)
+      (type-error))
 
-  (let ((addr (make-array 4 :element-type 'ub8))
-        parsed)
-    (let ((split (split-sequence #\. string :count 5)))
-      (tagbody
-         ;; must have exactly 4 tokens
-         (when (/= 4 (length split))
-           (go :error))
-         (loop
-            :for element :in split
-            :for index :below 4 :do
-            (setf parsed (parse-number-or-nil element :ub8))
-            (if parsed
-                (setf (aref addr index) parsed)
-                (go :error)))
-         (return-from dotted-to-vector addr)
-       :error (if errorp
-                  (error 'invalid-address :address string :type :ipv4)
-                  (return-from dotted-to-vector nil))))))
+    (let ((addr (make-array 4 :element-type 'ub8))
+          (split (split-sequence #\. string :count 5)))
+      ;; must have exactly 4 tokens
+      (when (/= 4 (length split))
+        (invalid-address))
+      (loop
+         :for element :in split
+         :for index :below 4
+         :for parsed := (parse-number-or-nil element :ub8) :do
+         (if parsed
+             (setf (aref addr index) parsed)
+             (invalid-address)))
+      addr)))
 
 (defun dotted-to-ipaddr (string)
   (vector-to-ipaddr (dotted-to-vector string)))
