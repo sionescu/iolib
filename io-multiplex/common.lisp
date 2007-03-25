@@ -513,14 +513,14 @@
 ;;;;
 
 ;; FIXME: Until a way to autodetect platform features is implemented
-(iolib-utils:define-constant et:pollrdhup 0)
+(iolib-utils:define-constant et::pollrdhup 0)
 
 (defun wait-until-fd-ready (fd event-type &optional timeout)
   (flet ((choose-poll-flags (type)
            (ecase type
-             (:read (logior et:pollin et:pollrdhup et:pollpri))
+             (:read (logior et:pollin et::pollrdhup et:pollpri))
              (:write (logior et:pollout et:pollhup))
-             (:read-write (logior et:pollin et:pollrdhup et:pollpri
+             (:read-write (logior et:pollin et::pollrdhup et:pollpri
                                   et:pollout et:pollhup)))))
     (let ((status ()))
       (with-foreign-object (pollfd 'et:pollfd)
@@ -534,7 +534,7 @@
               (return-from wait-until-fd-ready '(:error))))
           (flags-case et:revents
             ((et:pollout et:pollhup)             (push :write status))
-            ((et:pollin et:pollrdhup et:pollpri) (push :read  status))
+            ((et:pollin et::pollrdhup et:pollpri) (push :read  status))
             ((et:pollerr et:pollnval)            (push :error status)))
           (return-from wait-until-fd-ready status))))))
 

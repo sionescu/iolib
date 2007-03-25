@@ -175,6 +175,7 @@
         (char str 0)))))
 
 (defun maybe-find-line-ending-no-hang (fd ib ef)
+  (declare (ignore fd))
   (let* ((start-off (iobuf-start ib))
          (char-code (bref ib start-off)))
     (block nil
@@ -267,6 +268,7 @@
            (type iobuf buffer)
            (type buffer-index start)
            (type buffer-index end)
+           (ignore fd)
            (optimize (speed 3) (space 0) (safety 0) (debug 0)))
   (unless max-char-num (setf max-char-num -1))
   (let ((ptr start) oldptr
