@@ -463,7 +463,7 @@
   (finish-output *query-io*)
   (list (eval (read *query-io*))))
 
-(defun %octets-to-string (buffer string start end ef &optional max-char-num)
+(defun %octets-to-string (buffer string start end ef &optional max-char-num (prevptr start))
   (declare (type et:foreign-pointer buffer)
            (type buffer-index start end)
            (type external-format ef)
@@ -474,35 +474,38 @@
         (pos -1)
         (char-count -1)
         oldpos oldptr)
-    (tagbody
-       (flet ((input ()
-                (prog1 (cffi:mem-aref buffer :uint8 ptr) (incf ptr)))
-              (output (char)
-                (setf (char string (incf pos)) char))
-              (error-fn (symbol)
-                (restart-case
-                    (error symbol :array buffer
-                           :start start :end end
-                           :position oldptr
-                           :external-format (ef-name ef))
-                  (use-value (s)
-                    :report "Supply a replacement character."
-                    :interactive read-replacement-char
-                    s)
-                  (use-standard-unicode-replacement ()
-                    :report "Use standard UCS replacement character"
-                    (code-char +replacement-char+))
-                  (stop-decoding ()
-                    :report "Stop decoding and return to last good offset."
-                    (setf pos oldpos)
-                    (go :exit)))))
-         (loop :while (and (< ptr end)
-                           (/= (incf char-count) max-char-num))
-            :do (setf oldpos pos
-                      oldptr ptr)
-            (octets-to-char ef #'input #'output #'error-fn (- end ptr))))
-     :exit
-       (return-from %octets-to-string (values (1+ pos) (- ptr start))))))
+    (labels
+        ((input ()
+           (prog1 (cffi:mem-aref buffer :uint8 ptr) (incf ptr)))
+         (output (char)
+           (setf (char string (incf pos)) char))
+         (error-fn (symbol)
+           (restart-case
+               (error symbol :array buffer
+                      :start start :end end
+                      :position oldptr
+                      :external-format (ef-name ef))
+             (use-value (s)
+               :report "Supply a replacement character."
+               :interactive read-replacement-char
+               s)
+             (use-standard-unicode-replacement ()
+               :report "Use standard UCS replacement character"
+               (code-char +replacement-char+))
+             (stop-decoding ()
+               :report "Stop decoding and return to last good offset."
+               (setf pos oldpos)
+               (exit))))
+         (exit ()
+           (return-from %octets-to-string (values (1+ pos) (- ptr start) prevptr))))
+      (loop :while (and (< ptr end)
+                        (/= (incf char-count) max-char-num))
+         :do (setf oldpos pos
+                   oldptr ptr)
+         (octets-to-char ef #'input #'output #'error-fn (- end ptr))
+         (setf prevptr oldptr))
+      (exit))))
+
 
 (defun octets-to-string (octets
                          &key (start 0) end
