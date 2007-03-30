@@ -21,6 +21,8 @@
 
 (in-package :net.sockets)
 
+(iolib-utils:define-constant +max-octets-per-char+ 6)
+
 ;; TODO: use the buffer pool
 ;; TODO: handle instance reinitialization
 (defmethod shared-initialize :after ((s dual-channel-gray-stream) slot-names
@@ -141,19 +143,26 @@
 
 (defmethod stream-read-char ((stream active-socket))
   (with-slots ((fd fd) (ib input-buffer)
+               (unread-index ibuf-unread-index)
                (pos istream-pos)
                (ef external-format)) stream
+    (setf unread-index (iobuf-start ib))
     (let ((str (make-string 1))
           (ret nil))
       (flet ((fill-buf-or-eof ()
+               ;; FIXME - what if we can't refill, in the middle of a wide-char??
                (setf ret (fill-iobuf ib fd))
                (when (eq ret :eof)
                  (return-from stream-read-char :eof))))
         (cond ((zerop (iobuf-length ib))
                (iobuf-reset ib)
                (fill-buf-or-eof))
-              ((< 0 (iobuf-end-space-length ib) 4)
-               (iobuf-copy-data-to-start ib)))
+              ;; Some encodings such as CESU or Java's modified UTF-8 take
+              ;; as much as 6 bytes per character. Make sure we have enough
+              ;; space to collect read-ahead bytes if required.
+              ((< 0 (iobuf-end-space-length ib) +max-octets-per-char+)
+               (iobuf-copy-data-to-start ib)
+               (setf unread-index 0)))
         ;; line-end handling
         (multiple-value-bind (line-end bytes-consumed)
             (maybe-find-line-ending fd ib ef)
@@ -235,13 +244,26 @@
         (incf (iobuf-start ib) ret)
         (char str 0)))))
 
+(defun %stream-unread-char (stream)
+  (declare (type active-socket stream))
+  (with-slots ((ib input-buffer) (unread-index ibuf-unread-index)) stream
+    (symbol-macrolet ((start (iobuf-start ib)))
+      (cond
+        ((> start unread-index)
+         (setf start unread-index))
+        (t
+         (error "No uncommitted character to unread")))))
+  nil)
+
+(defmethod stream-unread-char ((stream active-socket) character)
+  (declare (ignore character))
+  (%stream-unread-char stream))
+
 (defmethod stream-peek-char ((stream active-socket))
   (let ((char (stream-read-char stream)))
-    (if (eq char :eof)
-        :eof
-        (progn
-          (stream-unread-char stream char)
-          (values char)))))
+    (cond ((eq char :eof) :eof)
+          (t (%stream-unread-char stream)
+             (values char)))))
 
 ;; (defmethod stream-read-line ((stream active-socket))
 ;;   (with-slots ((fd fd) (ib input-buffer)
@@ -254,8 +276,6 @@
 
 (defmethod stream-listen ((stream active-socket))
   (characterp (stream-read-char-no-hang stream)))
-
-;; (defmethod stream-unread-char ((stream active-socket) character))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;                  ;;
@@ -274,36 +294,42 @@
   (let ((ptr start) oldptr
         (pos -1) oldpos
         (char-count -1))
-    (tagbody
-       (flet ((input ()
-                (prog1 (char string ptr) (incf ptr)))
-              (output (octet)
-                (setf (bref buffer (incf pos)) octet))
-              (error-fn (symbol)
-                (restart-case
-                    (error symbol :string string
-                           :start start :end end
-                           :position oldptr
-                           :external-format (ef-name ef))
-                  (use-value (s)
-                    :report "Supply a replacement character."
-                    :interactive ioenc::read-replacement-char
-                    s)
-                  (use-standard-unicode-replacement ()
-                    :report "Use standard UCS replacement character"
-                    (code-char ioenc::+replacement-char+))
-                  (stop-decoding ()
-                    :report "Stop decoding and return to last good offset."
-                    (setf pos oldpos)
-                    (go :exit)))))
-         (loop :while (and (< ptr end)
-                           (/= (incf char-count) max-char-num))
-            :do (setf oldpos pos oldptr ptr)
-            (ioenc::char-to-octets ef #'input #'output #'error-fn (- end ptr))))
-     :exit (return-from buffer-string-to-octets (1+ pos)))))
+    (labels
+        ((input ()
+           (prog1 (char string ptr) (incf ptr)))
+         (output (octet)
+           (setf (bref buffer (incf pos)) octet))
+         (error-fn (symbol)
+           (restart-case
+               (error symbol :string string
+                      :start start :end end
+                      :position oldptr
+                      :external-format (ef-name ef))
+             (use-value (s)
+               :report "Supply a replacement character."
+               :interactive ioenc::read-replacement-char
+               s)
+             (use-standard-unicode-replacement ()
+               :report "Use standard UCS replacement character"
+               (code-char ioenc::+replacement-char+))
+             (stop-decoding ()
+               :report "Stop decoding and return to last good offset."
+               (setf pos oldpos)
+               (exit))))
+         (exit ()
+           (return-from buffer-string-to-octets (1+ pos))))
+      (loop :while (and (< ptr end)
+                        (/= (incf char-count) max-char-num))
+         :do (setf oldpos pos oldptr ptr)
+         (ioenc::char-to-octets ef #'input #'output #'error-fn (- end ptr)))
+      (exit))))
 
-;; (defmethod stream-write-char ((stream active-socket) character)
-;;   )
+(defmethod %stream-write-octets ((stream active-socket) octets
+                                 &optional start end)
+  (error "NOT IMPLEMENTED YET"))
+
+(defmethod stream-write-char ((stream active-socket) character)
+  (stream-write-string stream (make-string 1 :initial-element character)))
 
 ;; (defmethod stream-advance-to-column ((stream active-socket)
 ;;                                      (column integer)))
@@ -319,9 +345,13 @@
 
 ;; (defmethod stream-fresh-line ((stream active-socket)))
 
-;; (defmethod stream-write-string ((stream active-socket)
-;;                                 (string string)
-;;                                 &optional start end))
+(defmethod stream-write-string ((stream active-socket)
+                                (string string)
+                                &optional start end)
+  (%stream-write-octets
+   stream
+   (ioenc:string-to-octets string :start start :end end
+                           :external-format (slot-value stream 'external-format))))
 
 ;;;;;;;;;;;;;;;;;;
 ;;              ;;
@@ -332,19 +362,15 @@
 (defmethod stream-read-byte ((stream active-socket))
   (with-slots ((fd fd) (ib input-buffer)
                (pos istream-pos)) stream
-    (let ((ret nil))
-      (flet ((fill-buf-or-eof ()
-               (setf ret (fill-iobuf ib fd))
-               (when (eq ret :eof)
-                 (return-from stream-read-byte :eof))))
-        (cond ((zerop (iobuf-length ib))
-               (iobuf-reset ib)
-               (fill-buf-or-eof))
-              ((< 0 (iobuf-end-space-length ib) 4)
-               (iobuf-copy-data-to-start ib)))
-        (prog1 (bref ib (iobuf-start ib))
-          (incf pos)
-          (incf (iobuf-start ib)))))))
+    (flet ((fill-buf-or-eof ()
+             (when (eq :eof (fill-iobuf ib fd))
+               (return-from stream-read-byte :eof))))
+      (when (zerop (iobuf-length ib))
+        (iobuf-reset ib)
+        (fill-buf-or-eof))
+      (prog1 (bref ib (iobuf-start ib))
+        (incf pos)
+        (incf (iobuf-start ib))))))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;               ;;

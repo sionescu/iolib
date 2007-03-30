@@ -58,6 +58,8 @@
    (input-buffer :initform nil :type (or iobuf null))
    ;; Output buffer.
    (output-buffer :initform nil :type (or iobuf null))
+   ;; Last read char buffer index
+   (ibuf-unread-index :initform 0 :type buffer-index)
    ;; Input stream position
    (istream-pos :initform 0 :type stream-position)
    ;; Output stream position
