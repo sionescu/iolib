@@ -137,8 +137,9 @@
 (defmethod add-fd ((event-base event-base) fd event-type function &key timeout persistent)
   (check-type event-type fd-event)
 
-  (when (> fd (fd-limit-of (mux-of event-base)))
-    (error "Cannot add such a large FD: ~A" fd))
+  (let ((fd-limit (fd-limit-of (mux-of event-base))))
+    (when (and fd-limit (> fd fd-limit))
+      (error "Cannot add such a large FD: ~A" fd)))
   (let ((current-entry (fd-entry-of event-base fd))
         (event (make-event fd event-type function persistent
                            (abs-timeout timeout)
@@ -528,7 +529,10 @@
         (with-foreign-slots ((et:fd et:events et:revents) pollfd et:pollfd)
           (setf et:fd fd
                 et:events (choose-poll-flags event-type))
-          (handler-case (et:poll pollfd 1 (timeout->milisec timeout))
+          (handler-case
+              (let ((ret (et:poll pollfd 1 (timeout->milisec timeout))))
+                (when (zerop ret)
+                  (return-from wait-until-fd-ready '(:timeout))))
             (et:unix-error (err)
               (declare (ignore err))
               (return-from wait-until-fd-ready '(:error))))
@@ -539,4 +543,4 @@
           (return-from wait-until-fd-ready status))))))
 
 (defun fd-ready-p (fd &optional (event-type :read))
-  (wait-until-fd-ready fd event-type 0))
+  (not (member :timeout (wait-until-fd-ready fd event-type 0) :test #'eq)))
