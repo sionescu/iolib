@@ -113,11 +113,15 @@
   (with-foreign-objects ((events 'et:kevent *kqueue-max-events*)
                          (ts 'et:timespec))
     (et:memset events 0 (* *kqueue-max-events* et:size-of-kevent))
-    (when timeout
-      (timeout->timespec timeout ts))
-    (let ((ready-fds
-           (et:kevent (fd-of mux) (null-pointer) 0
-                      events *kqueue-max-events* (if timeout ts (null-pointer)))))
+    (let (ready-fds)
+      (repeat-decreasing-timeout ((et:unix-error-intr)
+                                  tmp-timeout timeout)
+        (when tmp-timeout
+          (timeout->timespec tmp-timeout ts))
+        (setf ready-fds
+              (et:kevent (fd-of mux) (null-pointer) 0
+                         events *kqueue-max-events*
+                         (if tmp-timeout ts (null-pointer)))))
       (macrolet ((kevent-slot (slot-name)
                    `(foreign-slot-value (mem-aref events 'et:kevent i)
                                         'et:kevent ',slot-name)))

@@ -104,22 +104,25 @@
 
 
 (defmethod harvest-events ((mux epoll-multiplexer) timeout)
-  (let ((milisec-timeout (timeout->milisec timeout)))
-    (with-foreign-object (events 'et:epoll-event *epoll-max-events*)
-      (et:memset events 0 (* *epoll-max-events* et:size-of-epoll-event))
-      (let ((ready-fds
-             (et:epoll-wait (fd-of mux) events
-                            *epoll-max-events* milisec-timeout)))
-        (macrolet ((epoll-slot (slot-name)
-                     `(foreign-slot-value (mem-aref events 'et:epoll-event i)
-                                          'et:epoll-event ',slot-name)))
-          (return-from harvest-events
-            (loop
-               :for i :below ready-fds
-               :for fd := (foreign-slot-value (epoll-slot et:data) 'et:epoll-data 'et:fd)
-               :for event-mask := (epoll-slot et:events)
-               :for epoll-event := (make-epoll-event fd event-mask)
-               :when epoll-event :collect epoll-event)))))))
+  (with-foreign-object (events 'et:epoll-event *epoll-max-events*)
+    (et:memset events 0 (* *epoll-max-events* et:size-of-epoll-event))
+    (let (ready-fds)
+      (repeat-decreasing-timeout ((et:unix-error-intr)
+                                  tmp-timeout timeout)
+        (setf ready-fds
+              (et:epoll-wait (fd-of mux) events
+                             *epoll-max-events*
+                             (timeout->milisec tmp-timeout))))
+      (macrolet ((epoll-slot (slot-name)
+                   `(foreign-slot-value (mem-aref events 'et:epoll-event i)
+                                        'et:epoll-event ',slot-name)))
+        (return-from harvest-events
+          (loop
+             :for i :below ready-fds
+             :for fd := (foreign-slot-value (epoll-slot et:data) 'et:epoll-data 'et:fd)
+             :for event-mask := (epoll-slot et:events)
+             :for epoll-event := (make-epoll-event fd event-mask)
+             :when epoll-event :collect epoll-event))))))
 
 
 (defun make-epoll-event (fd mask)

@@ -115,13 +115,15 @@
 
       (handler-case
           (with-foreign-object (tv 'et:timeval)
-            (when timeout
-              (timeout->timeval timeout tv))
-            (et:select (1+ max-fd)
-                       read-fds
-                       write-fds
-                       except-fds
-                       (if timeout tv (null-pointer))))
+            (repeat-decreasing-timeout ((et:unix-error-intr)
+                                        tmp-timeout timeout)
+              (when tmp-timeout
+                (timeout->timeval tmp-timeout tv))
+              (et:select (1+ max-fd)
+                         read-fds
+                         write-fds
+                         except-fds
+                         (if tmp-timeout tv (null-pointer)))))
         (et:unix-error-badf (err)
           (declare (ignore err))
           (return-from harvest-events
