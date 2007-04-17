@@ -50,13 +50,17 @@
   (- (iobuf-end iobuf)
      (iobuf-start iobuf)))
 
+(defun iobuf-empty-p (iobuf)
+  (= (iobuf-end iobuf)
+     (iobuf-start iobuf)))
+
 (defun iobuf-end-space-length (iobuf)
   (- (iobuf-size iobuf)
      (iobuf-end iobuf)))
 
 (defun iobuf-reset (iobuf)
   (setf (iobuf-start iobuf) 0
-        (iobuf-end iobuf) 0))
+        (iobuf-end iobuf)   0))
 
 (defun iobuf-copy-data-to-start (iobuf)
   (declare (type iobuf iobuf))

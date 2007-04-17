@@ -254,8 +254,8 @@
              (remove-event event-base main-timeout)
              (setf (main-timeout-of event-base) nil)))
 
-         (multiple-value-setq (deletion-list dispatch-list)
-           (filter-expired-events (expired-events timeouts after)))
+         (setf (values deletion-list dispatch-list)
+               (filter-expired-events (expired-events timeouts after)))
          (dispatch-timeouts dispatch-list)
          (remove-events event-base deletion-list)
 
@@ -517,6 +517,10 @@
 (iolib-utils:define-constant et::pollrdhup 0)
 
 (defun wait-until-fd-ready (fd event-type &optional timeout)
+  ;; FIXME: this conses badly for its return value
+  ;; solution: (1) use a fixnum bitmap, just like C
+  ;; (2) if we really want to expose only lists of keyword as the API,
+  ;; cache a bitmap-indexed vector of all the combinations (sharing tails)
   (flet ((choose-poll-flags (type)
            (ecase type
              (:read (logior et:pollin et::pollrdhup et:pollpri))
@@ -537,9 +541,9 @@
               (declare (ignore err))
               (return-from wait-until-fd-ready '(:error))))
           (flags-case et:revents
-            ((et:pollout et:pollhup)             (push :write status))
+            ((et:pollout et:pollhup)              (push :write status))
             ((et:pollin et::pollrdhup et:pollpri) (push :read  status))
-            ((et:pollerr et:pollnval)            (push :error status)))
+            ((et:pollerr et:pollnval)             (push :error status)))
           (return-from wait-until-fd-ready status))))))
 
 (defun fd-ready-p (fd &optional (event-type :read))

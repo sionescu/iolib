@@ -235,25 +235,25 @@
        ;; if the query size fits into a datagram(512 bytes max) do a
        ;; UDP query, otherwise use TCP
        ;; in case of a socket error, try again
-       (multiple-value-setq (in-buff bytes-received)
-         (if (> bufflen +dns-datagram-size+)
-             (go :do-tcp-query)
-             (handler-case
-                 (send-query :datagram buffer nameserver timeout)
-               (socket-error (err)
-                 (declare (ignore err))
-                 (go :try-again-if-possible)))))
+       (setf (values in-buff bytes-received)
+             (if (> bufflen +dns-datagram-size+)
+                 (go :do-tcp-query)
+                 (handler-case
+                     (send-query :datagram buffer nameserver timeout)
+                   (socket-error (err)
+                     (declare (ignore err))
+                     (go :try-again-if-possible)))))
        ;; if no socket error, go parse the response
        (go :parse-response)
 
      :do-tcp-query
        ;; do a TCP query; in case of a socket error, try again
-       (multiple-value-setq (in-buff bytes-received)
-         (handler-case
-             (send-query :stream buffer nameserver timeout)
-           (socket-error (err)
-             (declare (ignore err))
-             (go :try-again-if-possible))))
+       (setf (values in-buff bytes-received)
+             (handler-case
+                 (send-query :stream buffer nameserver timeout)
+               (socket-error (err)
+                 (declare (ignore err))
+                 (go :try-again-if-possible))))
        (setf tcp-done t)
 
      :parse-response

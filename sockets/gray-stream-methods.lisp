@@ -92,13 +92,16 @@
     (iobuf-reset ob)
     nil))
 
-;; (defmethod stream-finish-output ((stream active-socket))
-;;   (with-slots ((ob output-buffer)) stream
-;;     nil))
+(defmethod stream-finish-output ((stream active-socket))
+  (with-slots ((ob output-buffer) fd) stream
+    (flush-obuf ob fd)
+    nil))
 
-;; (defmethod stream-force-output ((stream active-socket))
-;;   (with-slots ((ob output-buffer)) stream
-;;     nil))
+(defmethod stream-force-output ((stream active-socket))
+  ;; FIXME: add non-blocking version of this?
+  ;; and/or re-write the flush code in a non-blocking variant,
+  ;; and have the finish-output synchronize on the result.
+  (stream-finish-output stream))
 
 ;; (defmethod stream-read-sequence ((stream active-socket) seq
 ;;                                  &optional start end)
@@ -110,8 +113,13 @@
 ;;                 ;;
 ;;;;;;;;;;;;;;;;;;;;;
 
-(defun fill-iobuf (buf fd &optional timeout)
-  (iomux:wait-until-fd-ready fd :read timeout)
+(defun fill-ibuf (buf fd &optional timeout)
+  (when timeout
+    (let ((status
+           (iomux:wait-until-fd-ready fd :read timeout)))
+      (unless (member :read status)
+        ;; FIXME signal something better
+        (return-from fill-ibuf :timeout))))
   (let ((num (et:read fd (cffi:inc-pointer (iobuf-data buf)
                                            (iobuf-start buf))
                       (- (iobuf-size buf)
@@ -133,7 +141,7 @@
                 (return (values #\Newline 1))))
         (:dos (when (= char-code (char-code #\Return))
                 (when (and (= (iobuf-length ib) 1)
-                           (eq (fill-iobuf ib fd) :eof))
+                           (eq (fill-ibuf ib fd) :eof))
                   (incf (iobuf-start ib))
                   (return (values #\Return 1)))
                 (when (= (bref ib (1+ start-off))
@@ -151,7 +159,7 @@
           (ret nil))
       (flet ((fill-buf-or-eof ()
                ;; FIXME - what if we can't refill, in the middle of a wide-char??
-               (setf ret (fill-iobuf ib fd))
+               (setf ret (fill-ibuf ib fd))
                (when (eq ret :eof)
                  (return-from stream-read-char :eof))))
         (cond ((zerop (iobuf-length ib))
@@ -215,7 +223,7 @@
         (when (< 0 (iobuf-end-space-length ib) 4)
           (iobuf-copy-data-to-start ib))
         (when (and (iomux:fd-ready-p fd :read)
-                   (eql :eof (fill-iobuf ib fd)))
+                   (eql :eof (fill-ibuf ib fd)))
           (setf eof t))
         (when (zerop (iobuf-length ib))
           (return (if eof :eof nil)))
@@ -245,6 +253,13 @@
         (char str 0)))))
 
 (defun %stream-unread-char (stream)
+  ;; unreading anything but the latest character is wrong,
+  ;; but checking is not mandated by the standard
+  #+super-anal-checks
+  (progn
+    (%stream-unread-char stream)
+    (unless (ignore-errors (eql (stream-read-char stream) character))
+      (error "Trying to unread wrong character ~S" character)))
   (declare (type active-socket stream))
   (with-slots ((ib input-buffer) (unread-index ibuf-unread-index)) stream
     (symbol-macrolet ((start (iobuf-start ib)))
@@ -324,11 +339,80 @@
          (ioenc::char-to-octets ef #'input #'output #'error-fn (- end ptr)))
       (exit))))
 
+(defun flush-obuf (buf fd &optional timeout)
+  ;; FIXME - ought to loop partial writes until actual timeout,
+  ;; interleaving write 
+  ;; computing the initial deadline, and retrying until it's passed
+  (flet ((write-once ()
+           (let* ((num (et:write
+                        fd
+                        (cffi:inc-pointer (iobuf-data buf)
+                                          (iobuf-start buf))
+                        (iobuf-length buf))))
+             (if (zerop num)
+                 nil
+                 (progn (incf (iobuf-start buf) num) t))))
+         (emptyp ()
+           (when (iobuf-empty-p buf)
+             (iobuf-reset buf)
+             t)))
+    (if (emptyp)
+        (values t nil)
+        (if timeout
+            (loop :with deadline := (+ (iomux::gettime) timeout)
+               :for status := (iomux:wait-until-fd-ready fd :write timeout) :do
+               (unless (member :write status)
+                 ;; FIXME signal something better -- maybe analyze the status
+                 (return (values nil :timeout)))
+               (unless (write-once)
+                 (return (values nil :fail)))
+               (when (emptyp)
+                 (return (values t nil)))
+               (setf timeout (- deadline (iomux::gettime)))
+               (unless (> timeout 0)
+                 (return (values nil :timeout))))
+            (loop :for status := (iomux:wait-until-fd-ready fd :write nil) :do
+               (unless (member :write status)
+                 ;; FIXME signal something better -- maybe analyze the status
+                 (return (values nil :fail)))
+               (unless (write-once)
+                 (return (values nil :fail)))
+               (when (emptyp)
+                 (return (values t nil))))))))
+
+
 (defmethod %stream-write-octets ((stream active-socket) octets
                                  &optional start end)
-  (error "NOT IMPLEMENTED YET"))
+  ;; FIXME: when calling write-sequence with a simple-array of octets
+  ;; do required I/O directly, not through a buffer
+  (check-type octets (simple-array ub8 (*)))
+  (let ((max (length octets)))
+    (if start
+        (check-type start unsigned-byte)
+        (setf start 0))
+    (if end
+        (progn
+          (check-type end unsigned-byte)
+          (assert (<= end max)))
+        (setf end max)))
+  (with-slots ((buf output-buffer) fd) stream
+    (loop :while (< start end) :do
+         (let ((len (min (- end start) (iobuf-end-space-length buf))))
+           (setf *print-readably* nil)
+           ;; FIXME: optimize this BLT
+           (loop :for i :from start
+              :for j :from (iobuf-end buf)
+              :repeat len :do
+              (setf (bref buf j) (aref octets i)))
+           (incf (iobuf-end buf) len)
+           (incf start len)
+           (when (= (iobuf-end buf) (iobuf-size buf))
+             (or (flush-obuf buf fd)
+                 ;; FIXME: better error handling
+                 (error "Failed to write octets")))))))
 
 (defmethod stream-write-char ((stream active-socket) character)
+  ;; FIXME: avoid consing a string here. At worst, declare it dynamic-extent
   (stream-write-string stream (make-string 1 :initial-element character)))
 
 ;; (defmethod stream-advance-to-column ((stream active-socket)
@@ -348,10 +432,15 @@
 (defmethod stream-write-string ((stream active-socket)
                                 (string string)
                                 &optional start end)
+  ;; FIXME: have the ef do i/o directly into the existing buffer,
+  ;; don't do double buffering of I/O
   (%stream-write-octets
    stream
    (ioenc:string-to-octets string :start start :end end
                            :external-format (slot-value stream 'external-format))))
+
+;; FIXME: isn't there a generic stream-write-sequence???
+
 
 ;;;;;;;;;;;;;;;;;;
 ;;              ;;
@@ -363,7 +452,7 @@
   (with-slots ((fd fd) (ib input-buffer)
                (pos istream-pos)) stream
     (flet ((fill-buf-or-eof ()
-             (when (eq :eof (fill-iobuf ib fd))
+             (when (eq :eof (fill-ibuf ib fd))
                (return-from stream-read-byte :eof))))
       (when (zerop (iobuf-length ib))
         (iobuf-reset ib)

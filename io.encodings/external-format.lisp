@@ -537,14 +537,17 @@
   `(funcall (ef-char-to-octets ,ef) ,input ,output ,error-fn
             ,chars-left))
 
-(defun string-to-octets (string &key (start 0) end
+(defun string-to-octets (string &key start end
                          (external-format :default)
                          adjust-factor)
   (declare (type string string)
-           (type buffer-index start)
+           (type (or null buffer-index) start)
            (type (or null buffer-index) end)
            (type (or null real) adjust-factor)
            (optimize (speed 3) (space 0) (safety 0) (debug 0)))
+
+  (setf start (or start 0)
+        end (or end (length string)))
   (let* ((ef (find-external-format external-format))
          (buffer (make-array (1+ (length string))
                              :element-type 'octet
@@ -554,8 +557,7 @@
          (pos -1) oldpos)
     (setf adjust-factor (if (and adjust-factor (<= 1 adjust-factor 4))
                             adjust-factor
-                            (ef-octet-size ef))
-          end (or end (length string)))
+                            (ef-octet-size ef)))
     (tagbody
        (flet ((input ()
                 (prog1 (char string ptr) (incf ptr)))
