@@ -35,7 +35,7 @@
 
 (defstruct (iobuf
              (:constructor %make-iobuf ()))
-  (data (cffi:null-pointer) :type stream-buffer)
+  (data (null-pointer) :type stream-buffer)
   (size 0 :type buffer-index)
   (start 0 :type buffer-index)
   (end 0 :type buffer-index))

@@ -41,13 +41,13 @@
 
 (defun allocate-iobuf (&optional (size +bytes-per-iobuf+))
   (let ((b (%make-iobuf)))
-    (setf (iobuf-data b) (cffi:foreign-alloc :uint8 :count size)
+    (setf (iobuf-data b) (foreign-alloc :uint8 :count size)
           (iobuf-size b) size)
     (values b)))
 
 (defun free-iobuf (iobuf)
-  (cffi:foreign-free (iobuf-data iobuf))
-  (setf (iobuf-data iobuf) (cffi:null-pointer))
+  (foreign-free (iobuf-data iobuf))
+  (setf (iobuf-data iobuf) (null-pointer))
   (values iobuf))
 
 (defun iobuf-length (iobuf)
@@ -55,12 +55,12 @@
      (iobuf-start iobuf)))
 
 (defun iobuf-start-pointer (iobuf)
-  (cffi:inc-pointer (iobuf-data iobuf)
-                    (iobuf-start iobuf)))
+  (inc-pointer (iobuf-data iobuf)
+               (iobuf-start iobuf)))
 
 (defun iobuf-end-pointer (iobuf)
-  (cffi:inc-pointer (iobuf-data iobuf)
-                    (iobuf-end iobuf)))
+  (inc-pointer (iobuf-data iobuf)
+               (iobuf-end iobuf)))
 
 (defun iobuf-empty-p (iobuf)
   (= (iobuf-end iobuf)
@@ -81,8 +81,8 @@
 (defun iobuf-copy-data-to-start (iobuf)
   (declare (type iobuf iobuf))
   (et:memmove (iobuf-data iobuf)
-              (cffi:inc-pointer (iobuf-data iobuf)
-                                (iobuf-start iobuf))
+              (inc-pointer (iobuf-data iobuf)
+                           (iobuf-start iobuf))
               (iobuf-length iobuf)))
 
 ;; BREF, (SETF BREF) and BUFFER-COPY *DO NOT* check boundaries
@@ -90,22 +90,22 @@
 (defun bref (iobuf index)
   (declare (type iobuf iobuf)
            (type buffer-index index))
-  (cffi:mem-aref (iobuf-data iobuf) :uint8 index))
+  (mem-aref (iobuf-data iobuf) :uint8 index))
 
 (defun (setf bref) (octet iobuf index)
   (declare (type (unsigned-byte 8) octet)
            (type iobuf iobuf)
            (type buffer-index index))
-  (setf (cffi:mem-aref (iobuf-data iobuf) :uint8 index) octet))
+  (setf (mem-aref (iobuf-data iobuf) :uint8 index) octet))
 
 (defun iobuf-copy-from-lisp-array (src soff dst doff length)
   (declare (type compatible-lisp-array src)
            (type iobuf dst)
            (type buffer-index soff doff length))
   (let ((dst-ptr (iobuf-data dst)))
-    (cffi:with-pointer-to-vector-data (src-ptr src)
-      (et:memcpy (cffi:inc-pointer dst-ptr doff)
-                 (cffi:inc-pointer src-ptr soff)
+    (with-pointer-to-vector-data (src-ptr src)
+      (et:memcpy (inc-pointer dst-ptr doff)
+                 (inc-pointer src-ptr soff)
                  length))))
 
 (defun iobuf-copy-into-lisp-array (src soff dst doff length)
@@ -113,9 +113,9 @@
            (type compatible-lisp-array dst)
            (type buffer-index soff doff length))
   (let ((src-ptr (iobuf-data src)))
-    (cffi:with-pointer-to-vector-data (dst-ptr dst)
-      (et:memcpy (cffi:inc-pointer dst-ptr doff)
-                 (cffi:inc-pointer src-ptr soff)
+    (with-pointer-to-vector-data (dst-ptr dst)
+      (et:memcpy (inc-pointer dst-ptr doff)
+                 (inc-pointer src-ptr soff)
                  length))))
 
 (defun iobuf-pop-octet (iobuf)

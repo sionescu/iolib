@@ -181,7 +181,7 @@
     (flet ((write-once ()
              (let ((num (handler-case
                             (et:repeat-upon-eintr
-                              (et:write fd (cffi:inc-pointer buf bytes-written)
+                              (et:write fd (inc-pointer buf bytes-written)
                                         nbytes))
                           (et:unix-error-pipe (err) (declare (ignore err))
                             (return-from %write-n-bytes (values nil :eof))))))
@@ -262,9 +262,9 @@
             (incf pos octets-needed)
             (incf (iobuf-end ob) octets-needed)
             (%flush-obuf-if-needed stream))
-          (cffi:with-pointer-to-vector-data (ptr array)
+          (with-pointer-to-vector-data (ptr array)
             (%flush-obuf ob fd)
-            (let ((ret (%write-n-bytes (cffi:inc-pointer ptr start)
+            (let ((ret (%write-n-bytes (inc-pointer ptr start)
                                        fd octets-needed)))
               (when (numberp ret)
                 (incf pos ret)
