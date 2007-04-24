@@ -32,8 +32,12 @@
   '(simple-array * (*)))
 
 (declaim (inline allocate-iobuf free-iobuf
+                 iobuf-length iobuf-start-pointer
+                 iobuf-end-pointer iobuf-end-space-length
+                 iobuf-empty-p iobuf-full-p
+                 iobuf-reset iobuf-copy-data-to-start
                  bref (setf bref) iobuf-copy
-                 pop-byte push-byte))
+                 iobuf-pop-octet iobuf-push-octet))
 
 (defun allocate-iobuf (&optional (size +bytes-per-iobuf+))
   (let ((b (%make-iobuf)))
@@ -50,9 +54,21 @@
   (- (iobuf-end iobuf)
      (iobuf-start iobuf)))
 
+(defun iobuf-start-pointer (iobuf)
+  (cffi:inc-pointer (iobuf-data iobuf)
+                    (iobuf-start iobuf)))
+
+(defun iobuf-end-pointer (iobuf)
+  (cffi:inc-pointer (iobuf-data iobuf)
+                    (iobuf-end iobuf)))
+
 (defun iobuf-empty-p (iobuf)
   (= (iobuf-end iobuf)
      (iobuf-start iobuf)))
+
+(defun iobuf-full-p (iobuf)
+  (= (iobuf-end iobuf)
+     (iobuf-size iobuf)))
 
 (defun iobuf-end-space-length (iobuf)
   (- (iobuf-size iobuf)
@@ -70,7 +86,7 @@
               (iobuf-length iobuf)))
 
 ;; BREF, (SETF BREF) and BUFFER-COPY *DO NOT* check boundaries
-;; that must be done in their callers
+;; that must be done by their callers
 (defun bref (iobuf index)
   (declare (type iobuf iobuf)
            (type buffer-index index))
@@ -82,30 +98,38 @@
            (type buffer-index index))
   (setf (cffi:mem-aref (iobuf-data iobuf) :uint8 index) octet))
 
-(defun iobuf-copy (src soff dst doff length)
+(defun iobuf-copy-from-lisp-array (src soff dst doff length)
   (declare (type compatible-lisp-array src)
            (type iobuf dst)
-           (type fixnum soff doff length))
+           (type buffer-index soff doff length))
   (let ((dst-ptr (iobuf-data dst)))
     (cffi:with-pointer-to-vector-data (src-ptr src)
-      (cffi:incf-pointer src-ptr soff)
-      (cffi:incf-pointer dst-ptr doff)
-      (et:memmove dst-ptr src-ptr length)
-      (incf (iobuf-end dst) length))))
+      (et:memcpy (cffi:inc-pointer dst-ptr doff)
+                 (cffi:inc-pointer src-ptr soff)
+                 length))))
 
-(defun pop-byte (iobuf)
-  (declare (type iobuf iobuf))
-  (let ((length (iobuf-length iobuf)))
-    (unless (>= length (iobuf-size iobuf))
-      (prog1 (bref iobuf length)
-        (incf (iobuf-end iobuf))))))
+(defun iobuf-copy-into-lisp-array (src soff dst doff length)
+  (declare (type iobuf src)
+           (type compatible-lisp-array dst)
+           (type buffer-index soff doff length))
+  (let ((src-ptr (iobuf-data src)))
+    (cffi:with-pointer-to-vector-data (dst-ptr dst)
+      (et:memcpy (cffi:inc-pointer dst-ptr doff)
+                 (cffi:inc-pointer src-ptr soff)
+                 length))))
 
-(defun push-byte (iobuf byte)
+(defun iobuf-pop-octet (iobuf)
   (declare (type iobuf iobuf))
-  (let ((length (iobuf-length iobuf)))
-    (unless (>= length (iobuf-size iobuf))
-      (prog1 (setf (bref iobuf length) byte)
-        (incf (iobuf-end iobuf))))))
+  (let ((start (iobuf-start iobuf)))
+    (prog1 (bref iobuf start)
+      (incf (iobuf-start iobuf)))))
+
+(defun iobuf-push-octet (iobuf octet)
+  (declare (type iobuf iobuf)
+           (type (unsigned-byte 8) octet))
+  (let ((end (iobuf-end iobuf)))
+    (prog1 (setf (bref iobuf end) octet)
+      (incf (iobuf-end iobuf)))))
 
 ;;;
 ;;; Buffer Pool

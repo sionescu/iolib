@@ -53,17 +53,26 @@
                                     fundamental-binary-output-stream
                                     fundamental-character-input-stream
                                     fundamental-character-output-stream)
-  ((external-format :initform (find-external-format :default))
+  ((external-format :initform (find-external-format :default)
+                    :accessor external-format-of)
    ;; Input buffer.
-   (input-buffer :initform nil :type (or iobuf null))
+   (input-buffer :initform nil :type (or iobuf null)
+                 :accessor input-buffer-of)
    ;; Output buffer.
-   (output-buffer :initform nil :type (or iobuf null))
+   (output-buffer :initform nil :type (or iobuf null)
+                  :accessor output-buffer-of)
+   ;; Flag used by stream-force-output
+   (must-flush-output :initform nil :type boolean
+                      :accessor must-flush-output-p)
    ;; Last read char buffer index
-   (ibuf-unread-index :initform 0 :type buffer-index)
+   (ibuf-unread-index :initform 0 :type buffer-index
+                      :accessor ibuf-unread-index-of)
    ;; Input stream position
-   (istream-pos :initform 0 :type stream-position)
+   (istream-pos :initform 0 :type stream-position
+                :accessor istream-pos-of)
    ;; Output stream position
-   (ostream-pos :initform 0 :type stream-position)))
+   (ostream-pos :initform 0 :type stream-position
+                :accessor ostream-pos-of)))
 
 
 ;;;;;;;;;;;;;;;

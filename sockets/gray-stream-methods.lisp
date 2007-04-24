@@ -21,6 +21,11 @@
 
 (in-package :net.sockets)
 
+(defun %check-bounds (sequence start end)
+  (unless end (setf end (length sequence)))
+  (when (> start end) (error "~S ~S wrong sequence bounds" start end))
+  (values start end))
+
 (iolib-utils:define-constant +max-octets-per-char+ 6)
 
 ;; TODO: use the buffer pool
@@ -33,8 +38,8 @@
   (check-type input-buffer-size buffer-index)
   (check-type output-buffer-size buffer-index)
   (when (open-stream-p s) (close s))
-  (with-slots ((ib input-buffer) (ob output-buffer)
-               (ef external-format)) s
+  (with-accessors ((ib input-buffer-of) (ob output-buffer-of)
+                   (ef external-format-of)) s
     (setf ib (allocate-iobuf input-buffer-size)
           ob (allocate-iobuf output-buffer-size))
     (setf ef (etypecase external-format
@@ -49,14 +54,14 @@
 ;;;;;;;;;;;;;;;;;;;;
 
 (defmethod stream-element-type ((stream active-socket))
-  :default)
+  '(unsigned-byte 8))
 
 ;; TODO: use abort
 ;; TODO: use the buffer pool
 (defmethod close :around ((stream active-socket) &key abort)
   (declare (ignore abort))
-  (with-slots ((ib input-buffer)
-               (ob output-buffer)) stream
+  (with-accessors ((ib input-buffer-of)
+                   (ob output-buffer-of)) stream
     (when ib (free-iobuf ib))
     (when ob (free-iobuf ob))
     (setf ib nil ob nil))
@@ -73,13 +78,97 @@
 ;;;;;;;;;;;;;;;;;;;
 
 (defmethod stream-clear-input ((stream active-socket))
-  (with-slots ((ib input-buffer)) stream
+  (with-accessors ((ib input-buffer-of)) stream
     (iobuf-reset ib)
     nil))
 
-;; (defmethod stream-read-sequence ((stream active-socket) seq
-;;                                  &optional start end)
-;;   )
+(defun %fill-ibuf (buf fd &optional timeout)
+  (when timeout
+    (let ((status
+           (iomux:wait-until-fd-ready fd :read timeout)))
+      ;; FIXME signal something better
+      (cond ((member :timeout status)
+             (return-from %fill-ibuf :timeout))
+            ((member :error status)
+             (error "WAIT-UNTIL-FD-READY returned :ERROR on FD ~S" fd)))))
+  (let ((num (et:repeat-upon-eintr
+               (et:read fd (iobuf-end-pointer buf)
+                        (iobuf-end-space-length buf)))))
+    (if (zerop num)
+        :eof
+        (incf (iobuf-end buf) num))))
+
+(defun %read-into-simple-array-ub8 (stream array start end)
+  (declare (type dual-channel-gray-stream stream))
+  (with-accessors ((ib input-buffer-of)
+                   (pos istream-pos-of)
+                   (fd socket-fd)) stream
+    (let ((octets-needed (- end start)))
+      (loop :with array-offset := start
+            :for octets-in-buffer := (iobuf-length ib)
+            :for nbytes := (min octets-needed octets-in-buffer)
+         :when (plusp nbytes) :do
+           (iobuf-copy-into-lisp-array ib (iobuf-start ib)
+                                       array array-offset nbytes)
+           (incf array-offset nbytes)
+           (decf octets-needed nbytes)
+           (incf (iobuf-start ib) nbytes)
+           (incf pos nbytes)
+         :if (zerop octets-needed) :do (loop-finish)
+         :else :do (iobuf-reset ib)
+         :when (eql :eof (%fill-ibuf ib fd)) :do (loop-finish)
+         :finally (return array-offset)))))
+
+(defun %read-into-string (stream string start end)
+  (declare (type dual-channel-gray-stream stream))
+  (loop :for offset :from start :below end
+        :for char := (stream-read-char stream)
+     :if (eql char :eof) :do (loop-finish)
+     :else :do (setf (char string offset) char)
+     :finally (return offset)))
+
+(defun %read-into-vector (stream vector start end)
+  (declare (type dual-channel-gray-stream stream))
+  (loop :for offset :from start :below end
+        :for octet := (stream-read-byte stream)
+     :if (eql octet :eof) :do (loop-finish)
+     :else :do (setf (aref vector offset) octet)
+     :finally (return offset)))
+
+#-clisp
+(defmethod stream-read-sequence ((stream active-socket) seq
+                                 &optional (start 0) end)
+  (setf (values start end) (%check-bounds seq start end))
+  (when (< start end)
+    (etypecase seq
+      ((simple-array ub8 (*))
+       (%read-into-simple-array-ub8 stream seq start end))
+      (string
+       (%read-into-string stream seq start end))
+      (vector
+       (%read-into-vector stream seq start end)))))
+
+#+clisp
+(defmethod stream-read-byte-sequence ((stream active-socket) seq
+                                      &optional (start 0) end
+                                      no-hang interactive)
+  (declare (ignore no-hang interactive))
+  (setf (values start end) (%check-bounds seq start end))
+  (when (< start end)
+    (etypecase seq
+      ((simple-array ub8 (*))
+       (%read-into-simple-array-ub8 stream seq start end))
+      (vector
+       (%read-into-vector stream seq start end)))))
+
+#+clisp
+(defmethod stream-read-char-sequence ((stream active-socket) seq
+                                      &optional (start 0) end)
+  (setf (values start end) (%check-bounds seq start end))
+  (when (< start end)
+    (etypecase seq
+      (string
+       (%read-into-string stream seq start end)))))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;;                ;;
@@ -87,46 +176,148 @@
 ;;                ;;
 ;;;;;;;;;;;;;;;;;;;;
 
+(defun %write-n-bytes (buf fd nbytes &optional timeout)
+  (let ((bytes-written 0))
+    (flet ((write-once ()
+             (let ((num (handler-case
+                            (et:repeat-upon-eintr
+                              (et:write fd (cffi:inc-pointer buf bytes-written)
+                                        nbytes))
+                          (et:unix-error-pipe (err) (declare (ignore err))
+                            (return-from %write-n-bytes (values nil :eof))))))
+               (unless (zerop num) (incf bytes-written num))))
+           (buffer-emptyp () (zerop nbytes)))
+      (let (num)
+        (if (buffer-emptyp) (values t nil)
+            (et:repeat-decreasing-timeout (timeout-var timeout)
+              (unless (setf num (write-once))
+                (when (member :error (iomux:wait-until-fd-ready fd :write))
+                  ;; FIXME signal something better -- maybe analyze the status
+                  (return-from %write-n-bytes (values nil :fail))))
+              (when (buffer-emptyp) (return-from %write-n-bytes (values t bytes-written)))
+              (when (zerop timeout-var) (return-from %write-n-bytes (values nil :timeout)))))))))
+
+(defun %flush-obuf (buf fd &optional timeout)
+  (let ((bytes-written 0))
+    (flet ((write-once ()
+             (let ((num (handler-case
+                            (et:repeat-upon-eintr
+                              (et:write fd (iobuf-start-pointer buf)
+                                        (iobuf-length buf)))
+                          (et:unix-error-pipe (err) (declare (ignore err))
+                            (return-from %flush-obuf (values nil :eof))))))
+               (unless (zerop num)
+                 (incf (iobuf-start buf) num)
+                 (incf bytes-written num))))
+           (buffer-emptyp ()
+             (when (iobuf-empty-p buf)
+               (iobuf-reset buf) t)))
+      (let (num)
+        (if (buffer-emptyp) (values t nil)
+            (et:repeat-decreasing-timeout (timeout-var timeout)
+              (unless (setf num (write-once))
+                (when (member :error (iomux:wait-until-fd-ready fd :write))
+                  ;; FIXME signal something better -- maybe analyze the status
+                  (return-from %flush-obuf (values nil :fail))))
+              (when (buffer-emptyp) (return-from %flush-obuf (values t bytes-written)))
+              (when (zerop timeout-var) (return-from %flush-obuf (values nil :timeout)))))))))
+
+(defun %flush-obuf-if-needed (stream)
+  (declare (type dual-channel-gray-stream stream))
+  (with-accessors ((fd socket-fd) (ob output-buffer-of)
+                   (must-flush-output-p must-flush-output-p)) stream
+    (when (or must-flush-output-p (iobuf-full-p ob))
+      (%flush-obuf ob fd)
+      (setf must-flush-output-p nil))))
+
 (defmethod stream-clear-output ((stream active-socket))
-  (with-slots ((ob output-buffer)) stream
+  (with-accessors ((ob output-buffer-of)
+                   (must-flush-output-p must-flush-output-p)
+                   (fd socket-fd)) stream
     (iobuf-reset ob)
+    (setf must-flush-output-p nil)
     nil))
 
 (defmethod stream-finish-output ((stream active-socket))
-  (with-slots ((ob output-buffer) fd) stream
-    (flush-obuf ob fd)
+  (with-accessors ((ob output-buffer-of)
+                   (must-flush-output-p must-flush-output-p)
+                   (fd socket-fd)) stream
+    (%flush-obuf ob fd)
+    (setf must-flush-output-p nil)
     nil))
 
 (defmethod stream-force-output ((stream active-socket))
-  ;; FIXME: add non-blocking version of this?
-  ;; and/or re-write the flush code in a non-blocking variant,
-  ;; and have the finish-output synchronize on the result.
-  (stream-finish-output stream))
+  (setf (must-flush-output-p stream) t))
 
-;; (defmethod stream-read-sequence ((stream active-socket) seq
-;;                                  &optional start end)
-;;   )
+(defun %write-simple-array-ub8 (stream array start end)
+  (declare (type dual-channel-gray-stream stream))
+  (with-accessors ((ob output-buffer-of)
+                   (pos ostream-pos-of)
+                   (fd socket-fd)) stream
+    (let ((octets-needed (- end start)))
+      (if (<= octets-needed (iobuf-end-space-length ob))
+          (progn
+            (iobuf-copy-from-lisp-array array start ob
+                                        (iobuf-end ob) octets-needed)
+            (incf pos octets-needed)
+            (incf (iobuf-end ob) octets-needed)
+            (%flush-obuf-if-needed stream))
+          (cffi:with-pointer-to-vector-data (ptr array)
+            (%flush-obuf ob fd)
+            (let ((ret (%write-n-bytes (cffi:inc-pointer ptr start)
+                                       fd octets-needed)))
+              (when (numberp ret)
+                (incf pos ret)
+                (incf (iobuf-end ob) octets-needed)))))
+      (values array))))
+
+(defun %write-vector (stream vector start end)
+  (declare (type dual-channel-gray-stream stream))
+  (loop :for offset :from start :below end
+        :for octet := (aref vector offset)
+     :do (stream-write-byte stream octet)
+     :finally (return vector)))
+
+#-clisp
+(defmethod stream-write-sequence ((stream active-socket) seq
+                                  &optional (start 0) end)
+  (setf (values start end) (%check-bounds seq start end))
+  (when (< start end)
+    (etypecase seq
+      ((simple-array ub8 (*))
+       (%write-simple-array-ub8 stream seq start end))
+      (string
+       (stream-write-string stream seq start end))
+      (vector
+       (%write-vector stream seq start end)))))
+
+#+clisp
+(defmethod stream-write-byte-sequence ((stream active-socket) seq
+                                       &optional (start 0) end
+                                       no-hang interactive)
+  (declare (ignore no-hang interactive))
+  (setf (values start end) (%check-bounds seq start end))
+  (when (< start end)
+    (etypecase seq
+      ((simple-array ub8 (*))
+       (%write-simple-array-ub8 stream seq start end))
+      (vector
+       (%write-vector stream seq start end)))))
+
+#+clisp
+(defmethod stream-write-char-sequence ((stream active-socket) seq
+                                       &optional (start 0) end)
+  (setf (values start end) (%check-bounds seq start end))
+  (when (< start end)
+    (etypecase seq
+      (string
+       (stream-write-string stream seq start end)))))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;;                 ;;
 ;; Character Input ;;
 ;;                 ;;
 ;;;;;;;;;;;;;;;;;;;;;
-
-(defun fill-ibuf (buf fd &optional timeout)
-  (when timeout
-    (let ((status
-           (iomux:wait-until-fd-ready fd :read timeout)))
-      (unless (member :read status)
-        ;; FIXME signal something better
-        (return-from fill-ibuf :timeout))))
-  (let ((num (et:read fd (cffi:inc-pointer (iobuf-data buf)
-                                           (iobuf-start buf))
-                      (- (iobuf-size buf)
-                         (iobuf-end buf)))))
-    (if (zerop num)
-        :eof
-        (incf (iobuf-end buf) num))))
 
 (defun maybe-find-line-ending (fd ib ef)
   (let* ((start-off (iobuf-start ib))
@@ -141,7 +332,7 @@
                 (return (values #\Newline 1))))
         (:dos (when (= char-code (char-code #\Return))
                 (when (and (= (iobuf-length ib) 1)
-                           (eq (fill-ibuf ib fd) :eof))
+                           (eql (%fill-ibuf ib fd) :eof))
                   (incf (iobuf-start ib))
                   (return (values #\Return 1)))
                 (when (= (bref ib (1+ start-off))
@@ -149,18 +340,21 @@
                   (incf (iobuf-start ib) 2)
                   (return (values #\Newline 2)))))))))
 
+;; FIXME: currently we return :EOF when read(2) returns 0
+;;        we should distinguish hard end-of-files(EOF and buffer empty)
+;;        from soft end-of-files(EOF and *some* bytes still in the buffer
+;;        but not enough to make a full character)
 (defmethod stream-read-char ((stream active-socket))
-  (with-slots ((fd fd) (ib input-buffer)
-               (unread-index ibuf-unread-index)
-               (pos istream-pos)
-               (ef external-format)) stream
+  (with-accessors ((fd socket-fd) (ib input-buffer-of)
+                   (unread-index ibuf-unread-index-of)
+                   (pos istream-pos-of)
+                   (ef external-format-of)) stream
     (setf unread-index (iobuf-start ib))
     (let ((str (make-string 1))
           (ret nil))
       (flet ((fill-buf-or-eof ()
-               ;; FIXME - what if we can't refill, in the middle of a wide-char??
-               (setf ret (fill-ibuf ib fd))
-               (when (eq ret :eof)
+               (setf ret (%fill-ibuf ib fd))
+               (when (eql ret :eof)
                  (return-from stream-read-char :eof))))
         (cond ((zerop (iobuf-length ib))
                (iobuf-reset ib)
@@ -213,9 +407,9 @@
                   (return (values #\Newline 2)))))))))
 
 (defmethod stream-read-char-no-hang ((stream active-socket))
-  (with-slots ((fd fd) (ib input-buffer)
-               (pos istream-pos)
-               (ef external-format)) stream
+  (with-accessors ((fd socket-fd) (ib input-buffer-of)
+                   (pos istream-pos-of)
+                   (ef external-format-of)) stream
     (let ((str (make-string 1))
           (ret nil)
           (eof nil))
@@ -223,7 +417,7 @@
         (when (< 0 (iobuf-end-space-length ib) 4)
           (iobuf-copy-data-to-start ib))
         (when (and (iomux:fd-ready-p fd :read)
-                   (eql :eof (fill-ibuf ib fd)))
+                   (eql :eof (%fill-ibuf ib fd)))
           (setf eof t))
         (when (zerop (iobuf-length ib))
           (return (if eof :eof nil)))
@@ -255,13 +449,14 @@
 (defun %stream-unread-char (stream)
   ;; unreading anything but the latest character is wrong,
   ;; but checking is not mandated by the standard
-  #+super-anal-checks
+  (declare (type active-socket stream))
+  #+iolib-debug
   (progn
     (%stream-unread-char stream)
     (unless (ignore-errors (eql (stream-read-char stream) character))
       (error "Trying to unread wrong character ~S" character)))
-  (declare (type active-socket stream))
-  (with-slots ((ib input-buffer) (unread-index ibuf-unread-index)) stream
+  (with-accessors ((ib input-buffer-of)
+                   (unread-index ibuf-unread-index-of)) stream
     (symbol-macrolet ((start (iobuf-start ib)))
       (cond
         ((> start unread-index)
@@ -276,21 +471,21 @@
 
 (defmethod stream-peek-char ((stream active-socket))
   (let ((char (stream-read-char stream)))
-    (cond ((eq char :eof) :eof)
+    (cond ((eql char :eof) :eof)
           (t (%stream-unread-char stream)
              (values char)))))
 
 ;; (defmethod stream-read-line ((stream active-socket))
-;;   (with-slots ((fd fd) (ib input-buffer)
-;;                (pos istream-pos)
-;;                (ef external-format)) stream
-;;     (let ((str (make-string 80)) (strsz 80) (strlen 0)
-;;           (chars-out 0) (bytes-in 0)
-;;           (ret nil))
-;;       )))
+;;   )
 
 (defmethod stream-listen ((stream active-socket))
-  (characterp (stream-read-char-no-hang stream)))
+  (let ((char (stream-read-char-no-hang stream)))
+    (cond ((characterp char)
+           (stream-unread-char stream char)
+           t)
+          ((eql char :eof)
+           nil)
+          (t t))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;                  ;;
@@ -298,122 +493,13 @@
 ;;                  ;;
 ;;;;;;;;;;;;;;;;;;;;;;
 
-(defun buffer-string-to-octets (string buffer start end ef fd &optional max-char-num)
-  (declare (string string)
-           (type iobuf buffer)
-           (type buffer-index start)
-           (type buffer-index end)
-           (ignore fd)
-           (optimize (speed 3) (space 0) (safety 0) (debug 0)))
-  (unless max-char-num (setf max-char-num -1))
-  (let ((ptr start) oldptr
-        (pos -1) oldpos
-        (char-count -1))
-    (labels
-        ((input ()
-           (prog1 (char string ptr) (incf ptr)))
-         (output (octet)
-           (setf (bref buffer (incf pos)) octet))
-         (error-fn (symbol)
-           (restart-case
-               (error symbol :string string
-                      :start start :end end
-                      :position oldptr
-                      :external-format (ef-name ef))
-             (use-value (s)
-               :report "Supply a replacement character."
-               :interactive ioenc::read-replacement-char
-               s)
-             (use-standard-unicode-replacement ()
-               :report "Use standard UCS replacement character"
-               (code-char ioenc::+replacement-char+))
-             (stop-decoding ()
-               :report "Stop decoding and return to last good offset."
-               (setf pos oldpos)
-               (exit))))
-         (exit ()
-           (return-from buffer-string-to-octets (1+ pos))))
-      (loop :while (and (< ptr end)
-                        (/= (incf char-count) max-char-num))
-         :do (setf oldpos pos oldptr ptr)
-         (ioenc::char-to-octets ef #'input #'output #'error-fn (- end ptr)))
-      (exit))))
-
-(defun flush-obuf (buf fd &optional timeout)
-  ;; FIXME - ought to loop partial writes until actual timeout,
-  ;; interleaving write 
-  ;; computing the initial deadline, and retrying until it's passed
-  (flet ((write-once ()
-           (let* ((num (et:write
-                        fd
-                        (cffi:inc-pointer (iobuf-data buf)
-                                          (iobuf-start buf))
-                        (iobuf-length buf))))
-             (if (zerop num)
-                 nil
-                 (progn (incf (iobuf-start buf) num) t))))
-         (emptyp ()
-           (when (iobuf-empty-p buf)
-             (iobuf-reset buf)
-             t)))
-    (if (emptyp)
-        (values t nil)
-        (if timeout
-            (loop :with deadline := (+ (iomux::gettime) timeout)
-               :for status := (iomux:wait-until-fd-ready fd :write timeout) :do
-               (unless (member :write status)
-                 ;; FIXME signal something better -- maybe analyze the status
-                 (return (values nil :timeout)))
-               (unless (write-once)
-                 (return (values nil :fail)))
-               (when (emptyp)
-                 (return (values t nil)))
-               (setf timeout (- deadline (iomux::gettime)))
-               (unless (> timeout 0)
-                 (return (values nil :timeout))))
-            (loop :for status := (iomux:wait-until-fd-ready fd :write nil) :do
-               (unless (member :write status)
-                 ;; FIXME signal something better -- maybe analyze the status
-                 (return (values nil :fail)))
-               (unless (write-once)
-                 (return (values nil :fail)))
-               (when (emptyp)
-                 (return (values t nil))))))))
-
-
-(defmethod %stream-write-octets ((stream active-socket) octets
-                                 &optional start end)
-  ;; FIXME: when calling write-sequence with a simple-array of octets
-  ;; do required I/O directly, not through a buffer
-  (check-type octets (simple-array ub8 (*)))
-  (let ((max (length octets)))
-    (if start
-        (check-type start unsigned-byte)
-        (setf start 0))
-    (if end
-        (progn
-          (check-type end unsigned-byte)
-          (assert (<= end max)))
-        (setf end max)))
-  (with-slots ((buf output-buffer) fd) stream
-    (loop :while (< start end) :do
-         (let ((len (min (- end start) (iobuf-end-space-length buf))))
-           (setf *print-readably* nil)
-           ;; FIXME: optimize this BLT
-           (loop :for i :from start
-              :for j :from (iobuf-end buf)
-              :repeat len :do
-              (setf (bref buf j) (aref octets i)))
-           (incf (iobuf-end buf) len)
-           (incf start len)
-           (when (= (iobuf-end buf) (iobuf-size buf))
-             (or (flush-obuf buf fd)
-                 ;; FIXME: better error handling
-                 (error "Failed to write octets")))))))
-
-(defmethod stream-write-char ((stream active-socket) character)
-  ;; FIXME: avoid consing a string here. At worst, declare it dynamic-extent
-  (stream-write-string stream (make-string 1 :initial-element character)))
+(defmethod stream-write-char ((stream active-socket)
+                              (character character))
+  (%flush-obuf-if-needed stream)
+  (if (eql character #\Newline)
+      (%write-line-terminator stream (ioenc:ef-line-terminator (external-format-of stream)))
+      ;; FIXME: avoid consing a string here. At worst, declare it dynamic-extent
+      (stream-write-string stream (make-string 1 :initial-element character))))
 
 ;; (defmethod stream-advance-to-column ((stream active-socket)
 ;;                                      (column integer)))
@@ -423,24 +509,46 @@
 ;; (defmethod stream-line-length ((stream active-socket)))
 
 (defmethod stream-start-line-p ((stream active-socket))
-  nil)
+  (values nil))
 
-;; (defmethod stream-terpri ((stream active-socket)))
+(defmethod stream-terpri ((stream active-socket))
+  (write-char #\Newline stream) nil)
 
-;; (defmethod stream-fresh-line ((stream active-socket)))
+(defmethod stream-fresh-line ((stream active-socket))
+  (write-char #\Newline stream) t)
+
+(iolib-utils:define-constant +unix-line-terminator+
+    (make-array 1 :element-type 'ub8 :initial-contents '(10)))
+(iolib-utils:define-constant +dos-line-terminator+
+    (make-array 2 :element-type 'ub8 :initial-contents '(13 10)))
+(iolib-utils:define-constant +mac-line-terminator+
+    (make-array 1 :element-type 'ub8 :initial-contents '(13)))
+
+(defun %write-line-terminator (stream line-terminator)
+  (case line-terminator
+    (:unix (%write-simple-array-ub8 stream +unix-line-terminator+ 0 1))
+    (:dos  (%write-simple-array-ub8 stream +dos-line-terminator+  0 2))
+    (:mac  (%write-simple-array-ub8 stream +mac-line-terminator+  0 1))))
 
 (defmethod stream-write-string ((stream active-socket)
                                 (string string)
-                                &optional start end)
-  ;; FIXME: have the ef do i/o directly into the existing buffer,
-  ;; don't do double buffering of I/O
-  (%stream-write-octets
-   stream
-   (ioenc:string-to-octets string :start start :end end
-                           :external-format (slot-value stream 'external-format))))
-
-;; FIXME: isn't there a generic stream-write-sequence???
-
+                                &optional (start 0) end)
+  (setf (values start end) (%check-bounds string start end))
+  (when (< start end)
+    (let* ((octets nil)
+           (ef (external-format-of stream))
+           (line-terminator (ioenc:ef-line-terminator ef)))
+      (loop :for off1 := start :then (1+ off2)
+            :for nl-off := (position #\Newline string :start off1)
+            :for off2 := (or nl-off end)
+         :when nl-off :do (%write-line-terminator stream line-terminator)
+         :when (> off2 off1) :do
+         (setf octets (ioenc:string-to-octets
+                       string :start off1 :end off2
+                       :external-format ef))
+         (%write-simple-array-ub8 stream octets 0 (length octets))
+         :while (< off2 end))))
+  (values string))
 
 ;;;;;;;;;;;;;;;;;;
 ;;              ;;
@@ -449,17 +557,16 @@
 ;;;;;;;;;;;;;;;;;;
 
 (defmethod stream-read-byte ((stream active-socket))
-  (with-slots ((fd fd) (ib input-buffer)
-               (pos istream-pos)) stream
+  (with-accessors ((fd socket-fd) (ib input-buffer-of)
+                   (pos istream-pos-of)) stream
     (flet ((fill-buf-or-eof ()
-             (when (eq :eof (fill-ibuf ib fd))
+             (iobuf-reset ib)
+             (when (eql :eof (%fill-ibuf ib fd))
                (return-from stream-read-byte :eof))))
       (when (zerop (iobuf-length ib))
-        (iobuf-reset ib)
         (fill-buf-or-eof))
-      (prog1 (bref ib (iobuf-start ib))
-        (incf pos)
-        (incf (iobuf-start ib))))))
+      (prog1 (iobuf-pop-octet ib)
+        (incf pos)))))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;               ;;
@@ -467,5 +574,9 @@
 ;;               ;;
 ;;;;;;;;;;;;;;;;;;;
 
-;; (defmethod stream-write-byte ((stream active-socket) (integer integer))
-;;   )
+(defmethod stream-write-byte ((stream active-socket) integer)
+  (check-type integer ub8 "an unsigned 8-bit value")
+  (with-accessors ((ob output-buffer-of) (pos ostream-pos-of)) stream
+    (%flush-obuf-if-needed stream)
+    (prog1 (iobuf-push-octet ob integer)
+      (incf pos))))
