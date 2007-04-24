@@ -550,8 +550,7 @@
         end (or end (length string)))
   (let* ((ef (find-external-format external-format))
          (buffer (make-array (1+ (length string))
-                             :element-type 'octet
-                             :adjustable t))
+                             :element-type 'octet))
          (adjust-threshold (length string))
          (ptr start) oldptr
          (pos -1) oldpos)
