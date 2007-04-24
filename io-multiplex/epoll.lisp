@@ -107,8 +107,8 @@
   (with-foreign-object (events 'et:epoll-event *epoll-max-events*)
     (et:memset events 0 (* *epoll-max-events* et:size-of-epoll-event))
     (let (ready-fds)
-      (repeat-decreasing-timeout ((et:unix-error-intr)
-                                  tmp-timeout timeout)
+      (et:repeat-upon-condition-decreasing-timeout ((et:unix-error-intr)
+                                                    tmp-timeout timeout)
         (setf ready-fds
               (et:epoll-wait (fd-of mux) events
                              *epoll-max-events*

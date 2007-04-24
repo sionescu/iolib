@@ -115,8 +115,8 @@
 
       (handler-case
           (with-foreign-object (tv 'et:timeval)
-            (repeat-decreasing-timeout ((et:unix-error-intr)
-                                        tmp-timeout timeout)
+            (et:repeat-upon-condition-decreasing-timeout ((et:unix-error-intr)
+                                                          tmp-timeout timeout)
               (when tmp-timeout
                 (timeout->timeval tmp-timeout tv))
               (et:select (1+ max-fd)

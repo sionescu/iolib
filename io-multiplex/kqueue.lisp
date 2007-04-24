@@ -114,8 +114,8 @@
                          (ts 'et:timespec))
     (et:memset events 0 (* *kqueue-max-events* et:size-of-kevent))
     (let (ready-fds)
-      (repeat-decreasing-timeout ((et:unix-error-intr)
-                                  tmp-timeout timeout)
+      (et:repeat-upon-condition-decreasing-timeout ((et:unix-error-intr)
+                                                    tmp-timeout timeout)
         (when tmp-timeout
           (timeout->timespec tmp-timeout ts))
         (setf ready-fds

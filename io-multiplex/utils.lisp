@@ -60,27 +60,3 @@
      (error (error)
        (warn "Caught a ~A: ~A, ignoring it."
              (type-of error) error))))
-
-
-(defmacro repeat-decreasing-timeout (((&rest conditions) timeout-var timeout) &body body)
-  (let (($block$ (gensym "BLOCK-"))
-        ($deadline$ (gensym "DEADLINE-"))
-        ($temp-timeout$ (gensym "TEMP-TIMEOUT-")))
-    `(block ,$block$
-       (let* ((,timeout-var ,timeout)
-              (,$deadline$ (when ,timeout-var
-                             (+ ,timeout-var (gettime)))))
-         (flet ((recalculate-timeout ()
-                  (when ,$deadline$
-                    (let ((,$temp-timeout$ (- ,$deadline$ (gettime))))
-                      (setf ,timeout-var
-                            (if (plusp ,$temp-timeout$)
-                                ,$temp-timeout$
-                                0))))))
-           (loop
-              (handler-case
-                  (return-from ,$block$ (progn ,@body))
-                ,@(mapcar #'(lambda (c) `(,c (err)
-                                             (declare (ignore err))
-                                             (recalculate-timeout)))
-                          conditions))))))))

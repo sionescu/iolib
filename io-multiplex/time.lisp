@@ -39,12 +39,6 @@
      (error "Timeout is not a real number or NIL: ~S" timeout))))
 
 
-(defun gettime ()
-  (multiple-value-bind (sec nsec)
-      (et:clock-get-time et:clock-monotonic)
-    (+ sec (/ nsec 1d9))))
-
-
 (defun normalize-timeout (timeout)
   (when timeout
     (assert (not (minusp timeout)))
@@ -54,7 +48,7 @@
 
 (defun abs-timeout (timeout)
   (when timeout
-    (+ (gettime) (normalize-timeout timeout))))
+    (+ (et::gettime) (normalize-timeout timeout))))
 
 
 (defun calc-min-timeout (t1 t2)

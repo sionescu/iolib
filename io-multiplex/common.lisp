@@ -242,12 +242,12 @@
          :with dispatch-list := ()
          :do
 
-         (setf before (gettime))
+         (setf before (et::gettime))
          (mapc #'(lambda (ev)
                    (event-recalc-abs-timeout ev before))
                (queue-head timeouts))
          (dispatch-fd-events-once event-base actual-timeout)
-         (setf after (gettime))
+         (setf after (et::gettime))
 
          (let ((main-timeout (main-timeout-of event-base)))
            (when main-timeout
@@ -318,7 +318,7 @@
 
 
 (defun events-calc-min-rel-timeout (timeouts)
-  (let* ((now (gettime))
+  (let* ((now (et::gettime))
          (first-valid-event (find-if #'(lambda (to)
                                          (or (null to) (< now to)))
                                      (queue-head timeouts)
@@ -534,7 +534,8 @@
           (setf et:fd fd
                 et:events (choose-poll-flags event-type))
           (handler-case
-              (let ((ret (et:poll pollfd 1 (timeout->milisec timeout))))
+              (let ((ret (et:repeat-upon-eintr
+                           (et:poll pollfd 1 (timeout->milisec timeout)))))
                 (when (zerop ret)
                   (return-from wait-until-fd-ready '(:timeout))))
             (et:unix-error (err)
