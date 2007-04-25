@@ -21,7 +21,7 @@
 
 (in-package :net.sockets)
 
-(defparameter *socket-type-map*
+(defvar *socket-type-map*
   '(((:ipv4  :stream   :active  :default) . socket-stream-internet-active)
     ((:ipv6  :stream   :active  :default) . socket-stream-internet-active)
     ((:ipv4  :stream   :passive :default) . socket-stream-internet-passive)

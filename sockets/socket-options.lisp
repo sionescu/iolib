@@ -103,7 +103,7 @@
                                '-socket-option-
                                value-type))
 
-  (defparameter +helper-args-map+
+  (defvar +helper-args-map+
     '((:bool (value))
       (:int (value))
       (:linger (onoff linger))

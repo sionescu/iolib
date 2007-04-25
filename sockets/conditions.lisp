@@ -47,7 +47,7 @@
 ;;;  SOCKET ERRORS  ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 
-(defparameter *socket-error-map* nil)
+(defvar *socket-error-map* nil)
 
 (define-condition socket-error (unix-error) ())
 
