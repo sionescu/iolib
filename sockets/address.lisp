@@ -21,6 +21,7 @@
 
 (in-package :net.sockets)
 
+
 ;;;;;;;;;;;;;;;;
 ;;;  ERRORS  ;;;
 ;;;;;;;;;;;;;;;;
@@ -33,6 +34,7 @@
                      (address-type condition) (address condition))))
   (:documentation "Condition raised when an address designator is invalid."))
 
+
 ;;;
 ;;; Conversion functions
 ;;;
@@ -149,7 +151,7 @@
                       addr-type :ipv6)))
     (values vector addr-type)))
 
-
+
 ;;;
 ;;; Class definitions
 ;;;
@@ -171,26 +173,24 @@
   ((abstract :initform nil :initarg :abstract :reader abstract-p :type boolean))
   (:documentation "UNIX socket address."))
 
-
+
 ;;;
 ;;; Print methods
 ;;;
 
 (defmethod print-object ((address ipv4addr) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
-    (with-slots (name) address
-      (format stream "IPv4 address: ~A"
-              (sockaddr->presentation address)))))
+    (format stream "IPv4 address: ~A"
+            (sockaddr->presentation address))))
 
 (defmethod print-object ((address ipv6addr) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
-    (with-slots (name) address
-      (format stream "IPv6 address: ~A"
-              (sockaddr->presentation address)))))
+    (format stream "IPv6 address: ~A"
+            (sockaddr->presentation address))))
 
 (defmethod print-object ((address localaddr) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
-    (with-slots (name abstract) address
+    (with-slots (abstract) address
       (format stream "Unix socket address: ~A. Abstract: ~:[no~;yes~]"
               (sockaddr->presentation address) abstract))))
 
@@ -205,10 +205,10 @@
 
 (defmethod sockaddr->presentation ((addr localaddr))
   (if (abstract-p addr)
-      "unknown socket"
+      "<unknown socket>"
       (name addr)))
 
-
+
 ;;;
 ;;; Equality methods
 ;;;
@@ -226,7 +226,7 @@
 (defmethod sockaddr= ((addr1 localaddr) (addr2 localaddr))
   (equal (name addr1) (name addr2)))
 
-
+
 ;;;
 ;;; Copy methods
 ;;;
@@ -264,8 +264,7 @@
     ((ignore-errors (coercef name 'ipv6-array))
      (make-instance 'ipv6addr :name name))
     (t (error 'invalid-address :address name :type :unknown))))
-
-
+
 ;;;
 ;;; Well-known addresses
 ;;;
@@ -298,7 +297,7 @@
 (defparameter +ipv6-site-local-all-routers+
   (make-address #(#xFF05 0 0 0 0 0 0 2)))
 
-
+
 ;;;
 ;;; Predicates
 ;;;
