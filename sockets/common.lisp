@@ -21,46 +21,30 @@
 
 (in-package :net.sockets)
 
-(deftype ub8 () `(unsigned-byte 8))
+;;;
+;;; Types
+;;;
+
+(deftype ub8  () `(unsigned-byte 8))
 (deftype ub16 () `(unsigned-byte 16))
 (deftype ub32 () `(unsigned-byte 32))
-(deftype sb8 () `(signed-byte 8))
+(deftype sb8  () `(signed-byte 8))
 (deftype sb16 () `(signed-byte 16))
 (deftype sb32 () `(signed-byte 32))
 
-(defun parse-number-or-nil (value &optional (type :any) (radix 10))
-  (check-type value (or string unsigned-byte))
-  (let ((parsed
-         (if (stringp value)
-             (ignore-errors (parse-integer value :radix radix
-                                           :junk-allowed nil))
-             value)))
-    (if parsed
-        ;; if it's a number and its type is ok return it
-        (and (ecase type
-               (:any  t)
-               (:ub8  (typep parsed 'ub8))
-               (:ub16 (typep parsed 'ub16))
-               (:ub32 (typep parsed 'ub32)))
-             parsed)
-        ;; otherwise nil
-        nil)))
+(deftype ub8-sarray (&optional (size '*))
+  `(simple-array ub8 (,size)))
+(deftype ub8-vector ()
+  '(vector ub8))
+(deftype ub16-sarray (&optional (size '*))
+  `(simple-array ub16 (,size)))
+(deftype ipv4-array ()
+  '(ub8-sarray 4))
+(deftype ipv6-array ()
+  '(ub16-sarray 8))
 
-(defun c->lisp-bool (val)
-  (if (zerop val) nil t))
-
-(defun lisp->c-bool (val)
-  (if val 1 0))
-
-(defun addrerr-value (keyword)
-  (foreign-enum-value 'et:addrinfo-errors keyword))
-
-(defun unixerr-value (keyword)
-  (foreign-enum-value 'et:errno-values keyword))
-
-(defun xor (x1 x2)
-  (not (eql (not x1) (not x2))))
-
+(define-modify-macro coercef (type-spec) coerce)
+
 ;;;
 ;;; Byte-swap functions
 ;;;
@@ -86,15 +70,19 @@
 
 (defun ntohl (long)
   (htonl long))
+
+;;;
+;;; Conversion between address formats
+;;;
 
 (defun copy-simple-array-ub16-to-alien-vector (lisp-vec alien-vec)
-  (declare (type (simple-array ub16 (8)) lisp-vec))
+  (declare (type ipv6-array lisp-vec))
   (dotimes (i 8)
     (setf (mem-aref alien-vec :uint16 i)
           (htons (aref lisp-vec i)))))
 
 (defun map-ipv4-vector-to-ipv6 (addr)
-  (declare (type (simple-array ub8 (*)) addr))
+  (declare (type ipv4-array addr))
   (let ((ipv6addr (make-array 8 :element-type 'ub16
                                 :initial-element 0)))
     ;; setting the IPv4 marker
@@ -110,11 +98,31 @@
 
 ;; From CLOCC's PORT library
 (defun vector-to-ipaddr (vector)
-  (coerce vector '(simple-array ub8 (4)))
+  (coercef vector 'ipv4-array)
   (+ (ash (aref vector 0) 24)
      (ash (aref vector 1) 16)
      (ash (aref vector 2) 8)
      (aref vector 3)))
+
+(defun ipaddr-to-vector (ipaddr)
+  (check-type ipaddr ub32)
+  (let ((vector (make-array 4 :element-type 'ub8)))
+    (setf (aref vector 0) (ldb (byte 8 24) ipaddr)
+          (aref vector 1) (ldb (byte 8 16) ipaddr)
+          (aref vector 2) (ldb (byte 8  8) ipaddr)
+          (aref vector 3) (ldb (byte 8  0) ipaddr))
+    vector))
+
+(defun in6-addr-to-ipv6-array (in6-addr)
+  (let ((vector (make-array 8 :element-type 'ub16)))
+    (dotimes (i 8)
+      (setf (aref vector i)
+            (ntohs (mem-aref in6-addr :uint16 i))))
+    vector))
+
+;;;
+;;; Constructors for SOCKADDR_* structs
+;;;
 
 (defun make-sockaddr-in (sin ub8-vector &optional (port 0))
   (et:bzero sin et:size-of-sockaddr-in)
@@ -145,34 +153,21 @@
          :do (setf (mem-aref et:path :uint8 off)
                    (mem-aref c-string :uint8 off)))))
   sun)
-
-(defun make-vector-u8-4-from-in-addr (in-addr)
-  (check-type in-addr ub32)
-  (let ((vector (make-array 4 :element-type 'ub8)))
-    (setf in-addr (ntohl in-addr))
-    (setf (aref vector 0) (ldb (byte 8 24) in-addr))
-    (setf (aref vector 1) (ldb (byte 8 16) in-addr))
-    (setf (aref vector 2) (ldb (byte 8  8) in-addr))
-    (setf (aref vector 3) (ldb (byte 8  0) in-addr))
-    vector))
-
-(defun make-vector-u16-8-from-in6-addr (in6-addr)
-  (let ((newvector (make-array 8 :element-type 'ub16)))
-    (dotimes (i 8)
-      (setf (aref newvector i)
-            (ntohs (mem-aref in6-addr :uint16 i))))
-    newvector))
+
+;;;
+;;; Conversion functions for SOCKADDR_* structs
+;;;
 
 (defun sockaddr-in->sockaddr (sin)
   (with-foreign-slots ((et:addr et:port) sin et:sockaddr-in)
     (values (make-instance 'ipv4addr
-                           :name (make-vector-u8-4-from-in-addr et:addr))
+                           :name (ipaddr-to-vector (ntohl et:addr)))
             (ntohs et:port))))
 
 (defun sockaddr-in6->sockaddr (sin6)
   (with-foreign-slots ((et:addr et:port) sin6 et:sockaddr-in6)
     (values (make-instance 'ipv6addr
-                           :name (make-vector-u16-8-from-in6-addr et:addr))
+                           :name (in6-addr-to-ipv6-array et:addr))
             (ntohs et:port))))
 
 (defun sockaddr-un->sockaddr (sun)
@@ -212,3 +207,46 @@
      (make-sockaddr-in6 ss (name sockaddr) port))
     (localaddr
      (make-sockaddr-un ss (name sockaddr)))))
+
+;;;
+;;; Misc
+;;;
+
+(defun %check-bounds (sequence start end)
+  (unless end (setf end (length sequence)))
+  (when (> start end) (error "~S ~S wrong sequence bounds" start end))
+  (values start end))
+
+(defun %to-octets (buff ef start end)
+  (io.encodings:string-to-octets buff :external-format ef
+                                 :start start :end end))
+
+(defun parse-number-or-nil (value &optional (type :any) (radix 10))
+  (check-type value (or string unsigned-byte))
+  (let ((parsed
+         (if (stringp value)
+             (ignore-errors (parse-integer value :radix radix
+                                           :junk-allowed nil))
+             value)))
+    (if parsed
+        ;; if it's a number and its type is ok return it
+        (and (ecase type
+               (:any  t)
+               (:ub8  (typep parsed 'ub8))
+               (:ub16 (typep parsed 'ub16))
+               (:ub32 (typep parsed 'ub32)))
+             parsed)
+        ;; otherwise nil
+        nil)))
+
+(defun c->lisp-bool (val)
+  (if (zerop val) nil t))
+
+(defun lisp->c-bool (val)
+  (if val 1 0))
+
+(defun addrerr-value (keyword)
+  (foreign-enum-value 'et:addrinfo-errors keyword))
+
+(defun unixerr-value (keyword)
+  (foreign-enum-value 'et:errno-values keyword))

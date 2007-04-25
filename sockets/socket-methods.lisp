@@ -62,6 +62,7 @@
 (defmethod shared-initialize :after ((socket socket) slot-names
                                      &key file-descriptor family
                                      type (protocol :default))
+  (declare (ignore slot-names))
   (when (socket-open-p socket)
     (close socket))
   (with-slots (fd (fam family) (proto protocol)) socket
@@ -291,6 +292,7 @@
 
 (defmethod bind-address :before ((socket internet-socket)
                                  address &key (reuse-address t))
+  (declare (ignore address))
   (when reuse-address
     (set-socket-option socket :reuse-address :value t)))
 
@@ -415,6 +417,7 @@
 #+freebsd
 (defmethod connect :before ((socket active-socket)
                             sockaddr &key)
+  (declare (ignore sockaddr))
   (when *no-sigpipe*
     (set-socket-option socket :no-sigpipe :value t)))
 
@@ -454,6 +457,7 @@
 
 (defmethod connect ((socket passive-socket)
                     address &key)
+  (declare (ignore address))
   (error "You cannot connect passive sockets."))
 
 (defmethod socket-connected-p ((socket socket))
@@ -490,6 +494,7 @@
   (values socket))
 
 (defmethod shutdown ((socket passive-socket) direction)
+  (declare (ignore direction))
   (error "You cannot shut down passive sockets."))
 
 
@@ -497,39 +502,27 @@
 ;;  SEND  ;;
 ;;;;;;;;;;;;
 
-(defun normalize-send-buffer (buff vstart vend)
-  (let ((start (or vstart 0))
-        (end (if vend
-                 (min vend (length buff))
-                 (length buff))))
-    (assert (<= start end))
-    (etypecase buff
-      ((simple-array ub8 (*)) (values buff start (- end start)))
-      ((vector ub8) (values (coerce buff '(simple-array ub8 (*)))
-                            start (- end start)))
-      (string (values (coerce (io.encodings:string-to-octets buff :external-format :iso-8859-1
-                                                              :start start :end end)
-                              '(simple-array ub8 (*)))
-                      0 (- end start))))))
-
-(defmethod socket-send :before ((buffer array)
-                                (socket active-socket)
-                                &key start end
-                                remote-address remote-port)
-  (check-type start (or unsigned-byte null)
-              "a non-negative value or NIL")
-  (check-type end (or unsigned-byte null)
-              "a non-negative value or NIL")
-  (when (or remote-port remote-address)
-    (check-type remote-address sockaddr "a network address")
-    (check-type remote-port (unsigned-byte 16) "a valid IP port number")))
+(defun %normalize-send-buffer (buff start end ef)
+  (setf (values start end) (%check-bounds buff start end))
+  (etypecase buff
+    (ub8-sarray (values buff start (- end start)))
+    (ub8-vector (values (coerce buff 'ub8-sarray)
+                        start (- end start)))
+    (string     (values (%to-octets buff ef start end)
+                        0 (- end start)))))
 
 (defmethod socket-send ((buffer array)
-                        (socket active-socket) &key start end
+                        (socket active-socket) &key (start 0) end
                         remote-address remote-port end-of-record
                         dont-route dont-wait (no-signal *no-sigpipe*)
                         out-of-band #+linux more #+linux confirm)
-
+  (check-type start unsigned-byte
+              "a non-negative unsigned integer")
+  (check-type end (or unsigned-byte null)
+              "a non-negative unsigned integer or NIL")
+  (when (or remote-port remote-address)
+    (check-type remote-address sockaddr "a network address")
+    (check-type remote-port (unsigned-byte 16) "a valid IP port number"))
   (let ((flags (logior (if end-of-record et:msg-eor 0)
                        (if dont-route et:msg-dontroute 0)
                        (if dont-wait  et:msg-dontwait 0)
@@ -537,12 +530,11 @@
                        (if out-of-band et:msg-oob 0)
                        #+linux (if more et:msg-more 0)
                        #+linux (if confirm et:msg-confirm 0))))
-
     (when (and (ipv4-address-p remote-address)
                (eql (socket-family socket) :ipv6))
       (setf remote-address (map-ipv4-address->ipv6 remote-address)))
     (multiple-value-bind (buff start-offset bufflen)
-        (normalize-send-buffer buffer start end)
+        (%normalize-send-buffer buffer start end (external-format-of socket))
       (with-foreign-object (ss 'et:sockaddr-storage)
         (et:bzero ss et:size-of-sockaddr-storage)
         (when remote-address
@@ -558,6 +550,7 @@
                          (if remote-address et:size-of-sockaddr-storage 0)))))))))
 
 (defmethod socket-send (buffer (socket passive-socket) &key)
+  (declare (ignore buffer))
   (error "You cannot send data on a passive socket."))
 
 
@@ -565,38 +558,23 @@
 ;;  RECV  ;;
 ;;;;;;;;;;;;
 
-(defun normalize-receive-buffer (buff vstart vend)
-  (let ((start (or vstart 0))
-        (end (if vend
-                 (min vend (length buff))
-                 (length buff))))
-    (assert (<= start end))
-    (etypecase buff
-      ((simple-array ub8 (*)) (values buff start (- end start)))
-      (simple-base-string (values buff start (- end start))))))
-
-(defmethod socket-receive :before ((buffer array)
-                                   (socket active-socket)
-                                   &key start end)
-  (check-type start (or unsigned-byte null)
-              "a non-negative value or NIL")
-  (check-type end (or unsigned-byte null)
-              "a non-negative value or NIL"))
+(defun %normalize-receive-buffer (buff start end)
+  (setf (values start end) (%check-bounds buff start end))
+  (etypecase buff
+    ((simple-array ub8 (*)) (values buff start (- end start)))))
 
 (defmethod socket-receive ((buffer array)
-                           (socket active-socket) &key start end
+                           (socket active-socket) &key (start 0) end
                            out-of-band peek wait-all
                            dont-wait (no-signal *no-sigpipe*))
-
   (let ((flags (logior (if out-of-band et:msg-oob 0)
                        (if peek        et:msg-peek 0)
                        (if wait-all    et:msg-waitall 0)
                        (if dont-wait   et:msg-dontwait 0)
                        (if no-signal   et:msg-nosignal 0)))
         bytes-received)
-
     (multiple-value-bind (buff start-offset bufflen)
-        (normalize-receive-buffer buffer start end)
+        (%normalize-receive-buffer buffer start end)
       (with-foreign-object (ss 'et:sockaddr-storage)
         (et:bzero ss et:size-of-sockaddr-storage)
         (with-foreign-pointer (size et:size-of-socklen)
@@ -621,6 +599,7 @@
               (values buffer bytes-received)))))))
 
 (defmethod socket-receive (buffer (socket passive-socket) &key)
+  (declare (ignore buffer))
   (error "You cannot receive data from a passive socket."))
 
 

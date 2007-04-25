@@ -21,11 +21,6 @@
 
 (in-package :net.sockets)
 
-(defun %check-bounds (sequence start end)
-  (unless end (setf end (length sequence)))
-  (when (> start end) (error "~S ~S wrong sequence bounds" start end))
-  (values start end))
-
 (iolib-utils:define-constant +max-octets-per-char+ 6)
 
 ;; TODO: use the buffer pool
@@ -141,7 +136,7 @@
   (setf (values start end) (%check-bounds seq start end))
   (when (< start end)
     (etypecase seq
-      ((simple-array ub8 (*))
+      (ub8-sarray
        (%read-into-simple-array-ub8 stream seq start end))
       (string
        (%read-into-string stream seq start end))
@@ -156,7 +151,7 @@
   (setf (values start end) (%check-bounds seq start end))
   (when (< start end)
     (etypecase seq
-      ((simple-array ub8 (*))
+      (ub8-sarray
        (%read-into-simple-array-ub8 stream seq start end))
       (vector
        (%read-into-vector stream seq start end)))))
@@ -271,6 +266,10 @@
                 (incf (iobuf-end ob) octets-needed)))))
       (values array))))
 
+(defun %write-vector-ub8 (stream vector start end)
+  (declare (type dual-channel-gray-stream stream))
+  (%write-simple-array-ub8 stream (coerce vector 'ub8-sarray) start end))
+
 (defun %write-vector (stream vector start end)
   (declare (type dual-channel-gray-stream stream))
   (loop :for offset :from start :below end
@@ -284,10 +283,12 @@
   (setf (values start end) (%check-bounds seq start end))
   (when (< start end)
     (etypecase seq
-      ((simple-array ub8 (*))
+      (ub8-sarray
        (%write-simple-array-ub8 stream seq start end))
       (string
        (stream-write-string stream seq start end))
+      ((vector ub8)
+       (%write-vector-ub8 stream seq start end))
       (vector
        (%write-vector stream seq start end)))))
 
@@ -299,8 +300,10 @@
   (setf (values start end) (%check-bounds seq start end))
   (when (< start end)
     (etypecase seq
-      ((simple-array ub8 (*))
+      (ub8-sarray
        (%write-simple-array-ub8 stream seq start end))
+      ((vector ub8)
+       (%write-vector-ub8 stream seq start end))
       (vector
        (%write-vector stream seq start end)))))
 

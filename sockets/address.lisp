@@ -37,14 +37,6 @@
 ;;; Conversion functions
 ;;;
 
-;; From CLOCC's PORT library
-(defun ipaddr-to-vector (ipaddr)
-  (declare (type ub32 ipaddr))
-  (vector (ldb (byte 8 24) ipaddr)
-          (ldb (byte 8 16) ipaddr)
-          (ldb (byte 8 8)  ipaddr)
-          (ldb (byte 8 0)  ipaddr)))
-
 (defun ipaddr-to-dotted (ipaddr)
   (declare (type ub32 ipaddr))
   (format nil "~A.~A.~A.~A"
@@ -83,7 +75,7 @@
   (vector-to-ipaddr (dotted-to-vector string)))
 
 (defun vector-to-dotted (vector)
-  (setf vector (coerce vector '(simple-array ub8 (4))))
+  (coercef vector 'ipv4-array)
   (format nil "~A.~A.~A.~A"
           (aref vector 0)
           (aref vector 1)
@@ -109,16 +101,16 @@
           (if errorp
               (error 'invalid-address :address string :type :ipv6)
               (return-from colon-separated-to-vector nil)))))
-    (make-vector-u16-8-from-in6-addr in6-addr)))
+    (in6-addr-to-ipv6-array in6-addr)))
 
 (defun vector-to-colon-separated (vector &key (case :downcase) (errorp t))
   (handler-case
-      (setf vector (coerce vector '(simple-array ub16 (8))))
+      (coercef vector 'ipv6-array)
     (type-error (err)
       (declare (ignore err))
       (if errorp
           (error 'type-error :datum vector
-                 :expected-type '(simple-array (unsigned-byte 16) (8)))
+                 :expected-type 'ipv6-array)
           (return-from vector-to-colon-separated nil))))
 
   (with-foreign-object (sin6 'et:sockaddr-in6)
@@ -147,12 +139,10 @@
                  (setf addr-type :ipv4))
                 ((setf vector (colon-separated-to-vector address :errorp nil))
                  (setf addr-type :ipv6))))
-      ((array * (4)) (cond ((setf vector (ignore-errors
-                                           (coerce address '(simple-array ub8 (4)))))
-                            (setf addr-type :ipv4))))
-      ((array * (8)) (cond ((setf vector (ignore-errors
-                                           (coerce address '(simple-array ub16 (8)))))
-                            (setf addr-type :ipv6))))
+      ((vector * 4) (and (ignore-errors (setf vector (coerce address 'ipv4-array)))
+                         (setf addr-type :ipv4)))
+      ((vector * 8) (and (ignore-errors (setf vector (coerce address 'ipv6-array)))
+                         (setf addr-type :ipv6)))
       (ipv4addr (setf vector (name address)
                       addr-type :ipv4))
       (ipv6addr (setf vector (name address)
@@ -266,17 +256,14 @@
 
 ;;; Constructor
 (defun make-address (name)
-  (let (n)
-    (cond
-      ((stringp name)
-       (make-instance 'localaddr :name name))
-      ((setf n (ignore-errors
-                 (coerce name '(simple-array ub8  (4)))))
-       (make-instance 'ipv4addr :name n))
-      ((setf n (ignore-errors
-                 (coerce name '(simple-array ub16 (8)))))
-       (make-instance 'ipv6addr :name n))
-      (t (error 'invalid-address :address name :type :unknown)))))
+  (cond
+    ((stringp name)
+     (make-instance 'localaddr :name name))
+    ((ignore-errors (coercef name 'ipv4-array))
+     (make-instance 'ipv4addr :name name))
+    ((ignore-errors (coercef name 'ipv6-array))
+     (make-instance 'ipv6addr :name name))
+    (t (error 'invalid-address :address name :type :unknown))))
 
 
 ;;;
@@ -317,43 +304,53 @@
 ;;;
 
 ;; General predicates
-(defgeneric ipv4-address-p (addr)
-  (:documentation "Returns T if ADDR is an IPv4 address object."))
+(defgeneric ipv4-address-p (address)
+  (:documentation "Returns T if ADDRESS is an IPv4 address object."))
 
-(defmethod ipv4-address-p ((addr ipv4addr))
+(defmethod ipv4-address-p ((address ipv4addr))
+  (declare (ignore address))
   t)
 
-(defmethod ipv4-address-p (addr)
+(defmethod ipv4-address-p (address)
+  (declare (ignore address))
   nil)
 
-(defgeneric ipv6-address-p (addr)
-  (:documentation "Returns T if ADDR is an IPv6 address object."))
+(defgeneric ipv6-address-p (address)
+  (:documentation "Returns T if ADDRESS is an IPv6 address object."))
 
-(defmethod ipv6-address-p ((addr ipv6addr))
+(defmethod ipv6-address-p ((address ipv6addr))
+  (declare (ignore address))
   t)
 
-(defmethod ipv6-address-p (addr)
+(defmethod ipv6-address-p (address)
+  (declare (ignore address))
   nil)
 
-(defgeneric local-address-p (addr)
-  (:documentation "Returns T if ADDR is local address object."))
+(defgeneric local-address-p (address)
+  (:documentation "Returns T if ADDRESS is local address object."))
 
-(defmethod local-address-p ((addr localaddr))
+(defmethod local-address-p ((address localaddr))
+  (declare (ignore address))
   t)
 
-(defmethod local-address-p (addr)
+(defmethod local-address-p (address)
+  (declare (ignore address))
   nil)
 
 (defmethod address-type ((address ipv4addr))
+  (declare (ignore address))
   :ipv4)
 
 (defmethod address-type ((address ipv6addr))
+  (declare (ignore address))
   :ipv6)
 
 (defmethod address-type ((address localaddr))
+  (declare (ignore address))
   :local)
 
 (defmethod address-type (address)
+  (declare (ignore address))
   nil)
 
 ;; IPv4 predicates

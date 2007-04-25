@@ -165,8 +165,7 @@
 ;;
 
 (defun lookup-host-u8-vector-4 (host ipv6)
-  (setf host (coerce host '(simple-array ub8 (4))))
-
+  (coercef host 'ub8-sarray)
   (handler-case
       (ecase ipv6
         ((nil)
@@ -175,7 +174,6 @@
            (return-from lookup-host-u8-vector-4
              (make-host (get-name-info sin :flags et:ni-namereqd)
                         (list (make-address (copy-seq host)))))))
-
         ((t)
          (with-foreign-object (sin6 'et:sockaddr-storage)
            (let ((ipv6addr (map-ipv4-vector-to-ipv6 host)))
@@ -191,15 +189,13 @@
       (resolver-error (et:system-error-identifier err) :data host))))
 
 (defun lookup-host-u16-vector-8 (host ipv6)
-  (setf host (coerce host '(simple-array ub16 (8))))
-
+  (coercef host 'ub16-sarray)
   (handler-case
       (ecase ipv6
         ((nil)
          (resolver-error :eai-fail
                          :data host
                          :message "Received IPv6 address but IPv4-only was requested."))
-
         ((:ipv6 t)
          (with-foreign-object (sin6 'et:sockaddr-storage)
            (make-sockaddr-in6 sin6 host)
@@ -237,6 +233,7 @@
 (defgeneric lookup-host (host &key &allow-other-keys))
 
 (defmethod lookup-host :before (host &key (ipv6 *ipv6*))
+  (declare (ignore host))
   (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration"))
 
 (defmethod lookup-host ((host string) &key (ipv6 *ipv6*))
@@ -254,17 +251,14 @@
                              #+freebsd et:ai-v4mapped-cfg
                              et:ai-all)))
              (:ipv6 (values et:af-inet6 0)))))
-
     (let (parsed)
       (cond
         ((setf parsed (dotted-to-vector host :errorp nil))
          (return-from lookup-host
            (lookup-host-u8-vector-4 parsed ipv6)))
-
         ((setf parsed (colon-separated-to-vector host :errorp nil))
          (return-from lookup-host
            (lookup-host-u16-vector-8 parsed ipv6)))
-
         ;; FIXME: check for ASCII-only strings or implement IDN
         (t
          (multiple-value-bind (family flags)
@@ -298,10 +292,9 @@
 
 (defmethod lookup-host (host &key (ipv6 *ipv6*))
   (etypecase host
-    ((simple-array * (4)) ; IPv4 address
+    ((vector * 4)                       ; IPv4 address
      (lookup-host-u8-vector-4 host ipv6))
-
-    ((simple-array * (8)) ; IPv6 address
+    ((vector * 8)                       ; IPv6 address
      (lookup-host-u16-vector-8 host ipv6))))
 
 
