@@ -3,7 +3,7 @@
 (in-package :common-lisp-user)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:operate 'asdf:load-op :cffi)
+  (asdf:operate 'asdf:load-op :asdf-additions)
   #+cmu (require :gray-streams))
 
 (defpackage #:net.sockets-system
