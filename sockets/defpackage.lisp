@@ -122,6 +122,7 @@
 
    ;; socket methods
    #:socket-fd #:socket-address #:socket-family #:socket-protocol
+   #:external-format-of #:istream-pos-of #:ostream-pos-of
    #:get-socket-option #:set-socket-option
    #:socket-type #:make-socket #:socket-close #:socket-open-p
    #:socket-non-blocking #:local-name #:remote-name
