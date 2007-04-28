@@ -205,7 +205,7 @@
          (funcall output code)
          (funcall output (char-code (funcall error-fn 'illegal-character)))))))
 
-(define-external-format :iso-8859-1 (:iso8859-1 :ISO_8859-1 :latin1 :l1
+(define-external-format :iso-8859-1 (:iso8859-1 :ISO_8859-1 :latin1 :latin-1 :l1
                                      :csISOLatin1 :iso-ir-100 :CP819) 1
   (to-char
    (declare (optimize (speed 3) (space 0) (safety 0) (debug 0)))
@@ -251,20 +251,20 @@
 
 #+ucs-chars
 (define-iso-8859-external-formats
-    (("2" :ISO_8859-2 :latin2 :l2 :csISOLatin2 :iso-ir-101)
-     ("3" :ISO_8859-3 :latin3 :l3 :csISOLatin3 :iso-ir-109)
-     ("4" :ISO_8859-4 :latin4 :l4 :csISOLatin4 :iso-ir-110)
+    (("2" :ISO_8859-2 :latin2 :latin-2 :l2 :csISOLatin2 :iso-ir-101)
+     ("3" :ISO_8859-3 :latin3 :latin-2 :l3 :csISOLatin3 :iso-ir-109)
+     ("4" :ISO_8859-4 :latin4 :latin-4 :l4 :csISOLatin4 :iso-ir-110)
      ("5" :ISO_8859-5 :cyrillic :csISOLatinCyrillic :iso-ir-144)
      ("6" :ISO_8859-6 :arabic :csISOLatinArabic :iso-ir-127)
      ("7" :ISO_8859-7 :greek :greek8 :csISOLatinGreek :iso-ir-126)
      ("8" :ISO_8859-8 :hebrew :csISOLatinHebrew :iso-ir-138)
-     ("9" :ISO_8859-9 :latin5 :l5 :csISOLatin5 :iso-ir-148)
-     ("10" :ISO_8859-10 :latin6 :l6 :csISOLatin6 :iso-ir-157)
+     ("9" :ISO_8859-9 :latin5 :latin-5 :l5 :csISOLatin5 :iso-ir-148)
+     ("10" :ISO_8859-10 :latin6 :latin-6 :l6 :csISOLatin6 :iso-ir-157)
      ("11" :ISO_8859-11 :thai :csISOLatinThai :iso-ir-166)
      ("13" :ISO_8859-13 :baltic :csISOLatinBaltic :iso-ir-179)
      ("14" :ISO_8859-14 :iso-celtic :latin8 :l8 :csISOLatinCeltic :iso-ir-199)
-     ("15" :ISO_8859-15 :latin9 :l9 :csISOLatin9 :iso-ir-203)
-     ("16" :ISO_8859-16 :latin10 :l10 :csISOLatin10 :iso-ir-226)))
+     ("15" :ISO_8859-15 :latin9 :latin-9 :l9 :csISOLatin9 :iso-ir-203)
+     ("16" :ISO_8859-16 :latin10 :latin-10 :l10 :csISOLatin10 :iso-ir-226)))
 
 (iolib-utils:define-constant +max-unicode-code-point+ #x10FFFF)
 
