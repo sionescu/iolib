@@ -23,7 +23,7 @@
 ;;; Foreign Buffers
 ;;;
 
-(iolib-utils:define-constant +bytes-per-iobuf+ (* 4 1024))
+(define-constant +bytes-per-iobuf+ (* 4 1024))
 
 ;; FIXME: make this right
 ;; probably not all SIMPLE-ARRAYs are admissible

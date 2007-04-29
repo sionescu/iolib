@@ -99,7 +99,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun make-sockopt-helper-name (action value-type)
-    (iolib-utils:concat-symbol action
+    (concat-symbol action
                                '-socket-option-
                                value-type))
 
@@ -128,7 +128,7 @@
   (declare (type symbol action)
            (type symbol argtype)
            (type symbol os))
-  (let ((eql-name (iolib-utils:ensure-keyword name))
+  (let ((eql-name (ensure-keyword name))
         (args (second (assoc argtype +helper-args-map+)))
         (helper-get (make-sockopt-helper-name :get argtype))
         (helper-set (make-sockopt-helper-name :set argtype)))

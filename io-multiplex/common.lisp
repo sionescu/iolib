@@ -514,7 +514,7 @@
 ;;;;
 
 ;; FIXME: Until a way to autodetect platform features is implemented
-(iolib-utils:define-constant et::pollrdhup 0)
+(define-constant et::pollrdhup 0)
 
 (defun wait-until-fd-ready (fd event-type &optional timeout)
   ;; FIXME: this conses badly for its return value

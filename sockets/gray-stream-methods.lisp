@@ -21,7 +21,7 @@
 
 (in-package :net.sockets)
 
-(iolib-utils:define-constant +max-octets-per-char+ 6)
+(define-constant +max-octets-per-char+ 6)
 
 ;; TODO: use the buffer pool
 ;; TODO: handle instance reinitialization
@@ -506,11 +506,11 @@
 (defmethod stream-fresh-line ((stream active-socket))
   (write-char #\Newline stream) t)
 
-(iolib-utils:define-constant +unix-line-terminator+
+(define-constant +unix-line-terminator+
     (make-array 1 :element-type 'ub8 :initial-contents '(10)))
-(iolib-utils:define-constant +dos-line-terminator+
+(define-constant +dos-line-terminator+
     (make-array 2 :element-type 'ub8 :initial-contents '(13 10)))
-(iolib-utils:define-constant +mac-line-terminator+
+(define-constant +mac-line-terminator+
     (make-array 1 :element-type 'ub8 :initial-contents '(13)))
 
 (defun %write-line-terminator (stream line-terminator)

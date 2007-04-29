@@ -23,7 +23,7 @@
 
 (defpackage :io.multiplex
   (:nicknames #:iomux)
-  (:use #:common-lisp #:cffi)
+  (:use #:common-lisp #:cffi #:iolib-utils)
   (:export
    ;; classes
    #:event-base #:event

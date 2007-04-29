@@ -4,7 +4,7 @@
 
 (defpackage :io.encodings
   (:nicknames #:ioenc)
-  (:use #:common-lisp)
+  (:use #:common-lisp #:iolib-utils)
   (:export
    ;; External-format handling
    #:external-format #:make-external-format #:find-external-format

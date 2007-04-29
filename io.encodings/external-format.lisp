@@ -166,7 +166,7 @@
   (when (eq name :default)
     (setq name *default-external-format*))
   (when (stringp name)
-    (setf name (iolib-utils:ensure-keyword name)))
+    (setf name (ensure-keyword name)))
 
   (or (gethash name *external-formats*)
       (gethash (gethash name *external-format-aliases*)
@@ -229,10 +229,10 @@
        ,@(loop :for i :in indexes
             :collect
             (multiple-value-bind (index aliases) (get-name-and-aliases i)
-              (let ((table (iolib-utils:concat-symbol "+iso-8859-" index "-table+"))
-                    (name (iolib-utils:ensure-keyword
+              (let ((table (concat-symbol "+iso-8859-" index "-table+"))
+                    (name (ensure-keyword
                            (concatenate 'string "ISO-8859-" index))))
-                (push (iolib-utils:ensure-keyword
+                (push (ensure-keyword
                        (concatenate 'string "ISO8859-" index))
                       aliases)
                 `(define-external-format ,name ,aliases 1
@@ -266,7 +266,7 @@
      ("15" :ISO_8859-15 :latin9 :latin-9 :l9 :csISOLatin9 :iso-ir-203)
      ("16" :ISO_8859-16 :latin10 :latin-10 :l10 :csISOLatin10 :iso-ir-226)))
 
-(iolib-utils:define-constant +max-unicode-code-point+ #x10FFFF)
+(define-constant +max-unicode-code-point+ #x10FFFF)
 
 #+ucs-chars (declaim (inline illegal-unicode-code-point))
 #+ucs-chars
@@ -446,7 +446,7 @@
 ;;;
 ;;;
 
-(iolib-utils:define-constant +replacement-char+
+(define-constant +replacement-char+
     #+ucs-chars #xFFFD
     #-ucs-chars (char-code #\?))
 
