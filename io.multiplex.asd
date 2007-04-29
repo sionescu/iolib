@@ -21,15 +21,15 @@
   :pathname (merge-pathnames (make-pathname :directory '(:relative "io-multiplex"))
                              *load-truename*)
   :components
-  ((:file "defpackage")
-   (:file "time" :depends-on ("defpackage"))
-   (:file "queue" :depends-on ("defpackage"))
-   (:file "utils" :depends-on ("defpackage"))
-   (:file "common" :depends-on ("defpackage" "time" "utils" "queue"))
-   (:file "select" :depends-on ("defpackage" "common" "utils" "queue"))
-   #+linux (:file "epoll" :depends-on ("defpackage" "common" "utils" "queue"))
-   #+freebsd (:file "kqueue" :depends-on ("defpackage" "common" "utils" "queue"))
-   (:file "detect" :depends-on ("defpackage" "common"
+  ((:file "pkgdcl")
+   (:file "time" :depends-on ("pkgdcl"))
+   (:file "queue" :depends-on ("pkgdcl"))
+   (:file "utils" :depends-on ("pkgdcl"))
+   (:file "common" :depends-on ("pkgdcl" "time" "utils" "queue"))
+   (:file "select" :depends-on ("pkgdcl" "common" "utils" "queue"))
+   #+linux (:file "epoll" :depends-on ("pkgdcl" "common" "utils" "queue"))
+   #+freebsd (:file "kqueue" :depends-on ("pkgdcl" "common" "utils" "queue"))
+   (:file "detect" :depends-on ("pkgdcl" "common"
                                 "select"
                                 #+linux "epoll"
                                 #+freebsd "kqueue"))))

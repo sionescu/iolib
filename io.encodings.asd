@@ -25,8 +25,8 @@
   :default-component-class muffled-source-file
   :pathname (merge-pathnames (make-pathname :directory '(:relative "io.encodings"))
                              *load-truename*)
-  :components ((:file "defpackage")
-               (:file "common" :depends-on ("defpackage"))
-               (:file "iso-8859-tables" :depends-on ("defpackage"))
+  :components ((:file "pkgdcl")
+               (:file "common" :depends-on ("pkgdcl"))
+               (:file "iso-8859-tables" :depends-on ("pkgdcl"))
                (:file "external-format"
-                      :depends-on ("defpackage" "common" "iso-8859-tables"))))
+                      :depends-on ("pkgdcl" "common" "iso-8859-tables"))))

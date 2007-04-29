@@ -25,18 +25,18 @@
   :pathname (merge-pathnames (make-pathname :directory '(:relative "sockets"))
                              *load-truename*)
   :components
-  ((:file "defpackage")
-   (:file "common" :depends-on ("defpackage"))
-   (:file "conditions" :depends-on ("defpackage" "common"))
-   (:file "config" :depends-on ("defpackage" "common"))
-   (:file "iface" :depends-on ("defpackage" "common" "conditions"))
-   (:file "address" :depends-on ("defpackage" "common" "conditions"))
-   (:file "resolv" :depends-on ("defpackage" "common"
+  ((:file "pkgdcl")
+   (:file "common" :depends-on ("pkgdcl"))
+   (:file "conditions" :depends-on ("pkgdcl" "common"))
+   (:file "config" :depends-on ("pkgdcl" "common"))
+   (:file "iface" :depends-on ("pkgdcl" "common" "conditions"))
+   (:file "address" :depends-on ("pkgdcl" "common" "conditions"))
+   (:file "resolv" :depends-on ("pkgdcl" "common"
                                 "config" "conditions" "address"))
-   (:file "base-sockets" :depends-on ("defpackage" "config" "resolv"))
-   (:file "socket-options" :depends-on ("defpackage" "common" "base-sockets"))
+   (:file "base-sockets" :depends-on ("pkgdcl" "config" "resolv"))
+   (:file "socket-options" :depends-on ("pkgdcl" "common" "base-sockets"))
    (:file "socket-methods"
-          :depends-on ("defpackage" "config" "common" "address"
+          :depends-on ("pkgdcl" "config" "common" "address"
                        "base-sockets" "socket-options"))
    (:file "make-socket"
-          :depends-on ("defpackage" "config" "socket-methods"))))
+          :depends-on ("pkgdcl" "config" "socket-methods"))))

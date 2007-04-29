@@ -10,4 +10,4 @@
 (defsystem :iolib-utils-package
   :pathname (merge-pathnames (make-pathname :directory '(:relative "utils"))
                              *load-truename*)
-  :components ((:file "defpackage")))
+  :components ((:file "pkgdcl")))
