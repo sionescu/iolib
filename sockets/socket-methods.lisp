@@ -204,29 +204,6 @@
           (otherwise (error err)))))))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;  get and set O_NONBLOCK  ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod socket-non-blocking ((socket socket))
-  (with-accessors ((fd fd-of)) socket
-    (let ((current-flags (with-socket-error-filter
-                           (et:fcntl fd et:f-getfl))))
-      (logtest et:o-nonblock current-flags))))
-
-(defmethod (setf socket-non-blocking) (value (socket socket))
-  (check-type value boolean "a boolean value")
-  (with-accessors ((fd fd-of)) socket
-    (with-socket-error-filter
-      (let* ((current-flags (et:fcntl fd et:f-getfl))
-             (new-flags (if value
-                            (logior current-flags et:o-nonblock)
-                            (logandc2 current-flags et:o-nonblock))))
-        (when (/= new-flags current-flags)
-          (et:fcntl fd et:f-setfl new-flags)))))
-  (values value))
-
-
 ;;;;;;;;;;;;;;;;;;;
 ;;  GETSOCKNAME  ;;
 ;;;;;;;;;;;;;;;;;;;
@@ -391,12 +368,12 @@
                   (unwind-protect
                        (progn
                          ;; saving the current non-blocking state
-                         (setf non-blocking-state (socket-non-blocking socket))
+                         (setf non-blocking-state (fd-non-blocking socket))
                          ;; switch the socket to non-blocking mode
-                         (setf (socket-non-blocking socket) t)
+                         (setf (fd-non-blocking socket) t)
                          (setf client-fd (et:accept (fd-of socket) ss size)))
                     ;; restoring the socket's non-blocking state
-                    (setf (socket-non-blocking socket) non-blocking-state)))
+                    (setf (fd-non-blocking socket) non-blocking-state)))
             ;; the socket is marked non-blocking and there's no new connection
             (et:unix-error-wouldblock (err)
               (declare (ignore err))

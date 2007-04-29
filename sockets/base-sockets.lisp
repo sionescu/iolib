@@ -36,9 +36,6 @@
 
 (defgeneric socket-type (socket))
 
-(defgeneric socket-non-blocking (socket))
-(defgeneric (setf socket-non-blocking) (value socket))
-
 (defgeneric socket-open-p (socket))
 
 (defgeneric local-name (socket))

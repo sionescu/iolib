@@ -28,4 +28,5 @@
   ((:file "pkgdcl")
    (:file "classes")
    (:file "buffer")
+   (:file "fd-mixin")
    (:file "gray-stream-methods")))

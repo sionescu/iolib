@@ -61,11 +61,11 @@
   (start 0 :type buffer-index)
   (end 0 :type buffer-index))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                             ;;;
-;;; Bivalent socket Gray stream ;;;
-;;;                             ;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                        ;;;
+;;; File-Descriptor Mixins ;;;
+;;;                        ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (deftype stream-position ()
   '(unsigned-byte 64))
@@ -73,6 +73,13 @@
 (defclass dual-channel-fd-stream-mixin ()
   ((input-fd  :initform nil :accessor input-fd-of)
    (output-fd :initform nil :accessor output-fd-of)))
+
+(defgeneric input-fd-non-blocking (socket))
+(defgeneric (setf input-fd-non-blocking) (mode fd-mixin))
+
+(defgeneric output-fd-non-blocking (socket))
+(defgeneric (setf output-fd-non-blocking) (mode fd-mixin))
+
 
 (defclass dual-channel-single-fd-stream-mixin (dual-channel-fd-stream-mixin) ())
 
@@ -89,6 +96,15 @@
       (assert (eql fd-in fd-out))
       (setf fd-in fd fd-out fd)
       (values fd-in))))
+
+(defgeneric fd-non-blocking (socket))
+(defgeneric (setf fd-non-blocking) (mode fd-mixin))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                             ;;;
+;;; Bivalent socket Gray stream ;;;
+;;;                             ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defclass dual-channel-gray-stream (dual-channel-fd-stream-mixin
                                     fundamental-binary-input-stream

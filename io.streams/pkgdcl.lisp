@@ -41,10 +41,10 @@
                          #:ub8-sarray #:ub8-vector #:ub16-sarray
                          #:external-format-of
                          #:dual-channel-fd-stream-mixin
-                         #:input-fd #:input-fd-of
-                         #:output-fd #:output-fd-of
+                         #:input-fd #:input-fd-of #:input-fd-non-blocking
+                         #:output-fd #:output-fd-of #:output-fd-non-blocking
                          #:dual-channel-single-fd-stream-mixin
-                         #:fd-of))))
+                         #:fd-of #:fd-non-blocking))))
   (def-my-package
     #:fundamental-binary-input-stream #:fundamental-binary-output-stream
     #:fundamental-character-input-stream #:fundamental-character-output-stream

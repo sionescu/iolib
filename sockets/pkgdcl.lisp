@@ -99,7 +99,7 @@
    #:socket-fd #:socket-address #:socket-family #:socket-protocol
    #:get-socket-option #:set-socket-option
    #:socket-type #:make-socket #:socket-close #:socket-open-p
-   #:socket-non-blocking #:local-name #:remote-name
+   #:local-name #:remote-name
    #:bind-address #:socket-listen #:accept-connection
    #:connect  #:unconnect #:socket-connected-p
    #:shutdown #:socket-send  #:socket-receive))
