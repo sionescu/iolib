@@ -132,8 +132,10 @@
      :finally (return offset)))
 
 #-clisp
-(defmethod stream-read-sequence ((stream dual-channel-gray-stream) seq
-                                 &optional (start 0) end)
+(defmethod #-openmcl stream-read-sequence
+           #+openmcl stream-read-vector
+           ((stream dual-channel-gray-stream) seq
+            &optional (start 0) end)
   (setf (values start end) (%check-bounds seq start end))
   (when (< start end)
     (etypecase seq
@@ -277,8 +279,10 @@
      :finally (return vector)))
 
 #-clisp
-(defmethod stream-write-sequence ((stream dual-channel-gray-stream) seq
-                                  &optional (start 0) end)
+(defmethod #-openmcl stream-write-sequence
+           #+openmcl stream-write-vector
+           ((stream dual-channel-gray-stream) seq
+            &optional (start 0) end)
   (setf (values start end) (%check-bounds seq start end))
   (when (< start end)
     (etypecase seq

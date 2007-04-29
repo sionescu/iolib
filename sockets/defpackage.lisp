@@ -43,13 +43,13 @@
      #:stream-read-byte #:stream-write-byte
      #:stream-peek-char #:stream-read-char #:stream-read-char-no-hang
      #:stream-unread-char #:stream-read-line #:stream-listen
-     #-clisp #:stream-read-sequence
+     #-(or clisp openmcl) #:stream-read-sequence
+     #+openmcl #:stream-read-vector
      #+clisp #:stream-read-char-sequence #+clisp #:stream-read-byte-sequence
-     #-clisp #:stream-write-sequence
+     #-(or clisp openmcl) #:stream-write-sequence
+     #+openmcl #:stream-write-vector
      #+clisp #:stream-write-char-sequence #+clisp #:stream-write-byte-sequence
-     #:stream-advance-to-column #:stream-fresh-line
-     #:stream-line-column #:stream-start-line-p
-     #-clisp #:stream-line-length
+     #:stream-fresh-line #:stream-start-line-p
      #:stream-terpri #:stream-write-char #:stream-write-string)
   (:export
    ;; conditions
