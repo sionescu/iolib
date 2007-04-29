@@ -51,10 +51,9 @@
 (defmethod stream-element-type ((stream active-socket))
   '(unsigned-byte 8))
 
-;; TODO: use abort
 ;; TODO: use the buffer pool
 (defmethod close :around ((stream active-socket) &key abort)
-  (declare (ignore abort))
+  (unless abort (finish-output stream))
   (with-accessors ((ib input-buffer-of)
                    (ob output-buffer-of)) stream
     (when ib (free-iobuf ib))
