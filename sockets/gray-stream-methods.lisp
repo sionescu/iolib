@@ -95,7 +95,6 @@
 (defun %read-into-simple-array-ub8 (stream array start end)
   (declare (type dual-channel-gray-stream stream))
   (with-accessors ((ib input-buffer-of)
-                   (pos istream-pos-of)
                    (fd socket-fd)) stream
     (let ((octets-needed (- end start)))
       (loop :with array-offset := start
@@ -107,7 +106,6 @@
            (incf array-offset nbytes)
            (decf octets-needed nbytes)
            (incf (iobuf-start ib) nbytes)
-           (incf pos nbytes)
          :if (zerop octets-needed) :do (loop-finish)
          :else :do (iobuf-reset ib)
          :when (eql :eof (%fill-ibuf ib fd)) :do (loop-finish)
@@ -246,14 +244,12 @@
 (defun %write-simple-array-ub8 (stream array start end)
   (declare (type dual-channel-gray-stream stream))
   (with-accessors ((ob output-buffer-of)
-                   (pos ostream-pos-of)
                    (fd socket-fd)) stream
     (let ((octets-needed (- end start)))
       (if (<= octets-needed (iobuf-end-space-length ob))
           (progn
             (iobuf-copy-from-lisp-array array start ob
                                         (iobuf-end ob) octets-needed)
-            (incf pos octets-needed)
             (incf (iobuf-end ob) octets-needed)
             (%flush-obuf-if-needed stream))
           (with-pointer-to-vector-data (ptr array)
@@ -261,7 +257,6 @@
             (let ((ret (%write-n-bytes (inc-pointer ptr start)
                                        fd octets-needed)))
               (when (numberp ret)
-                (incf pos ret)
                 (incf (iobuf-end ob) octets-needed)))))
       (values array))))
 
@@ -328,19 +323,19 @@
       (ecase (ioenc:ef-line-terminator ef)
         (:unix (when (= char-code (char-code #\Linefeed))
                  (incf (iobuf-start ib))
-                 (return (values #\Newline 1))))
+                 (return #\Newline)))
         (:mac (when (= char-code (char-code #\Return))
                 (incf (iobuf-start ib))
-                (return (values #\Newline 1))))
+                (return #\Newline)))
         (:dos (when (= char-code (char-code #\Return))
                 (when (and (= (iobuf-length ib) 1)
                            (eql (%fill-ibuf ib fd) :eof))
                   (incf (iobuf-start ib))
-                  (return (values #\Return 1)))
+                  (return #\Return))
                 (when (= (bref ib (1+ start-off))
                          (char-code #\Linefeed))
                   (incf (iobuf-start ib) 2)
-                  (return (values #\Newline 2)))))))))
+                  (return #\Newline))))))))
 
 ;; FIXME: currently we return :EOF when read(2) returns 0
 ;;        we should distinguish hard end-of-files(EOF and buffer empty)
@@ -349,7 +344,6 @@
 (defmethod stream-read-char ((stream active-socket))
   (with-accessors ((fd socket-fd) (ib input-buffer-of)
                    (unread-index ibuf-unread-index-of)
-                   (pos istream-pos-of)
                    (ef external-format-of)) stream
     (setf unread-index (iobuf-start ib))
     (let ((str (make-string 1))
@@ -368,10 +362,9 @@
                (iobuf-copy-data-to-start ib)
                (setf unread-index 0)))
         ;; line-end handling
-        (multiple-value-bind (line-end bytes-consumed)
-            (maybe-find-line-ending fd ib ef)
+        (let ((line-end
+               (maybe-find-line-ending fd ib ef)))
           (when line-end
-            (incf pos bytes-consumed)
             (return-from stream-read-char line-end)))
         (tagbody :start
            (handler-case
@@ -383,7 +376,6 @@
                (declare (ignore err))
                (fill-buf-or-eof)
                (go :start)))
-           (incf pos ret)
            (incf (iobuf-start ib) ret))
         (char str 0)))))
 
@@ -395,10 +387,10 @@
       (ecase (ioenc:ef-line-terminator ef)
         (:unix (when (= char-code (char-code #\Linefeed))
                  (incf (iobuf-start ib))
-                 (return (values #\Newline 1))))
+                 (return #\Newline)))
         (:mac (when (= char-code (char-code #\Return))
                 (incf (iobuf-start ib))
-                (return (values #\Newline 1))))
+                (return #\Newline)))
         (:dos (when (= char-code (char-code #\Return))
                 (when (= (iobuf-length ib) 1)
                   (incf (iobuf-start ib))
@@ -406,11 +398,10 @@
                 (when (= (bref ib (1+ start-off))
                          (char-code #\Linefeed))
                   (incf (iobuf-start ib) 2)
-                  (return (values #\Newline 2)))))))))
+                  (return #\Newline))))))))
 
 (defmethod stream-read-char-no-hang ((stream active-socket))
   (with-accessors ((fd socket-fd) (ib input-buffer-of)
-                   (pos istream-pos-of)
                    (ef external-format-of)) stream
     (let ((str (make-string 1))
           (ret nil)
@@ -424,16 +415,11 @@
         (when (zerop (iobuf-length ib))
           (return (if eof :eof nil)))
         ;; line-end handling
-        (multiple-value-bind (line-end bytes-consumed)
-            (maybe-find-line-ending-no-hang fd ib ef)
+        (let ((line-end
+               (maybe-find-line-ending-no-hang fd ib ef)))
           (cond ((eql line-end :starvation)
-                 (if eof
-                     (progn
-                       (incf pos)
-                       (return #\Return))
-                     (return nil)))
+                 (return (if eof #\Return nil)))
                 ((characterp line-end)
-                 (incf pos bytes-consumed)
                  (return line-end))))
         ;; octet decoding
         (handler-case
@@ -444,7 +430,6 @@
           (end-of-input-in-character (err)
             (declare (ignore err))
             (return nil)))
-        (incf pos ret)
         (incf (iobuf-start ib) ret)
         (char str 0)))))
 
@@ -561,16 +546,15 @@
 ;;;;;;;;;;;;;;;;;;
 
 (defmethod stream-read-byte ((stream active-socket))
-  (with-accessors ((fd socket-fd) (ib input-buffer-of)
-                   (pos istream-pos-of)) stream
+  (with-accessors ((fd socket-fd)
+                   (ib input-buffer-of)) stream
     (flet ((fill-buf-or-eof ()
              (iobuf-reset ib)
              (when (eql :eof (%fill-ibuf ib fd))
                (return-from stream-read-byte :eof))))
       (when (zerop (iobuf-length ib))
         (fill-buf-or-eof))
-      (prog1 (iobuf-pop-octet ib)
-        (incf pos)))))
+      (iobuf-pop-octet ib))))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;               ;;
@@ -580,7 +564,6 @@
 
 (defmethod stream-write-byte ((stream active-socket) integer)
   (check-type integer ub8 "an unsigned 8-bit value")
-  (with-accessors ((ob output-buffer-of) (pos ostream-pos-of)) stream
+  (with-accessors ((ob output-buffer-of)) stream
     (%flush-obuf-if-needed stream)
-    (prog1 (iobuf-push-octet ob integer)
-      (incf pos))))
+    (iobuf-push-octet ob integer)))

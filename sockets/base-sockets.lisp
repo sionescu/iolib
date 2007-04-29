@@ -66,13 +66,7 @@
                       :accessor must-flush-output-p)
    ;; Last read char buffer index
    (ibuf-unread-index :initform 0 :type buffer-index
-                      :accessor ibuf-unread-index-of)
-   ;; Input stream position
-   (istream-pos :initform 0 :type stream-position
-                :accessor istream-pos-of)
-   ;; Output stream position
-   (ostream-pos :initform 0 :type stream-position
-                :accessor ostream-pos-of)))
+                      :accessor ibuf-unread-index-of)))
 
 
 ;;;;;;;;;;;;;;;
