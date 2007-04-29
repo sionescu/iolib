@@ -2,6 +2,9 @@
 
 (in-package :common-lisp-user)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (asdf:operate 'asdf:load-op :asdf-additions))
+
 (defpackage #:io.encodings.system
   (:use #:common-lisp #:asdf))
 
@@ -19,6 +22,7 @@
                :iolib-utils-misc
                :cffi
                :iolib-posix)
+  :default-component-class muffled-source-file
   :pathname (merge-pathnames (make-pathname :directory '(:relative "io.encodings"))
                              *load-truename*)
   :components ((:file "defpackage")
