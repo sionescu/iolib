@@ -21,36 +21,12 @@
 
 (in-package :common-lisp-user)
 
-#-(or sbcl cmu openmcl clisp allegro)
-(error "Your CL implementation is not suported.")
-
 (defpackage :net.sockets
   (:nicknames #:sockets)
   (:use #:common-lisp #:cffi #:split-sequence
-        #:iolib-utils #:io.encodings)
+        #:iolib-utils #:io.encodings #:io.streams)
   (:import-from #:iolib-posix
                 #:system-error #:unix-error #:message)
-  #+(or sbcl cmu openmcl clisp allegro)
-  (:import-from #+sbcl #:sb-gray
-                #+cmu #:ext
-                #+openmcl #:ccl
-                #+clisp #:gray
-                #+allegro #:excl
-     #:fundamental-binary-input-stream #:fundamental-binary-output-stream
-     #:fundamental-character-input-stream #:fundamental-character-output-stream
-     #:stream-clear-input #:stream-clear-output
-     #:stream-finish-output #:stream-force-output
-     #:stream-read-byte #:stream-write-byte
-     #:stream-peek-char #:stream-read-char #:stream-read-char-no-hang
-     #:stream-unread-char #:stream-read-line #:stream-listen
-     #-(or clisp openmcl) #:stream-read-sequence
-     #+openmcl #:stream-read-vector
-     #+clisp #:stream-read-char-sequence #+clisp #:stream-read-byte-sequence
-     #-(or clisp openmcl) #:stream-write-sequence
-     #+openmcl #:stream-write-vector
-     #+clisp #:stream-write-char-sequence #+clisp #:stream-write-byte-sequence
-     #:stream-fresh-line #:stream-start-line-p
-     #:stream-terpri #:stream-write-char #:stream-write-string)
   (:export
    ;; conditions
    #:possible-bug
@@ -121,11 +97,9 @@
 
    ;; socket methods
    #:socket-fd #:socket-address #:socket-family #:socket-protocol
-   #:external-format-of #:istream-pos-of #:ostream-pos-of
    #:get-socket-option #:set-socket-option
    #:socket-type #:make-socket #:socket-close #:socket-open-p
    #:socket-non-blocking #:local-name #:remote-name
    #:bind-address #:socket-listen #:accept-connection
    #:connect  #:unconnect #:socket-connected-p
-   #:shutdown #:socket-send  #:socket-receive
-))
+   #:shutdown #:socket-send  #:socket-receive))

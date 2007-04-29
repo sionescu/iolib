@@ -17,7 +17,7 @@
 ;;   Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;;   Boston, MA 02110-1301, USA
 
-(in-package :net.sockets)
+(in-package :io.streams)
 
 ;;;
 ;;; Foreign Buffers

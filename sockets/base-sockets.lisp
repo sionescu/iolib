@@ -21,75 +21,6 @@
 
 (in-package :net.sockets)
 
-;;;;;;;;;;;;;;;;;;;;;;
-;;;                ;;;
-;;; Socket buffers ;;;
-;;;                ;;;
-;;;;;;;;;;;;;;;;;;;;;;
-
-(deftype stream-buffer ()
-  'et:foreign-pointer)
-
-(deftype buffer-index ()
-  '(unsigned-byte 24))
-
-(defstruct (iobuf
-             (:constructor %make-iobuf ()))
-  (data (null-pointer) :type stream-buffer)
-  (size 0 :type buffer-index)
-  (start 0 :type buffer-index)
-  (end 0 :type buffer-index))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;                             ;;;
-;;; Bivalent socket Gray stream ;;;
-;;;                             ;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(deftype stream-position ()
-  '(unsigned-byte 64))
-
-(defclass dual-channel-fd-stream-mixin ()
-  ((input-fd  :initform nil :accessor input-fd-of)
-   (output-fd :initform nil :accessor output-fd-of)))
-
-(defclass dual-channel-single-fd-stream-mixin (dual-channel-fd-stream-mixin) ())
-
-(defgeneric fd-of (stream)
-  (:method ((stream dual-channel-single-fd-stream-mixin))
-    (with-accessors ((fd-in  input-fd-of)
-                     (fd-out output-fd-of)) stream
-      (assert (eql fd-in fd-out))
-      (values fd-in))))
-(defgeneric (setf fd-of) (fd stream)
-  (:method (fd (stream dual-channel-single-fd-stream-mixin))
-    (with-accessors ((fd-in  input-fd-of)
-                     (fd-out output-fd-of)) stream
-      (assert (eql fd-in fd-out))
-      (setf fd-in fd fd-out fd)
-      (values fd-in))))
-
-(defclass dual-channel-gray-stream (dual-channel-fd-stream-mixin
-                                    fundamental-binary-input-stream
-                                    fundamental-binary-output-stream
-                                    fundamental-character-input-stream
-                                    fundamental-character-output-stream)
-  ((external-format :initform (find-external-format :default)
-                    :accessor external-format-of)
-   ;; Input buffer.
-   (input-buffer :initform nil :type (or iobuf null)
-                 :accessor input-buffer-of)
-   ;; Output buffer.
-   (output-buffer :initform nil :type (or iobuf null)
-                  :accessor output-buffer-of)
-   ;; Flag used by stream-force-output
-   (must-flush-output :initform nil :type boolean
-                      :accessor must-flush-output-p)
-   ;; Last read char buffer index
-   (ibuf-unread-index :initform 0 :type buffer-index
-                      :accessor ibuf-unread-index-of)))
-
-
 ;;;;;;;;;;;;;;;
 ;;;         ;;;
 ;;; Sockets ;;;

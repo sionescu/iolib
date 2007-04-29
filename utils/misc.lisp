@@ -25,4 +25,9 @@
   `(defconstant ,name (if (boundp ',name) (symbol-value ',name) ,value)
      ,@(when doc (list doc))))
 
-(export '(define-constant))
+(defun %check-bounds (sequence start end)
+  (unless end (setf end (length sequence)))
+  (when (> start end) (error "~S ~S wrong sequence bounds" start end))
+  (values start end))
+
+(export '(define-constant %check-bounds))

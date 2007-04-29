@@ -21,27 +21,17 @@
 
 (in-package :net.sockets)
 
-;;;
-;;; Types
-;;;
+;;;;;;;;;;;;;
+;;;       ;;;
+;;; Types ;;;
+;;;       ;;;
+;;;;;;;;;;;;;
 
-(deftype ub8  () `(unsigned-byte 8))
-(deftype ub16 () `(unsigned-byte 16))
-(deftype ub32 () `(unsigned-byte 32))
-(deftype sb8  () `(signed-byte 8))
-(deftype sb16 () `(signed-byte 16))
-(deftype sb32 () `(signed-byte 32))
-
-(deftype ub8-sarray (&optional (size '*))
-  `(simple-array ub8 (,size)))
-(deftype ub8-vector ()
-  '(vector ub8))
-(deftype ub16-sarray (&optional (size '*))
-  `(simple-array ub16 (,size)))
 (deftype ipv4-array ()
   '(ub8-sarray 4))
 (deftype ipv6-array ()
   '(ub16-sarray 8))
+
 
 (define-modify-macro coercef (type-spec) coerce)
 
@@ -211,11 +201,6 @@
 ;;;
 ;;; Misc
 ;;;
-
-(defun %check-bounds (sequence start end)
-  (unless end (setf end (length sequence)))
-  (when (> start end) (error "~S ~S wrong sequence bounds" start end))
-  (values start end))
 
 (defun %to-octets (buff ef start end)
   (io.encodings:string-to-octets buff :external-format ef

@@ -3,8 +3,7 @@
 (in-package :common-lisp-user)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:operate 'asdf:load-op :asdf-additions)
-  #+cmu (require :gray-streams))
+  (asdf:operate 'asdf:load-op :asdf-additions))
 
 (defpackage #:net.sockets-system
   (:use #:common-lisp #:asdf))
@@ -20,7 +19,7 @@
                :iolib-utils-symbols
                :iolib-utils-misc
                :io.encodings
-               :io.multiplex
+               :io.streams
                :split-sequence)
   :default-component-class muffled-source-file
   :pathname (merge-pathnames (make-pathname :directory '(:relative "sockets"))
@@ -39,9 +38,5 @@
    (:file "socket-methods"
           :depends-on ("defpackage" "config" "common" "address"
                        "base-sockets" "socket-options"))
-   (:file "buffer" :depends-on ("defpackage" "common" "base-sockets"))
-   (:file "gray-stream-methods"
-          :depends-on ("defpackage" "common" "base-sockets"
-                       "socket-options" "socket-methods" "buffer"))
    (:file "make-socket"
           :depends-on ("defpackage" "config" "socket-methods"))))
