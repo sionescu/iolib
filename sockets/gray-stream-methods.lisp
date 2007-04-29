@@ -490,13 +490,6 @@
       ;; FIXME: avoid consing a string here. At worst, declare it dynamic-extent
       (stream-write-string stream (make-string 1 :initial-element character))))
 
-;; (defmethod stream-advance-to-column ((stream active-socket)
-;;                                      (column integer)))
-
-;; (defmethod stream-line-column ((stream active-socket)))
-
-;; (defmethod stream-line-length ((stream active-socket)))
-
 (defmethod stream-start-line-p ((stream active-socket))
   (values nil))
 
