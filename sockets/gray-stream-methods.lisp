@@ -57,9 +57,9 @@
 
 ;; TODO: use the buffer pool
 (defmethod close :around ((stream dual-channel-gray-stream) &key abort)
-  (unless abort (finish-output stream))
   (with-accessors ((ib input-buffer-of)
                    (ob output-buffer-of)) stream
+    (unless (or abort (null ib)) (finish-output stream))
     (when ib (free-iobuf ib))
     (when ob (free-iobuf ob))
     (setf ib nil ob nil))
