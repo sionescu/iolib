@@ -49,7 +49,28 @@
 (deftype stream-position ()
   '(unsigned-byte 64))
 
-(defclass dual-channel-gray-stream (fundamental-binary-input-stream
+(defclass dual-channel-fd-stream-mixin ()
+  ((input-fd  :initform nil :accessor input-fd-of)
+   (output-fd :initform nil :accessor output-fd-of)))
+
+(defclass dual-channel-single-fd-stream-mixin (dual-channel-fd-stream-mixin) ())
+
+(defgeneric fd-of (stream)
+  (:method ((stream dual-channel-single-fd-stream-mixin))
+    (with-accessors ((fd-in  input-fd-of)
+                     (fd-out output-fd-of)) stream
+      (assert (eql fd-in fd-out))
+      (values fd-in))))
+(defgeneric (setf fd-of) (fd stream)
+  (:method (fd (stream dual-channel-single-fd-stream-mixin))
+    (with-accessors ((fd-in  input-fd-of)
+                     (fd-out output-fd-of)) stream
+      (assert (eql fd-in fd-out))
+      (setf fd-in fd fd-out fd)
+      (values fd-in))))
+
+(defclass dual-channel-gray-stream (dual-channel-fd-stream-mixin
+                                    fundamental-binary-input-stream
                                     fundamental-binary-output-stream
                                     fundamental-character-input-stream
                                     fundamental-character-output-stream)
@@ -75,10 +96,12 @@
 ;;;         ;;;
 ;;;;;;;;;;;;;;;
 
-(defclass socket ()
-  ((fd       :initform nil      :reader socket-fd)
-   (family   :initarg :family   :reader socket-family)
-   (protocol :initarg :protocol :reader socket-protocol)))
+(defclass socket (dual-channel-single-fd-stream-mixin)
+  ((family   :initarg :family   :accessor socket-family)
+   (protocol :initarg :protocol :accessor socket-protocol)))
+
+(defgeneric socket-fd (socket))
+(defgeneric (setf socket-fd) (fd socket))
 
 (defgeneric socket-type (socket))
 

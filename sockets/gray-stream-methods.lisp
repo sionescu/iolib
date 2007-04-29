@@ -21,7 +21,11 @@
 
 (in-package :net.sockets)
 
-(define-constant +max-octets-per-char+ 6)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;                         ;;
+;; Instance Initialization ;;
+;;                         ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; TODO: use the buffer pool
 ;; TODO: handle instance reinitialization
@@ -48,11 +52,11 @@
 ;;                ;;
 ;;;;;;;;;;;;;;;;;;;;
 
-(defmethod stream-element-type ((stream active-socket))
+(defmethod stream-element-type ((stream dual-channel-gray-stream))
   '(unsigned-byte 8))
 
 ;; TODO: use the buffer pool
-(defmethod close :around ((stream active-socket) &key abort)
+(defmethod close :around ((stream dual-channel-gray-stream) &key abort)
   (unless abort (finish-output stream))
   (with-accessors ((ib input-buffer-of)
                    (ob output-buffer-of)) stream
@@ -71,7 +75,7 @@
 ;;               ;;
 ;;;;;;;;;;;;;;;;;;;
 
-(defmethod stream-clear-input ((stream active-socket))
+(defmethod stream-clear-input ((stream dual-channel-gray-stream))
   (with-accessors ((ib input-buffer-of)) stream
     (iobuf-reset ib)
     nil))
@@ -95,7 +99,7 @@
 (defun %read-into-simple-array-ub8 (stream array start end)
   (declare (type dual-channel-gray-stream stream))
   (with-accessors ((ib input-buffer-of)
-                   (fd socket-fd)) stream
+                   (fd input-fd-of)) stream
     (let ((octets-needed (- end start)))
       (loop :with array-offset := start
             :for octets-in-buffer := (iobuf-length ib)
@@ -128,7 +132,7 @@
      :finally (return offset)))
 
 #-clisp
-(defmethod stream-read-sequence ((stream active-socket) seq
+(defmethod stream-read-sequence ((stream dual-channel-gray-stream) seq
                                  &optional (start 0) end)
   (setf (values start end) (%check-bounds seq start end))
   (when (< start end)
@@ -141,7 +145,7 @@
        (%read-into-vector stream seq start end)))))
 
 #+clisp
-(defmethod stream-read-byte-sequence ((stream active-socket) seq
+(defmethod stream-read-byte-sequence ((stream dual-channel-gray-stream) seq
                                       &optional (start 0) end
                                       no-hang interactive)
   (declare (ignore no-hang interactive))
@@ -154,7 +158,7 @@
        (%read-into-vector stream seq start end)))))
 
 #+clisp
-(defmethod stream-read-char-sequence ((stream active-socket) seq
+(defmethod stream-read-char-sequence ((stream dual-channel-gray-stream) seq
                                       &optional (start 0) end)
   (setf (values start end) (%check-bounds seq start end))
   (when (< start end)
@@ -214,37 +218,38 @@
               (when (buffer-emptyp) (return-from %flush-obuf (values t bytes-written)))
               (when (zerop timeout-var) (return-from %flush-obuf (values nil :timeout)))))))))
 
+;; TODO: add timeout support
 (defun %flush-obuf-if-needed (stream)
   (declare (type dual-channel-gray-stream stream))
-  (with-accessors ((fd socket-fd) (ob output-buffer-of)
+  (with-accessors ((fd output-fd-of) (ob output-buffer-of)
                    (must-flush-output-p must-flush-output-p)) stream
     (when (or must-flush-output-p (iobuf-full-p ob))
       (%flush-obuf ob fd)
       (setf must-flush-output-p nil))))
 
-(defmethod stream-clear-output ((stream active-socket))
+(defmethod stream-clear-output ((stream dual-channel-gray-stream))
   (with-accessors ((ob output-buffer-of)
                    (must-flush-output-p must-flush-output-p)
-                   (fd socket-fd)) stream
+                   (fd output-fd-of)) stream
     (iobuf-reset ob)
     (setf must-flush-output-p nil)
     nil))
 
-(defmethod stream-finish-output ((stream active-socket))
+(defmethod stream-finish-output ((stream dual-channel-gray-stream))
   (with-accessors ((ob output-buffer-of)
                    (must-flush-output-p must-flush-output-p)
-                   (fd socket-fd)) stream
+                   (fd output-fd-of)) stream
     (%flush-obuf ob fd)
     (setf must-flush-output-p nil)
     nil))
 
-(defmethod stream-force-output ((stream active-socket))
+(defmethod stream-force-output ((stream dual-channel-gray-stream))
   (setf (must-flush-output-p stream) t))
 
 (defun %write-simple-array-ub8 (stream array start end)
   (declare (type dual-channel-gray-stream stream))
   (with-accessors ((ob output-buffer-of)
-                   (fd socket-fd)) stream
+                   (fd output-fd-of)) stream
     (let ((octets-needed (- end start)))
       (if (<= octets-needed (iobuf-end-space-length ob))
           (progn
@@ -272,7 +277,7 @@
      :finally (return vector)))
 
 #-clisp
-(defmethod stream-write-sequence ((stream active-socket) seq
+(defmethod stream-write-sequence ((stream dual-channel-gray-stream) seq
                                   &optional (start 0) end)
   (setf (values start end) (%check-bounds seq start end))
   (when (< start end)
@@ -287,7 +292,7 @@
        (%write-vector stream seq start end)))))
 
 #+clisp
-(defmethod stream-write-byte-sequence ((stream active-socket) seq
+(defmethod stream-write-byte-sequence ((stream dual-channel-gray-stream) seq
                                        &optional (start 0) end
                                        no-hang interactive)
   (declare (ignore no-hang interactive))
@@ -302,7 +307,7 @@
        (%write-vector stream seq start end)))))
 
 #+clisp
-(defmethod stream-write-char-sequence ((stream active-socket) seq
+(defmethod stream-write-char-sequence ((stream dual-channel-gray-stream) seq
                                        &optional (start 0) end)
   (setf (values start end) (%check-bounds seq start end))
   (when (< start end)
@@ -337,12 +342,14 @@
                   (incf (iobuf-start ib) 2)
                   (return #\Newline))))))))
 
+(define-constant +max-octets-per-char+ 6)
+
 ;; FIXME: currently we return :EOF when read(2) returns 0
 ;;        we should distinguish hard end-of-files(EOF and buffer empty)
 ;;        from soft end-of-files(EOF and *some* bytes still in the buffer
 ;;        but not enough to make a full character)
-(defmethod stream-read-char ((stream active-socket))
-  (with-accessors ((fd socket-fd) (ib input-buffer-of)
+(defmethod stream-read-char ((stream dual-channel-gray-stream))
+  (with-accessors ((fd input-fd-of) (ib input-buffer-of)
                    (unread-index ibuf-unread-index-of)
                    (ef external-format-of)) stream
     (setf unread-index (iobuf-start ib))
@@ -400,8 +407,8 @@
                   (incf (iobuf-start ib) 2)
                   (return #\Newline))))))))
 
-(defmethod stream-read-char-no-hang ((stream active-socket))
-  (with-accessors ((fd socket-fd) (ib input-buffer-of)
+(defmethod stream-read-char-no-hang ((stream dual-channel-gray-stream))
+  (with-accessors ((fd input-fd-of) (ib input-buffer-of)
                    (ef external-format-of)) stream
     (let ((str (make-string 1))
           (ret nil)
@@ -434,7 +441,7 @@
         (char str 0)))))
 
 (defun %stream-unread-char (stream)
-  (declare (type active-socket stream))
+  (declare (type dual-channel-gray-stream stream))
   (with-accessors ((ib input-buffer-of)
                    (unread-index ibuf-unread-index-of)) stream
     (symbol-macrolet ((start (iobuf-start ib)))
@@ -445,7 +452,7 @@
          (error "No uncommitted character to unread")))))
   nil)
 
-(defmethod stream-unread-char ((stream active-socket) character)
+(defmethod stream-unread-char ((stream dual-channel-gray-stream) character)
   ;; unreading anything but the latest character is wrong,
   ;; but checking is not mandated by the standard
   #+iolib-debug
@@ -458,16 +465,16 @@
   #-iolib-debug
   (%stream-unread-char stream))
 
-(defmethod stream-peek-char ((stream active-socket))
+(defmethod stream-peek-char ((stream dual-channel-gray-stream))
   (let ((char (stream-read-char stream)))
     (cond ((eql char :eof) :eof)
           (t (%stream-unread-char stream)
              (values char)))))
 
-;; (defmethod stream-read-line ((stream active-socket))
+;; (defmethod stream-read-line ((stream dual-channel-gray-stream))
 ;;   )
 
-(defmethod stream-listen ((stream active-socket))
+(defmethod stream-listen ((stream dual-channel-gray-stream))
   (let ((char (stream-read-char-no-hang stream)))
     (cond ((characterp char)
            (stream-unread-char stream char)
@@ -482,7 +489,7 @@
 ;;                  ;;
 ;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod stream-write-char ((stream active-socket)
+(defmethod stream-write-char ((stream dual-channel-gray-stream)
                               (character character))
   (%flush-obuf-if-needed stream)
   (if (eql character #\Newline)
@@ -490,13 +497,13 @@
       ;; FIXME: avoid consing a string here. At worst, declare it dynamic-extent
       (stream-write-string stream (make-string 1 :initial-element character))))
 
-(defmethod stream-start-line-p ((stream active-socket))
+(defmethod stream-start-line-p ((stream dual-channel-gray-stream))
   (values nil))
 
-(defmethod stream-terpri ((stream active-socket))
+(defmethod stream-terpri ((stream dual-channel-gray-stream))
   (write-char #\Newline stream) nil)
 
-(defmethod stream-fresh-line ((stream active-socket))
+(defmethod stream-fresh-line ((stream dual-channel-gray-stream))
   (write-char #\Newline stream) t)
 
 (define-constant +unix-line-terminator+
@@ -512,7 +519,7 @@
     (:dos  (%write-simple-array-ub8 stream +dos-line-terminator+  0 2))
     (:mac  (%write-simple-array-ub8 stream +mac-line-terminator+  0 1))))
 
-(defmethod stream-write-string ((stream active-socket)
+(defmethod stream-write-string ((stream dual-channel-gray-stream)
                                 (string string)
                                 &optional (start 0) end)
   (setf (values start end) (%check-bounds string start end))
@@ -538,8 +545,8 @@
 ;;              ;;
 ;;;;;;;;;;;;;;;;;;
 
-(defmethod stream-read-byte ((stream active-socket))
-  (with-accessors ((fd socket-fd)
+(defmethod stream-read-byte ((stream dual-channel-gray-stream))
+  (with-accessors ((fd input-fd-of)
                    (ib input-buffer-of)) stream
     (flet ((fill-buf-or-eof ()
              (iobuf-reset ib)
@@ -555,7 +562,7 @@
 ;;               ;;
 ;;;;;;;;;;;;;;;;;;;
 
-(defmethod stream-write-byte ((stream active-socket) integer)
+(defmethod stream-write-byte ((stream dual-channel-gray-stream) integer)
   (check-type integer ub8 "an unsigned 8-bit value")
   (with-accessors ((ob output-buffer-of)) stream
     (%flush-obuf-if-needed stream)

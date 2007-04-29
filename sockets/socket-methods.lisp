@@ -59,21 +59,27 @@
                                        (string protocol))))))))
     (values sf st sp)))
 
+(defmethod socket-fd ((socket socket))
+  (fd-of socket))
+(defmethod (setf socket-fd) (fd (socket socket))
+  (setf (fd-of socket) fd))
+
 (defmethod shared-initialize :after ((socket socket) slot-names
                                      &key file-descriptor family
                                      type (protocol :default))
   (declare (ignore slot-names))
   (when (socket-open-p socket)
     (close socket))
-  (with-slots (fd (fam family) (proto protocol)) socket
-    (multiple-value-bind (sf st sp)
-        (translate-make-socket-keywords-to-constants family type protocol)
-      (if file-descriptor
-          (setf fd file-descriptor)
-          (setf fd (with-socket-error-filter
-                     (et:socket sf st sp))))
-      (setf fam family
-            proto protocol))))
+  (with-accessors ((fd fd-of)
+                   (fam socket-family)
+                   (proto socket-protocol)) socket    
+    (setf fd (or file-descriptor
+                 (multiple-value-bind (sf st sp)
+                     (translate-make-socket-keywords-to-constants family type protocol)
+                   (with-socket-error-filter
+                     (et:socket sf st sp)))))
+    (setf fam family
+          proto protocol)))
 
 (defmethod socket-type ((socket stream-socket))
   :stream)
@@ -93,7 +99,7 @@
         (multiple-value-bind (addr port) (remote-name socket)
           (format stream " connected to ~A/~A"
                   (sockaddr->presentation addr) port))
-        (if (slot-value socket 'fd)
+        (if (fd-of socket)
             (format stream ", unconnected")
             (format stream ", closed")))))
 
@@ -107,7 +113,7 @@
                       "waiting for connections @"
                       "bound to")
                   (sockaddr->presentation addr) port))
-        (if (slot-value socket 'fd)
+        (if (fd-of socket)
             (format stream ", unbound")
             (format stream ", closed")))))
 
@@ -116,7 +122,7 @@
     (format stream "active local stream socket" )
     (if (socket-connected-p socket)
         (format stream " connected")
-        (if (slot-value socket 'fd)
+        (if (fd-of socket)
             (format stream ", unconnected")
             (format stream ", closed")))))
 
@@ -129,7 +135,7 @@
                     "waiting for connections @"
                     "bound to")
                 (sockaddr->presentation (socket-address socket)))
-        (if (slot-value socket 'fd)
+        (if (fd-of socket)
             (format stream ", unbound")
             (format stream ", closed")))))
 
@@ -138,7 +144,7 @@
     (format stream "local datagram socket" )
     (if (socket-connected-p socket)
         (format stream " connected")
-        (if (slot-value socket 'fd)
+        (if (fd-of socket)
             (format stream ", unconnected")
             (format stream ", closed")))))
 
@@ -149,7 +155,7 @@
         (multiple-value-bind (addr port) (remote-name socket)
           (format stream " connected to ~A/~A"
                   (sockaddr->presentation addr) port))
-        (if (slot-value socket 'fd)
+        (if (fd-of socket)
             (format stream ", unconnected")
             (format stream ", closed")))))
 
@@ -160,10 +166,10 @@
 
 (defmethod close :around ((socket socket) &key abort)
   (declare (ignore abort))
-  (when (slot-value socket 'fd)
+  (when (fd-of socket)
     (with-socket-error-filter
-      (et:close (socket-fd socket))))
-  (setf (slot-value socket 'fd) nil)
+      (et:close (fd-of socket))))
+  (setf (fd-of socket) nil)
   (call-next-method)
   (values socket))
 
@@ -178,7 +184,7 @@
   (declare (ignore socket abort)))
 
 (defmethod socket-open-p ((socket socket))
-  (unless (slot-value socket 'fd)
+  (unless (fd-of socket)
     (return-from socket-open-p nil))
   (with-socket-error-filter
     (handler-case
@@ -187,8 +193,7 @@
           (with-foreign-pointer (size et:size-of-socklen)
             (setf (mem-ref size :socklen)
                   et:size-of-sockaddr-storage)
-            (et:getsockname (socket-fd socket)
-                            ss size)
+            (et:getsockname (fd-of socket) ss size)
             t))
       (unix-error (err)
         (case (error-identifier err)
@@ -204,14 +209,14 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod socket-non-blocking ((socket socket))
-  (with-slots (fd) socket
+  (with-accessors ((fd fd-of)) socket
     (let ((current-flags (with-socket-error-filter
                            (et:fcntl fd et:f-getfl))))
       (logtest et:o-nonblock current-flags))))
 
 (defmethod (setf socket-non-blocking) (value (socket socket))
   (check-type value boolean "a boolean value")
-  (with-slots (fd) socket
+  (with-accessors ((fd fd-of)) socket
     (with-socket-error-filter
       (let* ((current-flags (et:fcntl fd et:f-getfl))
              (new-flags (if value
@@ -233,8 +238,7 @@
       (setf (mem-ref size :socklen)
             et:size-of-sockaddr-storage)
       (with-socket-error-filter
-        (et:getsockname (socket-fd socket)
-                        ss size))
+        (et:getsockname (fd-of socket) ss size))
       (return-from local-name
         (sockaddr-storage->sockaddr ss)))))
 
@@ -245,8 +249,7 @@
       (setf (mem-ref size :socklen)
             et:size-of-sockaddr-storage)
       (with-socket-error-filter
-        (et:getsockname (socket-fd socket)
-                        sun size))
+        (et:getsockname (fd-of socket) sun size))
       (return-from local-name
         (sockaddr-un->sockaddr sun)))))
 
@@ -268,8 +271,7 @@
       (setf (mem-ref size :socklen)
             et:size-of-sockaddr-storage)
       (with-socket-error-filter
-        (et:getpeername (socket-fd socket)
-                        ss size))
+        (et:getpeername (fd-of socket) ss size))
       (return-from remote-name
         (sockaddr-storage->sockaddr ss)))))
 
@@ -280,8 +282,7 @@
       (setf (mem-ref size :socklen)
             et:size-of-sockaddr-storage)
       (with-socket-error-filter
-        (et:getpeername (socket-fd socket)
-                        sun size))
+        (et:getpeername (fd-of socket) sun size))
       (return-from remote-name
         (sockaddr-un->sockaddr sun)))))
 
@@ -312,16 +313,16 @@
                          (address ipv4addr)
                          &key (port 0))
   (if (eql (socket-family socket) :ipv6)
-      (bind-ipv6-address (socket-fd socket)
+      (bind-ipv6-address (fd-of socket)
                          (map-ipv4-vector-to-ipv6 (name address))
                          port)
-      (bind-ipv4-address (socket-fd socket) (name address) port))
+      (bind-ipv4-address (fd-of socket) (name address) port))
   (values socket))
 
 (defmethod bind-address ((socket internet-socket)
                          (address ipv6addr)
                          &key (port 0))
-  (bind-ipv6-address (socket-fd socket) (name address) port)
+  (bind-ipv6-address (fd-of socket) (name address) port)
   (values socket))
 
 (defmethod bind-address :before ((socket local-socket)
@@ -334,7 +335,7 @@
   (with-foreign-object (sun 'et:sockaddr-un)
     (make-sockaddr-un sun (name address))
     (with-socket-error-filter
-      (et:bind (socket-fd socket) sun et:size-of-sockaddr-un)))
+      (et:bind (fd-of socket) sun et:size-of-sockaddr-un)))
   (values socket))
 
 (defmethod bind-address :after ((socket socket)
@@ -351,7 +352,7 @@
                                              +max-backlog-size+)))
   (check-type backlog unsigned-byte "a non-negative integer")
   (with-socket-error-filter
-    (et:listen (socket-fd socket) backlog))
+    (et:listen (fd-of socket) backlog))
   (setf (slot-value socket 'listening) t)
   (values socket))
 
@@ -384,8 +385,7 @@
               (if wait
                   ;; do a "normal" accept
                   ;; Note: the socket may already be in non-blocking mode
-                  (setf client-fd (et:accept (socket-fd socket)
-                                             ss size))
+                  (setf client-fd (et:accept (fd-of socket) ss size))
                   ;; set the socket to non-blocking mode before calling accept()
                   ;; if there's no new connection return NIL
                   (unwind-protect
@@ -394,8 +394,7 @@
                          (setf non-blocking-state (socket-non-blocking socket))
                          ;; switch the socket to non-blocking mode
                          (setf (socket-non-blocking socket) t)
-                         (setf client-fd (et:accept (socket-fd socket)
-                                                    ss size)))
+                         (setf client-fd (et:accept (fd-of socket) ss size)))
                     ;; restoring the socket's non-blocking state
                     (setf (socket-non-blocking socket) non-blocking-state)))
             ;; the socket is marked non-blocking and there's no new connection
@@ -436,15 +435,15 @@
 (defmethod connect ((socket internet-socket)
                     (address ipv4addr) &key (port 0))
   (if (eql (socket-family socket) :ipv6)
-      (ipv6-connect (socket-fd socket)
+      (ipv6-connect (fd-of socket)
                     (map-ipv4-vector-to-ipv6 (name address))
                     port)
-      (ipv4-connect (socket-fd socket) (name address) port))
+      (ipv4-connect (fd-of socket) (name address) port))
   (values socket))
 
 (defmethod connect ((socket internet-socket)
                     (address ipv6addr) &key (port 0))
-  (ipv6-connect (socket-fd socket) (name address) port)
+  (ipv6-connect (fd-of socket) (name address) port)
   (values socket))
 
 (defmethod connect ((socket local-socket)
@@ -452,7 +451,7 @@
   (with-foreign-object (sun 'et:sockaddr-un)
     (make-sockaddr-un sun (name address))
     (with-socket-error-filter
-      (et:connect (socket-fd socket) sun et:size-of-sockaddr-un)))
+      (et:connect (fd-of socket) sun et:size-of-sockaddr-un)))
   (values socket))
 
 (defmethod connect ((socket passive-socket)
@@ -461,7 +460,7 @@
   (error "You cannot connect passive sockets."))
 
 (defmethod socket-connected-p ((socket socket))
-  (unless (slot-value socket 'fd)
+  (unless (fd-of socket)
     (return-from socket-connected-p nil))
   (with-socket-error-filter
     (handler-case
@@ -470,8 +469,7 @@
           (with-foreign-pointer (size et:size-of-socklen)
             (setf (mem-ref size :socklen)
                   et:size-of-sockaddr-storage)
-            (et:getpeername (socket-fd socket)
-                            ss size)
+            (et:getpeername (fd-of socket) ss size)
             t))
       (et:unix-error-notconn (err)
         (declare (ignore err))
@@ -486,7 +484,7 @@
   (check-type direction (member :read :write :read-write)
               "valid direction specifier")
   (with-socket-error-filter
-    (et:shutdown (socket-fd socket)
+    (et:shutdown (fd-of socket)
                  (ecase direction
                    (:read et:shut-rd)
                    (:write et:shut-wr)
@@ -543,7 +541,7 @@
           (incf-pointer buff-sap start-offset)
           (with-socket-error-filter
             (return-from socket-send
-              (et:sendto (socket-fd socket)
+              (et:sendto (fd-of socket)
                          buff-sap bufflen
                          flags
                          (if remote-address ss (null-pointer))
@@ -584,7 +582,7 @@
             (incf-pointer buff-sap start-offset)
             (with-socket-error-filter
               (setf bytes-received
-                    (et:recvfrom (socket-fd socket)
+                    (et:recvfrom (fd-of socket)
                                  buff-sap bufflen
                                  flags
                                  ss size)))))
@@ -616,4 +614,4 @@
     (with-foreign-object (sin 'et:sockaddr-in)
       (et:bzero sin et:size-of-sockaddr-in)
       (setf (foreign-slot-value sin 'et:sockaddr-in 'et:addr) et:af-unspec)
-      (et:connect (socket-fd socket) sin et:size-of-sockaddr-in))))
+      (et:connect (fd-of socket) sin et:size-of-sockaddr-in))))
