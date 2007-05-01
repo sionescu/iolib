@@ -27,7 +27,7 @@
 ;;;         ;;;
 ;;;;;;;;;;;;;;;
 
-(defclass socket (dual-channel-single-fd-stream-mixin)
+(defclass socket (dual-channel-single-fd-mixin)
   ((family   :initarg :family   :accessor socket-family)
    (protocol :initarg :protocol :accessor socket-protocol)))
 

@@ -70,7 +70,7 @@
 (deftype stream-position ()
   '(unsigned-byte 64))
 
-(defclass dual-channel-fd-stream-mixin ()
+(defclass dual-channel-fd-mixin ()
   ((input-fd  :initform nil :accessor input-fd-of)
    (output-fd :initform nil :accessor output-fd-of)))
 
@@ -81,16 +81,16 @@
 (defgeneric (setf output-fd-non-blocking) (mode fd-mixin))
 
 
-(defclass dual-channel-single-fd-stream-mixin (dual-channel-fd-stream-mixin) ())
+(defclass dual-channel-single-fd-mixin (dual-channel-fd-mixin) ())
 
 (defgeneric fd-of (stream)
-  (:method ((stream dual-channel-single-fd-stream-mixin))
+  (:method ((stream dual-channel-single-fd-mixin))
     (with-accessors ((fd-in  input-fd-of)
                      (fd-out output-fd-of)) stream
       (assert (eql fd-in fd-out))
       (values fd-in))))
 (defgeneric (setf fd-of) (fd stream)
-  (:method (fd (stream dual-channel-single-fd-stream-mixin))
+  (:method (fd (stream dual-channel-single-fd-mixin))
     (with-accessors ((fd-in  input-fd-of)
                      (fd-out output-fd-of)) stream
       (assert (eql fd-in fd-out))
@@ -106,7 +106,7 @@
 ;;;                             ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defclass dual-channel-gray-stream (dual-channel-fd-stream-mixin
+(defclass dual-channel-gray-stream (dual-channel-fd-mixin
                                     fundamental-binary-input-stream
                                     fundamental-binary-output-stream
                                     fundamental-character-input-stream
