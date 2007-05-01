@@ -124,7 +124,7 @@
                          write-fds
                          except-fds
                          (if tmp-timeout tv (null-pointer)))))
-        (et:ebadf (err) (declare (ignore err))
+        (et:ebadf ()
           (return-from harvest-events
             (harvest-select-fd-errors rs ws max-fd))))
 

@@ -60,9 +60,9 @@
             fd)
       (handler-case
           (et:epoll-ctl (fd-of mux) et:epoll-ctl-add fd ev)
-        (et:ebadf (err) (declare (ignore err))
+        (et:ebadf ()
           (warn "FD ~A is invalid, cannot monitor it." fd))
-        (et:eexist (err) (declare (ignore err))
+        (et:eexist ()
           (warn "FD ~A is already monitored." fd))))))
 
 
@@ -78,9 +78,9 @@
             fd)
       (handler-case
           (et:epoll-ctl (fd-of mux) et:epoll-ctl-mod fd ev)
-        (et:ebadf (err) (declare (ignore err))
+        (et:ebadf ()
           (warn "FD ~A is invalid, cannot update its status." fd))
-        (et:enoent (err) (declare (ignore err))
+        (et:enoent ()
           (warn "FD ~A was not monitored, cannot update its status." fd))))
     (values fd-entry)))
 
@@ -91,9 +91,9 @@
                     et:epoll-ctl-del
                     (fd-entry-fd fd-entry)
                     (null-pointer))
-    (et:ebadf (err) (declare (ignore err))
+    (et:ebadf ()
       (warn "FD ~A is invalid, cannot unmonitor it." (fd-entry-fd fd-entry)))
-    (et:enoent (err) (declare (ignore err))
+    (et:enoent ()
       (warn "FD ~A was not monitored, cannot unmonitor it." (fd-entry-fd fd-entry)))))
 
 

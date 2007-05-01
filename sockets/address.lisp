@@ -98,8 +98,7 @@
           (et:inet-pton et:af-inet6        ; address family
                         string-pointer     ; name
                         in6-addr)          ; pointer to struct in6_addr
-        (unix-error (err)
-          (declare (ignore err))
+        (unix-error ()
           (if errorp
               (error 'invalid-address :address string :type :ipv6)
               (return-from colon-separated-to-vector nil)))))
@@ -108,8 +107,7 @@
 (defun vector-to-colon-separated (vector &key (case :downcase) (errorp t))
   (handler-case
       (coercef vector 'ipv6-array)
-    (type-error (err)
-      (declare (ignore err))
+    (type-error ()
       (if errorp
           (error 'type-error :datum vector
                  :expected-type 'ipv6-array)

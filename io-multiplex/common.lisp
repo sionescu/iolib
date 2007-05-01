@@ -538,8 +538,7 @@
                            (et:poll pollfd 1 (timeout->milisec timeout)))))
                 (when (zerop ret)
                   (return-from wait-until-fd-ready '(:timeout))))
-            (et:unix-error (err)
-              (declare (ignore err))
+            (et:unix-error ()
               (return-from wait-until-fd-ready '(:error))))
           (flags-case et:revents
             ((et:pollout et:pollhup)              (push :write status))

@@ -63,7 +63,7 @@
       (do-kqueue-event-request (fd-of mux) fd-entry
                                (calc-kqueue-monitor-filter fd-entry)
                                et:ev-add)
-    (et:ebadf (err) (declare (ignore err))
+    (et:ebadf ()
       (warn "FD ~A is invalid, cannot monitor it." (fd-entry-fd fd-entry)))))
 
 
@@ -81,9 +81,9 @@
       (multiple-value-bind (filter change)
           (calc-kqueue-update-filter-and-flags (fd-entry-edge-change fd-entry))
         (do-kqueue-event-request (fd-of mux) fd-entry filter change))
-    (et:ebadf (err) (declare (ignore err))
+    (et:ebadf ()
       (warn "FD ~A is invalid, cannot update its status." (fd-entry-fd fd-entry)))
-    (et:enoent (err) (declare (ignore err))
+    (et:enoent ()
       (warn "FD ~A was not monitored, cannot update its status." (fd-entry-fd fd-entry)))))
 
 
@@ -98,9 +98,9 @@
       (do-kqueue-event-request (fd-of mux) fd-entry
                                (calc-kqueue-unmonitor-filter fd-entry)
                                et:ev-delete)
-    (et:ebadf (err) (declare (ignore err))
+    (et:ebadf ()
       (warn "FD ~A is invalid, cannot unmonitor it." (fd-entry-fd fd-entry)))
-    (et:enoent (err) (declare (ignore err))
+    (et:enoent ()
       (warn "FD ~A was not monitored, cannot unmonitor it." (fd-entry-fd fd-entry)))))
 
 

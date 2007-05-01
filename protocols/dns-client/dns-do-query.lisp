@@ -240,8 +240,7 @@
                  (go :do-tcp-query)
                  (handler-case
                      (send-query :datagram buffer nameserver timeout)
-                   (socket-error (err)
-                     (declare (ignore err))
+                   (socket-error ()
                      (go :try-again-if-possible)))))
        ;; if no socket error, go parse the response
        (go :parse-response)
@@ -251,8 +250,7 @@
        (setf (values in-buff bytes-received)
              (handler-case
                  (send-query :stream buffer nameserver timeout)
-               (socket-error (err)
-                 (declare (ignore err))
+               (socket-error ()
                  (go :try-again-if-possible))))
        (setf tcp-done t)
 
@@ -264,11 +262,9 @@
                   (make-instance 'dynamic-input-buffer
                                  :sequence in-buff
                                  :size bytes-received))
-               (input-buffer-error (err)
-                 (declare (ignore err))
+               (input-buffer-error ()
                  (go :try-again-if-possible))
-               (dns-message-error (err)
-                 (declare (ignore err))
+               (dns-message-error ()
                  (go :try-again-if-possible))))
        ;; if a truncated response was received by UDP, try TCP
        (when (and (not tcp-done)

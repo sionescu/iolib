@@ -375,7 +375,7 @@
                     ;; restoring the socket's non-blocking state
                     (setf (fd-non-blocking socket) non-blocking-state)))
             ;; the socket is marked non-blocking and there's no new connection
-            (et:ewouldblock (err) (declare (ignore err))
+            (et:ewouldblock ()
               (return-from accept-connection nil))))
 
         (let ((client-socket
@@ -447,8 +447,7 @@
                   et:size-of-sockaddr-storage)
             (et:getpeername (fd-of socket) ss size)
             t))
-      (et:enotconn (err) (declare (ignore err))
-        nil))))
+      (et:enotconn () nil))))
 
 
 ;;;;;;;;;;;;;;;;

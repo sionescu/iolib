@@ -437,6 +437,5 @@
         (if parsed-number
             (get-protocol-by-number parsed-number)
             (get-protocol-by-name proto))
-      (unix-error (err)
-        (declare (ignore err))
+      (unix-error ()
         (error 'unknown-protocol :name proto)))))
