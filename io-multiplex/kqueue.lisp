@@ -63,8 +63,7 @@
       (do-kqueue-event-request (fd-of mux) fd-entry
                                (calc-kqueue-monitor-filter fd-entry)
                                et:ev-add)
-    (et:unix-error-badf (err)
-      (declare (ignore err))
+    (et:ebadf (err) (declare (ignore err))
       (warn "FD ~A is invalid, cannot monitor it." (fd-entry-fd fd-entry)))))
 
 
@@ -82,11 +81,9 @@
       (multiple-value-bind (filter change)
           (calc-kqueue-update-filter-and-flags (fd-entry-edge-change fd-entry))
         (do-kqueue-event-request (fd-of mux) fd-entry filter change))
-    (et:unix-error-badf (err)
-      (declare (ignore err))
+    (et:ebadf (err) (declare (ignore err))
       (warn "FD ~A is invalid, cannot update its status." (fd-entry-fd fd-entry)))
-    (et:unix-error-noent (err)
-      (declare (ignore err))
+    (et:enoent (err) (declare (ignore err))
       (warn "FD ~A was not monitored, cannot update its status." (fd-entry-fd fd-entry)))))
 
 
@@ -101,11 +98,9 @@
       (do-kqueue-event-request (fd-of mux) fd-entry
                                (calc-kqueue-unmonitor-filter fd-entry)
                                et:ev-delete)
-    (et:unix-error-badf (err)
-      (declare (ignore err))
+    (et:ebadf (err) (declare (ignore err))
       (warn "FD ~A is invalid, cannot unmonitor it." (fd-entry-fd fd-entry)))
-    (et:unix-error-noent (err)
-      (declare (ignore err))
+    (et:enoent (err) (declare (ignore err))
       (warn "FD ~A was not monitored, cannot unmonitor it." (fd-entry-fd fd-entry)))))
 
 
@@ -114,7 +109,7 @@
                          (ts 'et:timespec))
     (et:memset events 0 (* *kqueue-max-events* et:size-of-kevent))
     (let (ready-fds)
-      (et:repeat-upon-condition-decreasing-timeout ((et:unix-error-intr)
+      (et:repeat-upon-condition-decreasing-timeout ((et:eintr)
                                                     tmp-timeout timeout)
         (when tmp-timeout
           (timeout->timespec tmp-timeout ts))

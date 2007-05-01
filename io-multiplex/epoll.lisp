@@ -60,11 +60,9 @@
             fd)
       (handler-case
           (et:epoll-ctl (fd-of mux) et:epoll-ctl-add fd ev)
-        (et:unix-error-badf (err)
-          (declare (ignore err))
+        (et:ebadf (err) (declare (ignore err))
           (warn "FD ~A is invalid, cannot monitor it." fd))
-        (et:unix-error-exist (err)
-          (declare (ignore err))
+        (et:eexist (err) (declare (ignore err))
           (warn "FD ~A is already monitored." fd))))))
 
 
@@ -80,11 +78,9 @@
             fd)
       (handler-case
           (et:epoll-ctl (fd-of mux) et:epoll-ctl-mod fd ev)
-        (et:unix-error-badf (err)
-          (declare (ignore err))
+        (et:ebadf (err) (declare (ignore err))
           (warn "FD ~A is invalid, cannot update its status." fd))
-        (et:unix-error-noent (err)
-          (declare (ignore err))
+        (et:enoent (err) (declare (ignore err))
           (warn "FD ~A was not monitored, cannot update its status." fd))))
     (values fd-entry)))
 
@@ -95,11 +91,9 @@
                     et:epoll-ctl-del
                     (fd-entry-fd fd-entry)
                     (null-pointer))
-    (et:unix-error-badf (err)
-      (declare (ignore err))
+    (et:ebadf (err) (declare (ignore err))
       (warn "FD ~A is invalid, cannot unmonitor it." (fd-entry-fd fd-entry)))
-    (et:unix-error-noent (err)
-      (declare (ignore err))
+    (et:enoent (err) (declare (ignore err))
       (warn "FD ~A was not monitored, cannot unmonitor it." (fd-entry-fd fd-entry)))))
 
 
@@ -107,7 +101,7 @@
   (with-foreign-object (events 'et:epoll-event *epoll-max-events*)
     (et:memset events 0 (* *epoll-max-events* et:size-of-epoll-event))
     (let (ready-fds)
-      (et:repeat-upon-condition-decreasing-timeout ((et:unix-error-intr)
+      (et:repeat-upon-condition-decreasing-timeout ((et:eintr)
                                                     tmp-timeout timeout)
         (setf ready-fds
               (et:epoll-wait (fd-of mux) events

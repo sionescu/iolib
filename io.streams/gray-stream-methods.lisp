@@ -181,7 +181,7 @@
                             (et:repeat-upon-eintr
                               (et:write fd (inc-pointer buf bytes-written)
                                         nbytes))
-                          (et:unix-error-pipe (err) (declare (ignore err))
+                          (et:epipe (err) (declare (ignore err))
                             (return-from %write-n-bytes (values nil :eof))))))
                (unless (zerop num) (incf bytes-written num))))
            (buffer-emptyp () (zerop nbytes)))
@@ -202,7 +202,7 @@
                             (et:repeat-upon-eintr
                               (et:write fd (iobuf-start-pointer buf)
                                         (iobuf-length buf)))
-                          (et:unix-error-pipe (err) (declare (ignore err))
+                          (et:epipe (err) (declare (ignore err))
                             (return-from %flush-obuf (values nil :eof))))))
                (unless (zerop num)
                  (incf (iobuf-start buf) num)

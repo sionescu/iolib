@@ -73,7 +73,7 @@
     (let (retval)
       (handler-case
           (setf retval (et:if-indextoname index buff))
-        (et:unix-error-nxio (err)
+        (et:enxio (err)
           (error 'unknown-interface
                  :code (error-code err)
                  :identifier (error-identifier err)
@@ -85,7 +85,7 @@
   (let (retval)
     (handler-case
         (setf retval (et:if-nametoindex name))
-      (et:unix-error-nodev (err)
+      (et:enodev (err)
         (error 'unknown-interface
                :code (error-code err)
                :identifier (error-identifier err)
