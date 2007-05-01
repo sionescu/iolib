@@ -130,7 +130,9 @@
            :when kqueue-event :collect kqueue-event)))))
 
 
+;; TODO: do something with DATA
 (defun make-kqueue-event (fd flags filter data)
+  (declare (ignore data))
   (let ((event ()))
     (case filter
       (#.et:evfilt-write (push :write event))
