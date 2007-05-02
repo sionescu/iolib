@@ -195,13 +195,8 @@
                   et:size-of-sockaddr-storage)
             (et:getsockname (fd-of socket) ss size)
             t))
-      (unix-error (err)
-        (case (error-identifier err)
-          ((:ebadf
-            #+freebsd :econnreset)
-           nil)
-          ;; some other error
-          (otherwise (error err)))))))
+      (et:ebadf ())
+      #+freebsd (et:econnreset ()))))
 
 
 ;;;;;;;;;;;;;;;;;;;
