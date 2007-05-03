@@ -163,16 +163,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Linux-specific options ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define-socket-option bsd-compatible     :set         et:so-bsdcompat    et:sol-socket :bool    :linux)
-(define-socket-option bind-to-device     :set         et:so-bindtodevice et:sol-socket :int     :linux)
-(define-socket-option priority           :get-and-set et:so-priority     et:sol-socket :int     :linux)
+(define-socket-option bsd-compatible     :set         et::so-bsdcompat    et:sol-socket :bool    :linux)
+(define-socket-option bind-to-device     :set         et::so-bindtodevice et:sol-socket :int     :linux)
+(define-socket-option priority           :get-and-set et::so-priority     et:sol-socket :int     :linux)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FreeBSD-specific options ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define-socket-option reuse-port         :get-and-set et:so-reuseport    et:sol-socket :bool    :freebsd)
-(define-socket-option use-loopback       :get-and-set et:so-useloopback  et:sol-socket :bool    :freebsd)
-(define-socket-option no-sigpipe         :get-and-set et:so-nosigpipe    et:sol-socket :bool    :freebsd)
+(define-socket-option reuse-port         :get-and-set et::so-reuseport    et:sol-socket :bool    :freebsd)
+(define-socket-option use-loopback       :get-and-set et::so-useloopback  et:sol-socket :bool    :freebsd)
+(define-socket-option no-sigpipe         :get-and-set et::so-nosigpipe    et:sol-socket :bool    :freebsd)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
