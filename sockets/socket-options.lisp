@@ -143,36 +143,36 @@
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Generic options ;;
 ;;;;;;;;;;;;;;;;;;;;;
-(define-socket-option accept-connections :get         et::so-acceptconn   et::sol-socket :bool    :unix)
-(define-socket-option broadcast          :get-and-set et::so-broadcast    et::sol-socket :bool    :unix)
-(define-socket-option debug              :get-and-set et::so-debug        et::sol-socket :bool    :unix)
-(define-socket-option dont-route         :get-and-set et::so-dontroute    et::sol-socket :bool    :unix)
-(define-socket-option error              :get         et::so-error        et::sol-socket :int     :unix)
-(define-socket-option keep-alive         :get-and-set et::so-keepalive    et::sol-socket :bool    :unix)
-(define-socket-option linger             :get-and-set et::so-linger       et::sol-socket :linger  :unix)
-(define-socket-option oob-inline         :get-and-set et::so-oobinline    et::sol-socket :bool    :unix)
-(define-socket-option receive-buffer     :get-and-set et::so-rcvbuf       et::sol-socket :int     :unix)
-(define-socket-option send-buffer        :get-and-set et::so-sndbuf       et::sol-socket :int     :unix)
-(define-socket-option receive-low-water  :get-and-set et::so-rcvlowat     et::sol-socket :int     :unix)
-(define-socket-option send-low-water     :get-and-set et::so-sndlowat     et::sol-socket :int     :unix)
-(define-socket-option receive-timeout    :get-and-set et::so-rcvtimeo     et::sol-socket :timeval :unix)
-(define-socket-option send-timeout       :get-and-set et::so-sndtimeo     et::sol-socket :timeval :unix)
-(define-socket-option reuse-address      :get-and-set et::so-reuseaddr    et::sol-socket :bool    :unix)
-(define-socket-option type               :get         et::so-type         et::sol-socket :int     :unix)
+(define-socket-option accept-connections :get         et:so-acceptconn   et:sol-socket :bool    :unix)
+(define-socket-option broadcast          :get-and-set et:so-broadcast    et:sol-socket :bool    :unix)
+(define-socket-option debug              :get-and-set et:so-debug        et:sol-socket :bool    :unix)
+(define-socket-option dont-route         :get-and-set et:so-dontroute    et:sol-socket :bool    :unix)
+(define-socket-option error              :get         et:so-error        et:sol-socket :int     :unix)
+(define-socket-option keep-alive         :get-and-set et:so-keepalive    et:sol-socket :bool    :unix)
+(define-socket-option linger             :get-and-set et:so-linger       et:sol-socket :linger  :unix)
+(define-socket-option oob-inline         :get-and-set et:so-oobinline    et:sol-socket :bool    :unix)
+(define-socket-option receive-buffer     :get-and-set et:so-rcvbuf       et:sol-socket :int     :unix)
+(define-socket-option send-buffer        :get-and-set et:so-sndbuf       et:sol-socket :int     :unix)
+(define-socket-option receive-low-water  :get-and-set et:so-rcvlowat     et:sol-socket :int     :unix)
+(define-socket-option send-low-water     :get-and-set et:so-sndlowat     et:sol-socket :int     :unix)
+(define-socket-option receive-timeout    :get-and-set et:so-rcvtimeo     et:sol-socket :timeval :unix)
+(define-socket-option send-timeout       :get-and-set et:so-sndtimeo     et:sol-socket :timeval :unix)
+(define-socket-option reuse-address      :get-and-set et:so-reuseaddr    et:sol-socket :bool    :unix)
+(define-socket-option type               :get         et:so-type         et:sol-socket :int     :unix)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Linux-specific options ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define-socket-option bsd-compatible     :set         et::so-bsdcompat    et::sol-socket :bool    :linux)
-(define-socket-option bind-to-device     :set         et::so-bindtodevice et::sol-socket :int     :linux)
-(define-socket-option priority           :get-and-set et::so-priority     et::sol-socket :int     :linux)
+(define-socket-option bsd-compatible     :set         et:so-bsdcompat    et:sol-socket :bool    :linux)
+(define-socket-option bind-to-device     :set         et:so-bindtodevice et:sol-socket :int     :linux)
+(define-socket-option priority           :get-and-set et:so-priority     et:sol-socket :int     :linux)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FreeBSD-specific options ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define-socket-option reuse-port         :get-and-set et::so-reuseport    et::sol-socket :bool    :freebsd)
-(define-socket-option use-loopback       :get-and-set et::so-useloopback  et::sol-socket :bool    :freebsd)
-(define-socket-option no-sigpipe         :get-and-set et::so-nosigpipe    et::sol-socket :bool    :freebsd)
+(define-socket-option reuse-port         :get-and-set et:so-reuseport    et:sol-socket :bool    :freebsd)
+(define-socket-option use-loopback       :get-and-set et:so-useloopback  et:sol-socket :bool    :freebsd)
+(define-socket-option no-sigpipe         :get-and-set et:so-nosigpipe    et:sol-socket :bool    :freebsd)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -183,19 +183,19 @@
 
 ;; TODO: implement "struct ucred" helpers
 
-;; (define-socket-option pass-credentials   :get-and-set et::so-passcred     et::sol-socket :ucred   :freebsd)
-;; (define-socket-option peer-credentials   :get         et::so-peercred     et::sol-socket :ucred   :freebsd)
+;; (define-socket-option pass-credentials   :get-and-set et:so-passcred     et:sol-socket :ucred   :freebsd)
+;; (define-socket-option peer-credentials   :get         et:so-peercred     et:sol-socket :ucred   :freebsd)
 
 
 ;; TODO: implement "struct accept_filter_arg" helpers
 
-;; (define-socket-option accept-filter      :get-and-set et::so-acceptfilter et::sol-socket :accept-filter :freebsd)
+;; (define-socket-option accept-filter      :get-and-set et:so-acceptfilter et:sol-socket :accept-filter :freebsd)
 
 ;; TODO: find out the types of these options
 
-;; (define-socket-option bintime            :get-and-set et::so-bintime      et::sol-socket :bool    :freebsd)
-;; (define-socket-option label              :get-and-set et::so-label        et::sol-socket :bool    :freebsd)
-;; (define-socket-option peerlabel          :get-and-set et::so-peerlabel    et::sol-socket :bool    :freebsd)
-;; (define-socket-option listen-queue-limit :get-and-set et::so-listenqlimit et::sol-socket :int     :freebsd)
-;; (define-socket-option listen-queue-length :get-and-set et::so-listenqlen  et::sol-socket :int     :freebsd)
-;; (define-socket-option listen-incomplete-queue-length :get-and-set et::so-listenincqlen  et::sol-socket :int :freebsd)
+;; (define-socket-option bintime            :get-and-set et:so-bintime      et:sol-socket :bool    :freebsd)
+;; (define-socket-option label              :get-and-set et:so-label        et:sol-socket :bool    :freebsd)
+;; (define-socket-option peerlabel          :get-and-set et:so-peerlabel    et:sol-socket :bool    :freebsd)
+;; (define-socket-option listen-queue-limit :get-and-set et:so-listenqlimit et:sol-socket :int     :freebsd)
+;; (define-socket-option listen-queue-length :get-and-set et:so-listenqlen  et:sol-socket :int     :freebsd)
+;; (define-socket-option listen-incomplete-queue-length :get-and-set et:so-listenincqlen  et:sol-socket :int :freebsd)
