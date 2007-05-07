@@ -262,6 +262,10 @@
     ((ignore-errors (coercef name 'ipv6-array))
      (make-instance 'ipv6addr :name name))
     (t (error 'invalid-address :address name :type :unknown))))
+
+(defun ensure-address (addr)
+  (if (sockaddrp addr) addr
+      (make-address addr)))
 
 ;;;
 ;;; Well-known addresses
@@ -301,6 +305,17 @@
 ;;;
 
 ;; General predicates
+(defgeneric sockaddrp (address)
+  (:documentation "Returns T if ADDRESS is a socket address."))
+
+(defmethod sockaddrp ((address sockaddr))
+  (declare (ignore address))
+  t)
+
+(defmethod sockaddrp (address)
+  (declare (ignore address))
+  nil)
+
 (defgeneric ipv4-address-p (address)
   (:documentation "Returns T if ADDRESS is an IPv4 address object."))
 

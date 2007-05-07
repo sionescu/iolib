@@ -46,7 +46,8 @@
 
    ;; addresses
    #:sockaddr #:inetaddr #:ipv4addr #:ipv6addr #:localaddr
-   #:make-address #:sockaddr= #:sockaddr->presentation #:copy-sockaddr
+   #:make-address #:ensure-address
+   #:sockaddr= #:sockaddr->presentation #:copy-sockaddr
    #:name #:abstract-p
 
    ;; well-known addresses and important values
@@ -58,6 +59,7 @@
    #:+ipv6-site-local-all-routers+
 
    ;; address predicates
+   #:sockaddrp
    #:ipv4-address-p #:ipv6-address-p #:local-address-p
    #:inetaddr-unspecified-p #:inetaddr-loopback-p
    #:inetaddr-multicast-p #:inetaddr-unicast-p
