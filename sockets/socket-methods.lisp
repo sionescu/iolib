@@ -322,6 +322,8 @@
 (defmethod socket-listen ((socket passive-socket)
                           &key (backlog (min *default-backlog-size*
                                              +max-backlog-size+)))
+  (unless backlog (setf backlog (min *default-backlog-size*
+                                     +max-backlog-size+)))
   (check-type backlog unsigned-byte "a non-negative integer")
   (with-socket-error-filter
     (et:listen (fd-of socket) backlog))
