@@ -273,7 +273,7 @@
         ((stringp addr)
          (if (eql family :local)
              (make-instance 'localaddr :name addr)
-             (make-address (vector-address-or-nil addr))))
+             (make-address (string-address->vector addr))))
         (t (make-address addr))))
 
 ;;;
