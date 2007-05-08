@@ -1,0 +1,4 @@
+-*- text -*-
+
+* add make-socket-pair
+* make it possible to re-open sockets
