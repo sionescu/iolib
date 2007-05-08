@@ -181,8 +181,8 @@
 (defmethod close :around ((socket passive-socket) &key abort)
   (declare (ignore abort))
   (call-next-method)
-  (setf (slot-value socket 'bound) nil)
-  (setf (slot-value socket 'listening) nil)
+  (setf (slot-value socket 'bound) nil
+        (slot-value socket 'listening) nil)
   (values socket))
 
 (defmethod close ((socket socket) &key abort)
