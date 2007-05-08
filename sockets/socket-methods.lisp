@@ -92,9 +92,14 @@
 ;;  PRINT-OBJECT  ;;
 ;;;;;;;;;;;;;;;;;;;;
 
+(defun sock-fam (socket)
+  (ecase (socket-family socket)
+    (:ipv4 "IPv4")
+    (:ipv6 "IPv6")))
+
 (defmethod print-object ((socket socket-stream-internet-active) stream)
   (print-unreadable-object (socket stream :type nil :identity t)
-    (format stream "active internet stream socket" )
+    (format stream "active ~A stream socket" (sock-fam socket))
     (if (socket-connected-p socket)
         (multiple-value-bind (addr port) (remote-name socket)
           (format stream " connected to ~A/~A"
@@ -105,7 +110,7 @@
 
 (defmethod print-object ((socket socket-stream-internet-passive) stream)
   (print-unreadable-object (socket stream :type nil :identity t)
-    (format stream "passive internet stream socket" )
+    (format stream "passive ~A stream socket" (sock-fam socket))
     (if (socket-bound-p socket)
         (multiple-value-bind (addr port) (local-name socket)
           (format stream " ~A ~A/~A"
@@ -119,7 +124,7 @@
 
 (defmethod print-object ((socket socket-stream-local-active) stream)
   (print-unreadable-object (socket stream :type nil :identity t)
-    (format stream "active local stream socket" )
+    (format stream "active local stream socket")
     (if (socket-connected-p socket)
         (format stream " connected")
         (if (fd-of socket)
@@ -128,7 +133,7 @@
 
 (defmethod print-object ((socket socket-stream-local-passive) stream)
   (print-unreadable-object (socket stream :type nil :identity t)
-    (format stream "passive local stream socket" )
+    (format stream "passive local stream socket")
     (if (socket-bound-p socket)
         (format stream " ~A ~A"
                 (if (socket-listening-p socket)
@@ -141,7 +146,7 @@
 
 (defmethod print-object ((socket socket-datagram-local-active) stream)
   (print-unreadable-object (socket stream :type nil :identity t)
-    (format stream "local datagram socket" )
+    (format stream "local datagram socket")
     (if (socket-connected-p socket)
         (format stream " connected")
         (if (fd-of socket)
@@ -150,7 +155,7 @@
 
 (defmethod print-object ((socket socket-datagram-internet-active) stream)
   (print-unreadable-object (socket stream :type nil :identity t)
-    (format stream "internet datagram socket" )
+    (format stream "~A datagram socket" (sock-fam socket))
     (if (socket-connected-p socket)
         (multiple-value-bind (addr port) (remote-name socket)
           (format stream " connected to ~A/~A"
