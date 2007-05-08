@@ -37,11 +37,8 @@
          (select-socket-type address-family type connect protocol)))
     (make-instance socket-class :family address-family)))
 
-(defun open-client-socket (type address &optional port (ipv6 *ipv6*))
-  (let* ((addr (ensure-address address))
-         (family (etypecase addr
-                   (inetaddr  :internet)
-                   (localaddr :local)))
+(defun open-client-socket (family type address &optional port (ipv6 *ipv6*))
+  (let* ((addr (ensure-address address family))
          (socket (make-socket :address-family family
                               :type type
                               :connect :active
@@ -49,13 +46,10 @@
                               :ipv6 ipv6)))
     (connect socket addr :port port)))
 
-(defun open-server-socket (address &key
+(defun open-server-socket (family address &key
                            port reuse-address
                            backlog (ipv6 *ipv6*))
-  (let* ((addr (ensure-address address))
-         (family (etypecase addr
-                   (inetaddr  :internet)
-                   (localaddr :local)))
+  (let* ((addr (ensure-address address family))
          (socket (make-socket :address-family family
                               :connect :passive
                               :protocol :default
@@ -67,9 +61,9 @@
 (defmacro with-socket ((var &rest args) &body body)
   `(with-open-stream (,var (make-socket ,@args)) ,@body))
 
-(defmacro with-client-socket ((var &key type address port (ipv6 nil ipv6p)) &body body)
-  `(with-open-stream (,var  ,(if ipv6p `(open-client-socket ,type ,address ,port ,ipv6)
-                                       `(open-client-socket ,type ,address ,port)))
+(defmacro with-client-socket ((var &key family type address port (ipv6 nil ipv6p)) &body body)
+  `(with-open-stream (,var  ,(if ipv6p `(open-client-socket ,family ,type ,address ,port ,ipv6)
+                                       `(open-client-socket ,family ,type ,address ,port)))
      ,@body))
 
 (defmacro with-server-socket ((var &key address port reuse-address

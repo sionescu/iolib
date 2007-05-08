@@ -263,9 +263,18 @@
      (make-instance 'ipv6addr :name name))
     (t (error 'invalid-address :address name :type :unknown))))
 
-(defun ensure-address (addr)
-  (if (sockaddrp addr) addr
-      (make-address addr)))
+(defun ensure-address (addr &optional (family :internet))
+  (cond ((sockaddrp addr)
+         (progn
+           (ecase family
+             (:internet (check-type addr inetaddr))
+             (:local    (check-type addr localaddr)))
+           (values addr)))
+        ((stringp addr)
+         (if (eql family :local)
+             (make-instance 'localaddr :name addr)
+             (make-address (vector-address-or-nil addr))))
+        (t (make-address addr))))
 
 ;;;
 ;;; Well-known addresses
