@@ -1,4 +1,12 @@
--*- text -*-
+-*- outline -*-
 
-* add make-socket-pair
-* make it possible to re-open sockets
+* High priority
+- make it possible to specify stream's external format in OPEN-SOCKET-CLIENT and ACCEPT
+- add read/write timeouts to sockets
+
+* Medium priority
+- make it possible to re-open sockets
+
+* Low priority
+- add MAKE-SOCKET-PAIR
+- implement SCTP sockets
