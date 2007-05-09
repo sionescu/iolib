@@ -171,11 +171,11 @@
 
 (defmethod close :around ((socket socket) &key abort)
   (declare (ignore abort))
+  (call-next-method)
   (when (fd-of socket)
     (with-socket-error-filter
       (et:close (fd-of socket))))
   (setf (fd-of socket) nil)
-  (call-next-method)
   (values socket))
 
 (defmethod close :around ((socket passive-socket) &key abort)
