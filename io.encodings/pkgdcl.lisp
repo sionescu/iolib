@@ -16,6 +16,6 @@
    #:void-external-format
    #:octets-encoding-error
    #:octet-decoding-error #:end-of-input-in-character
-   #:malformed-multibyte-sequence #:invalid-utf-8-starter-byte
-   #:invalid-utf-8-continuation-byte #:overlong-utf-8-sequence
+   #:malformed-multibyte-sequence #:invalid-starter-octet
+   #:invalid-continuation-octet #:overlong-octet-sequence
    #:illegal-code-point))
