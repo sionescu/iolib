@@ -11,7 +11,8 @@
   :description "I/O library for SBCL."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
-  :licence "GPL-2.1"
+  :version "0.5.2"
+  :licence "LLGPL-2.1"
   :depends-on (:iolib-posix
                :net.sockets
                :net.dns-client))
