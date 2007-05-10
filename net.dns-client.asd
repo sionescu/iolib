@@ -14,7 +14,7 @@
   :description "DNS client library."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
-  :licence "GPL-2.1"
+  :licence "LLGPL-2.1"
   :depends-on (:net.sockets
                :io.encodings
                :iolib-utils-symbols)

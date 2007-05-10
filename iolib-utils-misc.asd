@@ -13,7 +13,7 @@
 (defsystem :iolib-utils-misc
   :description "Miscellaneous utils."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
-  :licence "GPL-2.1"
+  :licence "LLGPL-2.1"
   :depends-on (:iolib-utils-package)
   :default-component-class muffled-source-file
   :pathname (merge-pathnames (make-pathname :directory '(:relative "utils"))

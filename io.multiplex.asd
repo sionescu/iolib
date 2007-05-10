@@ -14,7 +14,7 @@
   :description "I/O multiplexing library for SBCL."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
-  :licence "GPL-2.1"
+  :licence "LLGPL-2.1"
   :depends-on (:iolib-posix
                :iolib-utils-misc)
   :default-component-class muffled-source-file
