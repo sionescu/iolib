@@ -112,7 +112,7 @@
                                     fundamental-character-input-stream
                                     fundamental-character-output-stream)
   ((external-format :initform (find-external-format :default)
-                    :accessor external-format-of)
+                    :reader external-format-of)
    ;; Input buffer.
    (input-buffer :initform nil :type (or iobuf null)
                  :accessor input-buffer-of)

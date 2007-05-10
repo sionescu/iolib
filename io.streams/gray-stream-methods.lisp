@@ -40,11 +40,8 @@
   (with-accessors ((ib input-buffer-of) (ob output-buffer-of)
                    (ef external-format-of)) s
     (setf ib (allocate-iobuf input-buffer-size)
-          ob (allocate-iobuf output-buffer-size))
-    (setf ef (etypecase external-format
-               (symbol (find-external-format external-format))
-               ((and list (not null))
-                (apply #'make-external-format external-format))))))
+          ob (allocate-iobuf output-buffer-size)
+          ef external-format)))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;;                ;;
@@ -68,6 +65,13 @@
 
 (defmethod close ((stream dual-channel-gray-stream) &key abort)
   (declare (ignore stream abort)))
+
+(defmethod (setf external-format-of) (external-format (stream dual-channel-gray-stream))
+  (setf (slot-value stream 'external-format)
+        (etypecase external-format
+          (symbol (find-external-format external-format))
+          ((and list (not null))
+           (apply #'make-external-format external-format)))))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;               ;;
