@@ -6,11 +6,11 @@
   (asdf:operate 'asdf:load-op :asdf-additions))
 
 (defpackage #:net.dns-client.system
-  (:use #:common-lisp #:asdf #:asdf-additions))
+  (:use #:common-lisp #:asdf-additions))
 
 (in-package #:net.dns-client.system)
 
-(defsystem :net.dns-client
+(asdf:defsystem :net.dns-client
   :description "DNS client library."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"

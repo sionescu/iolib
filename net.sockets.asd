@@ -6,11 +6,11 @@
   (asdf:operate 'asdf:load-op :asdf-additions))
 
 (defpackage #:net.sockets-system
-  (:use #:common-lisp #:asdf #:asdf-additions))
+  (:use #:common-lisp #:asdf-additions))
 
 (in-package #:net.sockets-system)
 
-(defsystem :net.sockets
+(asdf:defsystem :net.sockets
   :description "Socket library for SBCL."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"

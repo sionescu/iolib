@@ -6,7 +6,7 @@
   (asdf:operate 'asdf:load-op :asdf-additions))
 
 (defpackage #:io.encodings.system
-  (:use #:common-lisp #:asdf #:asdf-additions))
+  (:use #:common-lisp #:asdf-additions))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unless (<= char-code-limit 256)
@@ -14,7 +14,7 @@
 
 (in-package #:io.encodings.system)
 
-(defsystem :io.encodings
+(asdf:defsystem :io.encodings
   :description "Charset encoding/decoding library."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL"

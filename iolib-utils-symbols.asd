@@ -6,11 +6,11 @@
   (asdf:operate 'asdf:load-op :asdf-additions))
 
 (defpackage #:iolib-utils-symbols.system
-  (:use #:common-lisp #:asdf #:asdf-additions))
+  (:use #:common-lisp #:asdf-additions))
 
 (in-package #:iolib-utils-symbols.system)
 
-(defsystem :iolib-utils-symbols
+(asdf:defsystem :iolib-utils-symbols
   :description "Symbol manipulation library."
   :author "Kevin M. Rosenberg"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"

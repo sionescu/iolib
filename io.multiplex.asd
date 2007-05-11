@@ -6,11 +6,11 @@
   (asdf:operate 'asdf:load-op :asdf-additions))
 
 (defpackage #:io.multiplex-system
-  (:use #:common-lisp #:asdf #:asdf-additions))
+  (:use #:common-lisp #:asdf-additions))
 
 (in-package #:io.multiplex-system)
 
-(defsystem :io.multiplex
+(asdf:defsystem :io.multiplex
   :description "I/O multiplexing library for SBCL."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"

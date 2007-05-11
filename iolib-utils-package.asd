@@ -3,11 +3,11 @@
 (in-package :common-lisp-user)
 
 (defpackage #:iolib-utils-package.system
-  (:use #:common-lisp #:asdf))
+  (:use #:common-lisp))
 
 (in-package #:iolib-utils-package.system)
 
-(defsystem :iolib-utils-package
+(asdf:defsystem :iolib-utils-package
   :pathname (merge-pathnames (make-pathname :directory '(:relative "utils"))
                              *load-truename*)
   :components ((:file "pkgdcl")))

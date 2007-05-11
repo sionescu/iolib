@@ -8,11 +8,11 @@
   #+allegro (require :streamc))
 
 (defpackage #:io.streams.system
-  (:use #:common-lisp #:asdf #:asdf-additions))
+  (:use #:common-lisp #:asdf-additions))
 
 (in-package #:io.streams.system)
 
-(defsystem :io.streams
+(asdf:defsystem :io.streams
   :description "Gray streams."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"

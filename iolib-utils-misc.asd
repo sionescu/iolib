@@ -6,11 +6,11 @@
   (asdf:operate 'asdf:load-op :asdf-additions))
 
 (defpackage #:iolib-utils-misc.system
-  (:use #:common-lisp #:asdf #:asdf-additions))
+  (:use #:common-lisp #:asdf-additions))
 
 (in-package #:iolib-utils-misc.system)
 
-(defsystem :iolib-utils-misc
+(asdf:defsystem :iolib-utils-misc
   :description "Miscellaneous utils."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
