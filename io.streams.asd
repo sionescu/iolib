@@ -8,7 +8,7 @@
   #+allegro (require :streamc))
 
 (defpackage #:io.streams.system
-  (:use #:common-lisp #:asdf))
+  (:use #:common-lisp #:asdf #:asdf-additions))
 
 (in-package #:io.streams.system)
 

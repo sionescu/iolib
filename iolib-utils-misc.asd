@@ -6,7 +6,7 @@
   (asdf:operate 'asdf:load-op :asdf-additions))
 
 (defpackage #:iolib-utils-misc.system
-  (:use #:common-lisp #:asdf))
+  (:use #:common-lisp #:asdf #:asdf-additions))
 
 (in-package #:iolib-utils-misc.system)
 

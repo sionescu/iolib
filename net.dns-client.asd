@@ -6,7 +6,7 @@
   (asdf:operate 'asdf:load-op :asdf-additions))
 
 (defpackage #:net.dns-client.system
-  (:use #:common-lisp #:asdf))
+  (:use #:common-lisp #:asdf #:asdf-additions))
 
 (in-package #:net.dns-client.system)
 
