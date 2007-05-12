@@ -30,4 +30,18 @@
   (when (> start end) (error "~S ~S wrong sequence bounds" start end))
   (values start end))
 
-(export '(define-constant %check-bounds))
+(defmacro return-if (block form)
+  (let (($form$ (gensym "FORM-")))
+    `(let ((,$form$ ,form))
+       (when ,$form$ (return-from ,block ,$form$)))))
+
+(defun featurep (feature)
+  (etypecase feature
+    (symbol (consp (member feature *features* :test #'eq)))
+    (cons (ecase (first feature)
+            ((or :or)   (some #'featurep (rest feature)))
+            ((and :and) (every #'featurep (rest feature)))
+            ((not :not) (and (third feature) (error "Incorrect feature expression: ~S" feature))
+                        (not (featurep (second feature))))))))
+
+(export '(define-constant %check-bounds return-if featurep))
