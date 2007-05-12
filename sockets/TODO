@@ -9,7 +9,9 @@
 
 * Medium priority
 - make it possible to re-open sockets
+- add/fix socket options
 
 * Low priority
 - add MAKE-SOCKET-PAIR
+- make it possible to send descriptors/credentials over unix sockets
 - implement SCTP sockets
