@@ -179,6 +179,7 @@
 ;;;;;;;;;;;;;;;;;;;;
 
 (defun %write-n-bytes (buf fd nbytes &optional timeout)
+  (declare (type stream-buffer buf))
   (let ((bytes-written 0))
     (flet ((write-once ()
              (let ((num (handler-case
@@ -200,6 +201,7 @@
               (when (zerop timeout-var) (return-from %write-n-bytes (values nil :timeout)))))))))
 
 (defun %flush-obuf (buf fd &optional timeout)
+  (declare (type iobuf buf))
   (let ((bytes-written 0))
     (flet ((write-once ()
              (let ((num (handler-case
@@ -294,7 +296,7 @@
        (%write-simple-array-ub8 stream seq start end))
       (string
        (stream-write-string stream seq start end))
-      ((vector ub8)
+      (ub8-vector
        (%write-vector-ub8 stream seq start end))
       (vector
        (%write-vector stream seq start end)))))
@@ -309,7 +311,7 @@
     (etypecase seq
       (ub8-sarray
        (%write-simple-array-ub8 stream seq start end))
-      ((vector ub8)
+      (ub8-vector
        (%write-vector-ub8 stream seq start end))
       (vector
        (%write-vector stream seq start end)))))
@@ -360,38 +362,35 @@
   (with-accessors ((fd input-fd-of) (ib input-buffer-of)
                    (unread-index ibuf-unread-index-of)
                    (ef external-format-of)) stream
-    (setf unread-index (iobuf-start ib))
-    (let ((str (make-string 1))
-          (ret nil))
-      (flet ((fill-buf-or-eof ()
-               (setf ret (%fill-ibuf ib fd))
-               (when (eql ret :eof)
-                 (return-from stream-read-char :eof))))
-        (cond ((zerop (iobuf-length ib))
-               (iobuf-reset ib)
-               (fill-buf-or-eof))
-              ;; Some encodings such as CESU or Java's modified UTF-8 take
-              ;; as much as 6 bytes per character. Make sure we have enough
-              ;; space to collect read-ahead bytes if required.
-              ((< 0 (iobuf-end-space-length ib) +max-octets-per-char+)
-               (iobuf-copy-data-to-start ib)
-               (setf unread-index 0)))
-        ;; line-end handling
-        (let ((line-end
-               (maybe-find-line-ending fd ib ef)))
-          (when line-end
-            (return-from stream-read-char line-end)))
-        (tagbody :start
-           (handler-case
-               (setf ret (nth-value 1 (ioenc::%octets-to-string
-                                       (iobuf-data ib) str
-                                       (iobuf-start ib)
+    (flet ((decode-one-char (str ib ef)
+             (ioenc::%octets-to-string (iobuf-data ib) str (iobuf-start ib)
                                        (iobuf-end ib) ef 1)))
-             (end-of-input-in-character ()
-               (fill-buf-or-eof)
-               (go :start)))
-           (incf (iobuf-start ib) ret))
-        (char str 0)))))
+      (setf unread-index (iobuf-start ib))
+      (let ((str (make-string 1))
+            (ret nil))
+        (flet ((fill-buf-or-eof ()
+                 (setf ret (%fill-ibuf ib fd))
+                 (when (eql ret :eof)
+                   (return-from stream-read-char :eof))))
+          (cond ((zerop (iobuf-length ib))
+                 (iobuf-reset ib)
+                 (fill-buf-or-eof))
+                ;; Some encodings such as CESU or Java's modified UTF-8 take
+                ;; as much as 6 bytes per character. Make sure we have enough
+                ;; space to collect read-ahead bytes if required.
+                ((< 0 (iobuf-end-space-length ib) +max-octets-per-char+)
+                 (iobuf-copy-data-to-start ib)
+                 (setf unread-index 0)))
+          ;; line-end handling
+          (return-if stream-read-char (maybe-find-line-ending fd ib ef))
+          (tagbody :start
+             (handler-case
+                 (setf ret (nth-value 1 (decode-one-char str ib ef)))
+               (end-of-input-in-character ()
+                 (fill-buf-or-eof)
+                 (go :start)))
+             (incf (iobuf-start ib) ret))
+          (char str 0))))))
 
 (defun maybe-find-line-ending-no-hang (fd ib ef)
   (declare (ignore fd))
@@ -498,7 +497,7 @@
 (defmethod stream-write-char ((stream dual-channel-gray-stream)
                               (character character))
   (%flush-obuf-if-needed stream)
-  (if (eql character #\Newline)
+  (if (char= character #\Newline)
       (%write-line-terminator stream (ioenc:ef-line-terminator (external-format-of stream)))
       ;; FIXME: avoid consing a string here. At worst, declare it dynamic-extent
       (stream-write-string stream (make-string 1 :initial-element character))))
