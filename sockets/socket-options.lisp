@@ -99,9 +99,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun make-sockopt-helper-name (action value-type)
-    (concat-symbol action
-                               '-socket-option-
-                               value-type))
+    (concat-symbol action '-socket-option- value-type))
 
   (defvar +helper-args-map+
     '((:bool (value))
@@ -111,14 +109,14 @@
   
 (defmacro define-get-sockopt (os eql-name helper-get level optname)
   `(defmethod get-socket-option ((socket socket) (option-name (eql ,eql-name)))
-     ,(if (member os *features*)
+     ,(if (featurep os)
           `(with-socket-error-filter
              (,helper-get (socket-fd socket) ,level ,optname))
           `(error 'option-not-available option-name))))
 
 (defmacro define-set-sockopt (os eql-name args helper-set level optname)
   `(defmethod set-socket-option ((socket socket) (option-name (eql ,eql-name)) &key ,@args)
-     ,@(if (member os *features*)
+     ,@(if (featurep os)
            `((with-socket-error-filter
                (,helper-set (socket-fd socket) ,level ,optname ,@args)))
            `((declare (ignore ,@args))
@@ -183,8 +181,8 @@
 
 ;; TODO: implement "struct ucred" helpers
 
-;; (define-socket-option pass-credentials   :get-and-set et:so-passcred     et:sol-socket :ucred   :freebsd)
-;; (define-socket-option peer-credentials   :get         et:so-peercred     et:sol-socket :ucred   :freebsd)
+;; (define-socket-option pass-credentials   :get-and-set et:so-passcred     et:sol-socket :ucred   (or :linux :freebsd))
+;; (define-socket-option peer-credentials   :get         et:so-peercred     et:sol-socket :ucred   (or :linux :freebsd))
 
 
 ;; TODO: implement "struct accept_filter_arg" helpers
