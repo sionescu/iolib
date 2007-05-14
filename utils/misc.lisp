@@ -45,6 +45,6 @@
                         (not (featurep (second feature))))))))
 
 (defun xnor (x1 x2)
-  (not (eq (not x1) (not x2))))
+  (eq (not x1) (not x2)))
 
 (export '(define-constant %check-bounds return-if featurep xnor))
