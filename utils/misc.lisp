@@ -44,4 +44,7 @@
             ((not :not) (and (third feature) (error "Incorrect feature expression: ~S" feature))
                         (not (featurep (second feature))))))))
 
-(export '(define-constant %check-bounds return-if featurep))
+(defun xnor (x1 x2)
+  (not (eq (not x1) (not x2))))
+
+(export '(define-constant %check-bounds return-if featurep xnor))
