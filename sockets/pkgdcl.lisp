@@ -46,7 +46,7 @@
 
    ;; addresses
    #:sockaddr #:inetaddr #:ipv4addr #:ipv6addr #:localaddr
-   #:make-address #:ensure-address
+   #:make-address #:ensure-address #:convert-or-lookup-inet-address
    #:sockaddr= #:sockaddr->presentation #:copy-sockaddr
    #:name #:abstract-p
 

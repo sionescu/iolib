@@ -297,7 +297,13 @@
     ((vector * 8)                       ; IPv6 address
      (lookup-host-u16-vector-8 host ipv6))))
 
-
+(defun convert-or-lookup-inet-address (addr &optional (ipv6 *ipv6*))
+  (handler-case
+      (ensure-address addr :internet)
+    (invalid-address ()
+      (let ((addresses (host-addresses (lookup-host addr :ipv6 ipv6))))
+        (values (car addresses)
+                (cdr addresses))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;
