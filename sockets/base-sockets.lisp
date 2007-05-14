@@ -29,7 +29,8 @@
 
 (defclass socket (dual-channel-single-fd-mixin)
   ((family   :initarg :family   :accessor socket-family)
-   (protocol :initarg :protocol :accessor socket-protocol)))
+   (protocol :initarg :protocol :accessor socket-protocol)
+   (bound    :initform nil      :reader   socket-bound-p :type boolean)))
 
 (defgeneric socket-fd (socket))
 (defgeneric (setf socket-fd) (fd socket))
@@ -77,8 +78,7 @@
 (defgeneric socket-receive (buffer socket &key &allow-other-keys))
 
 (defclass passive-socket (socket)
-  ((bound     :initform nil :reader socket-bound-p     :type boolean)
-   (listening :initform nil :reader socket-listening-p :type boolean)
+  ((listening :initform nil :reader socket-listening-p :type boolean)
    (active-class :initarg :active-class :reader active-class
                  :type symbol :allocation :class)))
 

@@ -175,14 +175,14 @@
   (when (fd-of socket)
     (with-socket-error-filter
       (et:close (fd-of socket))))
-  (setf (fd-of socket) nil)
+  (setf (fd-of socket) nil
+        (slot-value socket 'bound) nil)
   (values socket))
 
 (defmethod close :around ((socket passive-socket) &key abort)
   (declare (ignore abort))
   (call-next-method)
-  (setf (slot-value socket 'bound) nil
-        (slot-value socket 'listening) nil)
+  (setf (slot-value socket 'listening) nil)
   (values socket))
 
 (defmethod close ((socket socket) &key abort)
