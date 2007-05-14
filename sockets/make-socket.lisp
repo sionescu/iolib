@@ -21,58 +21,118 @@
 
 (in-package :net.sockets)
 
-(defun make-socket (&key
-                    (address-family :internet)
-                    (type :stream)
-                    (connect :active)
-                    (protocol :default)
-                    (ipv6 *ipv6*))
+(defun create-socket (&key
+                      (address-family :internet)
+                      (type :stream)
+                      (connect :active)
+                      (protocol :default)
+                      (ipv6 *ipv6*)
+                      (external-format :default))
   (check-type address-family (member :internet :local))
   (check-type type (member :stream :datagram))
   (check-type connect (member :active :passive))
   (check-type ipv6 (member nil t :ipv6))
-  (when (eql address-family :internet)
+  (when (eq address-family :internet)
     (setf address-family (if ipv6 :ipv6 :ipv4)))
   (let ((socket-class
          (select-socket-type address-family type connect protocol)))
-    (make-instance socket-class :family address-family)))
+    (make-instance socket-class :family address-family
+                   :external-format external-format)))
 
-(defun open-client-socket (family type address &optional port (ipv6 *ipv6*))
-  (let* ((addr (ensure-address address family))
-         (socket (make-socket :address-family family
-                              :type type
-                              :connect :active
-                              :protocol :default
-                              :ipv6 ipv6)))
-    (connect socket addr :port port)))
+(declaim (inline %make-internet-stream-socket))
+(defun %make-internet-stream-socket (args connect ipv6 ef)
+  (let (socket address)
+    (destructuring-bind (&key local-host local-port remote-host remote-port
+                              backlog reuse-address keepalive nodelay &allow-other-keys) args
+      (ecase connect
+        (:active
+         (assert (xnor local-host local-port))
+         (assert (xnor remote-host remote-port))
+         (setf socket (create-socket :address-family :internet :type :stream
+                                     :connect :active :ipv6 ipv6
+                                     :external-format ef))
+         (when keepalive (set-socket-option socket :keep-alive :value t))
+         (when nodelay (set-socket-option socket :tcp-nodelay :value t))
+         (when local-host
+           (setf address (convert-or-lookup-inet-address local-host ipv6))
+           (bind-address socket address :port local-port
+                         :reuse-address reuse-address))
+         (when remote-host
+           (setf address (convert-or-lookup-inet-address remote-host ipv6))
+           (connect socket address :port remote-port)))
+        (:passive
+         (assert (xnor local-host local-port))
+         (setf socket (create-socket :address-family :internet :type :stream
+                                     :connect :passive :ipv6 ipv6))
+         (when local-host
+           (setf address (convert-or-lookup-inet-address local-host ipv6))
+           (bind-address socket address :port local-port
+                         :reuse-address reuse-address)
+           (socket-listen socket :backlog backlog)))))
+    (values socket)))
 
-(defun open-server-socket (family address &key
-                           port reuse-address
-                           backlog (ipv6 *ipv6*))
-  (let* ((addr (ensure-address address family))
-         (socket (make-socket :address-family family
-                              :connect :passive
-                              :protocol :default
-                              :ipv6 ipv6)))
-    (bind-address socket addr :port port
-                  :reuse-address reuse-address)
-    (socket-listen socket :backlog backlog)))
+(declaim (inline %make-local-stream-socket))
+(defun %make-local-stream-socket (args connect ef)
+  (let (socket)
+    (destructuring-bind (&key local-filename remote-filename backlog &allow-other-keys) args
+      (ecase connect
+        (:active
+         (assert remote-filename)
+         (setf socket (create-socket :address-family :local :type :stream
+                                     :connect :active :external-format ef))
+         (connect socket (make-address remote-filename)))
+        (:passive
+         (assert local-filename)
+         (setf socket (create-socket :address-family :local :type :stream
+                                     :connect :passive))
+         (bind-address socket (make-address local-filename))
+         (socket-listen socket :backlog backlog))))
+    (values socket)))
+
+(declaim (inline %make-internet-datagram-socket))
+(defun %make-internet-datagram-socket (args ipv6 ef)
+  (let (socket address)
+    (destructuring-bind (&key local-host local-port remote-host remote-port
+                              reuse-address broadcast &allow-other-keys) args
+      (assert (xnor local-host local-port))
+      (assert (xnor remote-host remote-port))
+      (setf socket (create-socket :address-family :internet :type :datagram
+                                  :connect :active :ipv6 ipv6
+                                  :external-format ef))
+      (when broadcast (set-socket-option socket :broadcast :value t))
+      (when local-host
+        (setf address (convert-or-lookup-inet-address local-host ipv6))
+        (bind-address socket address :port local-port
+                      :reuse-address reuse-address))
+      (when remote-host
+        (setf address (convert-or-lookup-inet-address remote-host ipv6))
+        (connect socket address :port remote-port)))
+    (values socket)))
+
+(declaim (inline %make-local-datagram-socket))
+(defun %make-local-datagram-socket (args ef)
+  (let (socket address)
+    (destructuring-bind (&key local-filename remote-filename &allow-other-keys) args
+      (setf socket (create-socket :address-family :local :type :datagram
+                                  :connect :active :external-format ef))
+      (when local-filename
+        (bind-address socket (make-address address)))
+      (when remote-filename
+        (connect socket (make-address address))))
+    (values socket)))
+
+(defun make-socket (&rest args &key address-family type connect (ipv6 *ipv6*)
+                    format eol (external-format :default) scope-id &allow-other-keys)
+  (declare (ignore format eol scope-id))
+  (cond
+    ((and (eq address-family :internet) (eq type :stream))
+     (%make-internet-stream-socket args connect ipv6 external-format))
+    ((and (eq address-family :local) (eq type :stream))
+     (%make-local-stream-socket args connect external-format))
+    ((and (eq address-family :internet) (eq type :datagram))
+     (%make-internet-datagram-socket args ipv6 external-format))
+    ((and (eq address-family :local) (eq type :datagram))
+     (%make-local-datagram-socket args external-format))))
 
 (defmacro with-socket ((var &rest args) &body body)
   `(with-open-stream (,var (make-socket ,@args)) ,@body))
-
-(defmacro with-client-socket ((var &key family type address port (ipv6 nil ipv6p)) &body body)
-  `(with-open-stream (,var  ,(if ipv6p `(open-client-socket ,family ,type ,address ,port ,ipv6)
-                                       `(open-client-socket ,family ,type ,address ,port)))
-     ,@body))
-
-(defmacro with-server-socket ((var &key address port reuse-address
-                                   backlog (ipv6 nil ipv6p)) &body body)
-  `(with-open-stream (,var  ,(if ipv6p `(open-server-socket ,address :port ,port
-                                                            :reuse-address ,reuse-address
-                                                            :backlog ,backlog
-                                                            :ipv6 ,ipv6)
-                                       `(open-server-socket ,address :port ,port
-                                                            :reuse-address ,reuse-address
-                                                            :backlog ,backlog)))
-     ,@body))

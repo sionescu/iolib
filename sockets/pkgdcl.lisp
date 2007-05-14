@@ -100,9 +100,7 @@
    ;; socket methods
    #:socket-fd #:socket-address #:socket-family #:socket-protocol
    #:get-socket-option #:set-socket-option
-   #:socket-type #:make-socket
-   #:open-client-socket #:open-server-socket
-   #:with-socket #:with-client-socket #:with-server-socket
+   #:socket-type #:create-socket #:make-socket #:with-socket
    #:socket-open-p #:local-name #:remote-name
    #:bind-address #:socket-listen #:accept-connection
    #:connect  #:unconnect #:socket-connected-p
