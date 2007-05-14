@@ -125,7 +125,7 @@
 (defmacro define-socket-option (name action optname level argtype os)
   (declare (type symbol action)
            (type symbol argtype)
-           (type symbol os))
+           (type (or symbol list) os))
   (let ((eql-name (ensure-keyword name))
         (args (second (assoc argtype +helper-args-map+)))
         (helper-get (make-sockopt-helper-name :get argtype))
@@ -197,3 +197,31 @@
 ;; (define-socket-option listen-queue-limit :get-and-set et:so-listenqlimit et:sol-socket :int     :freebsd)
 ;; (define-socket-option listen-queue-length :get-and-set et:so-listenqlen  et:sol-socket :int     :freebsd)
 ;; (define-socket-option listen-incomplete-queue-length :get-and-set et:so-listenincqlen  et:sol-socket :int :freebsd)
+
+
+;;;;;;;;;;;;;;;;;
+;; TCP options ;;
+;;;;;;;;;;;;;;;;;
+
+(define-socket-option tcp-maxseg  :get-and-set et::tcp-maxseg  et:ipproto-tcp :int  (or :linux :freebsd))
+(define-socket-option tcp-nodelay :get-and-set et::tcp-nodelay et:ipproto-tcp :bool (or :linux :freebsd))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Linux-specific options ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define-socket-option tcp-cork         :get-and-set et::tcp-cork         et:ipproto-tcp :bool     :linux)
+(define-socket-option tcp-defer-accept :get-and-set et::tcp-defer-accept et:ipproto-tcp :int      :linux)
+;; (define-socket-option tcp-info         :get         et::tcp-info         et:ipproto-tcp :tcp-info :linux)
+(define-socket-option tcp-keepcnt      :get-and-set et::tcp-keepcnt      et:ipproto-tcp :int      :linux)
+(define-socket-option tcp-keepidle     :get-and-set et::tcp-keepidle     et:ipproto-tcp :int      :linux)
+(define-socket-option tcp-keepintvl    :get-and-set et::tcp-keepintvl    et:ipproto-tcp :int      :linux)
+(define-socket-option tcp-linger2      :get-and-set et::tcp-linger2      et:ipproto-tcp :int      :linux)
+(define-socket-option tcp-quickack     :get-and-set et::tcp-quickack     et:ipproto-tcp :bool     :linux)
+(define-socket-option tcp-syncnt       :get-and-set et::tcp-syncnt       et:ipproto-tcp :int      :linux)
+(define-socket-option tcp-window-clamp :get-and-set et::tcp-window-clamp et:ipproto-tcp :int      :linux)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; FreeBSD-specific options ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define-socket-option noopt  :get-and-set et::tcp-noopt  et:ipproto-tcp :bool :freebsd)
+(define-socket-option nopush :get-and-set et::tcp-nopush et:ipproto-tcp :bool :freebsd)
