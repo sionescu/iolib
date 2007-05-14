@@ -104,4 +104,5 @@
    #:socket-open-p #:local-name #:remote-name
    #:bind-address #:socket-listen #:accept-connection
    #:connect  #:unconnect #:socket-connected-p
-   #:shutdown #:socket-send  #:socket-receive))
+   #:shutdown #:socket-send  #:socket-receive
+   #:*no-sigpipe*))
