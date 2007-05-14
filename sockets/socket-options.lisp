@@ -203,14 +203,15 @@
 ;; TCP options ;;
 ;;;;;;;;;;;;;;;;;
 
+(define-socket-option tcp-nodelay :get-and-set et::tcp-nodelay et:ipproto-tcp :bool :unix)
 (define-socket-option tcp-maxseg  :get-and-set et::tcp-maxseg  et:ipproto-tcp :int  (or :linux :freebsd))
-(define-socket-option tcp-nodelay :get-and-set et::tcp-nodelay et:ipproto-tcp :bool (or :linux :freebsd))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Linux-specific options ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define-socket-option tcp-cork         :get-and-set et::tcp-cork         et:ipproto-tcp :bool     :linux)
 (define-socket-option tcp-defer-accept :get-and-set et::tcp-defer-accept et:ipproto-tcp :int      :linux)
+;; TODO: implement "struct tcp_info" helper
 ;; (define-socket-option tcp-info         :get         et::tcp-info         et:ipproto-tcp :tcp-info :linux)
 (define-socket-option tcp-keepcnt      :get-and-set et::tcp-keepcnt      et:ipproto-tcp :int      :linux)
 (define-socket-option tcp-keepidle     :get-and-set et::tcp-keepidle     et:ipproto-tcp :int      :linux)
