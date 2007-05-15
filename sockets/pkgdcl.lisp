@@ -105,4 +105,4 @@
    #:bind-address #:socket-listen #:accept-connection
    #:connect  #:unconnect #:socket-connected-p
    #:shutdown #:socket-send  #:socket-receive
-   #:*no-sigpipe*))
+   #:*no-sigpipe* #:*default-backlog-size*))
