@@ -111,7 +111,7 @@
                                     fundamental-binary-output-stream
                                     fundamental-character-input-stream
                                     fundamental-character-output-stream)
-  ((external-format :initform (find-external-format :default)
+  ((external-format :initarg :external-format
                     :reader external-format-of)
    ;; Input buffer.
    (input-buffer :initform nil :type (or iobuf null)
@@ -124,4 +124,5 @@
                       :accessor must-flush-output-p)
    ;; Last read char buffer index
    (ibuf-unread-index :initform 0 :type buffer-index
-                      :accessor ibuf-unread-index-of)))
+                      :accessor ibuf-unread-index-of))
+  (:default-initargs :external-format :default))

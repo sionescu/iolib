@@ -7,7 +7,8 @@
   (:use #:common-lisp #:iolib-utils)
   (:export
    ;; External-format handling
-   #:external-format #:make-external-format #:find-external-format
+   #:external-format #:make-external-format
+   #:find-external-format #:ensure-external-format
    #:ef-name #:ef-line-terminator #:ef-octet-size
    #:*external-format-list*
    #:*default-external-format* #:*default-line-terminator*

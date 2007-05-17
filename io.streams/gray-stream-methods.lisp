@@ -68,11 +68,7 @@
 
 (defmethod (setf external-format-of) (external-format (stream dual-channel-gray-stream))
   (setf (slot-value stream 'external-format)
-        (etypecase external-format
-          (external-format external-format)
-          (symbol (find-external-format external-format))
-          ((and list (not null))
-           (apply #'make-external-format external-format)))))
+        (ensure-external-format external-format)))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;               ;;

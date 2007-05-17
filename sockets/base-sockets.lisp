@@ -79,8 +79,11 @@
 
 (defclass passive-socket (socket)
   ((listening :initform nil :reader socket-listening-p :type boolean)
+   (external-format :initarg :external-format :reader external-format-of
+                    :type external-format)
    (active-class :initarg :active-class :reader active-class
-                 :type symbol :allocation :class)))
+                 :type symbol :allocation :class))
+  (:default-initargs :external-format :default))
 
 (defgeneric bind-address (socket address &key &allow-other-keys))
 

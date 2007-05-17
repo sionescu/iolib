@@ -81,6 +81,15 @@
     (setf fam family
           proto protocol)))
 
+(defmethod (setf external-format-of) (external-format (socket passive-socket))
+  (setf (slot-value socket 'external-format)
+        (ensure-external-format external-format)))
+
+(defmethod shared-initialize :after ((socket passive-socket) slot-names
+                                     &key external-format)
+  (declare (ignore slot-names))
+  (setf (external-format-of socket) external-format))
+
 (defmethod socket-type ((socket stream-socket))
   :stream)
 

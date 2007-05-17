@@ -172,6 +172,14 @@
       (gethash (gethash name *external-format-aliases*)
                *external-formats*)
       (if error-p (error "External format ~S not found." name) nil)))
+
+(defun ensure-external-format (external-format)
+  (etypecase external-format
+    (external-format external-format)
+    (null   (find-external-format :default))
+    (symbol (find-external-format external-format))
+    (cons
+     (apply #'make-external-format external-format))))
 
 ;;;
 ;;;
