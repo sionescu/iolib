@@ -112,10 +112,10 @@
     (et:bzero hints et:size-of-addrinfo)
     (with-foreign-slots ((et:flags et:family et:socktype et:protocol)
                          hints et:addrinfo)
-      (setf et:flags hint-flags)
-      (setf et:family hint-family)
-      (setf et:socktype hint-type)
-      (setf et:protocol hint-protocol)
+      (setf et:flags    hint-flags
+            et:family   hint-family
+            et:socktype hint-type
+            et:protocol hint-protocol)
       (et:getaddrinfo node service hints res)
       (make-pointer (pointer-address (mem-ref res :pointer))))))
 
