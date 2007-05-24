@@ -207,7 +207,7 @@
 (defmacro with-fd-handler ((event-base fd event-type function
                             &optional timeout)
                            &body body)
-  (let ((event (gensym "EVENT-")))
+  (with-gensyms (event)
     `(let (,event)
        (unwind-protect
             (progn

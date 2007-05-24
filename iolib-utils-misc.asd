@@ -14,7 +14,8 @@
   :description "Miscellaneous utils."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
-  :depends-on (:iolib-utils-package)
+  :depends-on (:iolib-utils-package
+               :iolib-utils-symbols)
   :default-component-class muffled-source-file
   :pathname (merge-pathnames (make-pathname :directory '(:relative "utils"))
                              *load-truename*)

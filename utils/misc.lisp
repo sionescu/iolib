@@ -31,9 +31,8 @@
   (values start end))
 
 (defmacro return-if (block form)
-  (let (($form$ (gensym "FORM-")))
-    `(let ((,$form$ ,form))
-       (when ,$form$ (return-from ,block ,$form$)))))
+  (once-only (form)
+    `(when ,form (return-from ,block ,form))))
 
 (defun featurep (feature)
   (etypecase feature

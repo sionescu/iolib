@@ -128,7 +128,7 @@
   '(unsigned-byte 24))
 
 (defmacro add-external-format (name aliases ef)
-  (let (($alias$ (gensym "ALIAS")))
+  (with-gensyms ($alias$)
     `(progn
        (setf (gethash ,name *external-formats*) ,ef)
        (setf *external-format-list* (append *external-format-list* (list ,name)))
@@ -138,7 +138,7 @@
 
 (defmacro define-external-format (name aliases octet-size octets-to-char char-to-octets
                                   &key (line-terminator *default-line-terminator*))
-  (let (($ef$ (gensym "EF")))
+  (with-gensyms ($ef$)
     `(macrolet ((to-char (&body body)
                   `(lambda (input output error-fn bytes-left)
                      (declare (type (function () octet) input)

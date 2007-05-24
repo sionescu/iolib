@@ -24,7 +24,7 @@
   (when (char= #\a (schar (symbol-name '#:a) 0))
     (pushnew :iolib-utils-lowercase-reader *features*))
   (when (not (string= (symbol-name '#:a)
-		      (symbol-name '#:A)))
+                      (symbol-name '#:A)))
     (pushnew :iolib-utils-case-sensitive *features*)))
 
 (defun string-default-case (str)
@@ -45,7 +45,7 @@
               (symbol-name arg)))))
     (let ((str (apply #'concatenate 'string (mapcar #'stringify args))))
       (nth-value 0 (intern (string-default-case str)
-			   (if pkg pkg *package*))))))
+                           (or pkg *package*))))))
 
 (defun concat-symbol (&rest args)
   (apply #'concat-symbol-pkg nil args))
@@ -59,11 +59,52 @@
 
 (defun ensure-keyword-upcase (desig)
   (nth-value 0 (intern (string-upcase
-			(symbol-name (ensure-keyword desig))) :keyword)))
+                        (symbol-name (ensure-keyword desig))) :keyword)))
 
 (defun ensure-keyword-default-case (desig)
   (nth-value 0 (intern (string-default-case
-			(symbol-name (ensure-keyword desig))) :keyword)))
+                        (symbol-name (ensure-keyword desig))) :keyword)))
+
+(defun make-symbol-name (sym)
+  (let* ((name (symbol-name sym))
+         (start (if (char= (char name 0) #\$) 1 0))
+         (end (- (length name)
+                 (if (char= (char name (1- (length name))) #\$) 1 0))))
+    (concatenate 'string (subseq name start end) "-")))
+
+(defun make-gensym (var)
+  (etypecase var
+    (symbol `(,var (gensym ,(make-symbol-name var))))
+    (cons   `(,(first var) (gensym ,(string (second var)))))))
+
+(defmacro with-gensyms (vars &body body)
+  (if vars
+      `(let ,(mapcar #'make-gensym vars)
+         ,@body)
+      `(progn ,@body)))
+
+;; cribbed from ALEXANDRIA
+(defmacro once-only (names &body forms)
+  "Evaluates FORMS with NAMES rebound to temporary variables,
+ensuring that each is evaluated only once.
+Example:
+  (defmacro cons1 (x) (once-only (x) `(cons ,x ,x)))
+  (let ((y 0)) (cons1 (incf y))) => (1 . 1)"
+  (flet ((make-gensym-list (length &optional x)
+           "Returns a list of LENGTH gensyms, each generated with a call to
+GENSYM using (if provided) as the argument."
+           (loop :repeat length
+              :collect (gensym x))))
+    (let ((gensyms (make-gensym-list (length names) "ONCE-ONLY")))
+      ;; bind in user-macro
+      `(let ,(mapcar (lambda (g n) (list g `(gensym ,(make-symbol-name n)))) 
+                     gensyms names)
+         ;; bind in final expansion
+         `(let (,,@(mapcar (lambda (g n) ``(,,g ,,n)) gensyms names))
+            ;; bind in user-macro          
+            ,(let ,(mapcar #'list names gensyms)
+                  ,@forms))))))
 
 (export '(string-default-case concat-symbol-pkg concat-symbol
-          ensure-keyword ensure-keyword-upcase ensure-keyword-default-case))
+          ensure-keyword ensure-keyword-upcase ensure-keyword-default-case
+          with-gensyms once-only))
