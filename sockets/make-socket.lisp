@@ -80,6 +80,7 @@
          (assert remote-filename)
          (setf socket (create-socket :address-family :local :type :stream
                                      :connect :active :external-format ef))
+         (when local-filename (bind-address socket (make-address local-filename)))
          (connect socket (make-address remote-filename)))
         (:passive
          (assert local-filename)

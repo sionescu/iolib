@@ -313,11 +313,6 @@
   (bind-ipv6-address (fd-of socket) (name address) port)
   (values socket))
 
-(defmethod bind-address :before ((socket local-socket)
-                                 (address localaddr) &key)
-  (when (typep socket 'active-socket)
-    (error "You can't bind an active Unix socket.")))
-
 (defmethod bind-address ((socket local-socket)
                          (address localaddr) &key)
   (with-foreign-object (sun 'et:sockaddr-un)
