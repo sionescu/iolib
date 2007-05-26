@@ -135,7 +135,8 @@
   (print-unreadable-object (socket stream :type nil :identity t)
     (format stream "active local stream socket")
     (if (socket-connected-p socket)
-        (format stream " connected")
+        (format stream " connected to ~A"
+                (sockaddr->presentation (remote-name socket)))
         (if (fd-of socket)
             (format stream ", unconnected")
             (format stream ", closed")))))
@@ -157,7 +158,8 @@
   (print-unreadable-object (socket stream :type nil :identity t)
     (format stream "local datagram socket")
     (if (socket-connected-p socket)
-        (format stream " connected")
+        (format stream " connected to ~A"
+                (sockaddr->presentation (remote-name socket)))
         (if (fd-of socket)
             (format stream ", unconnected")
             (format stream ", closed")))))
