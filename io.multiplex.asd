@@ -24,7 +24,7 @@
   ((:file "pkgdcl")
    (:file "time" :depends-on ("pkgdcl"))
    (:file "queue" :depends-on ("pkgdcl"))
-   (:file "utils" :depends-on ("pkgdcl"))
+   (:file "utils" :depends-on ("pkgdcl" "time"))
    (:file "common" :depends-on ("pkgdcl" "time" "utils" "queue"))
    (:file "select" :depends-on ("pkgdcl" "common" "utils" "queue"))
    #+linux (:file "epoll" :depends-on ("pkgdcl" "common" "utils" "queue"))
