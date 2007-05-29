@@ -32,7 +32,6 @@
    #:possible-bug
    #:system-error #:unix-error #:resolver-error
    #:unknown-interface #:unknown-protocol
-   #:invalid-address
    ; condition accessors
    #:bug-data
    #:error-code #:error-identifier #:error-message
@@ -43,6 +42,7 @@
    #:vector-to-ipaddr #:ipaddr-to-vector #:ipaddr-to-dotted
    #:dotted-to-ipaddr #:dotted-to-vector #:vector-to-dotted
    #:colon-separated-to-vector #:vector-to-colon-separated
+   #:string-address-to-vector #:address-to-vector
 
    ;; addresses
    #:sockaddr #:inetaddr #:ipv4addr #:ipv6addr #:localaddr

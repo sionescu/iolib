@@ -80,7 +80,7 @@
 (defun search-etc-hosts-ip (file ip ipv6)
   (let ((line (search-in-etc-file file
                                   #'(lambda (col1 col2 other-cols)
-                                      (let ((vector (string-address->vector col1)))
+                                      (let ((vector (string-address-to-vector col1)))
                                         (when (and (vector-ipv6-good-p vector ipv6)
                                                    (vector-equal vector ip))
                                           (let ((host
@@ -118,7 +118,7 @@
 (defun search-etc-hosts-name (file name ipv6)
   (let ((lines (search-in-etc-file file
                                    #'(lambda (col1 col2 other-cols)
-                                       (let ((vector (string-address->vector col1)))
+                                       (let ((vector (string-address-to-vector col1)))
                                          (when (and (vector-ipv6-good-p vector ipv6)
                                                     (or (string-equal name col2)
                                                         (member name other-cols

@@ -88,6 +88,7 @@
 
 ;; From CLOCC's PORT library
 (defun vector-to-ipaddr (vector)
+  "Convert a vector to a 32-bit unsigned integer."
   (coercef vector 'ipv4-array)
   (+ (ash (aref vector 0) 24)
      (ash (aref vector 1) 16)
@@ -95,6 +96,7 @@
      (aref vector 3)))
 
 (defun ipaddr-to-vector (ipaddr)
+  "Convert a 32-bit unsigned integer to a vector."
   (check-type ipaddr ub32)
   (let ((vector (make-array 4 :element-type 'ub8)))
     (setf (aref vector 0) (ldb (byte 8 24) ipaddr)
@@ -213,16 +215,12 @@
              (ignore-errors (parse-integer value :radix radix
                                            :junk-allowed nil))
              value)))
-    (if parsed
-        ;; if it's a number and its type is ok return it
-        (and (ecase type
-               (:any  t)
-               (:ub8  (typep parsed 'ub8))
-               (:ub16 (typep parsed 'ub16))
-               (:ub32 (typep parsed 'ub32)))
-             parsed)
-        ;; otherwise nil
-        nil)))
+    (and parsed
+         ;; if it's a number and its type is ok return it
+         (typep parsed (ecase type
+                         (:any  t)     (:ub8  'ub8)
+                         (:ub16 'ub16) (:ub32 'ub32)))
+         (values parsed))))
 
 (defun c->lisp-bool (val)
   (if (zerop val) nil t))

@@ -97,7 +97,7 @@
 
 (defun dns-ptr-name (address)
   (multiple-value-bind (vector address-type)
-      (vector-address-or-nil address)
+      (address-to-vector address)
     (when (null address)
       (error "The argument is not a valid IP address"))
     (ecase address-type

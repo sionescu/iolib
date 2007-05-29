@@ -161,7 +161,7 @@
 
 
 ;;
-;; Error management
+;; Auxiliary functions
 ;;
 
 (defun lookup-host-u8-vector-4 (host ipv6)
@@ -230,6 +230,11 @@
                   addresses)))
   hostobj)
 
+
+;;
+;; External interface
+;;
+
 (defgeneric lookup-host (host &key &allow-other-keys))
 
 (defmethod lookup-host :before (host &key (ipv6 *ipv6*))
@@ -251,59 +256,46 @@
                              #+freebsd et:ai-v4mapped-cfg
                              et:ai-all)))
              (:ipv6 (values et:af-inet6 0)))))
-    (let (parsed)
-      (cond
-        ((setf parsed (dotted-to-vector host :errorp nil))
-         (return-from lookup-host
-           (lookup-host-u8-vector-4 parsed ipv6)))
-        ((setf parsed (colon-separated-to-vector host :errorp nil))
-         (return-from lookup-host
-           (lookup-host-u16-vector-8 parsed ipv6)))
-        ;; FIXME: check for ASCII-only strings or implement IDN
-        (t
-         (multiple-value-bind (family flags)
-             (decide-family-and-flags)
-           (setf flags (logior flags et:ai-canonname et:ai-addrconfig))
-           (handler-case
-               (let* ((addrinfo
-                       (get-address-info :node host
-                                         :hint-flags flags
-                                         :hint-family family
-                                         :hint-type et:sock-stream
-                                         :hint-protocol et:ipproto-ip))
-                      (hostobj (make-host-from-addrinfo addrinfo)))
-                 (when (string-not-equal (host-truename hostobj)
-                                         host)
-                   (setf (slot-value hostobj 'aliases) (list host)))
-                 (et:freeaddrinfo addrinfo)
-                 ;; mapping IPv4 addresses onto IPv6
-                 #+freebsd
-                 (when (eql ipv6 t)
-                   (map-host-ipv4-addresses-to-ipv6 hostobj))
-                 (return-from lookup-host hostobj))
-             (et:resolv-error (err)
-               (resolver-error (et:system-error-identifier err) :data host)))))))))
-
-(defmethod lookup-host ((host ipv4addr) &key (ipv6 *ipv6*))
-  (lookup-host-u8-vector-4 (name host) ipv6))
-
-(defmethod lookup-host ((host ipv6addr) &key (ipv6 *ipv6*))
-  (lookup-host-u16-vector-8 (name host) ipv6))
+    (multiple-value-bind (vector type) (address-to-vector host)
+      (case type
+        (:ipv4 (return-from lookup-host
+                 (lookup-host-u8-vector-4 vector ipv6)))
+        (:ipv6 (return-from lookup-host
+                 (lookup-host-u16-vector-8 vector ipv6)))
+        (t     (multiple-value-bind (family flags)
+                   (decide-family-and-flags)
+                 (setf flags (logior flags et:ai-canonname et:ai-addrconfig))
+                 (handler-case
+                     (let* ((addrinfo
+                             (get-address-info :node host
+                                               :hint-flags flags
+                                               :hint-family family
+                                               :hint-type et:sock-stream
+                                               :hint-protocol et:ipproto-ip))
+                            (hostobj (make-host-from-addrinfo addrinfo)))
+                       (when (string-not-equal (host-truename hostobj)
+                                               host)
+                         (setf (slot-value hostobj 'aliases) (list host)))
+                       (et:freeaddrinfo addrinfo)
+                       ;; mapping IPv4 addresses onto IPv6
+                       #+freebsd
+                       (when (eql ipv6 t)
+                         (map-host-ipv4-addresses-to-ipv6 hostobj))
+                       (return-from lookup-host hostobj))
+                   (et:resolv-error (err)
+                     (resolver-error (et:system-error-identifier err) :data host)))))))))
 
 (defmethod lookup-host (host &key (ipv6 *ipv6*))
-  (etypecase host
-    ((vector * 4)                       ; IPv4 address
-     (lookup-host-u8-vector-4 host ipv6))
-    ((vector * 8)                       ; IPv6 address
-     (lookup-host-u16-vector-8 host ipv6))))
+  (multiple-value-bind (vector type) (address-to-vector host)
+    (ecase type
+      (:ipv4 (lookup-host-u8-vector-4 vector ipv6))
+      (:ipv6 (lookup-host-u16-vector-8 vector ipv6)))))
 
-(defun convert-or-lookup-inet-address (addr &optional (ipv6 *ipv6*))
-  (handler-case
-      (ensure-address addr :internet)
-    (invalid-address ()
-      (let ((addresses (host-addresses (lookup-host addr :ipv6 ipv6))))
+(defun convert-or-lookup-inet-address (address &optional (ipv6 *ipv6*))
+  (or (ignore-errors (ensure-address address :internet))
+      (let ((addresses (host-addresses (lookup-host address :ipv6 ipv6))))
         (values (car addresses)
-                (cdr addresses))))))
+                (cdr addresses)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;
@@ -329,14 +321,6 @@
     (with-slots (name port protocol) service
       (format stream "Name: ~A. Port: ~A. Protocol: ~A" name port protocol))))
 
-(defun socket-type-from-int (alien-val)
-  (case alien-val
-    (#.et:sock-stream    :tcp)
-    (#.et:sock-dgram     :udp)
-    (#.et:sock-seqpacket :sctp)
-    (#.et:sock-raw       :raw)
-    (t                   :unknown)))
-
 (defun lookup-service-number (port-number protocol &key name-required)
   (declare (type ub32 port-number))
   (with-foreign-object (sin 'et:sockaddr-in)
@@ -357,28 +341,31 @@
                              :want-host nil :want-service t)))))
       (make-service service port-number protocol))))
 
-(defun protocol-type-from-int (protocol)
-  (case protocol
-    (:tcp et:sock-stream)
-    (:udp et:sock-dgram)
-    (:any 0)))
-
 (defun lookup-service-name (port protocol)
-  (let* ((addrinfo
-          (get-address-info :service port
-                            :hint-type (protocol-type-from-int protocol)))
-         (port-number
-          (ntohs (foreign-slot-value (foreign-slot-value addrinfo 'et:addrinfo 'et:addr)
-                                     'et:sockaddr-in 'et:port)))
-         (true-protocol
-          (socket-type-from-int (foreign-slot-value addrinfo 'et:addrinfo 'et:socktype))))
-    (et:freeaddrinfo addrinfo)
-    (return-from lookup-service-name
-      (make-service port port-number true-protocol))))
+  (flet ((protocol-type-to-int (protocol)
+           (case protocol
+             (:tcp et:sock-stream)
+             (:udp et:sock-dgram)
+             (:any 0)))
+         (socket-type-from-int (alien-val)
+           (case alien-val
+             (#.et:sock-stream    :tcp)
+             (#.et:sock-dgram     :udp)
+             (t                   :unknown))))
+    (let* ((addrinfo
+            (get-address-info :service port
+                              :hint-type (protocol-type-to-int protocol)))
+           (port-number
+            (ntohs (foreign-slot-value (foreign-slot-value addrinfo 'et:addrinfo 'et:addr)
+                                       'et:sockaddr-in 'et:port)))
+           (true-protocol
+            (socket-type-from-int (foreign-slot-value addrinfo 'et:addrinfo 'et:socktype))))
+      (et:freeaddrinfo addrinfo)
+      (return-from lookup-service-name
+        (make-service port port-number true-protocol)))))
 
 (defun lookup-service (port &key (protocol :tcp) (name-required nil))
   (check-type protocol (member :tcp :udp :any))
-
   (let ((parsed-number (parse-number-or-nil port :ub16)))
     (handler-case
         (if parsed-number

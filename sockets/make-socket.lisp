@@ -152,4 +152,6 @@
      (%make-local-datagram-socket args external-format))))
 
 (defmacro with-socket ((var &rest args) &body body)
+  "`VAR' is bound to a socket created by passing `ARGS' to MAKE-SOCKET
+and `BODY' is executed as implicit PROGN. The socket is automatically closed upon exit."
   `(with-open-stream (,var (make-socket ,@args)) ,@body))

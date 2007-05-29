@@ -22,97 +22,68 @@
 (in-package :net.sockets)
 
 
-;;;;;;;;;;;;;;;;
-;;;  ERRORS  ;;;
-;;;;;;;;;;;;;;;;
-
-(define-condition invalid-address ()
-  ((address  :initarg :address  :initform nil :reader address)
-   (addrtype :initarg :type     :initform nil :reader address-type))
-  (:report (lambda (condition stream)
-             (format stream "Invalid ~A address: ~A"
-                     (address-type condition) (address condition))))
-  (:documentation "Condition raised when an address designator is invalid."))
-
-
 ;;;
 ;;; Conversion functions
 ;;;
 
 (defun ipaddr-to-dotted (ipaddr)
-  (declare (type ub32 ipaddr))
-  (format nil "~A.~A.~A.~A"
-          (ldb (byte 8 24) ipaddr)
-          (ldb (byte 8 16) ipaddr)
-          (ldb (byte 8 8)  ipaddr)
-          (ldb (byte 8 0)  ipaddr)))
+  "Convert a 32-bit unsigned integer to a dotted string."
+  (check-type ipaddr ub32)
+  (let ((*print-pretty* nil))
+    (with-output-to-string (s)
+      (princ (ldb (byte 8 24) ipaddr) s) (princ #\. s)
+      (princ (ldb (byte 8 16) ipaddr) s) (princ #\. s)
+      (princ (ldb (byte 8 8)  ipaddr) s) (princ #\. s)
+      (princ (ldb (byte 8 0)  ipaddr) s))))
 
-(defun dotted-to-vector (string &key (errorp t))
-  (labels ((err (&rest args)
-             (if errorp
-                 (apply #'error args)
-                 (return-from dotted-to-vector nil)))
-           (type-error ()
-             (err 'type-error :datum string :expected-type 'string))
-           (invalid-address ()
-             (err 'invalid-address :address string :type :ipv4)))
-    (unless (stringp string)
-      (type-error))
+(defun dotted-to-ipaddr (address)
+  "Convert a dotted IPv4 address to a 32-bit unsigned integer."
+  (vector-to-ipaddr (dotted-to-vector address)))
 
-    (let ((addr (make-array 4 :element-type 'ub8))
-          (split (split-sequence #\. string :count 5)))
-      ;; must have exactly 4 tokens
-      (when (/= 4 (length split))
-        (invalid-address))
-      (loop
-         :for element :in split
-         :for index :below 4
-         :for parsed := (parse-number-or-nil element :ub8) :do
-         (if parsed
-             (setf (aref addr index) parsed)
-             (invalid-address)))
-      addr)))
-
-(defun dotted-to-ipaddr (string)
-  (vector-to-ipaddr (dotted-to-vector string)))
+(defun dotted-to-vector (address)
+  "Convert a dotted IPv4 address to a (simple-array (unsigned-byte 8) 4)."
+  (check-type address string)
+  (let ((addr (make-array 4 :element-type 'ub8 :initial-element 0))
+        (split (split-sequence #\. address :count 5)))
+    (flet ((set-array-value (index str)
+             (setf (aref addr index)
+                   (or (parse-number-or-nil str :ub8)
+                       (error 'parse-error)))))
+      (let ((len (length split)))
+        (unless (<= 1 len 4) (error 'parse-error))
+        (set-array-value 3 (nth (1- len) split))
+        (loop :for n :in split
+              :for index :below (1- len)
+           :do (set-array-value index n))))
+    (values addr)))
 
 (defun vector-to-dotted (vector)
+  "Convert an 4-element vector to a dotted string."
   (coercef vector 'ipv4-array)
-  (format nil "~A.~A.~A.~A"
-          (aref vector 0)
-          (aref vector 1)
-          (aref vector 2)
-          (aref vector 3)))
+  (let ((*print-pretty* nil))
+    (with-output-to-string (s)
+      (princ (aref vector 0) s) (princ #\. s)
+      (princ (aref vector 1) s) (princ #\. s)
+      (princ (aref vector 2) s) (princ #\. s)
+      (princ (aref vector 3) s))))
 
-(defun colon-separated-to-vector (string &key (errorp t))
-  (when (not (stringp string))
-    (if errorp
-        (error 'type-error :datum string
-               :expected-type 'string)
-        (return-from colon-separated-to-vector nil)))
-
+(defun colon-separated-to-vector (string)
+  "Convert a colon-separated IPv6 address to a (simple-array (unsigned-byte 16) 8)."
+  (check-type string string)
   (with-foreign-object (in6-addr :uint16 8)
     (with-foreign-string (string-pointer string)
       (et:bzero in6-addr 16)
       (handler-case
-          (et:inet-pton et:af-inet6        ; address family
-                        string-pointer     ; name
-                        in6-addr)          ; pointer to struct in6_addr
-        (unix-error ()
-          (if errorp
-              (error 'invalid-address :address string :type :ipv6)
-              (return-from colon-separated-to-vector nil)))))
+          (et:inet-pton et:af-inet6      ; address family
+                        string-pointer   ; name
+                        in6-addr)        ; pointer to struct in6_addr
+        (unix-error () (error 'parse-error))))
     (in6-addr-to-ipv6-array in6-addr)))
 
-(defun vector-to-colon-separated (vector &key (case :downcase) (errorp t))
-  (handler-case
-      (coercef vector 'ipv6-array)
-    (type-error ()
-      (if errorp
-          (error 'type-error :datum vector
-                 :expected-type 'ipv6-array)
-          (return-from vector-to-colon-separated nil))))
-
+(defun vector-to-colon-separated (vector &optional (case :downcase))
+  "Convert an 8-element vector to a colon-separated IPv6 address. `CASE' may be :DOWNCASE or :UPCASE."
+  (coercef vector 'ipv6-array)
+  (check-type case (member :upcase :downcase))
   (with-foreign-object (sin6 'et:sockaddr-in6)
     (with-foreign-pointer (namebuf et:inet6-addrstrlen bufsize)
       (make-sockaddr-in6 sin6 vector)
@@ -123,21 +94,27 @@
                     bufsize)                             ; INET6_ADDRSTRLEN
       (return-from vector-to-colon-separated
         (let ((str (foreign-string-to-lisp namebuf bufsize)))
-          (ecase case
-            (:downcase str)
-            (:upcase (nstring-upcase str))))))))
+          (case case
+            (:downcase (nstring-downcase str))
+            (:upcase   (nstring-upcase   str))))))))
 
-(defun string-address->vector (address)
-  (or (dotted-to-vector address :errorp nil)
-      (colon-separated-to-vector address :errorp nil)))
+(defun string-address-to-vector (address)
+  "Convert a string address(dotted or colon-separated) to a vector address.
+If the string is not a valid address, return NIL."
+  (or (ignore-errors (dotted-to-vector address))
+      (ignore-errors (colon-separated-to-vector address))))
 
-(defun vector-address-or-nil (address)
+(defun address-to-vector (address)
+  "Convert any reppresentation of an internet address to a vector. Allowed inputs are: unsigned 32-bit integers, strings, vectors and INETADDR objects.
+If the address is valid, two values are returned: the vector and the address type(:IPV4 or IPV6), otherwise NIL is returned."
   (let (vector addr-type)
     (typecase address
+      (number (and (ignore-errors (setf vector (ipaddr-to-vector address)))
+                   (setf addr-type :ipv4)))
       (string (cond
-                ((setf vector (dotted-to-vector address :errorp nil))
+                ((ignore-errors (setf vector (dotted-to-vector address)))
                  (setf addr-type :ipv4))
-                ((setf vector (colon-separated-to-vector address :errorp nil))
+                ((ignore-errors (setf vector (colon-separated-to-vector address)))
                  (setf addr-type :ipv6))))
       ((vector * 4) (and (ignore-errors (setf vector (coerce address 'ipv4-array)))
                          (setf addr-type :ipv4)))
@@ -147,7 +124,21 @@
                       addr-type :ipv4))
       (ipv6addr (setf vector (name address)
                       addr-type :ipv6)))
-    (values vector addr-type)))
+    (when vector (values vector addr-type))))
+
+(defun ensure-address (address &optional (family :internet))
+  (cond ((sockaddrp address)
+         (progn
+           (ecase family
+             (:internet (check-type address inetaddr))
+             (:local    (check-type address localaddr)))
+           (values address)))
+        ((stringp address)
+         (if (eql family :local)
+             (make-instance 'localaddr :name address)
+             (make-address (or (dotted-to-vector address)
+                               (colon-separated-to-vector address)))))
+        (t (make-address address))))
 
 
 ;;;
@@ -212,7 +203,7 @@
 ;;;
 
 (defun vector-equal (v1 v2)
-  (and (equal (length v1) (length v2))
+  (and (= (length v1) (length v2))
        (every #'eql v1 v2)))
 
 (defgeneric sockaddr= (addr1 addr2)
@@ -261,20 +252,7 @@
      (make-instance 'ipv4addr :name name))
     ((ignore-errors (coercef name 'ipv6-array))
      (make-instance 'ipv6addr :name name))
-    (t (error 'invalid-address :address name :type :unknown))))
-
-(defun ensure-address (addr &optional (family :internet))
-  (cond ((sockaddrp addr)
-         (progn
-           (ecase family
-             (:internet (check-type addr inetaddr))
-             (:local    (check-type addr localaddr)))
-           (values addr)))
-        ((stringp addr)
-         (if (eql family :local)
-             (make-instance 'localaddr :name addr)
-             (make-address (string-address->vector addr))))
-        (t (make-address addr))))
+    (t (error 'type-error :datum name :expected-type '(or string ipv4-array ipv6-array)))))
 
 ;;;
 ;;; Well-known addresses
