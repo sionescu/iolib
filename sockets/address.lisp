@@ -80,23 +80,48 @@
         (unix-error () (error 'parse-error))))
     (in6-addr-to-ipv6-array in6-addr)))
 
+(defun ipv4-on-ipv6-mapped-vector-p (vector)
+  (and (dotimes (i 5 t) (when (plusp (aref vector i)) (return nil)))
+       (= (aref vector 5) #xFFFF)))
+
 (defun vector-to-colon-separated (vector &optional (case :downcase))
   "Convert an 8-element vector to a colon-separated IPv6 address. `CASE' may be :DOWNCASE or :UPCASE."
   (coercef vector 'ipv6-array)
   (check-type case (member :upcase :downcase))
-  (with-foreign-object (sin6 'et:sockaddr-in6)
-    (with-foreign-pointer (namebuf et:inet6-addrstrlen bufsize)
-      (make-sockaddr-in6 sin6 vector)
-      (et:inet-ntop et:af-inet6                          ; address family
-                    (foreign-slot-pointer
-                      sin6 'et:sockaddr-in6 'et:addr)    ; pointer to struct in6_addr
-                    namebuf                              ; destination buffer
-                    bufsize)                             ; INET6_ADDRSTRLEN
-      (return-from vector-to-colon-separated
-        (let ((str (foreign-string-to-lisp namebuf bufsize)))
-          (case case
-            (:downcase (nstring-downcase str))
-            (:upcase   (nstring-upcase   str))))))))
+  (labels ((find-zeros ()
+             (loop :for i :from 0 :upto 6
+                :if (and (zerop (aref vector i))
+                         (zerop (aref vector (1+ i))))
+                :do (return (values i (or (position-if #'plusp vector :start (1+ i)) 8)))))
+           (princ-subvec (start end s)
+             (loop :for i :from start :below end :do
+                (princ #\: s) (princ (aref vector i) s))))
+    (let ((s (make-string-output-stream)))
+      (cond
+        ((ipv4-on-ipv6-mapped-vector-p vector)
+         (princ "::ffff:" s)
+         (let ((*print-base* 10))
+           (princ (ldb (byte 8 8) (aref vector 6)) s) (princ #\. s)
+           (princ (ldb (byte 8 0) (aref vector 6)) s) (princ #\. s)
+           (princ (ldb (byte 8 8) (aref vector 7)) s) (princ #\. s)
+           (princ (ldb (byte 8 0) (aref vector 7)) s)))
+        (t
+         (let ((*print-base* 16))
+           (multiple-value-bind (start end) (find-zeros)
+             (cond (start
+                    (when (plusp start)
+                      (princ (aref vector 0) s)
+                      (princ-subvec 1 start s))
+                    (princ #\: s)
+                    (if (< end 8)
+                        (princ-subvec end 8 s)
+                        (princ #\: s)))
+                   (t (princ (aref vector 0) s)
+                      (princ-subvec 1 8 s)))))))
+      (let ((str (get-output-stream-string s)))
+        (case case
+          (:downcase (nstring-downcase str))
+          (:upcase   (nstring-upcase   str)))))))
 
 (defun string-address-to-vector (address)
   "Convert a string address(dotted or colon-separated) to a vector address.
@@ -179,9 +204,8 @@ If the address is valid, two values are returned: the vector and the address typ
 
 (defmethod print-object ((address localaddr) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
-    (with-slots (abstract) address
-      (format stream "Unix socket address: ~A. Abstract: ~:[no~;yes~]"
-              (sockaddr->presentation address) abstract))))
+    (format stream "Unix socket address: ~A. Abstract: ~:[no~;yes~]"
+            (sockaddr->presentation address) (abstract-p address))))
 
 (defgeneric sockaddr->presentation (addr)
   (:documentation "Returns a textual presentation of ADDR."))
@@ -336,6 +360,8 @@ If the address is valid, two values are returned: the vector and the address typ
   (declare (ignore address))
   nil)
 
+(defgeneric address-type (address))
+
 (defmethod address-type ((address ipv4addr))
   (declare (ignore address))
   :ipv4)
@@ -390,21 +416,7 @@ If the address is valid, two values are returned: the vector and the address typ
 (defgeneric ipv6-ipv4-mapped-p (addr)
   (:documentation "Returns T if ADDR is an IPv6 address representing an IPv4 mapped address."))
 (defmethod ipv6-ipv4-mapped-p ((addr ipv6addr))
-  (with-slots (name) addr
-    (and (zerop (aref name 0))
-         (zerop (aref name 1))
-         (zerop (aref name 2))
-         (zerop (aref name 3))
-         (zerop (aref name 4))
-         (eql (aref name 5) #xFFFF)
-         (< (ldb (byte 8 0) (aref name 6))
-            255)
-         (< (ldb (byte 8 8) (aref name 6))
-            255)
-         (< (ldb (byte 8 0) (aref name 7))
-            255)
-         (< (ldb (byte 8 8) (aref name 7))
-            255))))
+  (ipv4-on-ipv6-mapped-vector-p (name addr)))
 
 (defmethod inetaddr-multicast-p ((addr ipv6addr))
   (eql (logand (aref (name addr) 0)
