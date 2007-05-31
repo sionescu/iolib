@@ -152,18 +152,21 @@ If the address is valid, two values are returned: the vector and the address typ
     (when vector (values vector addr-type))))
 
 (defun ensure-address (address &optional (family :internet))
-  (cond ((sockaddrp address)
-         (progn
-           (ecase family
-             (:internet (check-type address inetaddr))
-             (:local    (check-type address localaddr)))
-           (values address)))
-        ((stringp address)
-         (if (eql family :local)
-             (make-instance 'localaddr :name address)
-             (make-address (or (dotted-to-vector address)
-                               (colon-separated-to-vector address)))))
-        (t (make-address address))))
+  (ecase family
+    (:internet
+     (typecase address
+       (sockaddr
+        (check-type address inetaddr)
+        (values address))
+       (t
+        (make-address (address-to-vector address)))))
+    (:local
+     (etypecase address
+       (string
+        (make-instance 'localaddr :name address))
+       (sockaddr
+        (check-type address localaddr)
+        (values address))))))
 
 
 ;;;
@@ -270,12 +273,12 @@ If the address is valid, two values are returned: the vector and the address typ
 ;;; Constructor
 (defun make-address (name)
   (cond
-    ((stringp name)
-     (make-instance 'localaddr :name name))
     ((ignore-errors (coercef name 'ipv4-array))
      (make-instance 'ipv4addr :name name))
     ((ignore-errors (coercef name 'ipv6-array))
      (make-instance 'ipv6addr :name name))
+    ((stringp name)
+     (make-instance 'localaddr :name name))
     (t (error 'type-error :datum name :expected-type '(or string ipv4-array ipv6-array)))))
 
 ;;;
