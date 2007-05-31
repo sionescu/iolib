@@ -237,24 +237,15 @@
 
 (defgeneric lookup-host (host &key &allow-other-keys))
 
-(defmethod lookup-host :before (host &key (ipv6 *ipv6*))
-  (declare (ignore host))
-  (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration"))
-
 (defmethod lookup-host ((host string) &key (ipv6 *ipv6*))
+  (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration")
   (flet ((decide-family-and-flags ()
-           (ecase ipv6
+           (case ipv6
              ((nil) (values et:af-inet 0))
-             ;; the freebsd I use rejects AI_V4MAPPED and AI_ALL(weird thing)
+             ;; freebsd 6.1 rejects AI_V4MAPPED and AI_ALL(weird thing)
              ;; therefore I'll use AF_UNSPEC and do the mappings myself
-             ((t)   (values
-                     #-freebsd et:af-inet6
-                     #+freebsd et:af-unspec
-                     #+freebsd 0
-                     #-freebsd
-                     (logior et:ai-v4mapped
-                             #+freebsd et:ai-v4mapped-cfg
-                             et:ai-all)))
+             ((t)    #-freebsd (values et:af-inet6  (logior et:ai-v4mapped et:ai-all))
+                     #+freebsd (values et:af-unspec 0))
              (:ipv6 (values et:af-inet6 0)))))
     (multiple-value-bind (vector type) (address-to-vector host)
       (case type
@@ -279,13 +270,14 @@
                        (et:freeaddrinfo addrinfo)
                        ;; mapping IPv4 addresses onto IPv6
                        #+freebsd
-                       (when (eql ipv6 t)
+                       (when (eq ipv6 t)
                          (map-host-ipv4-addresses-to-ipv6 hostobj))
                        (return-from lookup-host hostobj))
                    (et:resolv-error (err)
                      (resolver-error (et:system-error-identifier err) :data host)))))))))
 
 (defmethod lookup-host (host &key (ipv6 *ipv6*))
+  (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration")
   (multiple-value-bind (vector type) (address-to-vector host)
     (ecase type
       (:ipv4 (lookup-host-u8-vector-4 vector ipv6))
