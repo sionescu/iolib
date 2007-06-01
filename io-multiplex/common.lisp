@@ -250,12 +250,12 @@
          :with dispatch-list := ()
          :do
 
-         (setf before (et::gettime))
+         (setf before (gettime))
          (mapc #'(lambda (ev)
                    (event-recalc-abs-timeout ev before))
                (queue-head timeouts))
          (dispatch-fd-events-once event-base actual-timeout)
-         (setf after (et::gettime))
+         (setf after (gettime))
 
          (let ((main-timeout (main-timeout-of event-base)))
            (when main-timeout
@@ -325,7 +325,7 @@
 
 
 (defun events-calc-min-rel-timeout (timeouts)
-  (let* ((now (et::gettime))
+  (let* ((now (gettime))
          (first-valid-event (find-if #'(lambda (to)
                                          (or (null to) (< now to)))
                                      (queue-head timeouts)

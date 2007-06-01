@@ -48,7 +48,7 @@
 
 (defun abs-timeout (timeout)
   (when timeout
-    (+ (et::gettime) (normalize-timeout timeout))))
+    (+ (gettime) (normalize-timeout timeout))))
 
 
 (defun calc-min-timeout (t1 t2)

@@ -24,6 +24,7 @@
 (defpackage :io.multiplex
   (:nicknames #:iomux)
   (:use #:common-lisp #:cffi #:iolib-utils)
+  (:import-from #:iolib-posix #:gettime)
   (:export
    ;; classes
    #:event-base #:event
