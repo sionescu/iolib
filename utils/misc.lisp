@@ -46,4 +46,8 @@
 (defun xnor (x1 x2)
   (eq (not x1) (not x2)))
 
-(export '(define-constant %check-bounds return-if featurep xnor))
+(define-modify-macro coercef (type-spec) coerce)
+
+(define-modify-macro nconcf (&rest lists) nconc)
+
+(export '(define-constant %check-bounds return-if featurep xnor coercef nconcf))

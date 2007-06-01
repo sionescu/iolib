@@ -32,9 +32,6 @@
 (deftype ipv6-array ()
   '(ub16-sarray 8))
 
-
-(define-modify-macro coercef (type-spec) coerce)
-
 ;;;
 ;;; Byte-swap functions
 ;;;
