@@ -38,8 +38,6 @@
         :reader fds-of)
    (timeouts :initform (make-queue)
              :reader timeouts-of)
-   (main-timeout :initform nil
-                 :accessor main-timeout-of)
    (exit :initform nil
          :accessor exit-p)
    (exit-when-empty :initarg :exit-when-empty
@@ -76,17 +74,16 @@
 (defgeneric remove-events (event-base event-list))
 
 
-(defgeneric event-dispatch (event-base &key timeout only-once))
+(defgeneric event-dispatch (event-base &key &allow-other-keys))
 
 
 (defgeneric exit-event-loop (event-base &key delay)
   (:method ((event-base event-base) &key (delay 0))
-    (setf (main-timeout-of event-base)
-          (add-timeout event-base
-                       #'(lambda (fd event-type)
-                           (declare (ignore fd event-type))
-                           (setf (exit-p event-base) t))
-                       delay :persistent nil))))
+    (add-timeout event-base
+                 #'(lambda (fd event-type)
+                     (declare (ignore fd event-type))
+                     (setf (exit-p event-base) t))
+                 delay :persistent nil)))
 
 
 (defgeneric event-base-empty-p (event-base)
@@ -141,6 +138,7 @@
 
 
 (defmethod add-fd ((event-base event-base) fd event-type function &key timeout persistent)
+  (check-type fd unsigned-byte)
   (check-type event-type fd-event)
 
   (let ((fd-limit (fd-limit-of (mux-of event-base))))
@@ -205,11 +203,6 @@
   (values event-base))
 
 
-(defmethod remove-events ((event-base event-base) event-list)
-  (dolist (ev event-list)
-    (remove-event event-base ev)))
-
-
 (defmacro with-fd-handler ((event-base fd event-type function
                             &optional timeout)
                            &body body)
@@ -228,78 +221,76 @@
 
 (defmethod event-dispatch :around ((event-base event-base) &key timeout only-once)
   (setf (exit-p event-base) nil)
-  (setf (main-timeout-of event-base) nil)
-  (when timeout
-    (exit-event-loop event-base :delay timeout)
-    (setf only-once t))
-  (unless (event-base-empty-p event-base)
-    (call-next-method event-base :timeout timeout
-                      :only-once only-once)))
+  (when timeout (exit-event-loop event-base :delay timeout))
+  (call-next-method event-base :only-once only-once))
 
 
-(defmethod event-dispatch ((event-base event-base) &key timeout only-once)
+(defun recalculate-timeouts (timeouts)
+  (let ((now (gettime)))
+    (dolist (ev (queue-head timeouts))
+      (event-recalc-abs-timeout ev now))))
+
+
+(defun dispatch-timeouts (dispatch-list)
+  (dolist (ev dispatch-list)
+    (funcall (event-handler ev) nil :timeout)))
+
+
+(defmethod remove-events ((event-base event-base) event-list)
+  (dolist (ev event-list)
+    (remove-event event-base ev)))
+
+
+(defmethod event-dispatch ((event-base event-base) &key only-once)
   (with-accessors ((mux mux-of) (fds fds-of)
                    (exit-p exit-p) (exit-when-empty exit-when-empty-p)
                    (timeouts timeouts-of)) event-base
-    (let* ((min-event-timeout (events-calc-min-rel-timeout timeouts))
-           (actual-timeout (calc-min-timeout min-event-timeout timeout))
-           (before nil)
-           (after nil))
-      (loop
-         :with deletion-list := ()
-         :with dispatch-list := ()
-         :do
+    (flet ((recalc-poll-timeout ()
+             (calc-min-timeout (events-calc-min-rel-timeout timeouts)
+                               *default-event-loop-timeout*)))
+      (do ((poll-timeout (recalc-poll-timeout) (recalc-poll-timeout))
+           (deletion-list () ())
+           (dispatch-list () ()))
+          ((or exit-p (and exit-when-empty (event-base-empty-p event-base))))
+        (recalculate-timeouts timeouts)
+        (when (dispatch-fd-events-once event-base poll-timeout)
+          (and only-once (setf exit-p t)))
 
-         (setf before (gettime))
-         (mapc #'(lambda (ev)
-                   (event-recalc-abs-timeout ev before))
-               (queue-head timeouts))
-         (dispatch-fd-events-once event-base actual-timeout)
-         (setf after (gettime))
-
-         (let ((main-timeout (main-timeout-of event-base)))
-           (when main-timeout
-             (remove-event event-base main-timeout)
-             (setf (main-timeout-of event-base) nil)))
-
-         (setf (values deletion-list dispatch-list)
-               (filter-expired-events (expired-events timeouts after)))
-         (dispatch-timeouts dispatch-list)
-         (remove-events event-base deletion-list)
-
-         (queue-sort timeouts #'< #'event-abs-timeout)
-
-         :when (or only-once exit-p
-                   (and exit-when-empty (event-base-empty-p event-base)))
-         :do (loop-finish)))))
+        (setf (values deletion-list dispatch-list)
+              (filter-expired-events (expired-events timeouts (gettime))))
+        (dispatch-timeouts dispatch-list)
+        (remove-events event-base deletion-list)
+        
+        (queue-sort timeouts #'< #'event-abs-timeout)))))
 
 
 (defun dispatch-fd-events-once (event-base timeout)
+  "Waits for events and dispatches them. Returns T if some events have been received, NIL otherwise."
   (with-accessors ((mux mux-of) (fds fds-of)
                    (timeouts timeouts-of)) event-base
     (let ((deletion-list ())
-          (fd-events (harvest-events mux (or timeout *default-event-loop-timeout*))))
+          (fd-events (harvest-events mux timeout)))
       (dolist (ev fd-events)
         (destructuring-bind (fd ev-types) ev
           (let ((fd-entry (fd-entry-of event-base fd)))
             (if fd-entry
-                (progn
-                  (when (member :error ev-types)
+                (let ((errorp (member :error ev-types)))
+                  (when errorp
                     (dispatch-error-events fd-entry)
-                    (setf deletion-list (fd-entry-all-events fd-entry)))
+                    (nconcf deletion-list
+                            (fd-entry-all-events fd-entry)))
                   (when (member :read ev-types)
                     (dispatch-read-events fd-entry)
-                    (setf deletion-list
-                          (nconc deletion-list
-                                 (fd-entry-one-shot-events fd-entry :read))))
+                    (or errorp (nconcf deletion-list
+                                       (fd-entry-one-shot-events fd-entry :read))))
                   (when (member :write ev-types)
                     (dispatch-write-events fd-entry)
-                    (setf deletion-list
-                          (nconc deletion-list
-                                 (fd-entry-one-shot-events fd-entry :write)))))
+                    (or errorp (nconcf deletion-list
+                                       (fd-entry-one-shot-events fd-entry :write)))))
                 (warn "Got spurious event for non-monitored FD: ~A" fd)))))
       (dolist (ev deletion-list)
-        (remove-event event-base ev)))))
+        (remove-event event-base ev))
+      (consp fd-events))))
 
 
 (defun expired-events (queue now)
@@ -317,11 +308,6 @@
       (unless (event-persistent-p ev)          
         (push ev deletion-list)))
     (values deletion-list dispatch-list)))
-
-
-(defun dispatch-timeouts (dispatch-list)
-  (dolist (ev dispatch-list)
-    (funcall (event-handler ev) nil :timeout)))
 
 
 (defun events-calc-min-rel-timeout (timeouts)
