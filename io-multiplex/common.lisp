@@ -25,6 +25,9 @@
   (defvar *available-multiplexers* nil)
   (defvar *best-available-multiplexer* nil))
 
+(defvar *default-event-loop-timeout* 1
+  "Timeout(in seconds) to use if the events in a base have none.")
+
 ;;;
 ;;; Event-Base
 ;;;
@@ -38,7 +41,10 @@
    (main-timeout :initform nil
                  :accessor main-timeout-of)
    (exit :initform nil
-         :accessor exit-p)))
+         :accessor exit-p)
+   (exit-when-empty :initarg :exit-when-empty
+                    :accessor exit-when-empty-p))
+  (:default-initargs :exit-when-empty nil))
 
 
 (defmethod print-object ((base event-base) stream)
@@ -74,7 +80,7 @@
 
 
 (defgeneric exit-event-loop (event-base &key delay)
-  (:method ((event-base event-base) &key delay)
+  (:method ((event-base event-base) &key (delay 0))
     (setf (main-timeout-of event-base)
           (add-timeout event-base
                        #'(lambda (fd event-type)
@@ -207,16 +213,17 @@
 (defmacro with-fd-handler ((event-base fd event-type function
                             &optional timeout)
                            &body body)
-  (with-gensyms (event)
-    `(let (,event)
-       (unwind-protect
-            (progn
-              (setf ,event (add-fd ,event-base ,fd ,event-type ,function
-                                   :persistent t
-                                   :timeout ,timeout))
-              ,@body)
-         (when ,event
-           (remove-event ,event-base ,event))))))
+  (once-only (event-base)
+    (with-gensyms (event)
+      `(let (,event)
+         (unwind-protect
+              (progn
+                (setf ,event (add-fd ,event-base ,fd ,event-type ,function
+                                     :persistent t
+                                     :timeout ,timeout))
+                ,@body)
+           (when ,event
+             (remove-event ,event-base ,event)))))))
 
 
 (defmethod event-dispatch :around ((event-base event-base) &key timeout only-once)
@@ -231,8 +238,9 @@
 
 
 (defmethod event-dispatch ((event-base event-base) &key timeout only-once)
-  (with-accessors ((mux mux-of) (exit-p exit-p)
-                   (fds fds-of) (timeouts timeouts-of)) event-base
+  (with-accessors ((mux mux-of) (fds fds-of)
+                   (exit-p exit-p) (exit-when-empty exit-when-empty-p)
+                   (timeouts timeouts-of)) event-base
     (let* ((min-event-timeout (events-calc-min-rel-timeout timeouts))
            (actual-timeout (calc-min-timeout min-event-timeout timeout))
            (before nil)
@@ -261,9 +269,8 @@
 
          (queue-sort timeouts #'< #'event-abs-timeout)
 
-         :when (or only-once
-                   exit-p
-                   (event-base-empty-p event-base))
+         :when (or only-once exit-p
+                   (and exit-when-empty (event-base-empty-p event-base)))
          :do (loop-finish)))))
 
 
@@ -271,7 +278,7 @@
   (with-accessors ((mux mux-of) (fds fds-of)
                    (timeouts timeouts-of)) event-base
     (let ((deletion-list ())
-          (fd-events (harvest-events mux timeout)))
+          (fd-events (harvest-events mux (or timeout *default-event-loop-timeout*))))
       (dolist (ev fd-events)
         (destructuring-bind (fd ev-types) ev
           (let ((fd-entry (fd-entry-of event-base fd)))
