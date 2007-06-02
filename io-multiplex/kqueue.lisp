@@ -23,22 +23,17 @@
 
 (defconstant +kqueue-priority+ 1)
 
-
 (define-multiplexer kqueue-multiplexer +kqueue-priority+ (multiplexer)
   ())
-
 
 (defmethod print-object ((mux kqueue-multiplexer) stream)
   (print-unreadable-object (mux stream :type nil :identity nil)
     (format stream "kqueue(2) multiplexer")))
 
-
 (defvar *kqueue-max-events* 200)
-
 
 (defmethod initialize-instance :after ((mux kqueue-multiplexer) &key)
   (setf (slot-value mux 'fd) (et:kqueue)))
-
 
 (defun do-kqueue-event-request (kqueue-fd fd-entry filter request-type)
   (let ((fd (fd-entry-fd fd-entry)))
@@ -50,12 +45,10 @@
                  (null-pointer) 0
                  (null-pointer)))))
 
-
 (defun calc-kqueue-monitor-filter (fd-entry)
   (if (queue-empty-p (fd-entry-read-events fd-entry))
       et:evfilt-write
       et:evfilt-read))
-
 
 (defmethod monitor-fd ((mux kqueue-multiplexer) fd-entry)
   (assert fd-entry)
@@ -66,14 +59,12 @@
     (et:ebadf ()
       (warn "FD ~A is invalid, cannot monitor it." (fd-entry-fd fd-entry)))))
 
-
 (defun calc-kqueue-update-filter-and-flags (edge-change)
   (case edge-change
     (:read-add  (values et:evfilt-read et:ev-add))
     (:read-del  (values et:evfilt-read et:ev-delete))
     (:write-add (values et:evfilt-write et:ev-add))
     (:write-del (values et:evfilt-write et:ev-delete))))
-
 
 (defmethod update-fd ((mux kqueue-multiplexer) fd-entry)
   (assert fd-entry)
@@ -86,12 +77,10 @@
     (et:enoent ()
       (warn "FD ~A was not monitored, cannot update its status." (fd-entry-fd fd-entry)))))
 
-
 (defun calc-kqueue-unmonitor-filter (fd-entry)
   (if (queue-empty-p (fd-entry-read-events fd-entry))
       et:evfilt-read
       et:evfilt-write))
-
 
 (defmethod unmonitor-fd ((mux kqueue-multiplexer) fd-entry)
   (handler-case
@@ -102,7 +91,6 @@
       (warn "FD ~A is invalid, cannot unmonitor it." (fd-entry-fd fd-entry)))
     (et:enoent ()
       (warn "FD ~A was not monitored, cannot unmonitor it." (fd-entry-fd fd-entry)))))
-
 
 (defmethod harvest-events ((mux kqueue-multiplexer) timeout)
   (with-foreign-objects ((events 'et:kevent *kqueue-max-events*)
@@ -128,7 +116,6 @@
            :for data := (kevent-slot et:data)
            :for kqueue-event := (make-kqueue-event fd flags filter data)
            :when kqueue-event :collect kqueue-event)))))
-
 
 ;; TODO: do something with DATA
 (defun make-kqueue-event (fd flags filter data)

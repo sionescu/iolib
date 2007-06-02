@@ -74,7 +74,6 @@
   (head nil :type list)
   (tail nil :type list))
 
-
 (defun queue-invariant (queue)
   (assert (queue-p queue))
   (assert (or (and (null (queue-head queue))  (null (queue-tail queue)))
@@ -84,9 +83,7 @@
     (assert (search (queue-tail queue) (queue-head queue) :test (function eq)))
     (assert (null (cdr (queue-tail queue))))))
 
-
 (defun make-queue () (%make-queue))
-
 
 (defun queue-length (queue)
   "
@@ -96,14 +93,12 @@ RETURN:  The number of elements in the queue.
   (assert (queue-p queue))
   (length (queue-head queue))) ;;queue-length
 
-
 (defun queue-empty-p (queue)
   "
 RETURN:  (= 0 (queue-length queue))
 "
   (assert (queue-p queue))
   (null (queue-head queue)))
-
 
 (defun queue-first-element (queue)
   "
@@ -113,7 +108,6 @@ RETURN:  The first element of the queue.
   (assert (queue-p queue))
   (first (queue-head queue)))
 
-
 (defun queue-last-element (queue)
   "
 PRE:     (queue-p queue)
@@ -121,7 +115,6 @@ RETURN:  The last element of the queue.
 "
   (assert (queue-p queue))
   (first (queue-tail queue)))
-
 
 (defun queue-enqueue  (queue element)
   "
@@ -145,7 +138,6 @@ RETURN:  queue
         (setf (queue-tail queue) (queue-head queue))))
   queue)
 
-
 (defun queue-delete (queue element &key (test (function eql)))
   "
 POST:    (not (member element queue :test test))
@@ -156,13 +148,11 @@ RETURN:  queue
         (queue-tail queue) (last (queue-head queue)))
   queue)
 
-
 (defun queue-delete-if (queue test)
   (assert (queue-p queue))
   (setf (queue-head queue) (delete-if test (queue-head queue))
         (queue-tail queue) (last (queue-head queue)))
   queue)
-
 
 (defun queue-dequeue (queue)
   "
@@ -177,7 +167,6 @@ RETURN:  f
   (prog1 (pop (queue-head queue))
     (when (null (queue-head queue))
       (setf (queue-tail queue) nil))))
-
 
 (defun queue-requeue (queue element)
   "
@@ -195,12 +184,10 @@ RETURN:  queue
     (setf (queue-tail queue) (queue-head queue)))
   queue)
 
-
 (defun queue-sort (queue predicate &optional (key #'identity))
   (assert (queue-p queue))
   (setf (queue-head queue) (sort (queue-head queue) predicate :key key)
         (queue-tail queue) (last (queue-head queue))))
-
 
 (defun queue-sorted-insert (queue element predicate &optional (key #'identity))
   "Scan the queue comparing the elements of the queue
@@ -235,14 +222,12 @@ ELEMENT right before the last compared queue element."
                             (cdr newcons) next-list))))))))
   queue)
 
-
 ;; TODO: make it traverse the queue only once
 (defun queue-filter (queue test &optional (key #'identity))
   "Delete from the queue all elements that satisfy TEST
 and return them as list."
   (assert (queue-p queue))
   (remove-if-not test (queue-head queue) :key key))
-
 
 ;; TODO: make it traverse the queue only once
 (defun queue-filter-and-delete (queue test &optional (key #'identity))
@@ -252,6 +237,5 @@ and return them as list."
   (prog1 (remove-if-not test (queue-head queue) :key key)
     (setf (queue-head queue) (delete-if test (queue-head queue) :key key)
           (queue-tail queue) (last (queue-head queue)))))
-
 
 ;;;; queue.lisp                       --                     --          ;;;;

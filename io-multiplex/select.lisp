@@ -23,7 +23,6 @@
 
 (defconstant +select-priority+ 3)
 
-
 (define-multiplexer select-multiplexer +select-priority+ (multiplexer)
   ((max-fd :initform 0
            :accessor max-fd-of)
@@ -35,15 +34,12 @@
                   :reader except-fd-set-of))
   (:default-initargs :fd-limit (1- et:fd-setsize)))
 
-
 (defun allocate-fd-set ()
   (et:fd-zero (foreign-alloc 'et:fd-set)))
-
 
 (defmethod print-object ((mux select-multiplexer) stream)
   (print-unreadable-object (mux stream :type nil :identity nil)
     (format stream "select(2) multiplexer")))
-
 
 (defmethod close-multiplexer progn ((mux select-multiplexer))
   (foreign-free (read-fd-set-of mux))
@@ -53,14 +49,12 @@
             (setf (slot-value mux slot) nil))
         '(max-fd read-fd-set write-fd-set except-fd-set)))
 
-
 (defun find-max-fd (fd-set end)
   (loop :for i :downfrom end :to 0
      :do (when (et:fd-isset i fd-set)
            (return-from find-max-fd i)))
   ;; this means no fd <= end is set
   -1)
-
 
 (defun recalc-fd-masks (mux fd read write)
   (with-accessors ((rs read-fd-set-of) (ws write-fd-set-of)
@@ -79,22 +73,18 @@
                       (find-max-fd ws fd)))
     t))
 
-
 (defmethod monitor-fd ((mux select-multiplexer) fd-entry)
   (recalc-fd-masks mux (fd-entry-fd fd-entry)
                    (not (queue-empty-p (fd-entry-read-events fd-entry)))
                    (not (queue-empty-p (fd-entry-write-events fd-entry)))))
-
 
 (defmethod update-fd ((mux select-multiplexer) fd-entry)
   (recalc-fd-masks mux (fd-entry-fd fd-entry)
                    (not (queue-empty-p (fd-entry-read-events fd-entry)))
                    (not (queue-empty-p (fd-entry-write-events fd-entry)))))
 
-
 (defmethod unmonitor-fd ((mux select-multiplexer) fd-entry)
   (recalc-fd-masks mux (fd-entry-fd fd-entry) nil nil))
-
 
 (defmethod harvest-events ((mux select-multiplexer) timeout)
   (with-accessors ((rs read-fd-set-of) (ws write-fd-set-of)
@@ -105,14 +95,12 @@
                (null timeout))
       (warn "Non fds to monitor and no timeout set !")
       (return-from harvest-events nil))
-
     (with-foreign-objects ((read-fds 'et:fd-set)
                            (write-fds 'et:fd-set)
                            (except-fds 'et:fd-set))
       (et:copy-fd-set rs read-fds)
       (et:copy-fd-set ws write-fds)
       (et:copy-fd-set es except-fds)
-
       (handler-case
           (with-foreign-object (tv 'et:timeval)
             (et:repeat-upon-condition-decreasing-timeout ((et:eintr)
@@ -127,9 +115,7 @@
         (et:ebadf ()
           (return-from harvest-events
             (harvest-select-fd-errors rs ws max-fd))))
-
       (harvest-select-events max-fd read-fds write-fds except-fds))))
-
 
 (defun harvest-select-events (max-fd read-fds write-fds except-fds)
   (loop :for fd :upto max-fd
@@ -138,7 +124,6 @@
                (et:fd-isset fd except-fds)) :do (push :read event)
      :when (et:fd-isset fd write-fds) :do (push :write event)
      :when event :collect (list fd event)))
-
 
 ;; FIXME: I don't know whether on all *nix systems select()
 ;; returns EBADF only when a given FD present in some fd-set

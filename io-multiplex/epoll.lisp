@@ -23,30 +23,24 @@
 
 (defconstant +epoll-priority+ 1)
 
-
 (define-multiplexer epoll-multiplexer +epoll-priority+ (multiplexer)
   ())
-
 
 (defmethod print-object ((mux epoll-multiplexer) stream)
   (print-unreadable-object (mux stream :type nil :identity nil)
     (format stream "epoll(4) multiplexer")))
 
-
 (defconstant +epoll-default-size-hint+ 25)
 (defvar *epoll-max-events* 200)
-
 
 (defmethod initialize-instance :after ((mux epoll-multiplexer)
                                        &key (size +epoll-default-size-hint+))
   (setf (slot-value mux 'fd) (et:epoll-create size)))
 
-
 (defun calc-epoll-flags (fd-entry)
   (logior (if (not (queue-empty-p (fd-entry-read-events fd-entry))) et:epollin 0)
           (if (not (queue-empty-p (fd-entry-write-events fd-entry))) et:epollout 0)
           et:epollpri))
-
 
 (defmethod monitor-fd ((mux epoll-multiplexer) fd-entry)
   (assert fd-entry)
@@ -64,7 +58,6 @@
           (warn "FD ~A is invalid, cannot monitor it." fd))
         (et:eexist ()
           (warn "FD ~A is already monitored." fd))))))
-
 
 (defmethod update-fd ((mux epoll-multiplexer) fd-entry)
   (assert fd-entry)
@@ -84,7 +77,6 @@
           (warn "FD ~A was not monitored, cannot update its status." fd))))
     (values fd-entry)))
 
-
 (defmethod unmonitor-fd ((mux epoll-multiplexer) fd-entry)
   (handler-case
       (et:epoll-ctl (fd-of mux)
@@ -95,7 +87,6 @@
       (warn "FD ~A is invalid, cannot unmonitor it." (fd-entry-fd fd-entry)))
     (et:enoent ()
       (warn "FD ~A was not monitored, cannot unmonitor it." (fd-entry-fd fd-entry)))))
-
 
 (defmethod harvest-events ((mux epoll-multiplexer) timeout)
   (with-foreign-object (events 'et:epoll-event *epoll-max-events*)
@@ -117,7 +108,6 @@
              :for event-mask := (epoll-slot et:events)
              :for epoll-event := (make-epoll-event fd event-mask)
              :when epoll-event :collect epoll-event))))))
-
 
 (defun make-epoll-event (fd mask)
   (let ((event ()))

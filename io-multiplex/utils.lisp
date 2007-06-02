@@ -27,13 +27,11 @@
      (setf et:sec  sec
            et:usec usec))))
 
-
 (defun timeout->timespec (timeout ts)
   (with-foreign-slots ((et:sec et:nsec) ts et:timespec)
     (multiple-value-bind (sec usec) (decode-timeout timeout)
       (setf et:sec sec
             et:nsec (* 1000 usec)))))
-
 
 (defun timeout->milisec (timeout)
   (if timeout
@@ -41,7 +39,6 @@
         (+ (* sec 1000)
            (truncate usec 1000)))
       -1))
-
 
 (defmacro flags-case (mask &body clauses)
   (once-only (mask)
@@ -52,7 +49,6 @@
                                                     flags))
                                           ,mask)
                              ,(second clause))))))
-
 
 (defmacro ignore-and-print-errors (&body body)
   `(handler-case (progn ,@body)

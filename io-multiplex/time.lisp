@@ -24,7 +24,6 @@
 (deftype timeout ()
   'double-float)
 
-
 ;;; Break a real timeout into seconds and microseconds.
 (defun decode-timeout (timeout)
   (typecase timeout
@@ -38,18 +37,15 @@
     (t
      (error "Timeout is not a real number or NIL: ~S" timeout))))
 
-
 (defun normalize-timeout (timeout)
   (when timeout
     (assert (not (minusp timeout)))
     (etypecase timeout
       ((or integer real) (coerce timeout 'double-float)))))
 
-
 (defun abs-timeout (timeout)
   (when timeout
     (+ (gettime) (normalize-timeout timeout))))
-
 
 (defun calc-min-timeout (t1 t2)
   (if t1
