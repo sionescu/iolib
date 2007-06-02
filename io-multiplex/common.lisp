@@ -25,8 +25,7 @@
   (defvar *available-multiplexers* nil)
   (defvar *best-available-multiplexer* nil))
 
-(defvar *default-event-loop-timeout* 1
-  "Timeout(in seconds) to use if the events in a base have none.")
+(defvar *maximum-event-loop-timeout* 1)
 
 
 ;;;
@@ -224,7 +223,7 @@
                    (timeouts timeouts-of)) event-base
     (flet ((recalc-poll-timeout ()
              (calc-min-timeout (events-calc-min-rel-timeout timeouts)
-                               *default-event-loop-timeout*)))
+                               *maximum-event-loop-timeout*)))
       (do ((poll-timeout (recalc-poll-timeout) (recalc-poll-timeout))
            (deletion-list () ())
            (dispatch-list () ()))

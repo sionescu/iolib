@@ -35,7 +35,7 @@
 
    #:add-fd #:add-timeout
    #:remove-event #:event-dispatch
-   #:exit-event-loop
+   #:exit-event-loop #:*default-event-loop-timeout*
    #:event-base-empty-p
 
    #:wait-until-fd-ready #:fd-ready-p))
