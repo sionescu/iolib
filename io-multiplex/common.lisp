@@ -54,9 +54,8 @@
   (:method ((event-base event-base))
     (with-accessors ((mux mux-of)) event-base
       (close-multiplexer mux)
-      (mapc #'(lambda (slot)
-                (setf (slot-value event-base slot) nil))
-            '(fds timeouts exit))
+      (dolist (slot '(fds timeouts exit))
+        (setf (slot-value event-base slot) nil))
       event-base)))
 
 (defgeneric add-fd (base fd event-type function &key timeout persistent))

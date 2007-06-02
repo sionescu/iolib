@@ -45,9 +45,8 @@
   (foreign-free (read-fd-set-of mux))
   (foreign-free (write-fd-set-of mux))
   (foreign-free (except-fd-set-of mux))
-  (mapc #'(lambda (slot)
-            (setf (slot-value mux slot) nil))
-        '(max-fd read-fd-set write-fd-set except-fd-set)))
+  (dolist (slot '(max-fd read-fd-set write-fd-set except-fd-set))
+    (setf (slot-value mux slot) nil)))
 
 (defun find-max-fd (fd-set end)
   (loop :for i :downfrom end :to 0
@@ -59,13 +58,12 @@
 (defun recalc-fd-masks (mux fd read write)
   (with-accessors ((rs read-fd-set-of) (ws write-fd-set-of)
                    (es except-fd-set-of) (max-fd max-fd-of)) mux
-    (if read
-        (progn
-          (et:fd-set fd rs)
-          (et:fd-set fd es))
-        (progn
-          (et:fd-clr fd rs)
-          (et:fd-clr fd es)))
+    (cond (read
+           (et:fd-set fd rs)
+           (et:fd-set fd es))
+          (t
+           (et:fd-clr fd rs)
+           (et:fd-clr fd es)))
     (if write
         (et:fd-set fd ws)
         (et:fd-clr fd ws))
