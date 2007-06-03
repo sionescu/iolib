@@ -224,5 +224,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FreeBSD-specific options ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(define-socket-option noopt  :get-and-set et::tcp-noopt  et:ipproto-tcp :bool :freebsd)
-(define-socket-option nopush :get-and-set et::tcp-nopush et:ipproto-tcp :bool :freebsd)
+(define-socket-option tcp-noopt  :get-and-set et::tcp-noopt  et:ipproto-tcp :bool :freebsd)
+(define-socket-option tcp-nopush :get-and-set et::tcp-nopush et:ipproto-tcp :bool :freebsd)
