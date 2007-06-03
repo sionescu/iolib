@@ -48,7 +48,6 @@
                message (format nil "~%")))
 
 (defun send-attachment (sock attachment boundary buffer-size)
-  (print-debug (format nil "Sending attachment: ~a" attachment))
   (when (probe-file attachment)
     (let ((name (file-namestring attachment)))
       (send-attachment-header sock boundary name)
@@ -83,7 +82,6 @@
                                 (if (eql bchar 'EOF)
                                     (return i)
                                     (setf (aref buffer i) bchar))))) 
-           (print-debug (format nil "~%** Byte Count ~a~%" byte-count))
            ;; encode the buffer and write out to stream 
            (cl-base64:usb8-array-to-base64-stream 
             (if (< byte-count max-buffer-size)

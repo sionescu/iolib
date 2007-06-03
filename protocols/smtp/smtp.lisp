@@ -24,10 +24,6 @@
           (lisp-implementation-type)
           (lisp-implementation-version)))
 
-(defmacro print-debug (str)
-  `(when *debug*
-     (print ,str)))
-
 (defun check-arg (arg name)
   (cond
     ((or (stringp arg)
@@ -89,7 +85,6 @@
         (error "in RCPT TO command: ~A" msgstr)))))
 
 (defun write-to-smtp (sock command)
-  (print-debug (format nil "to server: ~A" command)) 
   (write-string command sock)
   (terpri sock)
   (finish-output sock))
@@ -97,7 +92,6 @@
 (defun read-from-smtp (sock)
   (let* ((line (read-line sock))
          (response-code (parse-integer line :start 0 :junk-allowed t)))
-    (print-debug (format nil "from server: ~A" line))
     (if (= (char-code (elt line 3)) (char-code #\-))
         (read-from-smtp sock)
         (values response-code line))))
