@@ -16,6 +16,7 @@
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
   :depends-on (:iolib-posix
+               :iolib-utils-symbols
                :net.sockets
                :cl-base64)
   :default-component-class muffled-source-file
@@ -24,5 +25,8 @@
   :serial t
   :components
   ((:file "pkgdcl")
+   (:file "client-net")
+   (:file "client-commands")
+   (:file "client-authentication")
    (:file "attachments")
    (:file "smtp")))
