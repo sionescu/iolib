@@ -18,11 +18,14 @@
 
 (in-package :net.smtp-client)
 
-(defparameter *debug* nil)
-(defparameter *x-mailer*
+(defvar *x-mailer*
   (format nil "(~A ~A)" 
           (lisp-implementation-type)
           (lisp-implementation-version)))
+
+;;;
+;;; Protocol handling
+;;;
 
 (defun check-arg (arg name)
   (cond
@@ -54,7 +57,7 @@
     resultstr))
 
 (defun string-to-base64-string (str)
-  (cl-base64:string-to-base64-string str))
+  (string-to-base64-string str))
 
 (defun send-email (host from to subject message 
                    &key (port 25) cc bcc reply-to extra-headers
@@ -71,143 +74,66 @@
                               buffer-size
                               256)))
 
-(defun make-smtp-socket (host port)
-  (make-socket :address-family :internet :type :stream :connect :active
-               :remote-host host :remote-port port
-               :external-format '(:iso-8859-1 :line-terminator :dos)))
-
-(defun compute-rcpt-command (sock adresses)
-  (dolist (to adresses)
-    (write-to-smtp sock (format nil "RCPT TO: <~A>" to))
-    (multiple-value-bind (code msgstr)
-        (read-from-smtp sock)
-      (when (/= code 250)
-        (error "in RCPT TO command: ~A" msgstr)))))
-
-(defun write-to-smtp (sock command)
-  (write-line command sock)
-  (finish-output sock))
-
-(defun read-from-smtp (sock)
-  (let* ((line (read-line sock))
-         (response-code (parse-integer line :start 0 :junk-allowed t)))
-    (if (= (char-code (elt line 3)) (char-code #\-))
-        (read-from-smtp sock)
-        (values response-code line))))
-
 (defun send-smtp (host from to subject message 
                   &key (port 25) cc bcc reply-to extra-headers
                   display-name authentication attachments buffer-size)
-  (let ((boundary (make-random-boundary)))
-    (with-open-stream (sock (make-smtp-socket host port))
-      (open-smtp-connection sock :authentication authentication)
-      (write-to-smtp sock (format nil "MAIL FROM: ~@[~A ~]<~A>" display-name from))
-      (multiple-value-bind (code msgstr)
-          (read-from-smtp sock)
-        (when (/= code 250)
-          (error "in MAIL FROM command: ~A" msgstr)))
-      (compute-rcpt-command sock to)
-      (compute-rcpt-command sock cc)
-      (compute-rcpt-command sock bcc)
-      (write-to-smtp sock "DATA")
-      (multiple-value-bind (code msgstr)
-          (read-from-smtp sock)
-        (when (/= code 354)
-          (error "in DATA command: ~A" msgstr)))
-      (write-to-smtp sock (format nil "Date: ~A" (get-email-date-string)))
-      (write-to-smtp sock (format nil "From: ~@[~A <~]~A~@[>~]" 
-                                  display-name from display-name))
-      (write-to-smtp sock (format nil "To: ~{ ~a~^,~}" to))
-      (when cc
-        (write-to-smtp sock (format nil "Cc: ~{ ~a~^,~}" cc)))
-      (write-to-smtp sock (format nil "Subject: ~A" subject))
-      (write-to-smtp sock (format nil "X-Mailer: cl-smtp ~A" 
-                                  *x-mailer*))
-      (when reply-to
-        (write-to-smtp sock (format nil "Reply-To: ~A" reply-to)))
-      (when (and extra-headers
-                 (listp extra-headers))
-        (dolist (l extra-headers)
-          (write-to-smtp sock 
-                         (format nil "~A: ~{~a~^,~}" (car l) (rest l)))))
-      (write-to-smtp sock "Mime-Version: 1.0")
-      (when attachments
-        (generate-multipart-header sock boundary))
-      (terpri sock)
-      (when attachments 
-        (setq message (wrap-message-with-multipart-dividers 
-                       message boundary)))
-      (write-to-smtp sock message)
-      (when attachments
-        (dolist (attachment attachments)
-          (send-attachment sock attachment boundary buffer-size))
-        (send-attachments-end-marker sock boundary))
-      (write-char #\. sock)
-      (terpri sock)
-      (finish-output sock)
-      (multiple-value-bind (code msgstr)
-          (read-from-smtp sock)
-        (when (/= code 250)
-          (error "Message send failed: ~A" msgstr)))
-      (write-to-smtp sock "QUIT")
-      (multiple-value-bind (code msgstr)
-          (read-from-smtp sock)
-        (when (/= code 221)
-          (error "in QUIT command:: ~A" msgstr))))))
+  (with-open-stream (sock (make-smtp-socket host port))
+    (open-smtp-connection sock authentication)
+    (send-message-envelope sock from to cc bcc)
+    (invoke-smtp-command :data sock)
+    (send-message-headers sock from to subject cc reply-to extra-headers display-name)
+    (send-message-body sock message attachments buffer-size)
+    (invoke-smtp-command :quit sock)))
 
-(defun open-smtp-connection (sock &key authentication)
-  (multiple-value-bind (code msgstr)
-      (read-from-smtp sock)
-    (when (/= code 220)
-      (error "wrong response from smtp server: ~A" msgstr)))
+(defun open-smtp-connection (sock authentication)
+  (read-smtp-return-code sock 220 "Wrong response from smtp server")
   (cond
     (authentication
-     (write-to-smtp sock (format nil "EHLO ~A" (et:get-host-name)))
-     (multiple-value-bind (code msgstr)
-         (read-from-smtp sock)
-       (when (/= code 250)
-         (error "wrong response from smtp server: ~A" msgstr)))
-     (cond
-       ((eq (car authentication) :plain)
-        (write-to-smtp sock (format nil "AUTH PLAIN ~A" 
-                                    (string-to-base64-string
-                                     (format nil "~A~C~A~C~A" (cadr authentication)
-                                             #\null (cadr authentication) #\null
-                                             (caddr authentication)))))
-        (multiple-value-bind (code msgstr)
-            (read-from-smtp sock)
-          (when (/= code 235)
-            (error "plain authentication failed: ~A" msgstr))))
-       ((eq (car authentication) :login)
-        (write-to-smtp sock "AUTH LOGIN")
-        (multiple-value-bind (code msgstr)
-            (read-from-smtp sock)
-          (when (/= code 334)
-            (error "login authentication failed: ~A" msgstr)))
-        (write-to-smtp sock (string-to-base64-string (cadr authentication)))
-        (multiple-value-bind (code msgstr)
-            (read-from-smtp sock)
-          (when (/= code 334)
-            (error "login authentication send username failed: ~A" msgstr)))
-        (write-to-smtp sock (string-to-base64-string (caddr authentication)))
-        (multiple-value-bind (code msgstr)
-            (read-from-smtp sock)
-          (when (/= code 235)
-            (error "login authentication send password failed: ~A" msgstr))))
-       (t
-        (error "authentication ~A is not supported in cl-smtp" 
-               (car authentication)))))
+     (invoke-smtp-command :ehlo sock (et:get-host-name))
+     (invoke-authentication (first authentication) (rest authentication)))
     (t
-     (write-to-smtp sock (format nil "HELO ~A" (et:get-host-name)))
-     (multiple-value-bind (code msgstr)
-         (read-from-smtp sock)
-       (when (/= code 250)
-         (error "wrong response from smtp server: ~A" msgstr))))))
+     (invoke-smtp-command :helo sock (et:get-host-name)))))
+
+(defun send-message-envelope (sock from to cc bcc)
+  (invoke-smtp-command :mail-from sock from)
+  (invoke-smtp-command :rcpt-to sock to)
+  (invoke-smtp-command :rcpt-to sock cc)
+  (invoke-smtp-command :rcpt-to sock bcc))
+
+(defun send-message-headers (sock from to subject cc reply-to extra-headers display-name)
+  (format-socket sock "Date: ~A" (get-email-date-string))
+  (format-socket sock "From: ~@[~A <~]~A~@[>~]" 
+                 display-name from display-name)
+  (format-socket sock "To: ~{ ~a~^,~}" to)
+  (when cc
+    (format-socket sock "Cc: ~{ ~A~^,~}" cc))
+  (format-socket sock "Subject: ~A" subject)
+  (format-socket sock "X-Mailer: cl-smtp ~A"  *x-mailer*)
+  (when reply-to
+    (format-socket sock "Reply-To: ~A" reply-to))
+  (dolist (l extra-headers)
+    (format-socket sock "~A: ~{~A~^,~}" (car l) (rest l)))
+  (write-to-smtp sock "Mime-Version: 1.0"))
+
+(defun send-message-body (sock message attachments buffer-size)
+  (let ((boundary (make-random-boundary)))
+    (when attachments
+      (generate-multipart-header sock boundary)
+      (terpri sock)
+      (setf message (wrap-message-with-multipart-dividers 
+                     message boundary)))
+    (write-to-smtp sock message)
+    (when attachments
+      (dolist (attachment attachments)
+        (send-attachment sock attachment boundary buffer-size))
+      (send-attachments-end-marker sock boundary))
+    (write-char #\. sock) (terpri sock) (finish-output sock)
+    (read-smtp-return-code sock 250 "Message send failed")))
 
 (defun get-email-date-string ()
   (multiple-value-bind (sec min h d m y wd) (get-decoded-time)
-    (let* ((month (elt '("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec") (- m 1)))
-           (weekday (elt '("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun") wd))
+    (let* ((month (aref #("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec") (- m 1)))
+           (weekday (aref #("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun") wd))
            (timezone (get-timezone-from-integer
                       (- (encode-universal-time sec min h d m y 0)
                          (get-universal-time)))))

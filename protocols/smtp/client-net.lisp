@@ -19,8 +19,23 @@
 ;;   Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;;   Boston, MA 02110-1301, USA
 
-(in-package :common-lisp-user)
+(in-package :net.smtp-client)
 
-(defpackage :net.smtp-client
-  (:use #:common-lisp #:iolib-utils #:net.sockets #:cl-base64)
-  (:export #:send-email))
+(defun make-smtp-socket (host port)
+  (make-socket :address-family :internet :type :stream :connect :active
+               :remote-host host :remote-port port
+               :external-format '(:iso-8859-1 :line-terminator :dos)))
+
+(defun write-to-smtp (socket command)
+  (write-line command socket)
+  (finish-output socket))
+
+(defun format-socket (socket cmdstr &rest args)
+  (write-to-smtp socket (apply #'format nil cmdstr args)))
+
+(defun read-from-smtp (sock)
+  (let* ((line (read-line sock))
+         (response-code (parse-integer line :start 0 :junk-allowed t)))
+    (if (= (char-code (elt line 3)) (char-code #\-))
+        (read-from-smtp sock)
+        (values response-code line))))

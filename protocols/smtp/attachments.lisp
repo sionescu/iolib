@@ -36,12 +36,11 @@
       (setf (aref boundary i) (char *boundary-chars* (random chars-length))))))
 
 (defun generate-multipart-header (sock boundary)
-  (write-to-smtp sock 
-                 (format nil "Content-type: multipart/mixed;~%~tBoundary=\"~a\"" 
-                         boundary)))
+  (format-socket sock "Content-type: multipart/mixed;~%~tBoundary=\"~A\"" 
+                 boundary))
 
 (defun wrap-message-with-multipart-dividers (message boundary)
-  (concatenate 'string (format nil "--~a~%" boundary)
+  (concatenate 'string (format nil "--~A~%" boundary)
                (format nil "Content-type: text/plain~%")
                (format nil "Content-Disposition: inline~%")
                (format nil "~%")
@@ -54,13 +53,10 @@
       (base64-encode-file attachment sock :buffer-size buffer-size))))
 
 (defun send-attachment-header (sock boundary name)
-  (write-to-smtp
-   sock 
-   (format nil "~%--~a~%Content-type: application/octet-stream;~%~tname=\"~a\"~%Content-Transfer-Encoding: base64~%Content-Disposition: attachment; filename=\"~a\"~%"
-           boundary name name)))
+  (format-socket sock "~%--~A~%Content-type: application/octet-stream;~%~tname=\"~A\"~%Content-Transfer-Encoding: base64~%Content-Disposition: attachment; filename=\"~A\"~%" boundary name name))
 
 (defun send-attachments-end-marker (sock boundary)
-  (write-to-smtp sock (format nil "~%--~a--~%" boundary)))
+  (write-to-smtp sock (format nil "~%--~A--~%" boundary)))
  
 (defun base64-encode-file (file-in sock
                            &key 
@@ -83,7 +79,7 @@
                                     (return i)
                                     (setf (aref buffer i) bchar))))) 
            ;; encode the buffer and write out to stream 
-           (cl-base64:usb8-array-to-base64-stream 
+           (usb8-array-to-base64-stream 
             (if (< byte-count max-buffer-size)
                 (trimmed-buffer byte-count buffer)
                 buffer)
