@@ -85,8 +85,7 @@
         (error "in RCPT TO command: ~A" msgstr)))))
 
 (defun write-to-smtp (sock command)
-  (write-string command sock)
-  (terpri sock)
+  (write-line command sock)
   (finish-output sock))
 
 (defun read-from-smtp (sock)
