@@ -50,13 +50,13 @@
             (hash-table-count (fds-of base))
             (mux-of base))))
 
-(defgeneric close-event-base (event-base)
-  (:method ((event-base event-base))
-    (with-accessors ((mux mux-of)) event-base
-      (close-multiplexer mux)
-      (dolist (slot '(fds timeouts exit))
-        (setf (slot-value event-base slot) nil))
-      event-base)))
+(defmethod close ((event-base event-base) &key abort)
+  (declare (ignore abort))
+  (with-accessors ((mux mux-of)) event-base
+    (close mux)
+    (dolist (slot '(fds timeouts exit))
+      (setf (slot-value event-base slot) nil))
+    event-base))
 
 (defgeneric add-fd (base fd event-type function &key timeout persistent))
 
