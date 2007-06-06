@@ -351,45 +351,28 @@
 ;;;;;;;;;;;;;;
 
 (defmethod accept-connection ((socket active-socket)
-                              &key wait)
+                              &key (wait t))
   (declare (ignore wait))
   (error "You can't accept connections on active sockets."))
 
 (defmethod accept-connection ((socket passive-socket)
                               &key (wait t))
-  (with-foreign-object (ss 'et:sockaddr-storage)
+  (with-foreign-objects ((ss 'et:sockaddr-storage)
+                         (size 'et:socklen))
     (et:bzero ss et:size-of-sockaddr-storage)
-    (with-foreign-pointer (size et:size-of-socklen)
-      (setf (mem-ref size 'et:socklen)
-            et:size-of-sockaddr-storage)
-      (let (non-blocking-state
-            client-fd)
-        (with-socket-error-filter
-          (handler-case
-              (if wait
-                  ;; do a "normal" accept
-                  ;; Note: the socket may already be in non-blocking mode
-                  (setf client-fd (et:accept (fd-of socket) ss size))
-                  ;; set the socket to non-blocking mode before calling accept()
-                  ;; if there's no new connection return NIL
-                  (unwind-protect
-                       (progn
-                         ;; saving the current non-blocking state
-                         (setf non-blocking-state (fd-non-blocking socket))
-                         ;; switch the socket to non-blocking mode
-                         (setf (fd-non-blocking socket) t)
-                         (setf client-fd (et:accept (fd-of socket) ss size)))
-                    ;; restoring the socket's non-blocking state
-                    (setf (fd-non-blocking socket) non-blocking-state)))
-            ;; the socket is marked non-blocking and there's no new connection
-            (et:ewouldblock ()
-              (return-from accept-connection nil))))
-
-        (let ((client-socket
-               ;; create the client socket object
-               (make-instance (active-class socket)
-                              :file-descriptor client-fd)))
-          (return-from accept-connection client-socket))))))
+    (setf (mem-ref size 'et:socklen) et:size-of-sockaddr-storage)
+    (flet ((make-client-socket (fd)
+             (make-instance (active-class socket)
+                            :external-format (external-format-of socket)
+                            :file-descriptor fd)))
+      (with-socket-error-filter
+        (let ((fd (fd-of socket)))
+          (cond (wait
+                 (iomux:wait-until-fd-ready fd :read)
+                 (make-client-socket (et:accept fd ss size)))
+                (t
+                 (when (iomux:fd-ready-p fd :read)
+                   (make-client-socket (et:accept fd ss size))))))))))
 
 
 ;;;;;;;;;;;;;;;
