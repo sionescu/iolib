@@ -28,7 +28,7 @@
              `(defpackage :io.streams
                 (:use #:common-lisp #:cffi #:iolib-utils
                       #:io.encodings)
-                #+(or sbcl cmu openmcl clisp allegro)
+                #+(or sbcl cmu openmcl clisp allegro lispworks)
                 (:import-from #+sbcl      #:sb-gray
                               #+cmu       #:ext
                               #+openmcl   #:ccl
@@ -60,5 +60,5 @@
     #-(or clisp openmcl) #:stream-write-sequence
     #+openmcl #:stream-write-vector
     #+clisp #:stream-write-char-sequence #+clisp #:stream-write-byte-sequence
-    #:stream-fresh-line #:stream-start-line-p
+    #:stream-fresh-line #:stream-start-line-p #:stream-line-column
     #:stream-terpri #:stream-write-char #:stream-write-string))
