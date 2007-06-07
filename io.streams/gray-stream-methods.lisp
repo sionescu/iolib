@@ -499,6 +499,9 @@
       ;; FIXME: avoid consing a string here. At worst, declare it dynamic-extent
       (stream-write-string stream (make-string 1 :initial-element character))))
 
+(defmethod stream-line-column ((stream dual-channel-gray-stream))
+  0)
+
 (defmethod stream-start-line-p ((stream dual-channel-gray-stream))
   (values nil))
 
