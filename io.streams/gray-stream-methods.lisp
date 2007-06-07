@@ -135,8 +135,11 @@
 #-clisp
 (defmethod #-openmcl stream-read-sequence
            #+openmcl stream-read-vector
+           #-lispworks
            ((stream dual-channel-gray-stream) seq
             &optional (start 0) end)
+           #+lispworks
+           ((stream dual-channel-gray-stream) seq start end)
   (setf (values start end) (%check-bounds seq start end))
   (when (< start end)
     (etypecase seq
@@ -286,6 +289,8 @@
            #+openmcl stream-write-vector
            ((stream dual-channel-gray-stream) seq
             &optional (start 0) end)
+           #+lispworks
+           ((stream dual-channel-gray-stream) seq start end)
   (setf (values start end) (%check-bounds seq start end))
   (when (< start end)
     (etypecase seq
