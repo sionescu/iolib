@@ -525,40 +525,40 @@
   (etypecase buff
     ((simple-array ub8 (*)) (values buff start (- end start)))))
 
-(defmethod socket-receive ((buffer array)
-                           (socket active-socket) &key (start 0) end
-                           out-of-band peek wait-all
-                           dont-wait (no-signal *no-sigpipe*))
-  (let ((flags (logior (if out-of-band et:msg-oob 0)
-                       (if peek        et:msg-peek 0)
-                       (if wait-all    et:msg-waitall 0)
-                       (if dont-wait   et:msg-dontwait 0)
-                       (if no-signal   et:msg-nosignal 0)))
-        bytes-received)
-    (multiple-value-bind (buff start-offset bufflen)
-        (%normalize-receive-buffer buffer start end)
-      (with-foreign-object (ss 'et:sockaddr-storage)
-        (et:bzero ss et:size-of-sockaddr-storage)
-        (with-foreign-pointer (size et:size-of-socklen)
-          (setf (mem-ref size 'et:socklen)
-                et:size-of-sockaddr-storage)
-          (with-pointer-to-vector-data (buff-sap buff)
-            (incf-pointer buff-sap start-offset)
-            (with-socket-error-filter
-              (setf bytes-received
-                    (et:recvfrom (fd-of socket)
-                                 buff-sap bufflen
-                                 flags
-                                 ss size)))))
+(defun calc-recvfrom-flags (out-of-band peek wait-all dont-wait no-signal)
+  (logior (if out-of-band et:msg-oob 0)
+          (if peek        et:msg-peek 0)
+          (if wait-all    et:msg-waitall 0)
+          (if dont-wait   et:msg-dontwait 0)
+          (if no-signal   et:msg-nosignal 0)))
 
-        (return-from socket-receive
-          ;; when socket is a datagram socket
-          ;; return the sender's address as 3rd value
-          (if (typep socket 'datagram-socket)
-              (multiple-value-bind (remote-address remote-port)
-                  (sockaddr-storage->sockaddr ss)
-                (values buffer bytes-received remote-address remote-port))
-              (values buffer bytes-received)))))))
+(defun %do-recvfrom (buffer ss fd flags start end)
+  (multiple-value-bind (buff start-offset bufflen)
+      (%normalize-receive-buffer buffer start end)
+    (with-foreign-object (size 'et:socklen)
+      (et:bzero ss et:size-of-sockaddr-storage)
+      (setf (mem-ref size 'et:socklen) et:size-of-sockaddr-storage)
+      (with-pointer-to-vector-data (buff-sap buff)
+        (incf-pointer buff-sap start-offset)
+        (with-socket-error-filter
+          (return-from %do-recvfrom
+            (et:recvfrom fd buff-sap bufflen flags ss size)))))))
+
+(defmethod socket-receive ((buffer array) (socket stream-socket) &key (start 0) end
+                           out-of-band peek wait-all dont-wait (no-signal *no-sigpipe*))
+  (with-foreign-object (ss 'et:sockaddr-storage)
+    (let* ((flags (calc-recvfrom-flags out-of-band peek wait-all dont-wait no-signal))
+           (bytes-received (%do-recvfrom buffer ss (fd-of socket) flags start end)))
+      (values buffer bytes-received))))
+
+(defmethod socket-receive ((buffer array) (socket datagram-socket) &key (start 0) end
+                           out-of-band peek wait-all dont-wait (no-signal *no-sigpipe*))
+  (with-foreign-object (ss 'et:sockaddr-storage)
+    (let* ((flags (calc-recvfrom-flags out-of-band peek wait-all dont-wait no-signal))
+           (bytes-received (%do-recvfrom buffer ss (fd-of socket) flags start end)))
+      (multiple-value-bind (remote-address remote-port)
+          (sockaddr-storage->sockaddr ss)
+        (values buffer bytes-received remote-address remote-port)))))
 
 (defmethod socket-receive (buffer (socket passive-socket) &key)
   (declare (ignore buffer))
