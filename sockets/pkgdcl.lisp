@@ -103,6 +103,6 @@
    #:socket-type #:create-socket #:make-socket #:with-socket
    #:socket-open-p #:local-name #:remote-name
    #:bind-address #:socket-listen #:accept-connection
-   #:connect  #:unconnect #:socket-connected-p
+   #:connect  #:disconnect #:socket-connected-p
    #:shutdown #:socket-send  #:socket-receive
    #:*no-sigpipe* #:*default-backlog-size*))

@@ -57,7 +57,7 @@
 (defclass datagram-socket (socket) ()
   (:default-initargs :type :datagram))
 
-(defgeneric unconnect (socket))
+(defgeneric disconnect (socket))
 
 (defclass internet-socket (socket) ()
   (:default-initargs :family (if *ipv6* :ipv6 :ipv4)))

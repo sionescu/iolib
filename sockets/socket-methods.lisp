@@ -569,11 +569,11 @@
 ;; Only for datagram sockets
 ;;
 
-(defmethod unconnect :before ((socket active-socket))
+(defmethod disconnect :before ((socket active-socket))
   (unless (typep socket 'datagram-socket)
-    (error "You can only unconnect active datagram sockets.")))
+    (error "You can only disconnect active datagram sockets.")))
 
-(defmethod unconnect ((socket datagram-socket))
+(defmethod disconnect ((socket datagram-socket))
   (with-socket-error-filter
     (with-foreign-object (sin 'et:sockaddr-in)
       (et:bzero sin et:size-of-sockaddr-in)
