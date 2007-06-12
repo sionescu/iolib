@@ -287,6 +287,7 @@
 #-clisp
 (defmethod #-openmcl stream-write-sequence
            #+openmcl stream-write-vector
+           #-lispworks
            ((stream dual-channel-gray-stream) seq
             &optional (start 0) end)
            #+lispworks
