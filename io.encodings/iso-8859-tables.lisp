@@ -19,6 +19,9 @@
 
 (in-package :io.encodings)
 
+#+lispworks
+(lw:set-default-character-element-type 'lw:simple-char)
+
 (defmacro define-iso-8859-tables (tables)
   `(progn
      ,@(loop :for (index table) :in tables
