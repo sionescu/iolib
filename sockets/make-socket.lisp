@@ -71,7 +71,8 @@
          (assert (xnor local-host local-port))
          (%close-on-error (socket)
            (setf socket (create-socket :address-family :internet :type :stream
-                                       :connect :passive :ipv6 ipv6))
+                                       :connect :passive :ipv6 ipv6
+                                       :external-format ef))
            (when local-host
              (setf address (convert-or-lookup-inet-address local-host ipv6))
              (bind-address socket address :port local-port
@@ -95,7 +96,8 @@
          (assert local-filename)
          (%close-on-error (socket)
            (setf socket (create-socket :address-family :local :type :stream
-                                       :connect :passive))
+                                       :connect :passive
+                                       :external-format ef))
            (bind-address socket (make-address local-filename))
            (socket-listen socket :backlog backlog)))))
     (values socket)))
