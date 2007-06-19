@@ -49,7 +49,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;
 
 (deftype stream-buffer ()
-  'et:foreign-pointer)
+  'foreign-pointer)
 
 (deftype buffer-index ()
   '(unsigned-byte 24))

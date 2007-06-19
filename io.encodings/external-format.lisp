@@ -472,7 +472,7 @@
   (list (eval (read *query-io*))))
 
 (defun %octets-to-string (buffer string start end ef &optional max-char-num (prevptr start))
-  (declare (type et:foreign-pointer buffer)
+  (declare (type cffi:foreign-pointer buffer)
            (type buffer-index start end)
            (type external-format ef)
            (type (or null signed-byte) max-char-num)
