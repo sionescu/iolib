@@ -276,6 +276,7 @@
                    (et:resolv-error (err)
                      (resolver-error (et:system-error-identifier err) :data host)))))))))
 
+;; TODO: signal meaningful error if ADDRESS-TO-VECTOR fails
 (defmethod lookup-host (host &key (ipv6 *ipv6*))
   (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration")
   (multiple-value-bind (vector type) (address-to-vector host)
