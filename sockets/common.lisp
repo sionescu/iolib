@@ -247,3 +247,8 @@
 
 (defun unixerr-value (keyword)
   (foreign-enum-value 'et:errno-values keyword))
+
+(defmacro with-socklen ((var value) &body body)
+  `(with-foreign-object (,var 'et:socklen)
+     (setf (mem-ref ,var 'et:socklen) ,value)
+     ,@body))

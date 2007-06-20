@@ -206,9 +206,7 @@
     (handler-case
         (with-foreign-object (ss 'et:sockaddr-storage)
           (et:bzero ss et:size-of-sockaddr-storage)
-          (with-foreign-pointer (size et:size-of-socklen)
-            (setf (mem-ref size 'et:socklen)
-                  et:size-of-sockaddr-storage)
+          (with-socklen (size et:size-of-sockaddr-storage)
             (et:getsockname (fd-of socket) ss size)
             t))
       (et:ebadf ())
@@ -222,9 +220,7 @@
 (defmethod local-name ((socket internet-socket))
   (with-foreign-object (ss 'et:sockaddr-storage)
     (et:bzero ss et:size-of-sockaddr-storage)
-    (with-foreign-pointer (size et:size-of-socklen)
-      (setf (mem-ref size 'et:socklen)
-            et:size-of-sockaddr-storage)
+    (with-socklen (size et:size-of-sockaddr-storage)
       (with-socket-error-filter
         (et:getsockname (fd-of socket) ss size))
       (return-from local-name
@@ -233,9 +229,7 @@
 (defmethod local-name ((socket local-socket))
   (with-foreign-object (sun 'et:sockaddr-un)
     (et:bzero sun et:size-of-sockaddr-un)
-    (with-foreign-pointer (size et:size-of-socklen)
-      (setf (mem-ref size 'et:socklen)
-            et:size-of-sockaddr-storage)
+    (with-socklen (size et:size-of-sockaddr-un)
       (with-socket-error-filter
         (et:getsockname (fd-of socket) sun size))
       (return-from local-name
@@ -255,9 +249,7 @@
 (defmethod remote-name ((socket internet-socket))
   (with-foreign-object (ss 'et:sockaddr-storage)
     (et:bzero ss et:size-of-sockaddr-storage)
-    (with-foreign-pointer (size et:size-of-socklen)
-      (setf (mem-ref size 'et:socklen)
-            et:size-of-sockaddr-storage)
+    (with-socklen (size et:size-of-sockaddr-storage)
       (with-socket-error-filter
         (et:getpeername (fd-of socket) ss size))
       (return-from remote-name
@@ -266,9 +258,7 @@
 (defmethod remote-name ((socket local-socket))
   (with-foreign-object (sun 'et:sockaddr-un)
     (et:bzero sun et:size-of-sockaddr-un)
-    (with-foreign-pointer (size et:size-of-socklen)
-      (setf (mem-ref size 'et:socklen)
-            et:size-of-sockaddr-storage)
+    (with-socklen (size et:size-of-sockaddr-un)
       (with-socket-error-filter
         (et:getpeername (fd-of socket) sun size))
       (return-from remote-name
@@ -354,22 +344,21 @@
 
 (defmethod accept-connection ((socket passive-socket)
                               &key (wait t))
-  (with-foreign-objects ((ss 'et:sockaddr-storage)
-                         (size 'et:socklen))
-    (et:bzero ss et:size-of-sockaddr-storage)
-    (setf (mem-ref size 'et:socklen) et:size-of-sockaddr-storage)
-    (flet ((make-client-socket (fd)
-             (make-instance (active-class socket)
-                            :external-format (external-format-of socket)
-                            :file-descriptor fd)))
-      (with-socket-error-filter
-        (let ((fd (fd-of socket)))
-          (cond (wait
-                 (iomux:wait-until-fd-ready fd :read)
-                 (make-client-socket (et:accept fd ss size)))
-                (t
-                 (when (iomux:fd-ready-p fd :read)
-                   (make-client-socket (et:accept fd ss size))))))))))
+  (flet ((make-client-socket (fd)
+           (make-instance (active-class socket)
+                          :external-format (external-format-of socket)
+                          :file-descriptor fd)))
+    (with-foreign-object (ss 'et:sockaddr-storage)
+      (et:bzero ss et:size-of-sockaddr-storage)
+      (with-socklen (size et:size-of-sockaddr-storage)
+        (with-socket-error-filter
+          (let ((fd (fd-of socket)))
+            (cond (wait
+                   (iomux:wait-until-fd-ready fd :read)
+                   (make-client-socket (et:accept fd ss size)))
+                  (t
+                   (when (iomux:fd-ready-p fd :read)
+                     (make-client-socket (et:accept fd ss size)))))))))))
 
 
 ;;;;;;;;;;;;;;;
@@ -426,9 +415,7 @@
     (handler-case
         (with-foreign-object (ss 'et:sockaddr-storage)
           (et:bzero ss et:size-of-sockaddr-storage)
-          (with-foreign-pointer (size et:size-of-socklen)
-            (setf (mem-ref size 'et:socklen)
-                  et:size-of-sockaddr-storage)
+          (with-socklen (size et:size-of-sockaddr-storage)
             (et:getpeername (fd-of socket) ss size)
             t))
       (et:enotconn () nil))))
@@ -529,9 +516,8 @@
 (defun %do-recvfrom (buffer ss fd flags start end)
   (multiple-value-bind (buff start-offset bufflen)
       (%normalize-receive-buffer buffer start end)
-    (with-foreign-object (size 'et:socklen)
+    (with-socklen (size et:size-of-sockaddr-storage)
       (et:bzero ss et:size-of-sockaddr-storage)
-      (setf (mem-ref size 'et:socklen) et:size-of-sockaddr-storage)
       (with-pointer-to-vector-data (buff-sap buff)
         (incf-pointer buff-sap start-offset)
         (with-socket-error-filter
