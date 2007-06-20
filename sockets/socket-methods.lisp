@@ -286,14 +286,12 @@
     (set-socket-option socket :reuse-address :value t)))
 
 (defun bind-ipv4-address (fd address port)
-  (with-foreign-object (sin 'et:sockaddr-in)
-    (make-sockaddr-in sin address port)
+  (with-sockaddr-in (sin address port)
     (with-socket-error-filter
       (et:bind fd sin et:size-of-sockaddr-in))))
 
 (defun bind-ipv6-address (fd address port)
-  (with-foreign-object (sin6 'et:sockaddr-in6)
-    (make-sockaddr-in6 sin6 address port)
+  (with-sockaddr-in6 (sin6 address port)
     (with-socket-error-filter
       (et:bind fd sin6 et:size-of-sockaddr-in6))))
 
@@ -315,8 +313,7 @@
 
 (defmethod bind-address ((socket local-socket)
                          (address localaddr) &key)
-  (with-foreign-object (sun 'et:sockaddr-un)
-    (make-sockaddr-un sun (name address))
+  (with-sockaddr-un (sun (name address))
     (with-socket-error-filter
       (et:bind (fd-of socket) sun et:size-of-sockaddr-un)))
   (values socket))
@@ -387,14 +384,12 @@
     (set-socket-option socket :no-sigpipe :value t)))
 
 (defun ipv4-connect (fd address port)
-  (with-foreign-object (sin 'et:sockaddr-in)
-    (make-sockaddr-in sin address port)
+  (with-sockaddr-in (sin address port)
     (with-socket-error-filter
       (et:connect fd sin et:size-of-sockaddr-in))))
 
 (defun ipv6-connect (fd address port)
-  (with-foreign-object (sin6 'et:sockaddr-in6)
-    (make-sockaddr-in6 sin6 address port)
+  (with-sockaddr-in6 (sin6 address port)
     (with-socket-error-filter
       (et:connect fd sin6 et:size-of-sockaddr-in6))))
 
@@ -414,8 +409,7 @@
 
 (defmethod connect ((socket local-socket)
                     (address localaddr) &key)
-  (with-foreign-object (sun 'et:sockaddr-un)
-    (make-sockaddr-un sun (name address))
+  (with-sockaddr-un (sun (name address))
     (with-socket-error-filter
       (et:connect (fd-of socket) sun et:size-of-sockaddr-un)))
   (values socket))

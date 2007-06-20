@@ -121,7 +121,12 @@
     (setf et:family et:af-inet)
     (setf et:addr (htonl (vector-to-ipaddr ub8-vector)))
     (setf et:port (htons port)))
-  sin)
+  (values sin))
+
+(defmacro with-sockaddr-in ((var address &optional port) &body body)
+  `(with-foreign-object (,var 'et:sockaddr-in)
+     (make-sockaddr-in ,var ,address ,port)
+     ,@body))
 
 (defun make-sockaddr-in6 (sin6 ub16-vector &optional (port 0))
   (declare (type ipv6-array ub16-vector)
@@ -131,7 +136,12 @@
     (setf et:family et:af-inet6)
     (copy-simple-array-ub16-to-alien-vector ub16-vector et:addr)
     (setf et:port (htons port)))
-  sin6)
+  (values sin6))
+
+(defmacro with-sockaddr-in6 ((var address &optional port) &body body)
+  `(with-foreign-object (,var 'et:sockaddr-in6)
+     (make-sockaddr-in6 ,var ,address ,port)
+     ,@body))
 
 (defun make-sockaddr-un (sun string)
   (declare (type string string))
@@ -143,7 +153,12 @@
          :for off :below (1- et:unix-path-max)
          :do (setf (mem-aref et:path :uint8 off)
                    (mem-aref c-string :uint8 off)))))
-  sun)
+  (values sun))
+
+(defmacro with-sockaddr-un ((var address) &body body)
+  `(with-foreign-object (,var 'et:sockaddr-un)
+     (make-sockaddr-un ,var ,address)
+     ,@body))
 
 ;;;
 ;;; Conversion functions for SOCKADDR_* structs
