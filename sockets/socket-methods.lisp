@@ -403,8 +403,7 @@
       (et:connect (fd-of socket) sun et:size-of-sockaddr-un)))
   (values socket))
 
-(defmethod connect ((socket passive-socket)
-                    address &key)
+(defmethod connect ((socket passive-socket) address &key)
   (declare (ignore address))
   (error "You cannot connect passive sockets."))
 
@@ -418,7 +417,7 @@
           (with-socklen (size et:size-of-sockaddr-storage)
             (et:getpeername (fd-of socket) ss size)
             t))
-      (et:enotconn () nil))))
+      (et:enotconn ()))))
 
 
 ;;;;;;;;;;;;;;;;
@@ -554,8 +553,8 @@
     (error "You can only disconnect active datagram sockets.")))
 
 (defmethod disconnect ((socket datagram-socket))
-  (with-socket-error-filter
-    (with-foreign-object (sin 'et:sockaddr-in)
-      (et:bzero sin et:size-of-sockaddr-in)
-      (setf (foreign-slot-value sin 'et:sockaddr-in 'et:addr) et:af-unspec)
+  (with-foreign-object (sin 'et:sockaddr-in)
+    (et:bzero sin et:size-of-sockaddr-in)
+    (setf (foreign-slot-value sin 'et:sockaddr-in 'et:addr) et:af-unspec)
+    (with-socket-error-filter
       (et:connect (fd-of socket) sin et:size-of-sockaddr-in))))
