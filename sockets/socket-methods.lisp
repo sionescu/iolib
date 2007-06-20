@@ -124,7 +124,7 @@
         (multiple-value-bind (addr port) (local-name socket)
           (format stream " ~A ~A/~A"
                   (if (socket-listening-p socket)
-                      "waiting for connections @"
+                      "waiting @"
                       "bound to")
                   (sockaddr->presentation addr) port))
         (if (fd-of socket)
@@ -147,7 +147,7 @@
     (if (socket-bound-p socket)
         (format stream " ~A ~A"
                 (if (socket-listening-p socket)
-                    "waiting for connections @"
+                    "waiting @"
                     "bound to")
                 (sockaddr->presentation (socket-address socket)))
         (if (fd-of socket)
