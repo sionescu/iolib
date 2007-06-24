@@ -38,4 +38,5 @@
    #:exit-event-loop #:*default-event-loop-timeout*
    #:event-base-empty-p
 
-   #:wait-until-fd-ready #:fd-ready-p))
+   #:wait-until-fd-ready #:fd-ready-p
+   #:poll-error #:poll-error-fd #:poll-error-identifier))
