@@ -83,13 +83,10 @@
 
 (defun %fill-ibuf (buf fd &optional timeout)
   (when timeout
-    (let ((status
+    (let ((readablep
            (iomux:wait-until-fd-ready fd :read timeout)))
-      ;; FIXME signal something better
-      (cond ((member :timeout status)
-             (return-from %fill-ibuf :timeout))
-            ((member :error status)
-             (error "WAIT-UNTIL-FD-READY returned :ERROR on FD ~S" fd)))))
+      (unless readablep
+        (return-from %fill-ibuf :timeout))))
   (let ((num (et:repeat-upon-eintr
                (et:read fd (iobuf-end-pointer buf)
                         (iobuf-end-space-length buf)))))
@@ -198,7 +195,8 @@
                    ;; FIXME signal something better -- maybe analyze the status
                    (return-from %write-n-bytes (values nil :fail)))))
              (buffer-emptyp () (= bytes-written nbytes))
-             (errorp () (member :error (iomux:wait-until-fd-ready fd :write))))
+             (errorp () (handler-case (iomux:wait-until-fd-ready fd :write)
+                          (iomux:poll-error ()))))
       (loop :until (buffer-emptyp) :do (write-or-return)
          :finally (return (values t bytes-written))))))
 
@@ -227,7 +225,8 @@
              (buffer-emptyp ()
                (when (iobuf-empty-p buf)
                  (iobuf-reset buf) t))
-             (errorp () (member :error (iomux:wait-until-fd-ready fd :write))))
+             (errorp () (handler-case (iomux:wait-until-fd-ready fd :write)
+                          (iomux:poll-error ()))))
       (loop :until (buffer-emptyp) :do (write-or-return)
          :finally (return (values t bytes-written))))))
 

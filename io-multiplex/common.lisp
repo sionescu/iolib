@@ -454,18 +454,28 @@
 ;; FIXME: Until a way to autodetect platform features is implemented
 (define-constant et::pollrdhup 0)
 
+(define-condition poll-error (error)
+  ((fd :initarg :fd :reader poll-error-fd)
+   (identifier :initarg :identifier :initform "<Unknown error>"
+               :reader poll-error-identifier))
+  (:report (lambda (condition stream)
+             (format stream "Error caught while polling file descriptor ~A: ~A"
+                     (poll-error-fd condition) (poll-error-identifier condition))))
+  (:documentation "Signaled when an error occurs while polling for I/O readiness of a file descriptor."))
+
 (defun wait-until-fd-ready (fd event-type &optional timeout)
-  ;; FIXME: this conses badly for its return value
-  ;; solution: (1) use a fixnum bitmap, just like C
-  ;; (2) if we really want to expose only lists of keyword as the API,
-  ;; cache a bitmap-indexed vector of all the combinations (sharing tails)
+  "Poll file descriptor `FD' for I/O readiness. `EVENT-TYPE' must be :READ, :WRITE or :READ-WRITE which means \"either :READ or :WRITE\".
+`TIMEOUT' must be either a non-negative integer measured in seconds, or `NIL' meaning no timeout at all."
   (flet ((choose-poll-flags (type)
            (ecase type
              (:read (logior et:pollin et::pollrdhup et:pollpri))
              (:write (logior et:pollout et:pollhup))
              (:read-write (logior et:pollin et::pollrdhup et:pollpri
-                                  et:pollout et:pollhup)))))
-    (let ((status ()))
+                                  et:pollout et:pollhup))))
+         (poll-error (unix-err)
+           (error 'poll-error :fd fd
+                  :identifier (et:system-error-identifier unix-err))))
+    (let ((readp nil) (writep nil))
       (with-foreign-object (pollfd 'et:pollfd)
         (et:bzero pollfd et:size-of-pollfd)
         (with-foreign-slots ((et:fd et:events et:revents) pollfd et:pollfd)
@@ -476,14 +486,25 @@
                              ((et:eintr) tmp-timeout (timeout->milisec timeout))
                            (et:poll pollfd 1 tmp-timeout))))
                 (when (zerop ret)
-                  (return-from wait-until-fd-ready '(:timeout))))
-            (et:unix-error ()
-              (return-from wait-until-fd-ready '(:error))))
+                  (return-from wait-until-fd-ready (values nil nil))))
+            (et:unix-error (err) (poll-error err)))
           (flags-case et:revents
-            ((et:pollout et:pollhup)              (push :write status))
-            ((et:pollin et::pollrdhup et:pollpri) (push :read  status))
-            ((et:pollerr et:pollnval)             (push :error status)))
-          (return-from wait-until-fd-ready status))))))
+            ((et:pollin et::pollrdhup et:pollpri) (setf readp t))
+            ((et:pollout et:pollhup)              (setf writep t))
+            ((et:pollerr et:pollnval) (error 'poll-error :fd fd)))
+          (return-from wait-until-fd-ready (values readp writep)))))))
 
 (defun fd-ready-p (fd &optional (event-type :read))
-  (not (member :timeout (wait-until-fd-ready fd event-type 0) :test #'eq)))
+  "Tests file-descriptor `FD' for I/O readiness. `EVENT-TYPE' must be :READ, :WRITE or :READ-WRITE which means \"either :READ or :WRITE\"."
+  (multiple-value-bind (readp writep)
+      (wait-until-fd-ready fd event-type 0)
+    (ecase event-type
+      (:read readp)
+      (:write writep)
+      (:read-write (or readp writep)))))
+
+(defun fd-readablep (fd)
+  (nth-value 0 (wait-until-fd-ready fd :read 0)))
+
+(defun fd-writablep (fd)
+  (nth-value 1 (wait-until-fd-ready fd :write 0)))
