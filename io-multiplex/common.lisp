@@ -502,3 +502,9 @@
       (:read readp)
       (:write writep)
       (:read-write (or readp writep)))))
+
+(defun fd-readablep (fd)
+  (nth-value 0 (wait-until-fd-ready fd :read 0)))
+
+(defun fd-writablep (fd)
+  (nth-value 1 (wait-until-fd-ready fd :write 0)))
