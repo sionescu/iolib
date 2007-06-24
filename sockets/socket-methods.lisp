@@ -369,8 +369,7 @@
 (defmethod connect :before ((socket active-socket)
                             sockaddr &key)
   (declare (ignore sockaddr))
-  (when *no-sigpipe*
-    (set-socket-option socket :no-sigpipe :value t)))
+  (set-socket-option socket :no-sigpipe :value t))
 
 (defun ipv4-connect (fd address port)
   (with-sockaddr-in (sin address port)
@@ -456,7 +455,7 @@
 (defmethod socket-send ((buffer array)
                         (socket active-socket) &key (start 0) end
                         remote-address remote-port end-of-record
-                        dont-route dont-wait (no-signal *no-sigpipe*)
+                        dont-route dont-wait no-signal
                         out-of-band #+linux more #+linux confirm)
   (check-type start unsigned-byte
               "a non-negative unsigned integer")
@@ -524,14 +523,14 @@
             (et:recvfrom fd buff-sap bufflen flags ss size)))))))
 
 (defmethod socket-receive ((buffer array) (socket stream-socket) &key (start 0) end
-                           out-of-band peek wait-all dont-wait (no-signal *no-sigpipe*))
+                           out-of-band peek wait-all dont-wait no-signal)
   (with-foreign-object (ss 'et:sockaddr-storage)
     (let* ((flags (calc-recvfrom-flags out-of-band peek wait-all dont-wait no-signal))
            (bytes-received (%do-recvfrom buffer ss (fd-of socket) flags start end)))
       (values buffer bytes-received))))
 
 (defmethod socket-receive ((buffer array) (socket datagram-socket) &key (start 0) end
-                           out-of-band peek wait-all dont-wait (no-signal *no-sigpipe*))
+                           out-of-band peek wait-all dont-wait no-signal)
   (with-foreign-object (ss 'et:sockaddr-storage)
     (let* ((flags (calc-recvfrom-flags out-of-band peek wait-all dont-wait no-signal))
            (bytes-received (%do-recvfrom buffer ss (fd-of socket) flags start end)))

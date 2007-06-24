@@ -33,6 +33,3 @@ Default value is T.")
 
 (defvar *default-backlog-size* 5
   "Default length of the pending connections queue(soft limit).")
-
-(defvar *no-sigpipe* t
-  "When T an EOF received on a stream socket won't raise a SIGPIPE. Default value it T.")
