@@ -144,7 +144,7 @@
        (%read-into-simple-array-ub8 stream seq start end))
       (string
        (%read-into-string stream seq start end))
-      (vector
+      (ub8-vector
        (%read-into-vector stream seq start end)))))
 
 #+clisp
@@ -157,7 +157,7 @@
     (etypecase seq
       (ub8-sarray
        (%read-into-simple-array-ub8 stream seq start end))
-      (vector
+      (ub8-vector
        (%read-into-vector stream seq start end)))))
 
 #+clisp
