@@ -337,13 +337,10 @@
 ;;  ACCEPT  ;;
 ;;;;;;;;;;;;;;
 
-(defmethod accept-connection ((socket active-socket)
-                              &key (wait t))
-  (declare (ignore wait))
+(defmethod accept-connection ((socket active-socket))
   (error "You can't accept connections on active sockets."))
 
-(defmethod accept-connection ((socket passive-socket)
-                              &key (wait t))
+(defmethod accept-connection ((socket passive-socket))
   (flet ((make-client-socket (fd)
            (make-instance (active-class socket)
                           :external-format (external-format-of socket)
@@ -352,13 +349,9 @@
       (et:bzero ss et:size-of-sockaddr-storage)
       (with-socklen (size et:size-of-sockaddr-storage)
         (with-socket-error-filter
-          (let ((fd (fd-of socket)))
-            (cond (wait
-                   (iomux:wait-until-fd-ready fd :read)
-                   (make-client-socket (et:accept fd ss size)))
-                  (t
-                   (when (iomux:fd-ready-p fd :read)
-                     (make-client-socket (et:accept fd ss size)))))))))))
+          (handler-case
+              (make-client-socket (et:accept (fd-of socket) ss size))
+            (et:ewouldblock ())))))))
 
 
 ;;;;;;;;;;;;;;;

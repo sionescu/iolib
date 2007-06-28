@@ -89,7 +89,7 @@
 
 (defgeneric socket-listen (socket &key backlog &allow-other-keys))
 
-(defgeneric accept-connection (passive-socket &key wait &allow-other-keys))
+(defgeneric accept-connection (passive-socket))
 
 (defclass socket-stream-internet-active (active-socket stream-socket internet-socket) ())
 
