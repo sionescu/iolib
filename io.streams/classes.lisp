@@ -97,7 +97,7 @@
       (setf fd-in fd fd-out fd)
       (values fd-in))))
 
-(defgeneric fd-non-blocking (socket))
+(defgeneric fd-non-blocking (fd-mixin))
 (defgeneric (setf fd-non-blocking) (mode fd-mixin))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
