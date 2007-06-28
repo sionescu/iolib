@@ -40,10 +40,11 @@
                          #:ub8 #:ub16 #:ub32 #:sb8 #:sb16 #:sb32
                          #:ub8-sarray #:ub8-vector #:ub16-sarray
                          #:external-format-of
+                         #:fd-mixin
                          #:dual-channel-fd-mixin
+                         #:dual-channel-single-fd-mixin
                          #:input-fd #:input-fd-of #:input-fd-non-blocking
                          #:output-fd #:output-fd-of #:output-fd-non-blocking
-                         #:dual-channel-single-fd-mixin
                          #:fd-of #:fd-non-blocking
                          #:dual-channel-gray-stream))))
   (def-my-package
