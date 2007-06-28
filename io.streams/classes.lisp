@@ -126,3 +126,5 @@
    (ibuf-unread-index :initform 0 :type buffer-index
                       :accessor ibuf-unread-index-of))
   (:default-initargs :external-format :default))
+
+(defgeneric (setf external-format-of) (external-format stream))
