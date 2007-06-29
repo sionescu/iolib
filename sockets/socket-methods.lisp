@@ -225,10 +225,10 @@
         (et:getsockname (fd-of socket) ss size))
       (sockaddr-storage->sockaddr ss))))
 
-(defmethod socket-address ((socket socket))
+(defmethod local-address ((socket socket))
   (nth-value 0 (local-name socket)))
 
-(defmethod socket-port ((socket internet-socket))
+(defmethod local-port ((socket internet-socket))
   (nth-value 1 (local-name socket)))
 
 
@@ -243,6 +243,12 @@
       (with-socket-error-filter
         (et:getpeername (fd-of socket) ss size))
       (sockaddr-storage->sockaddr ss))))
+
+(defmethod remote-address ((socket socket))
+  (nth-value 0 (remote-name socket)))
+
+(defmethod remote-port ((socket internet-socket))
+  (nth-value 1 (remote-name socket)))
 
 
 ;;;;;;;;;;;;

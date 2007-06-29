@@ -101,7 +101,9 @@
    #:socket-fd #:socket-address #:socket-family #:socket-protocol
    #:get-socket-option #:set-socket-option
    #:socket-type #:create-socket #:make-socket #:with-socket
-   #:socket-open-p #:local-name #:remote-name
+   #:socket-open-p
+   #:local-name #:local-address #:local-port
+   #:remote-name #:remote-address #:remote-port
    #:bind-address #:socket-listen #:accept-connection
    #:connect  #:disconnect #:socket-connected-p
    #:shutdown #:socket-send  #:socket-receive
