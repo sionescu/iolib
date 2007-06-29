@@ -39,4 +39,5 @@
    #:event-base-empty-p
 
    #:wait-until-fd-ready #:fd-ready-p
+   #:fd-readablep #:fd-writablep
    #:poll-error #:poll-error-fd #:poll-error-identifier))
