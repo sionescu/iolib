@@ -136,8 +136,9 @@
           (connect socket (make-address address)))))
     (values socket)))
 
-(defun make-socket (&rest args &key address-family type connect (ipv6 *ipv6*)
-                    format eol (external-format :default) scope-id &allow-other-keys)
+(defun make-socket (&rest args &key (address-family :internet) (type :stream)
+                    (connect :active) (ipv6 *ipv6*) format eol
+                    (external-format :default) scope-id &allow-other-keys)
   (declare (ignore format eol scope-id))
   (check-type address-family (member :internet :local))
   (check-type type (member :stream :datagram))
