@@ -217,23 +217,13 @@
 ;;  GETSOCKNAME  ;;
 ;;;;;;;;;;;;;;;;;;;
 
-(defmethod local-name ((socket internet-socket))
+(defmethod local-name ((socket socket))
   (with-foreign-object (ss 'et:sockaddr-storage)
     (et:bzero ss et:size-of-sockaddr-storage)
     (with-socklen (size et:size-of-sockaddr-storage)
       (with-socket-error-filter
         (et:getsockname (fd-of socket) ss size))
-      (return-from local-name
-        (sockaddr-storage->sockaddr ss)))))
-
-(defmethod local-name ((socket local-socket))
-  (with-foreign-object (sun 'et:sockaddr-un)
-    (et:bzero sun et:size-of-sockaddr-un)
-    (with-socklen (size et:size-of-sockaddr-un)
-      (with-socket-error-filter
-        (et:getsockname (fd-of socket) sun size))
-      (return-from local-name
-        (sockaddr-un->sockaddr sun)))))
+      (sockaddr-storage->sockaddr ss))))
 
 (defmethod socket-address ((socket socket))
   (nth-value 0 (local-name socket)))
@@ -246,23 +236,13 @@
 ;;  GETPEERNAME  ;;
 ;;;;;;;;;;;;;;;;;;;
 
-(defmethod remote-name ((socket internet-socket))
+(defmethod remote-name ((socket socket))
   (with-foreign-object (ss 'et:sockaddr-storage)
     (et:bzero ss et:size-of-sockaddr-storage)
     (with-socklen (size et:size-of-sockaddr-storage)
       (with-socket-error-filter
         (et:getpeername (fd-of socket) ss size))
-      (return-from remote-name
-        (sockaddr-storage->sockaddr ss)))))
-
-(defmethod remote-name ((socket local-socket))
-  (with-foreign-object (sun 'et:sockaddr-un)
-    (et:bzero sun et:size-of-sockaddr-un)
-    (with-socklen (size et:size-of-sockaddr-un)
-      (with-socket-error-filter
-        (et:getpeername (fd-of socket) sun size))
-      (return-from remote-name
-        (sockaddr-un->sockaddr sun)))))
+      (sockaddr-storage->sockaddr ss))))
 
 
 ;;;;;;;;;;;;
