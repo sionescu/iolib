@@ -41,11 +41,15 @@
 
 (defgeneric local-name (socket))
 
-(defgeneric socket-address (socket))
+(defgeneric local-address (socket))
 
-(defgeneric socket-port (socket))
+(defgeneric local-port (socket))
 
 (defgeneric remote-name (socket))
+
+(defgeneric remote-address (socket))
+
+(defgeneric remote-port (socket))
 
 (defgeneric get-socket-option (socket option-name))
 
