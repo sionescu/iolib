@@ -149,7 +149,7 @@
                 (if (socket-listening-p socket)
                     "waiting @"
                     "bound to")
-                (sockaddr->presentation (socket-address socket)))
+                (sockaddr->presentation (local-address socket)))
         (if (fd-of socket)
             (format stream ", unbound")
             (format stream ", closed")))))

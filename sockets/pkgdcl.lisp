@@ -98,7 +98,7 @@
    #:socket-datagram-internet-active
 
    ;; socket methods
-   #:socket-fd #:socket-address #:socket-family #:socket-protocol
+   #:socket-fd #:socket-family #:socket-protocol
    #:get-socket-option #:set-socket-option
    #:socket-type #:create-socket #:make-socket #:with-socket
    #:socket-open-p
