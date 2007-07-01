@@ -107,73 +107,57 @@
     (:ipv6 "IPv6")))
 
 (defmethod print-object ((socket socket-stream-internet-active) stream)
-  (print-unreadable-object (socket stream :type nil :identity t)
+  (print-unreadable-object (socket stream :identity t)
     (format stream "active ~A stream socket" (sock-fam socket))
     (if (socket-connected-p socket)
         (multiple-value-bind (addr port) (remote-name socket)
           (format stream " connected to ~A/~A"
                   (sockaddr->presentation addr) port))
-        (if (fd-of socket)
-            (format stream ", unconnected")
-            (format stream ", closed")))))
+        (format stream ", ~:[closed~;unconnected~]" (fd-of socket)))))
 
 (defmethod print-object ((socket socket-stream-internet-passive) stream)
-  (print-unreadable-object (socket stream :type nil :identity t)
+  (print-unreadable-object (socket stream :identity t)
     (format stream "passive ~A stream socket" (sock-fam socket))
     (if (socket-bound-p socket)
         (multiple-value-bind (addr port) (local-name socket)
-          (format stream " ~A ~A/~A"
-                  (if (socket-listening-p socket)
-                      "waiting @"
-                      "bound to")
+          (format stream " ~:[bound to~;waiting @~] ~A/~A"
+                  (socket-listening-p socket)
                   (sockaddr->presentation addr) port))
-        (if (fd-of socket)
-            (format stream ", unbound")
-            (format stream ", closed")))))
+        (format stream ", ~:[closed~;unbound~]" (fd-of socket)))))
 
 (defmethod print-object ((socket socket-stream-local-active) stream)
-  (print-unreadable-object (socket stream :type nil :identity t)
+  (print-unreadable-object (socket stream :identity t)
     (format stream "active local stream socket")
     (if (socket-connected-p socket)
         (format stream " connected to ~A"
-                (sockaddr->presentation (remote-name socket)))
-        (if (fd-of socket)
-            (format stream ", unconnected")
-            (format stream ", closed")))))
+                (sockaddr->presentation (remote-address socket)))
+        (format stream ", ~:[closed~;unconnected~]" (fd-of socket)))))
 
 (defmethod print-object ((socket socket-stream-local-passive) stream)
-  (print-unreadable-object (socket stream :type nil :identity t)
+  (print-unreadable-object (socket stream :identity t)
     (format stream "passive local stream socket")
     (if (socket-bound-p socket)
-        (format stream " ~A ~A"
-                (if (socket-listening-p socket)
-                    "waiting @"
-                    "bound to")
-                (sockaddr->presentation (local-address socket)))
-        (if (fd-of socket)
-            (format stream ", unbound")
-            (format stream ", closed")))))
+        (format stream " ~:[bound to~;waiting @~] ~A"
+                  (socket-listening-p socket)
+                  (sockaddr->presentation (local-address socket)))
+        (format stream ", ~:[closed~;unbound~]" (fd-of socket)))))
 
 (defmethod print-object ((socket socket-datagram-local-active) stream)
-  (print-unreadable-object (socket stream :type nil :identity t)
+  (print-unreadable-object (socket stream :identity t)
     (format stream "local datagram socket")
     (if (socket-connected-p socket)
         (format stream " connected to ~A"
-                (sockaddr->presentation (remote-name socket)))
-        (if (fd-of socket)
-            (format stream ", unconnected")
-            (format stream ", closed")))))
+                (sockaddr->presentation (remote-address socket)))
+        (format stream ", ~:[closed~;unconnected~]" (fd-of socket)))))
 
 (defmethod print-object ((socket socket-datagram-internet-active) stream)
-  (print-unreadable-object (socket stream :type nil :identity t)
+  (print-unreadable-object (socket stream :identity t)
     (format stream "~A datagram socket" (sock-fam socket))
     (if (socket-connected-p socket)
         (multiple-value-bind (addr port) (remote-name socket)
           (format stream " connected to ~A/~A"
                   (sockaddr->presentation addr) port))
-        (if (fd-of socket)
-            (format stream ", unconnected")
-            (format stream ", closed")))))
+        (format stream ", ~:[closed~;unconnected~]" (fd-of socket)))))
 
 
 ;;;;;;;;;;;;;
