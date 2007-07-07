@@ -184,17 +184,16 @@
   (declare (ignore socket abort)))
 
 (defmethod socket-open-p ((socket socket))
-  (unless (fd-of socket)
-    (return-from socket-open-p nil))
-  (with-socket-error-filter
-    (handler-case
-        (with-foreign-object (ss 'et:sockaddr-storage)
-          (et:bzero ss et:size-of-sockaddr-storage)
-          (with-socklen (size et:size-of-sockaddr-storage)
-            (et:getsockname (fd-of socket) ss size)
-            t))
-      (et:ebadf ())
-      #+freebsd (et:econnreset ()))))
+  (when (fd-of socket)
+    (with-socket-error-filter
+      (handler-case
+          (with-foreign-object (ss 'et:sockaddr-storage)
+            (et:bzero ss et:size-of-sockaddr-storage)
+            (with-socklen (size et:size-of-sockaddr-storage)
+              (et:getsockname (fd-of socket) ss size)
+              t))
+        (et:ebadf ())
+        #+freebsd (et:econnreset ())))))
 
 
 ;;;;;;;;;;;;;;;;;;;
@@ -370,16 +369,15 @@
   (error "You cannot connect passive sockets."))
 
 (defmethod socket-connected-p ((socket socket))
-  (unless (fd-of socket)
-    (return-from socket-connected-p nil))
-  (with-socket-error-filter
-    (handler-case
-        (with-foreign-object (ss 'et:sockaddr-storage)
-          (et:bzero ss et:size-of-sockaddr-storage)
-          (with-socklen (size et:size-of-sockaddr-storage)
-            (et:getpeername (fd-of socket) ss size)
-            t))
-      (et:enotconn ()))))
+  (when (fd-of socket)
+    (with-socket-error-filter
+      (handler-case
+          (with-foreign-object (ss 'et:sockaddr-storage)
+            (et:bzero ss et:size-of-sockaddr-storage)
+            (with-socklen (size et:size-of-sockaddr-storage)
+              (et:getpeername (fd-of socket) ss size)
+              t))
+        (et:enotconn ())))))
 
 
 ;;;;;;;;;;;;;;;;
