@@ -483,8 +483,8 @@
                 et:events (choose-poll-flags event-type))
           (handler-case
               (let ((ret (et:repeat-upon-condition-decreasing-timeout
-                             ((et:eintr) tmp-timeout (timeout->milisec timeout))
-                           (et:poll pollfd 1 tmp-timeout))))
+                             ((et:eintr) tmp-timeout timeout)
+                           (et:poll pollfd 1 (timeout->milisec tmp-timeout)))))
                 (when (zerop ret)
                   (return-from wait-until-fd-ready (values nil nil))))
             (et:unix-error (err) (poll-error err)))
