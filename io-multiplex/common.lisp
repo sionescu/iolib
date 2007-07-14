@@ -451,6 +451,9 @@
 ;;;; Misc
 ;;;;
 
+(defun fd-error-p (fd)
+  (not (et:fd-open-p fd)))
+
 ;; FIXME: Until a way to autodetect platform features is implemented
 (define-constant et::pollrdhup 0)
 

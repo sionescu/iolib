@@ -117,7 +117,7 @@
 
 (defun harvest-select-events (max-fd read-fds write-fds except-fds)
   (loop :for fd :upto max-fd
-     :for event := () :then ()
+     :for event := ()
      :when (or (et:fd-isset fd read-fds)
                (et:fd-isset fd except-fds)) :do (push :read event)
      :when (et:fd-isset fd write-fds) :do (push :write event)
@@ -127,9 +127,6 @@
 ;; returns EBADF only when a given FD present in some fd-set
 ;; is closed(as the POSIX docs say) or if some other kinds of
 ;; errors are reported too(as the Linux manpages seem to suggest)
-(defun fd-error-p (fd)
-  (not (et:fd-open-p fd)))
-
 (defun harvest-select-fd-errors (read-fds write-fds max-fd)
   (loop :for fd :upto max-fd
      :when (and (or (et:fd-isset fd read-fds)
