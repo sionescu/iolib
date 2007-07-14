@@ -27,9 +27,11 @@
    (:file "utils" :depends-on ("pkgdcl" "time"))
    (:file "common" :depends-on ("pkgdcl" "time" "utils" "queue"))
    (:file "select" :depends-on ("pkgdcl" "common" "utils" "queue"))
+   (:file "poll" :depends-on ("pkgdcl" "common" "utils" "queue"))
    #+linux (:file "epoll" :depends-on ("pkgdcl" "common" "utils" "queue"))
    #+freebsd (:file "kqueue" :depends-on ("pkgdcl" "common" "utils" "queue"))
    (:file "detect" :depends-on ("pkgdcl" "common"
                                 "select"
+                                "poll"
                                 #+linux "epoll"
                                 #+freebsd "kqueue"))))

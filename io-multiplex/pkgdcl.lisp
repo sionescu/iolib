@@ -30,6 +30,7 @@
    #:event-base #:event
    #:multiplexer
    #:select-multiplexer
+   #:poll-multiplexer
    #+linux #:epoll-multiplexer
    #+freebsd #:kqueue-multiplexer
 
