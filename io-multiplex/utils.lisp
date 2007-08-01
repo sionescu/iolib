@@ -1,37 +1,41 @@
-;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
-
-;;   Copyright (C) 2006, 2007 Stelian Ionescu
-;;
-;;   This code is free software; you can redistribute it and/or
-;;   modify it under the terms of the version 2.1 of
-;;   the GNU Lesser General Public License as published by
-;;   the Free Software Foundation, as clarified by the
-;;   preamble found here:
-;;       http://opensource.franz.com/preamble.html
-;;
-;;   This program is distributed in the hope that it will be useful,
-;;   but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;   GNU General Public License for more details.
-;;
-;;   You should have received a copy of the GNU Lesser General
-;;   Public License along with this library; if not, write to the
-;;   Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
-;;   Boston, MA 02110-1301, USA
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;
+;;; utils.lisp --- Miscellaneous utilities.
+;;;
+;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;;
+;;; This code is free software; you can redistribute it and/or
+;;; modify it under the terms of the version 2.1 of
+;;; the GNU Lesser General Public License as published by
+;;; the Free Software Foundation, as clarified by the
+;;; preamble found here:
+;;;     http://opensource.franz.com/preamble.html
+;;;
+;;; This program is distributed in the hope that it will be useful,
+;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;; GNU General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU Lesser General
+;;; Public License along with this library; if not, write to the
+;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+;;; Boston, MA 02110-1301, USA
 
 (in-package :io.multiplex)
 
+#-windows
 (defun timeout->timeval (timeout tv)
-  (with-foreign-slots ((et:sec et:usec) tv et:timeval)
+  (with-foreign-slots ((nix::sec nix::usec) tv nix::timeval)
     (multiple-value-bind (sec usec) (decode-timeout timeout)
-     (setf et:sec  sec
-           et:usec usec))))
+     (setf nix::sec  sec
+           nix::usec usec))))
 
+#-windows
 (defun timeout->timespec (timeout ts)
-  (with-foreign-slots ((et:sec et:nsec) ts et:timespec)
+  (with-foreign-slots ((nix::sec nix::nsec) ts nix::timespec)
     (multiple-value-bind (sec usec) (decode-timeout timeout)
-      (setf et:sec sec
-            et:nsec (* 1000 usec)))))
+      (setf nix::sec sec
+            nix::nsec (* 1000 usec)))))
 
 (defun timeout->milisec (timeout)
   (if timeout

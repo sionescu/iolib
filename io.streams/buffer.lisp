@@ -1,33 +1,35 @@
-;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
-
-;;   This code is free software; you can redistribute it and/or
-;;   modify it under the terms of the version 2.1 of
-;;   the GNU Lesser General Public License as published by
-;;   the Free Software Foundation, as clarified by the
-;;   preamble found here:
-;;       http://opensource.franz.com/preamble.html
-;;
-;;   This program is distributed in the hope that it will be useful,
-;;   but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;   GNU General Public License for more details.
-;;
-;;   You should have received a copy of the GNU Lesser General
-;;   Public License along with this library; if not, write to the
-;;   Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
-;;   Boston, MA 02110-1301, USA
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;
+;;; buffer.lisp --- Foreign memory buffers.
+;;;
+;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;;
+;;; This code is free software; you can redistribute it and/or
+;;; modify it under the terms of the version 2.1 of
+;;; the GNU Lesser General Public License as published by
+;;; the Free Software Foundation, as clarified by the
+;;; preamble found here:
+;;;     http://opensource.franz.com/preamble.html
+;;;
+;;; This program is distributed in the hope that it will be useful,
+;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;; GNU General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU Lesser General
+;;; Public License along with this library; if not, write to the
+;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+;;; Boston, MA 02110-1301, USA
 
 (in-package :io.streams)
 
-;;;
-;;; Foreign Buffers
-;;;
+;;;; Foreign Buffers
 
 (define-constant +bytes-per-iobuf+ (* 4 1024))
 
-;; FIXME: make this right
-;; probably not all SIMPLE-ARRAYs are admissible
-;; on all implementations
+;;; FIXME: make this right
+;;; probably not all SIMPLE-ARRAYs are admissible
+;;; on all implementations
 (deftype compatible-lisp-array ()
   '(simple-array * (*)))
 
@@ -80,13 +82,14 @@
 
 (defun iobuf-copy-data-to-start (iobuf)
   (declare (type iobuf iobuf))
-  (et:memmove (iobuf-data iobuf)
-              (inc-pointer (iobuf-data iobuf)
-                           (iobuf-start iobuf))
-              (iobuf-length iobuf)))
+  (cl-posix-ffi:memmove
+   (iobuf-data iobuf)
+   (inc-pointer (iobuf-data iobuf)
+                (iobuf-start iobuf))
+   (iobuf-length iobuf)))
 
-;; BREF, (SETF BREF) and BUFFER-COPY *DO NOT* check boundaries
-;; that must be done by their callers
+;;; BREF, (SETF BREF) and BUFFER-COPY *DO NOT* check boundaries
+;;; that must be done by their callers
 (defun bref (iobuf index)
   (declare (type iobuf iobuf)
            (type buffer-index index))
@@ -104,9 +107,10 @@
            (type buffer-index soff doff length))
   (let ((dst-ptr (iobuf-data dst)))
     (with-pointer-to-vector-data (src-ptr src)
-      (et:memcpy (inc-pointer dst-ptr doff)
-                 (inc-pointer src-ptr soff)
-                 length))))
+      (cl-posix-ffi:memcpy
+       (inc-pointer dst-ptr doff)
+       (inc-pointer src-ptr soff)
+       length))))
 
 (defun iobuf-copy-into-lisp-array (src soff dst doff length)
   (declare (type iobuf src)
@@ -114,9 +118,10 @@
            (type buffer-index soff doff length))
   (let ((src-ptr (iobuf-data src)))
     (with-pointer-to-vector-data (dst-ptr dst)
-      (et:memcpy (inc-pointer dst-ptr doff)
-                 (inc-pointer src-ptr soff)
-                 length))))
+      (cl-posix-ffi:memcpy
+       (inc-pointer dst-ptr doff)
+       (inc-pointer src-ptr soff)
+       length))))
 
 (defun iobuf-pop-octet (iobuf)
   (declare (type iobuf iobuf))
@@ -130,14 +135,11 @@
   (let ((end (iobuf-end iobuf)))
     (prog1 (setf (bref iobuf end) octet)
       (incf (iobuf-end iobuf)))))
-
-;;;
-;;; Buffer Pool
-;;;
 
-(defstruct (iobuf-pool
-             (:constructor make-iobuf-pool ())
-             (:copier nil))
+;;;; Buffer Pool
+
+(defstruct (iobuf-pool (:constructor make-iobuf-pool ())
+                       (:copier nil))
   (iobufs nil :type list)
   (count  0   :type unsigned-byte))
 
@@ -146,7 +148,7 @@
 ;; #-clisp
 ;; (defvar *iobuf-lock* (bordeaux-threads:make-lock "NET.SOCKETS STREAMS BUFFER POOL LOCK"))
 
-;; FIXME: using a lock-free queue would be better
+;;; FIXME: using a lock-free queue would be better
 (defun next-available-iobuf ()
 ;;   #-clisp
 ;;   (bordeaux-threads:with-lock-held (*iobuf-lock*)

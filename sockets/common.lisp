@@ -1,40 +1,34 @@
-;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
-
-;;   Copyright (C) 2006, 2007 Stelian Ionescu
-;;
-;;   This code is free software; you can redistribute it and/or
-;;   modify it under the terms of the version 2.1 of
-;;   the GNU Lesser General Public License as published by
-;;   the Free Software Foundation, as clarified by the
-;;   preamble found here:
-;;       http://opensource.franz.com/preamble.html
-;;
-;;   This program is distributed in the hope that it will be useful,
-;;   but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;   GNU General Public License for more details.
-;;
-;;   You should have received a copy of the GNU Lesser General
-;;   Public License along with this library; if not, write to the
-;;   Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
-;;   Boston, MA 02110-1301, USA
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;
+;;; common.lisp --- Various helpers for bsd-sockets.
+;;;
+;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;;
+;;; This code is free software; you can redistribute it and/or
+;;; modify it under the terms of the version 2.1 of
+;;; the GNU Lesser General Public License as published by
+;;; the Free Software Foundation, as clarified by the
+;;; preamble found here:
+;;;     http://opensource.franz.com/preamble.html
+;;;
+;;; This program is distributed in the hope that it will be useful,
+;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;; GNU General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU Lesser General
+;;; Public License along with this library; if not, write to the
+;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+;;; Boston, MA 02110-1301, USA
 
 (in-package :net.sockets)
 
-;;;;;;;;;;;;;
-;;;       ;;;
-;;; Types ;;;
-;;;       ;;;
-;;;;;;;;;;;;;
+;;;; Types
 
-(deftype ipv4-array ()
-  '(ub8-sarray 4))
-(deftype ipv6-array ()
-  '(ub16-sarray 8))
-
-;;;
-;;; Byte-swap functions
-;;;
+(deftype ipv4-array () '(ub8-sarray 4))
+(deftype ipv6-array () '(ub16-sarray 8))
+
+;;;; Byte-swap functions
 
 (defun htons (short)
   (check-type short ub16 "a 16-bit unsigned number")
@@ -57,10 +51,8 @@
 
 (defun ntohl (long)
   (htonl long))
-
-;;;
-;;; Conversion between address formats
-;;;
+
+;;;; Conversion between address formats
 
 (defun copy-simple-array-ub16-to-alien-vector (lisp-vec alien-vec)
   (declare (type ipv6-array lisp-vec))
@@ -71,7 +63,7 @@
 (defun map-ipv4-vector-to-ipv6 (addr)
   (declare (type ipv4-array addr))
   (let ((ipv6addr (make-array 8 :element-type 'ub16
-                                :initial-element 0)))
+                              :initial-element 0)))
     ;; setting the IPv4 marker
     (setf (aref ipv6addr 5) #xFFFF)
     ;; setting the first two bytes
@@ -80,11 +72,10 @@
     ;; setting the last two bytes
     (setf (aref ipv6addr 7) (+ (ash (aref addr 2) 8)
                                (aref addr 3)))
-
     ipv6addr))
 
-;; From CLOCC's PORT library
-(defun vector-to-ipaddr (vector)
+;;; From CLOCC's PORT library.
+(defun vector-to-integer (vector)
   "Convert a vector to a 32-bit unsigned integer."
   (coercef vector 'ipv4-array)
   (+ (ash (aref vector 0) 24)
@@ -92,7 +83,7 @@
      (ash (aref vector 2) 8)
      (aref vector 3)))
 
-(defun ipaddr-to-vector (ipaddr)
+(defun integer-to-vector (ipaddr)
   "Convert a 32-bit unsigned integer to a vector."
   (check-type ipaddr ub32)
   (let ((vector (make-array 4 :element-type 'ub8)))
@@ -108,119 +99,111 @@
       (setf (aref vector i)
             (ntohs (mem-aref in6-addr :uint16 i))))
     vector))
-
-;;;
-;;; Constructors for SOCKADDR_* structs
-;;;
+
+;;;; Constructors for SOCKADDR_* structs
 
 (defun make-sockaddr-in (sin ub8-vector &optional (port 0))
-  (declare (type ipv4-array ub8-vector)
-           (type ub16 port))
-  (et:bzero sin et:size-of-sockaddr-in)
-  (with-foreign-slots ((et:family et:addr et:port) sin et:sockaddr-in)
-    (setf et:family et:af-inet)
-    (setf et:addr (htonl (vector-to-ipaddr ub8-vector)))
-    (setf et:port (htons port)))
+  (declare (type ipv4-array ub8-vector) (type ub16 port))
+  (nix:bzero sin nix::size-of-sockaddr-in)
+  (with-foreign-slots ((nix::family nix::addr nix::port) sin nix::sockaddr-in)
+    (setf nix::family nix::af-inet)
+    (setf nix::addr (htonl (vector-to-integer ub8-vector)))
+    (setf nix::port (htons port)))
   (values sin))
 
-(defmacro with-sockaddr-in ((var address &optional port) &body body)
-  `(with-foreign-object (,var 'et:sockaddr-in)
+(defmacro with-sockaddr-in ((var address &optional (port 0)) &body body)
+  `(with-foreign-object (,var 'nix::sockaddr-in)
      (make-sockaddr-in ,var ,address ,port)
      ,@body))
 
 (defun make-sockaddr-in6 (sin6 ub16-vector &optional (port 0))
-  (declare (type ipv6-array ub16-vector)
-           (type ub16 port))
-  (et:bzero sin6 et:size-of-sockaddr-in6)
-  (with-foreign-slots ((et:family et:addr et:port) sin6 et:sockaddr-in6)
-    (setf et:family et:af-inet6)
-    (copy-simple-array-ub16-to-alien-vector ub16-vector et:addr)
-    (setf et:port (htons port)))
+  (declare (type ipv6-array ub16-vector) (type ub16 port))
+  (nix:bzero sin6 nix::size-of-sockaddr-in6)
+  (with-foreign-slots ((nix::family nix::addr nix::port) sin6 nix::sockaddr-in6)
+    (setf nix::family nix::af-inet6)
+    (copy-simple-array-ub16-to-alien-vector ub16-vector nix::addr)
+    (setf nix::port (htons port)))
   (values sin6))
 
 (defmacro with-sockaddr-in6 ((var address &optional port) &body body)
-  `(with-foreign-object (,var 'et:sockaddr-in6)
+  `(with-foreign-object (,var 'nix::sockaddr-in6)
      (make-sockaddr-in6 ,var ,address ,port)
      ,@body))
 
 (defun make-sockaddr-un (sun string)
   (declare (type string string))
-  (et:bzero sun et:size-of-sockaddr-un)
-  (with-foreign-slots ((et:family et:path) sun et:sockaddr-un)
-    (setf et:family et:af-local)
+  (nix:bzero sun nix::size-of-sockaddr-un)
+  (with-foreign-slots ((nix::family nix::path) sun nix::sockaddr-un)
+    (setf nix::family nix::af-local)
     (with-foreign-string (c-string string)
-      (loop
-         :for off :below (1- et:unix-path-max)
-         :do (setf (mem-aref et:path :uint8 off)
-                   (mem-aref c-string :uint8 off)))))
+      (loop :for off :below (1- nix::unix-path-max)
+            :do (setf (mem-aref nix::path :uint8 off)
+                      (mem-aref c-string :uint8 off)))))
   (values sun))
 
 (defmacro with-sockaddr-un ((var address) &body body)
-  `(with-foreign-object (,var 'et:sockaddr-un)
+  `(with-foreign-object (,var 'nix::sockaddr-un)
      (make-sockaddr-un ,var ,address)
      ,@body))
-
-;;;
-;;; Conversion functions for SOCKADDR_* structs
-;;;
+
+;;;; Conversion functions for SOCKADDR_* structs
 
 (defun sockaddr-in->sockaddr (sin)
-  (with-foreign-slots ((et:addr et:port) sin et:sockaddr-in)
-    (values (make-instance 'ipv4addr
-                           :name (ipaddr-to-vector (ntohl et:addr)))
-            (ntohs et:port))))
+  (with-foreign-slots ((nix::addr nix::port) sin nix::sockaddr-in)
+    (values (make-instance 'ipv4-address
+                           :name (integer-to-vector (ntohl nix::addr)))
+            (ntohs nix::port))))
 
 (defun sockaddr-in6->sockaddr (sin6)
-  (with-foreign-slots ((et:addr et:port) sin6 et:sockaddr-in6)
-    (values (make-instance 'ipv6addr
-                           :name (in6-addr-to-ipv6-array et:addr))
-            (ntohs et:port))))
+  (with-foreign-slots ((nix::addr nix::port) sin6 nix::sockaddr-in6)
+    (values (make-instance 'ipv6-address
+                           :name (in6-addr-to-ipv6-array nix::addr))
+            (ntohs nix::port))))
 
 (defun sockaddr-un->sockaddr (sun)
-  (with-foreign-slots ((et:path) sun et:sockaddr-un)
-    (let ((name (make-string (1- et:unix-path-max)))
+  (with-foreign-slots ((nix::path) sun nix::sockaddr-un)
+    (let ((name (make-string (1- nix::unix-path-max)))
           (abstract nil))
-      (if (zerop (mem-aref et:path :uint8 0))
+      (if (zerop (mem-aref nix::path :uint8 0))
           ;; abstract address
           (progn
             (setf abstract t)
-            (loop
-               :for sindex :from 0 :below (1- et:unix-path-max)
-               :for pindex :from 1 :below et:unix-path-max
-               :do (setf (schar name sindex)
-                         (code-char (mem-aref et:path :uint8 pindex)))))
+            (loop :for sindex :from 0 :below (1- nix::unix-path-max)
+                  :for pindex :from 1 :below nix::unix-path-max
+                  :do (setf (schar name sindex)
+                            (code-char (mem-aref nix::path :uint8 pindex)))))
           ;; address is in the filesystem
-          (setf name (foreign-string-to-lisp et:path)))
-      (make-instance 'localaddr
+          (setf name (foreign-string-to-lisp nix::path)))
+      (make-instance 'local-address
                      :name name
                      :abstract abstract))))
 
 (defun sockaddr-storage->sockaddr (ss)
-  (with-foreign-slots ((et:family) ss et:sockaddr-storage)
-    (ecase et:family
-      (#.et:af-inet
-       (sockaddr-in->sockaddr ss))
-      (#.et:af-inet6
-       (sockaddr-in6->sockaddr ss))
-      (#.et:af-local
-       (sockaddr-un->sockaddr ss)))))
+  (with-foreign-slots ((nix::family) ss nix::sockaddr-storage)
+    (ecase nix::family
+      (#.nix::af-inet (sockaddr-in->sockaddr ss))
+      (#.nix::af-inet6 (sockaddr-in6->sockaddr ss))
+      (#.nix::af-local (sockaddr-un->sockaddr ss)))))
 
 (defun sockaddr->sockaddr-storage (ss sockaddr &optional (port 0))
   (etypecase sockaddr
-    (ipv4addr
-     (make-sockaddr-in ss (name sockaddr) port))
-    (ipv6addr
-     (make-sockaddr-in6 ss (name sockaddr) port))
-    (localaddr
-     (make-sockaddr-un ss (name sockaddr)))))
-
-;;;
-;;; Misc
-;;;
+    (ipv4-address (make-sockaddr-in ss (address-name sockaddr) port))
+    (ipv6-address (make-sockaddr-in6 ss (address-name sockaddr) port))
+    (local-address (make-sockaddr-un ss (address-name sockaddr)))))
+
+;;;; Misc
+
+(defmacro check-bounds (sequence start end)
+  (alexandria:with-unique-names (length)
+    `(let ((,length (length ,sequence)))
+       (unless ,end
+         (setq ,end ,length))
+       (unless (<= ,start ,end ,length)
+         (error "Wrong sequence bounds. start: ~S end: ~S" ,start ,end)))))
 
 (defun %to-octets (buff ef start end)
-  (io.encodings:string-to-octets buff :external-format ef
-                                 :start start :end end))
+  (babel:string-to-octets buff :start start :end end
+                          :encoding (babel:external-format-encoding ef)))
 
 (defun parse-number-or-nil (value &optional (type :any) (radix 10))
   (check-type value (or string unsigned-byte))
@@ -243,12 +226,12 @@
   (if val 1 0))
 
 (defun addrerr-value (keyword)
-  (foreign-enum-value 'et:addrinfo-errors keyword))
+  (foreign-enum-value 'nix::addrinfo-errors keyword))
 
 (defun unixerr-value (keyword)
-  (foreign-enum-value 'et:errno-values keyword))
+  (foreign-enum-value 'nix::errno-values keyword))
 
 (defmacro with-socklen ((var value) &body body)
-  `(with-foreign-object (,var 'et:socklen)
-     (setf (mem-ref ,var 'et:socklen) ,value)
+  `(with-foreign-object (,var 'nix::socklen)
+     (setf (mem-ref ,var 'nix::socklen) ,value)
      ,@body))

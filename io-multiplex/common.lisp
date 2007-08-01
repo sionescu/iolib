@@ -1,23 +1,25 @@
-;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
-
-;;   Copyright (C) 2006, 2007 Stelian Ionescu
-;;
-;;   This code is free software; you can redistribute it and/or
-;;   modify it under the terms of the version 2.1 of
-;;   the GNU Lesser General Public License as published by
-;;   the Free Software Foundation, as clarified by the
-;;   preamble found here:
-;;       http://opensource.franz.com/preamble.html
-;;
-;;   This program is distributed in the hope that it will be useful,
-;;   but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;   GNU General Public License for more details.
-;;
-;;   You should have received a copy of the GNU Lesser General
-;;   Public License along with this library; if not, write to the
-;;   Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
-;;   Boston, MA 02110-1301, USA
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;
+;;; common.lisp --- Miscellaneous definitions.
+;;;
+;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;;
+;;; This code is free software; you can redistribute it and/or
+;;; modify it under the terms of the version 2.1 of
+;;; the GNU Lesser General Public License as published by
+;;; the Free Software Foundation, as clarified by the
+;;; preamble found here:
+;;;     http://opensource.franz.com/preamble.html
+;;;
+;;; This program is distributed in the hope that it will be useful,
+;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;; GNU General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU Lesser General
+;;; Public License along with this library; if not, write to the
+;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+;;; Boston, MA 02110-1301, USA
 
 (in-package :io.multiplex)
 
@@ -27,10 +29,8 @@
 
 (defvar *maximum-event-loop-timeout* 1)
 
-
-;;;
-;;; Event-Base
-;;;
+;;;; EVENT-BASE
+
 (defclass event-base ()
   ((mux :initform (make-instance *best-available-multiplexer*)
         :reader mux-of)
@@ -84,7 +84,6 @@
 (defgeneric fd-entry-of (event-base fd)
   (:method ((event-base event-base) fd)
     (gethash fd (fds-of event-base))))
-
 
 (defun %add-event (event-base event &optional fd-entry)
   (with-accessors ((fds fds-of) (timeouts timeouts-of)) event-base
@@ -123,7 +122,8 @@
               (queue-empty-p (fd-entry-write-events fd-entry)))
          :write-add)))
 
-(defmethod add-fd ((event-base event-base) fd event-type function &key timeout persistent)
+(defmethod add-fd ((event-base event-base) fd event-type function
+                   &key timeout persistent)
   (check-type fd unsigned-byte)
   (check-type event-type fd-event)
   (let ((fd-limit (fd-limit-of (mux-of event-base))))
@@ -150,7 +150,8 @@
             (%remove-event event-base event))))
     (values event)))
 
-(defmethod add-timeout ((event-base event-base) function timeout &key persistent)
+(defmethod add-timeout ((event-base event-base) function timeout
+                        &key persistent)
   (assert timeout)
   (%add-event event-base (make-event nil :timeout function persistent
                                      (abs-timeout timeout)
@@ -183,11 +184,10 @@
         (%remove-event event-base event)))
   (values event-base))
 
-(defmacro with-fd-handler ((event-base fd event-type function
-                            &optional timeout)
+(defmacro with-fd-handler ((event-base fd event-type function &optional timeout)
                            &body body)
   (once-only (event-base)
-    (with-gensyms (event)
+    (with-unique-names (event)
       `(let (,event)
          (unwind-protect
               (progn
@@ -198,13 +198,14 @@
            (when ,event
              (remove-event ,event-base ,event)))))))
 
-(defmethod event-dispatch :around ((event-base event-base) &key timeout only-once)
+(defmethod event-dispatch :around ((event-base event-base)
+                                   &key timeout only-once)
   (setf (exit-p event-base) nil)
   (when timeout (exit-event-loop event-base :delay timeout))
   (call-next-method event-base :only-once only-once))
 
 (defun recalculate-timeouts (timeouts)
-  (let ((now (gettime)))
+  (let ((now (get-monotonic-time)))
     (dolist (ev (queue-head timeouts))
       (event-recalc-abs-timeout ev now))))
 
@@ -231,15 +232,17 @@
         (when (dispatch-fd-events-once event-base poll-timeout)
           (and only-once (setf exit-p t)))
         (setf (values deletion-list dispatch-list)
-              (filter-expired-events (expired-events timeouts (gettime))))
+              (filter-expired-events (expired-events timeouts
+                                                     (get-monotonic-time))))
         (dispatch-timeouts dispatch-list)
         (remove-events event-base deletion-list)
         (queue-sort timeouts #'< #'event-abs-timeout)))))
 
 (defun dispatch-fd-events-once (event-base timeout)
-  "Waits for events and dispatches them. Returns T if some events have been received, NIL otherwise."
-  (with-accessors ((mux mux-of) (fds fds-of)
-                   (timeouts timeouts-of)) event-base
+  "Waits for events and dispatches them. Returns T if some events
+have been received, NIL otherwise."
+  (with-accessors ((mux mux-of) (fds fds-of) (timeouts timeouts-of))
+      event-base
     (let ((deletion-list ())
           (fd-events (harvest-events mux timeout)))
       (dolist (ev fd-events)
@@ -253,12 +256,14 @@
                             (fd-entry-all-events fd-entry)))
                   (when (member :read ev-types)
                     (dispatch-read-events fd-entry)
-                    (or errorp (nconcf deletion-list
-                                       (fd-entry-one-shot-events fd-entry :read))))
+                    (or errorp
+                        (nconcf deletion-list
+                                (fd-entry-one-shot-events fd-entry :read))))
                   (when (member :write ev-types)
                     (dispatch-write-events fd-entry)
-                    (or errorp (nconcf deletion-list
-                                       (fd-entry-one-shot-events fd-entry :write)))))
+                    (or errorp
+                        (nconcf deletion-list
+                                (fd-entry-one-shot-events fd-entry :write)))))
                 (warn "Got spurious event for non-monitored FD: ~A" fd)))))
       (dolist (ev deletion-list)
         (remove-event event-base ev))
@@ -266,8 +271,7 @@
 
 (defun expired-events (queue now)
   (queue-filter queue
-                #'(lambda (to)
-                    (and to (<= to now)))
+                #'(lambda (to) (and to (<= to now)))
                 #'event-abs-timeout))
 
 (defun filter-expired-events (events)
@@ -275,14 +279,14 @@
         (dispatch-list ()))
     (dolist (ev events)
       (push ev dispatch-list)
-      (unless (event-persistent-p ev)          
+      (unless (event-persistent-p ev)
         (push ev deletion-list)))
     (values deletion-list dispatch-list)))
 
 (defun events-calc-min-rel-timeout (timeouts)
-  (let* ((now (gettime))
+  (let* ((now (get-monotonic-time))
          (first-valid-event (find-if #'(lambda (to)
-                                         (or (null to) (< now to)))
+                                       (or (null to) (< now to)))
                                      (queue-head timeouts)
                                      :key #'event-abs-timeout)))
     (when (and first-valid-event
@@ -300,19 +304,17 @@
 (defun dispatch-write-events (fd-entry)
   (dolist (ev (queue-head (fd-entry-write-events fd-entry)))
     (funcall (event-handler ev) (fd-entry-fd fd-entry) :write)))
-
-;;;
-;;; FD-Entry
-;;;
+
+;;;; FD-ENTRY
+
 (deftype fd-event ()
   '(member :read :write :error))
 
 (deftype event-type ()
   '(or fd-event (member :timeout)))
 
-(defstruct (fd-entry
-             (:constructor make-fd-entry (fd))
-             (:copier nil))
+(defstruct (fd-entry (:constructor make-fd-entry (fd))
+                     (:copier nil))
   (fd 0 :type unsigned-byte)
   (edge-change nil :type symbol)
   (read-events  (make-queue) :type queue)
@@ -356,14 +358,12 @@
 (defun fd-entry-one-shot-events (fd-entry event-type)
   (remove-if #'event-persistent-p
              (queue-head (fd-entry-event-list fd-entry event-type))))
-
-;;;
-;;; Event
-;;;
-(defstruct (event
-             (:constructor make-event (fd type handler persistent-p
-                                       abs-timeout timeout))
-             (:copier nil))
+
+;;;; Event
+
+(defstruct (event (:constructor make-event (fd type handler persistent-p
+                                               abs-timeout timeout))
+                  (:copier nil))
   ;; a file descriptor or nil in case of a timeout
   (fd nil :type (or null unsigned-byte))
   (type nil :type (or null event-type))
@@ -382,14 +382,16 @@
 (defun event-recalc-abs-timeout (event now)
   (setf (event-abs-timeout event)
         (+ now (event-timeout event))))
-
-;;;
-;;; Multiplexer
-;;;
 
+;;;; Multiplexer
+
+#+windows
+(defcfun ("_getmaxstdio" get-fd-limit) :int)
+
+#-windows
 (defun get-fd-limit ()
-  (let ((fd-limit (et:get-resource-limit et:rlimit-nofile)))
-    (unless (eql fd-limit et:rlim-infinity)
+  (let ((fd-limit (nix:getrlimit nix::rlimit-nofile)))
+    (unless (eql fd-limit nix::rlim-infinity)
       (1- fd-limit))))
 
 (defclass multiplexer ()
@@ -413,13 +415,18 @@
     (declare (ignore fd-entry))
     t))
 
+;;; Returns a list of fd/result pairs which have one of these forms:
+;;;   (fd (:read))
+;;;   (fd (:write))
+;;;   (fd (:read :write))
+;;;   (fd . :error)
 (defgeneric harvest-events (mux timeout))
 
 (defgeneric close-multiplexer (mux)
   (:method-combination progn :most-specific-last)
   (:method progn ((mux multiplexer))
     (when (slot-value mux 'fd)
-      (et:close (fd-of mux))
+      (nix:close (fd-of mux))
       (setf (slot-value mux 'fd) nil))
     mux))
 
@@ -446,13 +453,12 @@
      (defclass ,name ,superclasses ,slots ,@options)
      (pushnew (cons ,priority ',name)
               *available-multiplexers*)))
-
-;;;;
-;;;; Misc
-;;;;
 
-;; FIXME: Until a way to autodetect platform features is implemented
-(define-constant et::pollrdhup 0)
+;;;; Misc
+
+;;; FIXME: Until a way to autodetect platform features is implemented
+#+darwin
+(defconstant nix::pollrdhup 0)
 
 (define-condition poll-error (error)
   ((fd :initarg :fd :reader poll-error-fd)
@@ -460,42 +466,89 @@
                :reader poll-error-identifier))
   (:report (lambda (condition stream)
              (format stream "Error caught while polling file descriptor ~A: ~A"
-                     (poll-error-fd condition) (poll-error-identifier condition))))
-  (:documentation "Signaled when an error occurs while polling for I/O readiness of a file descriptor."))
+                     (poll-error-fd condition)
+                     (poll-error-identifier condition))))
+  (:documentation
+   "Signaled when an error occurs while polling for I/O readiness
+of a file descriptor."))
 
-(defun wait-until-fd-ready (fd event-type &optional timeout)
-  "Poll file descriptor `FD' for I/O readiness. `EVENT-TYPE' must be :READ, :WRITE or :READ-WRITE which means \"either :READ or :WRITE\".
-`TIMEOUT' must be either a non-negative integer measured in seconds, or `NIL' meaning no timeout at all."
+#+windows
+(progn
+  (defctype dword :unsigned-long)
+
+  (cl-posix-ffi:defsyscall "get_osfhandle" :long
+    (fd :int))
+
+  (cl-posix-ffi:defsyscall "open_osfhandle" :int
+    (handle :intptr)
+    (flags :int))
+
+  (defconstant +wait-failed+ #xffffffff)
+  (defconstant +wait-abandoned+ #x80)
+  (defconstant +wait-object-0+ 0)
+  (defconstant +wait-timeout+ #x102)
+
+  ;; We might want to use *Msg*WaitForMultipleObjects in order to
+  ;; integrate with Windows' event-loop.
+  (defcfun ("WaitForSingleObject" wait-for-single-object :cconv :stdcall)
+      dword
+    (handle :intptr)
+    (millis dword))
+
+  (defun %wait-until-fd-ready (fd event-type timeout)
+    (declare (ignore event-type))
+    (let ((ret (wait-for-single-object (get-osfhandle fd)
+                                       (timeout->milisec timeout))))
+      (when (or (eql ret +wait-failed+)
+                (eql ret +wait-abandoned+))
+        (error 'poll-error :fd fd))
+      (let ((ready (= ret +wait-object-0+)))
+        ;; is this right?
+        (values ready ready)))))
+
+#-windows
+(defun %wait-until-fd-ready (fd event-type timeout)
   (flet ((choose-poll-flags (type)
            (ecase type
-             (:read (logior et:pollin et::pollrdhup et:pollpri))
-             (:write (logior et:pollout et:pollhup))
-             (:read-write (logior et:pollin et::pollrdhup et:pollpri
-                                  et:pollout et:pollhup))))
+             (:read (logior nix::pollin nix::pollrdhup nix::pollpri))
+             (:write (logior nix::pollout nix::pollhup))
+             (:read-write (logior nix::pollin nix::pollrdhup nix::pollpri
+                                  nix::pollout nix::pollhup))))
          (poll-error (unix-err)
            (error 'poll-error :fd fd
-                  :identifier (et:system-error-identifier unix-err))))
+                  :identifier (nix:system-error-identifier unix-err))))
     (let ((readp nil) (writep nil))
-      (with-foreign-object (pollfd 'et:pollfd)
-        (et:bzero pollfd et:size-of-pollfd)
-        (with-foreign-slots ((et:fd et:events et:revents) pollfd et:pollfd)
-          (setf et:fd fd
-                et:events (choose-poll-flags event-type))
+      (with-foreign-object (pollfd 'nix::pollfd)
+        (nix:bzero pollfd nix::size-of-pollfd)
+        (with-foreign-slots ((nix::fd nix::events nix::revents)
+                             pollfd nix::pollfd)
+          (setf nix::fd fd
+                nix::events (choose-poll-flags event-type))
           (handler-case
-              (let ((ret (et:repeat-upon-condition-decreasing-timeout
-                             ((et:eintr) tmp-timeout timeout)
-                           (et:poll pollfd 1 (timeout->milisec tmp-timeout)))))
+              (let ((ret (nix:repeat-upon-condition-decreasing-timeout
+                             ((nix:eintr) tmp-timeout timeout)
+                           (nix:poll pollfd 1 (timeout->milisec timeout)))))
                 (when (zerop ret)
-                  (return-from wait-until-fd-ready (values nil nil))))
-            (et:unix-error (err) (poll-error err)))
-          (flags-case et:revents
-            ((et:pollin et::pollrdhup et:pollpri) (setf readp t))
-            ((et:pollout et:pollhup)              (setf writep t))
-            ((et:pollerr et:pollnval) (error 'poll-error :fd fd)))
-          (return-from wait-until-fd-ready (values readp writep)))))))
+                  (return-from %wait-until-fd-ready (values nil nil))))
+            (nix:posix-error (err) (poll-error err)))
+          (flags-case nix::revents
+            ((nix::pollin nix::pollrdhup nix::pollpri)
+             (setf readp t))
+            ((nix::pollout nix::pollhup) (setf writep t))
+            ((nix::pollerr nix::pollnval) (error 'poll-error :fd fd)))
+          (values readp writep))))))
+
+(defun wait-until-fd-ready (fd event-type &optional timeout)
+  "Poll file descriptor `FD' for I/O readiness. `EVENT-TYPE' must be
+:READ, :WRITE or :READ-WRITE which means \"either :READ or :WRITE\".
+`TIMEOUT' must be either a non-negative integer measured in seconds,
+or `NIL' meaning no timeout at all."
+  (%wait-until-fd-ready fd event-type timeout))
 
 (defun fd-ready-p (fd &optional (event-type :read))
-  "Tests file-descriptor `FD' for I/O readiness. `EVENT-TYPE' must be :READ, :WRITE or :READ-WRITE which means \"either :READ or :WRITE\"."
+  "Tests file-descriptor `FD' for I/O readiness. `EVENT-TYPE'
+must be :READ, :WRITE or :READ-WRITE which means \"either :READ
+or :WRITE\"."
   (multiple-value-bind (readp writep)
       (wait-until-fd-ready fd event-type 0)
     (ecase event-type
