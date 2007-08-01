@@ -1,110 +1,214 @@
-;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
-
-;;   Copyright (C) 2006, 2007 Stelian Ionescu
-;;
-;;   This code is free software; you can redistribute it and/or
-;;   modify it under the terms of the version 2.1 of
-;;   the GNU Lesser General Public License as published by
-;;   the Free Software Foundation, as clarified by the
-;;   preamble found here:
-;;       http://opensource.franz.com/preamble.html
-;;
-;;   This program is distributed in the hope that it will be useful,
-;;   but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;   GNU General Public License for more details.
-;;
-;;   You should have received a copy of the GNU Lesser General
-;;   Public License along with this library; if not, write to the
-;;   Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
-;;   Boston, MA 02110-1301, USA
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;
+;;; package.lisp --- Package definition.
+;;;
+;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;;
+;;; This code is free software; you can redistribute it and/or
+;;; modify it under the terms of the version 2.1 of
+;;; the GNU Lesser General Public License as published by
+;;; the Free Software Foundation, as clarified by the
+;;; preamble found here:
+;;;     http://opensource.franz.com/preamble.html
+;;;
+;;; This program is distributed in the hope that it will be useful,
+;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;; GNU General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU Lesser General
+;;; Public License along with this library; if not, write to the
+;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+;;; Boston, MA 02110-1301, USA
 
 (in-package :common-lisp-user)
 
 (defpackage :net.sockets
   (:nicknames #:sockets)
-  (:use #:common-lisp #:cffi #:split-sequence
-        #:iolib-utils #:io.encodings #:io.streams)
-  (:import-from #:iolib-posix
-                #:system-error #:unix-error #:message)
+  (:use #:common-lisp :cffi :alexandria :split-sequence :io.streams)
+  (:import-from #:cl-posix #:system-error #:posix-error #:system-error-message)
   (:export
-   ;; conditions
+   ;; Conditions
+   #:posix-error
    #:possible-bug
-   #:system-error #:unix-error #:resolver-error
-   #:unknown-interface #:unknown-protocol
-   ; condition accessors
+   #:resolver-again-error
+   #:resolver-error
+   #:resolver-fail-error
+   #:resolver-no-name-error
+   #:resolver-no-service-error
+   #:resolver-unknown-error
+   #:socket-address-in-use-error
+   #:socket-address-not-available-error
+   #:socket-already-connected-error
+   #:socket-connection-aborted-error
+   #:socket-connection-refused-error
+   #:socket-connection-reset-error
+   #:socket-connection-timeout-error
+   #:socket-endpoint-shutdown-error
+   #:socket-error
+   #:socket-host-down-error
+   #:socket-host-unreachable-error
+   #:socket-network-down-error
+   #:socket-network-reset-error
+   #:socket-network-unreachable-error
+   #:socket-no-buffer-space-error
+   #:socket-no-network-error
+   #:socket-not-connected-error
+   #:socket-operation-not-supported-error
+   #:socket-option-not-supported-error
+   #:system-error
+   #:unknown-interface
+   #:unknown-protocol
+
+   ;; Condition Accessors
+   #:address-type
    #:bug-data
-   #:error-code #:error-identifier #:error-message
-   #:interface-name #:interface-index #:protocol-name #:protocol-number
-   #:address #:address-type
+   #:error-code
+   #:error-identifier
+   #:error-message
 
-   ;; low-level address conversion functions
-   #:vector-to-ipaddr #:ipaddr-to-vector #:ipaddr-to-dotted
-   #:dotted-to-ipaddr #:dotted-to-vector #:vector-to-dotted
-   #:colon-separated-to-vector #:vector-to-colon-separated
-   #:string-address-to-vector #:address-to-vector
+   ;; Low-level Address Conversion
+   #:address-to-vector
+   #:colon-separated-to-vector
+   #:dotted-to-integer
+   #:dotted-to-vector
+   #:integer-to-dotted
+   #:integer-to-vector
+   #:string-address-to-vector
+   #:vector-to-colon-separated
+   #:vector-to-dotted
+   #:vector-to-integer
 
-   ;; addresses
-   #:sockaddr #:inetaddr #:ipv4addr #:ipv6addr #:localaddr
-   #:make-address #:ensure-address #:convert-or-lookup-inet-address
-   #:sockaddr= #:sockaddr->presentation #:copy-sockaddr
-   #:name #:abstract-p
+   ;; Address Classes
+   #:address
+   #:inet-address
+   #:ipv4-address
+   #:ipv6-address
+   #:local-address
 
-   ;; well-known addresses and important values
-   #:+max-ipv4-value+
-   #:+ipv4-unspecified+ #:+ipv4-loopback+
-   #:+ipv6-unspecified+ #:+ipv6-loopback+
-   #:+ipv6-interface-local-all-nodes+ #:+ipv6-link-local-all-nodes+
-   #:+ipv6-interface-local-all-routers+ #:+ipv6-link-local-all-routers+
+   ;; Address Functions
+   #:address-equal-p
+   #:address-name
+   #:address-to-string
+   #:address=
+   #:copy-address
+   #:ensure-address
+   #:make-address
+
+   ;; Well-known Addresses
+   #:+ipv4-loopback+
+   #:+ipv4-unspecified+
+   #:+ipv6-interface-local-all-nodes+
+   #:+ipv6-interface-local-all-routers+
+   #:+ipv6-link-local-all-nodes+
+   #:+ipv6-link-local-all-routers+
+   #:+ipv6-loopback+
    #:+ipv6-site-local-all-routers+
+   #:+ipv6-unspecified+
+   #:+max-ipv4-value+
 
-   ;; address predicates
-   #:sockaddrp
-   #:ipv4-address-p #:ipv6-address-p #:local-address-p
-   #:inetaddr-unspecified-p #:inetaddr-loopback-p
-   #:inetaddr-multicast-p #:inetaddr-unicast-p
-   #:ipv6-ipv4-mapped-p #:ipv6-interface-local-multicast-p
-   #:ipv6-link-local-multicast-p #:ipv6-admin-local-multicast-p
-   #:ipv6-site-local-multicast-p #:ipv6-organization-local-multicast-p
-   #:ipv6-global-multicast-p #:ipv6-reserved-multicast-p
-   #:ipv6-unassigned-multicast-p #:ipv6-transient-multicast-p
-   #:ipv6-solicited-node-multicast-p
-   #:ipv6-link-local-unicast-p #:ipv6-site-local-unicast-p
+   ;; Address Predicates
+   #:abstract-address-p
+   #:addressp
+   #:inet-address-loopback-p
+   #:inet-address-multicast-p
+   #:inet-address-type
+   #:inet-address-unicast-p
+   #:inet-address-unspecified-p
+   #:ipv4-address-p
+   #:ipv6-address-p
+   #:ipv6-admin-local-multicast-p
+   #:ipv6-global-multicast-p
    #:ipv6-global-unicast-p
-   #:ipv6-multicast-type #:inetaddr-type
+   #:ipv6-interface-local-multicast-p
+   #:ipv6-ipv4-mapped-p
+   #:ipv6-link-local-multicast-p
+   #:ipv6-link-local-unicast-p
+   #:ipv6-multicast-type
+   #:ipv6-organization-local-multicast-p
+   #:ipv6-reserved-multicast-p
+   #:ipv6-site-local-multicast-p
+   #:ipv6-site-local-unicast-p
+   #:ipv6-solicited-node-multicast-p
+   #:ipv6-transient-multicast-p
+   #:ipv6-unassigned-multicast-p
+   #:ipv6-unicast-type
+   #:local-address-p
 
-   ;; hostname, service and protocol lookup
-   #:*ipv6*
-   #:host #:make-host #:lookup-host #:random-address
-   #:host-truename #:host-aliases #:host-addresses
-   #:service #:make-service #:lookup-service
-   #:service-name #:service-port #:service-protocol
-   #:protocol #:make-protocol #:lookup-protocol
-   #:protocol-name #:protocol-aliases #:protocol-number
+   ;; Hostname, Service, and Protocol Lookups
+   #:convert-or-lookup-inet-address
+   #:host
+   #:host-addresses
+   #:host-aliases
+   #:host-truename
+   #:lookup-host
+   #:lookup-protocol
+   #:lookup-service
+   #:make-host
+   #:make-protocol
+   #:make-service
+   #:protocol
+   #:protocol-aliases
+   #:protocol-name
+   #:protocol-number
+   #:host-random-address
+   #:service
+   #:service-name
+   #:service-port
+   #:service-protocol
 
-   ;; network interface lookup
-   #:interface #:make-interface #:lookup-interface #:get-network-interfaces
-   #:interface-name #:interface-index
+   ;; Network Interface Lookup
+   #:list-network-interfaces
+   #:interface
+   #:interface-index
+   #:interface-name
+   #:lookup-interface
+   #:make-interface
 
-   ;; socket classes
-   #:socket #:stream-socket #:datagram-socket
-   #:internet-socket #:local-socket
-   #:active-socket #:passive-socket
+   ;; Socket Classes
+   #:active-socket
+   #:datagram-socket
+   #:internet-socket
+   #:local-socket
+   #:passive-socket
+   #:socket
+   #:socket-datagram-internet-active
+   #:socket-datagram-local-active
    #:socket-stream-internet-active
    #:socket-stream-internet-passive
    #:socket-stream-local-active
    #:socket-stream-local-passive
-   #:socket-datagram-local-active
-   #:socket-datagram-internet-active
+   #:stream-socket
 
-   ;; socket methods
-   #:socket-fd #:socket-family #:socket-protocol
-   #:get-socket-option #:set-socket-option
-   #:socket-type #:create-socket #:make-socket #:with-socket
+   ;; Socket Methods
+   #:accept-connection
+   #:bind-address
+   #:connect
+   ;; #:create-socket
+   #:disconnect
+   #:get-socket-option
+   #:local-address
+   #:local-name
+   #:local-port
+   #:make-socket
+   #:remote-address
+   #:remote-name
+   #:remote-port
+   #:set-socket-option
+   #:shutdown
+   #:socket-connected-p
+   #:socket-family
+   #:socket-fd
+   #:socket-listen
    #:socket-open-p
-   #:local-name #:local-address #:local-port
-   #:remote-name #:remote-address #:remote-port
-   #:bind-address #:socket-listen #:accept-connection
-   #:connect  #:disconnect #:socket-connected-p
-   #:shutdown #:socket-send  #:socket-receive
-   #:*default-backlog-size*))
+   #:socket-option
+   #:socket-protocol
+   #:socket-receive
+   #:socket-send
+   #:socket-type
+   #:with-socket
+
+   ;; Specials
+   #:*default-backlog-size*
+   #:*ipv6*
+   ))
