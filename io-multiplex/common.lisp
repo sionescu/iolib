@@ -525,7 +525,7 @@ of a file descriptor."))
           (setf nix::fd fd
                 nix::events (choose-poll-flags event-type))
           (handler-case
-              (let ((ret (repeat-upon-condition-decreasing-timeout
+              (let ((ret (nix:repeat-upon-condition-decreasing-timeout
                              ((nix:eintr) tmp-timeout timeout)
                            (nix:poll pollfd 1 (timeout->milisec timeout)))))
                 (when (zerop ret)

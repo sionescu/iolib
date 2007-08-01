@@ -102,7 +102,7 @@
                          (ts 'nix::timespec))
     (cl-posix-ffi:memset events 0 (* *kqueue-max-events* nix::size-of-kevent))
     (let (ready-fds)
-      (repeat-upon-condition-decreasing-timeout
+      (nix:repeat-upon-condition-decreasing-timeout
           ((nix:eintr) tmp-timeout timeout)
         (when tmp-timeout
           (timeout->timespec tmp-timeout ts))

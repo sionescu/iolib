@@ -29,7 +29,7 @@
   (asdf:oos 'asdf:load-op :trivial-features))
 
 (defpackage #:io.multiplex-system
-  (:use #:common-lisp #:asdf-additions))
+  (:use #:common-lisp))
 
 (in-package #:io.multiplex-system)
 

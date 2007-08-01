@@ -103,7 +103,7 @@
       (nix:copy-fd-set es except-fds)
       (handler-case
           (with-foreign-object (tv 'nix::timeval)
-            (repeat-upon-condition-decreasing-timeout
+            (nix:repeat-upon-condition-decreasing-timeout
                 ((nix:eintr) tmp-timeout timeout)
               (when tmp-timeout
                 (timeout->timeval tmp-timeout tv))

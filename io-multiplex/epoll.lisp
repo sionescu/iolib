@@ -102,7 +102,7 @@
     (cl-posix-ffi:memset events 0
                          (* *epoll-max-events* nix::size-of-epoll-event))
     (let (ready-fds)
-      (repeat-upon-condition-decreasing-timeout
+      (nix:repeat-upon-condition-decreasing-timeout
           ((nix:eintr) tmp-timeout timeout)
         (setf ready-fds (nix:epoll-wait (fd-of mux) events *epoll-max-events*
                                         (timeout->milisec tmp-timeout))))
