@@ -1,23 +1,25 @@
-;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp -*-
-
-;;   Copyright (C) 2006, 2007 Stelian Ionescu
-;;
-;;   This code is free software; you can redistribute it and/or
-;;   modify it under the terms of the version 2.1 of
-;;   the GNU Lesser General Public License as published by
-;;   the Free Software Foundation, as clarified by the
-;;   preamble found here:
-;;       http://opensource.franz.com/preamble.html
-;;
-;;   This program is distributed in the hope that it will be useful,
-;;   but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;   GNU General Public License for more details.
-;;
-;;   You should have received a copy of the GNU Lesser General
-;;   Public License along with this library; if not, write to the
-;;   Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
-;;   Boston, MA 02110-1301, USA
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;
+;;; select.lisp --- select()-based multiplexer implementation.
+;;;
+;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;;
+;;; This code is free software; you can redistribute it and/or
+;;; modify it under the terms of the version 2.1 of
+;;; the GNU Lesser General Public License as published by
+;;; the Free Software Foundation, as clarified by the
+;;; preamble found here:
+;;;     http://opensource.franz.com/preamble.html
+;;;
+;;; This program is distributed in the hope that it will be useful,
+;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;; GNU General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU Lesser General
+;;; Public License along with this library; if not, write to the
+;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+;;; Boston, MA 02110-1301, USA
 
 (in-package :io.multiplex)
 
@@ -32,10 +34,10 @@
                  :reader write-fd-set-of)
    (except-fd-set :initform (allocate-fd-set)
                   :reader except-fd-set-of))
-  (:default-initargs :fd-limit (1- et:fd-setsize)))
+  (:default-initargs :fd-limit (1- nix::fd-setsize)))
 
 (defun allocate-fd-set ()
-  (et:fd-zero (foreign-alloc 'et:fd-set)))
+  (nix:fd-zero (foreign-alloc 'nix::fd-set)))
 
 (defmethod print-object ((mux select-multiplexer) stream)
   (print-unreadable-object (mux stream :type nil :identity nil)
@@ -50,7 +52,7 @@
 
 (defun find-max-fd (fd-set end)
   (loop :for i :downfrom end :to 0
-     :do (when (et:fd-isset i fd-set)
+     :do (when (nix:fd-isset i fd-set)
            (return-from find-max-fd i)))
   ;; this means no fd <= end is set
   -1)
@@ -59,14 +61,14 @@
   (with-accessors ((rs read-fd-set-of) (ws write-fd-set-of)
                    (es except-fd-set-of) (max-fd max-fd-of)) mux
     (cond (read
-           (et:fd-set fd rs)
-           (et:fd-set fd es))
+           (nix:fd-set fd rs)
+           (nix:fd-set fd es))
           (t
-           (et:fd-clr fd rs)
-           (et:fd-clr fd es)))
+           (nix:fd-clr fd rs)
+           (nix:fd-clr fd es)))
     (if write
-        (et:fd-set fd ws)
-        (et:fd-clr fd ws))
+        (nix:fd-set fd ws)
+        (nix:fd-clr fd ws))
     (setf max-fd (max (find-max-fd rs fd)
                       (find-max-fd ws fd)))
     t))
@@ -93,43 +95,46 @@
                (null timeout))
       (warn "Non fds to monitor and no timeout set !")
       (return-from harvest-events nil))
-    (with-foreign-objects ((read-fds 'et:fd-set)
-                           (write-fds 'et:fd-set)
-                           (except-fds 'et:fd-set))
-      (et:copy-fd-set rs read-fds)
-      (et:copy-fd-set ws write-fds)
-      (et:copy-fd-set es except-fds)
+    (with-foreign-objects ((read-fds 'nix::fd-set)
+                           (write-fds 'nix::fd-set)
+                           (except-fds 'nix::fd-set))
+      (nix:copy-fd-set rs read-fds)
+      (nix:copy-fd-set ws write-fds)
+      (nix:copy-fd-set es except-fds)
       (handler-case
-          (with-foreign-object (tv 'et:timeval)
-            (et:repeat-upon-condition-decreasing-timeout ((et:eintr)
-                                                          tmp-timeout timeout)
+          (with-foreign-object (tv 'nix::timeval)
+            (repeat-upon-condition-decreasing-timeout
+                ((nix:eintr) tmp-timeout timeout)
               (when tmp-timeout
                 (timeout->timeval tmp-timeout tv))
-              (et:select (1+ max-fd)
+              (nix:select (1+ max-fd)
                          read-fds
                          write-fds
                          except-fds
                          (if tmp-timeout tv (null-pointer)))))
-        (et:ebadf ()
+        (nix:ebadf ()
           (return-from harvest-events
             (harvest-select-fd-errors rs ws max-fd))))
       (harvest-select-events max-fd read-fds write-fds except-fds))))
 
 (defun harvest-select-events (max-fd read-fds write-fds except-fds)
-  (loop :for fd :upto max-fd
-     :for event := ()
-     :when (or (et:fd-isset fd read-fds)
-               (et:fd-isset fd except-fds)) :do (push :read event)
-     :when (et:fd-isset fd write-fds) :do (push :write event)
-     :when event :collect (list fd event)))
+  (loop for fd upto max-fd
+        for event = () then ()
+        when (or (nix:fd-isset fd read-fds)
+                 (nix:fd-isset fd except-fds)) do (push :read event)
+        when (nix:fd-isset fd write-fds) do (push :write event)
+        when event collect (list fd event)))
 
-;; FIXME: I don't know whether on all *nix systems select()
-;; returns EBADF only when a given FD present in some fd-set
-;; is closed(as the POSIX docs say) or if some other kinds of
-;; errors are reported too(as the Linux manpages seem to suggest)
+;;; FIXME: I don't know whether on all *nix systems select()
+;;; returns EBADF only when a given FD present in some fd-set
+;;; is closed(as the POSIX docs say) or if some other kinds of
+;;; errors are reported too(as the Linux manpages seem to suggest)
+(defun fd-error-p (fd)
+  (not (nix:fd-open-p fd)))
+
 (defun harvest-select-fd-errors (read-fds write-fds max-fd)
-  (loop :for fd :upto max-fd
-     :when (and (or (et:fd-isset fd read-fds)
-                    (et:fd-isset fd write-fds))
-                (fd-error-p fd))
-     :collect (cons fd :error)))
+  (loop for fd upto max-fd
+        when (and (or (nix:fd-isset fd read-fds)
+                      (nix:fd-isset fd write-fds))
+                  (fd-error-p fd))
+        collect (cons fd :error)))

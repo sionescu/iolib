@@ -1,57 +1,31 @@
-;;;; -*- coding:utf-8 -*-
-;;;;****************************************************************************
-;;;;FILE:               queue.lisp
-;;;;LANGUAGE:           Common-Lisp
-;;;;SYSTEM:             Common-Lisp
-;;;;USER-INTERFACE:     None
-;;;;DESCRIPTION
-;;;;
-;;;;    This module exports a queue type. This is a structure optimized for
-;;;;    FIFO operations, keeping a pointer to the head and the tail of a list.
-;;;;
-;;;;AUTHORS
-;;;;    <PJB> Pascal J. Bourguignon <pjb@informatimago.com>
-;;;;    <SI>  Stelian Ionescu <sionescu@common-lisp.net>
-;;;;MODIFICATIONS
-;;;;    2007-02-03 <SI>  Added QUEUE-SORTED-INSERT, QUEUE-FILTER-AND-DELETE,
-;;;;                     QUEUE-DELETE-IF and QUEUE-FILTER
-;;;;    2005-08-31 <PJB> Added QUEUE-DELETE
-;;;;    2004-02-26 <PJB> Formated for publication.
-;;;;    2001-12-31 <PJB> Added pjb-queue-requeue. 
-;;;;                     Corrected the return value of some methods.
-;;;;    2001-11-12 <PJB> Creation.
-;;;;BUGS
-;;;;LEGAL
-;;;;    LLGPL
-;;;;    
-;;;;    Copyright Pascal J. Bourguignon 2001 - 2005
-;;;;              Stelian Ionescu 2007
-;;;;    
-;;;;    This library is licenced under the Lisp Lesser General Public
-;;;;    License.
-;;;;    
-;;;;    This library is free software; you can redistribute it and/or
-;;;;    modify it under the terms of the GNU Lesser General Public
-;;;;    License as published by the Free Software Foundation; either
-;;;;    version 2 of the License, or (at your option) any later
-;;;;    version.
-;;;;    
-;;;;    This library is distributed in the hope that it will be
-;;;;    useful, but WITHOUT ANY WARRANTY; without even the implied
-;;;;    warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
-;;;;    PURPOSE.  See the GNU Lesser General Public License for more
-;;;;    details.
-;;;;    
-;;;;    You should have received a copy of the GNU Lesser General
-;;;;    Public License along with this library; if not, write to the
-;;;;    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
-;;;;    Boston, MA 02111-1307 USA
-;;;;****************************************************************************
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;
+;;; queue.lisp --- FIFO-optimized queues.
+;;;
+;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2001-2005, Pascal J. Bourguignon  <pjb@informatimago.com>
+;;;
+;;; This code is free software; you can redistribute it and/or
+;;; modify it under the terms of the version 2.1 of
+;;; the GNU Lesser General Public License as published by
+;;; the Free Software Foundation, as clarified by the
+;;; preamble found here:
+;;;     http://opensource.franz.com/preamble.html
+;;;
+;;; This program is distributed in the hope that it will be useful,
+;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;; GNU General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU Lesser General
+;;; Public License along with this library; if not, write to the
+;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+;;; Boston, MA 02110-1301, USA
 
 (in-package :io.multiplex)
 
-;;; The structure of a queue is as follow:
-;;; 
+;;; The structure of a queue is as follows:
+;;;
 ;;;                  queue
 ;;;                    |
 ;;;                    V
@@ -69,7 +43,6 @@
 ;;;         | elem |           | elem |           | elem |
 ;;;         +------+           +------+           +------+
 
-
 (defstruct (queue (:constructor %make-queue))
   (head nil :type list)
   (tail nil :type list))
@@ -85,46 +58,26 @@
 
 (defun make-queue () (%make-queue))
 
+;;; Returns the number of elements in the queue.
 (defun queue-length (queue)
-  "
-PRE:     (queue-p queue)
-RETURN:  The number of elements in the queue.
-"
   (assert (queue-p queue))
   (length (queue-head queue))) ;;queue-length
 
 (defun queue-empty-p (queue)
-  "
-RETURN:  (= 0 (queue-length queue))
-"
   (assert (queue-p queue))
   (null (queue-head queue)))
 
+;;; Returns the first element of the queue.
 (defun queue-first-element (queue)
-  "
-PRE:     (queue-p queue)
-RETURN:  The first element of the queue.
-"
   (assert (queue-p queue))
   (first (queue-head queue)))
 
+;;; Returns the last element of the queue.
 (defun queue-last-element (queue)
-  "
-PRE:     (queue-p queue)
-RETURN:  The last element of the queue.
-"
   (assert (queue-p queue))
   (first (queue-tail queue)))
 
 (defun queue-enqueue  (queue element)
-  "
-PRE:     (queue-p queue)
-         l=(queue-length queue)
-POST:    (eq (queue-last-element queue) element),
-         (queue-p queue),
-         l+1=(queue-length queue)
-RETURN:  queue
-"
   (assert (queue-p queue))
   ;; (car q) = head      (cdr q) = tail
   (if (queue-head queue)
@@ -139,10 +92,6 @@ RETURN:  queue
   queue)
 
 (defun queue-delete (queue element &key (test (function eql)))
-  "
-POST:    (not (member element queue :test test))
-RETURN:  queue
-"
   (assert (queue-p queue))
   (setf (queue-head queue) (delete element (queue-head queue) :test test)
         (queue-tail queue) (last (queue-head queue)))
@@ -155,29 +104,13 @@ RETURN:  queue
   queue)
 
 (defun queue-dequeue (queue)
-  "
-PRE:     (queue-p queue)
-         l=(queue-length queue)
-         f=(queue-first-element queue)
-POST:    l>0 ==> l-1=(queue-length queue)
-         l=0 ==> 0=(queue-length queue)
-RETURN:  f
-"
   (assert (queue-p queue))
   (prog1 (pop (queue-head queue))
     (when (null (queue-head queue))
       (setf (queue-tail queue) nil))))
 
+;;; Insert the element at the beginning of the queue.
 (defun queue-requeue (queue element)
-  "
-DO:      Insert the element at the beginning of the queue.
-PRE:     (queue-p queue)
-         l=(queue-length queue)
-POST:    (eq (queue-first-element queue) element)
-         (queue-p queue),
-         l+1=(queue-length queue)
-RETURN:  queue
-"
   (assert (queue-p queue))
   (push element (queue-head queue))
   (when (null (queue-tail queue))
@@ -189,10 +122,10 @@ RETURN:  queue
   (setf (queue-head queue) (sort (queue-head queue) predicate :key key)
         (queue-tail queue) (last (queue-head queue))))
 
+;;; Scan the queue comparing the elements of the queue with ELEMENT
+;;; until PREDICATE returns NIL, then insert ELEMENT right before the
+;;; last compared queue element.
 (defun queue-sorted-insert (queue element predicate &optional (key #'identity))
-  "Scan the queue comparing the elements of the queue
-with ELEMENT until PREDICATE returns NIL, then insert
-ELEMENT right before the last compared queue element."
   (assert (queue-p queue))
   (if (null (queue-head queue))
       (progn
@@ -222,20 +155,20 @@ ELEMENT right before the last compared queue element."
                             (cdr newcons) next-list))))))))
   queue)
 
-;; TODO: make it traverse the queue only once
+;;; TODO: make it traverse the queue only once
+;;;
+;;; Delete from the queue all elements that satisfy TEST and return
+;;; them as list.
 (defun queue-filter (queue test &optional (key #'identity))
-  "Delete from the queue all elements that satisfy TEST
-and return them as list."
   (assert (queue-p queue))
   (remove-if-not test (queue-head queue) :key key))
 
-;; TODO: make it traverse the queue only once
+;;; TODO: make it traverse the queue only once
+;;;
+;;; Delete from the queue all elements that satisfy TEST and return
+;;; them as list.
 (defun queue-filter-and-delete (queue test &optional (key #'identity))
-  "Delete from the queue all elements that satisfy TEST
-and return them as list."
   (assert (queue-p queue))
   (prog1 (remove-if-not test (queue-head queue) :key key)
     (setf (queue-head queue) (delete-if test (queue-head queue) :key key)
           (queue-tail queue) (last (queue-head queue)))))
-
-;;;; queue.lisp                       --                     --          ;;;;
