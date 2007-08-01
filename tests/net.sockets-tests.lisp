@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
 ;;;
-;;; tests.lisp --- bsd-sockets test suite.
+;;; tests.lisp --- net.sockets test suite.
 ;;;
 ;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
@@ -31,13 +31,13 @@
 ;;;    released into the public domain in jurisdictions where this is
 ;;;    possible, or under the FreeBSD licence where not.
 
-(in-package #:cl-user)
+(in-package #:common-lisp-user)
 
-(defpackage #:bsd-sockets-tests
+(defpackage #:net.sockets-tests
   (:nicknames #:sockets-tests)
-  (:use #:common-lisp #:rtest #:bsd-sockets))
+  (:use #:common-lisp #:rtest :net.sockets))
 
-(in-package #:bsd-sockets-tests)
+(in-package #:net.sockets-tests)
 
 ;;; Returns T if one of the expected conditions occured, otherwise returns
 ;;; a list of the form (:RESULT return-value-1 return-value-2) with
@@ -394,7 +394,7 @@
                   :type nil
                   :defaults
                   (asdf:system-definition-pathname
-                   (asdf:find-system '#:bsd-sockets-tests))))))
+                   (asdf:find-system '#:net.sockets-tests))))))
       (ignore-errors (delete-file file))
       (with-socket (p :family :local :connect :passive :local-filename file)
         (with-socket (a :family :local :remote-filename file)
