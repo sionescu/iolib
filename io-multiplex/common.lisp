@@ -472,39 +472,76 @@ have been received, NIL otherwise."
    "Signaled when an error occurs while polling for I/O readiness
 of a file descriptor."))
 
+;;; This should probably be moved elsewhere.  Also, it's quite a mess.
 #+windows
 (progn
+  (load-foreign-library "User32.dll")
+  (load-foreign-library "msvcrt.dll")
+  (load-foreign-library "Ws2_32.dll")
+
   (defctype dword :unsigned-long)
+  (defctype bool (:boolean :int))
 
   (cl-posix-ffi:defsyscall "get_osfhandle" :long
     (fd :int))
-
-  (cl-posix-ffi:defsyscall "open_osfhandle" :int
-    (handle :intptr)
-    (flags :int))
 
   (defconstant +wait-failed+ #xffffffff)
   (defconstant +wait-abandoned+ #x80)
   (defconstant +wait-object-0+ 0)
   (defconstant +wait-timeout+ #x102)
+  (defconstant +true+ 1)
+  (defconstant +fd-read+ 1)
+  (defconstant +fd-write+ 2)
+  (defconstant +socket-error+ -1)
+  (defconstant +wsaenotsock+ 10038)
 
-  ;; We might want to use *Msg*WaitForMultipleObjects in order to
-  ;; integrate with Windows' event-loop.
-  (defcfun ("WaitForSingleObject" wait-for-single-object :cconv :stdcall)
-      dword
-    (handle :intptr)
-    (millis dword))
+  (defcfun ("WaitForMultipleObjects" %wait :cconv :stdcall) dword
+    (count    dword)
+    (handles  :pointer)
+    (wait-all bool)
+    (millis   dword))
 
-  (defun %wait-until-fd-ready (fd event-type timeout)
-    (declare (ignore event-type))
-    (let ((ret (wait-for-single-object (get-osfhandle fd)
-                                       (timeout->milisec timeout))))
+  (defcfun ("WSAGetLastError" wsa-get-last-error :cconv :stdcall) :int)
+
+  (defcfun ("WSAEventSelect" wsa-event-select :cconv :stdcall) :int
+    (socket-handle :int)
+    (event-handle :int)
+    (event-mask :long))
+
+  (defcfun ("WSACreateEvent" wsa-create-event :cconv :stdcall) :int)
+
+  (defcfun ("WSACloseEvent" wsa-close-event :cconv :stdcall) bool
+    (event :int))
+
+  ;; this one is probably completely broken
+  (defun wait-for-multiple-objects (handle timeout)
+    (let ((ret (with-foreign-object (phandle :int)
+                 (setf (mem-ref phandle :int) handle)
+                 (%wait 1 phandle t (timeout->milisec timeout)))))
       (when (or (eql ret +wait-failed+)
                 (eql ret +wait-abandoned+))
-        (error 'poll-error :fd fd))
+        (error 'poll-error))
       (let ((ready (= ret +wait-object-0+)))
         ;; is this right?
-        (values ready ready)))))
+        (values ready ready))))
+
+  ;; wasn't handling :read-write properly so won't pretend to support it
+  (defun %wait-until-fd-ready (fd event-type timeout)
+    (let ((handle (get-osfhandle fd))
+          (ev (wsa-create-event)))
+      (unwind-protect
+           (let ((ret (wsa-event-select handle ev (ecase event-type
+                                                    (:read +fd-read+)
+                                                    (:write +fd-write+)))))
+             (if (eql ret +socket-error+)
+                 (if (= (wsa-get-last-error) +wsaenotsock+)
+                     (wait-for-multiple-objects handle timeout)
+                     (error 'poll-error :fd fd))
+                 (let ((ret (wait-for-multiple-objects ev timeout)))
+                   (ecase event-type
+                     (:read (values ret nil))
+                     (:write (values nil ret))))))
+        (wsa-close-event ev)))))
 
 #-windows
 (defun %wait-until-fd-ready (fd event-type timeout)

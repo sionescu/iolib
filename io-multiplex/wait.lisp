@@ -21,7 +21,7 @@
 ;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;;; Boston, MA 02110-1301, USA
 
-(in-package #:io-multiplex)
+(in-package :io.multiplex)
 
 ;;; <http://msdn2.microsoft.com/en-us/library/ms687025.aspx> has some
 ;;; suggestions on how to work around this limitation.
@@ -62,14 +62,6 @@
   (alexandria:deletef (mux-read-fds mux) (fd-entry-fd fd-entry))
   (alexandria:deletef (mux-write-fds mux) (fd-entry-fd fd-entry))
   t)
-
-(defctype bool (:boolean :int))
-
-(defcfun ("WaitForMultipleObjects" %wait :cconv :stdcall) dword
-  (count    dword)
-  (handles  :pointer)
-  (wait-all bool)
-  (millis   dword))
 
 ;;; FIXME: can we get WAIT_ABANDONED+X?  What to do in that case?
 (defun wait-for-multiple-objects (fds timeout)
