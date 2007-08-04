@@ -39,6 +39,19 @@
 
 (in-package #:net.sockets-tests)
 
+;;; A couple of these tests require an echo server.  You can either
+;;; compile and run the provided tests/echo-server.c or enabled the
+;;; echo services in (x)inetd.
+;;;
+;;; (Note: on Darwin, this can be achieved by uncommenting the echo
+;;;  service in /etc/inetd.conf and running:
+;;;    sudo xinetd -dontfork -inetd_compat)
+;;;
+;;; Set these appropriately if you want to point the echo tests
+;;; somewhere else.
+(defparameter *echo-address* #(127 0 0 1))
+(defparameter *echo-port* 7)
+
 ;;; Returns T if one of the expected conditions occured, otherwise returns
 ;;; a list of the form (:RESULT return-value-1 return-value-2) with
 ;;; the return values from BODY.
@@ -59,6 +72,7 @@
     (address-to-vector "242.1.211.3")
   #(242 1 211 3) :ipv4)
 
+#-sockets::ipv6-disabled
 (deftest address-to-vector.3
     (address-to-vector "::")
   #(0 0 0 0 0 0 0 0) :ipv6)
@@ -75,6 +89,7 @@
   t)
 
 ;;; RT: should signal a PARSE-ERROR when given an invalid string.
+#-sockets::ipv6-disabled
 (deftest ensure-address.1
     (handler-case (ensure-address "ff0x::114")
       (parse-error () t))
@@ -126,12 +141,14 @@
       (type-error () t))
   t)
 
+#-sockets::ipv6-disabled
 (deftest address-to-string.1
     (mapcar (lambda (x) (address-to-string (make-address x)))
             '(#(127 0 0 1) #(255 255 255 255) #(0 0 0 0 0 0 0 0)
               #(0 0 0 0 0 0 0 1) #(1 0 0 0 0 0 0 0)))
   ("127.0.0.1" "255.255.255.255" "::" "::1" "1::"))
 
+#-sockets::ipv6-disabled
 (deftest vector-to-colon-separated.1
     (let ((ip  #(0 0 0 255 255 255 0 0)))
       (values (vector-to-colon-separated ip)
@@ -143,10 +160,12 @@
     (address= +ipv4-loopback+ (make-address #(127 0 0 1)))
   t)
 
+#-sockets::ipv6-disabled
 (deftest address=.2
     (address= +ipv6-loopback+ (ensure-address "::1"))
   t)
 
+#-sockets::ipv6-disabled
 (deftest copy-address.1
     (loop for designator in (list "127.0.0.1" +max-ipv4-value+ "::" "::1")
           for addr1 = (ensure-address designator)
@@ -162,16 +181,19 @@
       (type-error () t))
   t)
 
+#-sockets::ipv6-disabled
 (deftest address.unspecified.1
     (every #'inet-address-unspecified-p
            (mapcar #'ensure-address '("0.0.0.0" "::" "0:0:0:0:0:0:0:0")))
   t)
 
+#-sockets::ipv6-disabled
 (deftest address.loopback.1
     (every #'inet-address-loopback-p
            (mapcar #'ensure-address '("127.0.0.1" "::1" "0:0::1")))
   t)
 
+#-sockets::ipv6-disabled
 (deftest address.multicast.1
     (every #'inet-address-multicast-p
            (mapcar #'ensure-address
@@ -179,6 +201,7 @@
                      "ff02::2" "ff0a::114" "ff05::1:3")))
   t)
 
+#-sockets::ipv6-disabled
 (deftest address.ipv6-ipv4-mapped.1
     (ipv6-ipv4-mapped-p (ensure-address "::ffff:127.0.0.1"))
   t)
@@ -350,13 +373,9 @@
         ((or (>= i (length buffer)) (not c) (eq c eof)) i)
       (setf (elt buffer i) c))))
 
-;;; these require that the echo services are turned on in inetd
-;;;
-;;; note: on Darwin, this can be achieved by uncommenting the echo
-;;; service in /etc/inetd.conf and running:
-;;;   sudo xinetd -dontfork -inetd_compat
 (deftest simple-tcp-client
-    (with-socket (s :family :ipv4 :remote-host #(127 0 0 1) :remote-port 7)
+    (with-socket (s :remote-host *echo-address* :remote-port *echo-port*
+                    :family :ipv4)
       (let ((data (make-string 200)))
         (format s "here is some text")
         (finish-output s)
@@ -366,7 +385,8 @@
   t)
 
 (deftest sockaddr-return-type
-    (with-socket (s :family :ipv4 :remote-host #(127 0 0 1) :remote-port 7)
+    (with-socket (s :remote-host *echo-address* :remote-port *echo-port*
+                    :family :ipv4)
       (and (ipv4-address-p (remote-address s))
            (numberp (remote-port s))))
   t)
@@ -374,15 +394,16 @@
 ;;; We don't support streams with UDP sockets ATM.  But when we do,
 ;;; let's add a similar test using stream functions.
 ;;;
-;;; FIXME: figure out why this test blocks on my machines, on both
-;;; Darwin and Linux/x86-64 --luis
-#-(and)
+;;; FIXME: figure out why this test blocks with the inetd services on
+;;; my machines, on both Darwin and Linux/x86-64.  Works with
+;;; echo-server.c though --luis
 (deftest simple-udp-client
-    (with-socket (s :type :datagram :remote-host #(127 0 0 1) :remote-port 7)
+    (with-socket (s :remote-host *echo-address* :remote-port *echo-port*
+                    :type :datagram :family :ipv4)
       (let ((data (make-array '(200) :element-type '(unsigned-byte 8))))
         (socket-send "here is some text" s)
         (socket-receive data s)
-        (format t "~&Got ~S back from UDP echo server~%" data)
+        ;; (format t "~&Got ~S back from UDP echo server~%" data)
         (> (length data) 0)))
   t)
 
@@ -394,7 +415,7 @@
                   :type nil
                   :defaults
                   (asdf:system-definition-pathname
-                   (asdf:find-system '#:net.sockets-tests))))))
+                   (asdf:find-system '#:bsd-sockets-tests))))))
       (ignore-errors (delete-file file))
       (with-socket (p :family :local :connect :passive :local-filename file)
         (with-socket (a :family :local :remote-filename file)
@@ -444,7 +465,8 @@
   t)
 
 (deftest socket-open-p.2
-    (with-socket (s :family :ipv4 :remote-host #(127 0 0 1) :remote-port 7)
+    (with-socket (s :remote-host *echo-address* :remote-port *echo-port*
+                    :family :ipv4)
       (socket-open-p s))
   t)
 
