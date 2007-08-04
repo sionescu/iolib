@@ -1,6 +1,6 @@
 ;;;; -*- Mode: lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; io-streams-tests.asd --- ASDF system definition.
+;;; io.streams-tests.asd --- ASDF system definition.
 ;;;
 ;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
@@ -28,7 +28,7 @@
   :description "Test suite for io-streams."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
   :licence "BSD"
-  :depends-on (:rt :io-streams :alexandria)
+  :depends-on (:rt :io.streams :alexandria)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "tests"))
                              *load-truename*)
   :components

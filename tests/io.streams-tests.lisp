@@ -1,6 +1,6 @@
 ;;;; -*- Mode: lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; tests.lisp --- IO-STREAMS test suite.
+;;; tests.lisp --- IO.STREAMS test suite.
 ;;;
 ;;; Copyright (c) 2006-2007, Dr. Edmund Weitz.  All rights reserved.
 ;;; Copyright (c) 2007, Luis Oliveira  <loliveira@common-lisp.net>
@@ -82,7 +82,7 @@
 
 (defvar *this-dir*
   (let ((sys-pn (asdf:system-definition-pathname
-                 (asdf:find-system 'io-streams-tests))))
+                 (asdf:find-system 'io.streams-tests))))
     (make-pathname :directory (append (pathname-directory sys-pn) '("tests"))
                    :defaults sys-pn)))
 
