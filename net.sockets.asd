@@ -52,7 +52,7 @@
    (:file "bsd")
    #+windows (:file "winsock")
    (:file "config")
-   (:file "iface")
+   #-windows (:file "iface")
    (:file "address")
    (:file "address-predicates")
    (:file "resolv")

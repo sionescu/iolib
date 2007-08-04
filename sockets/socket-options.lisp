@@ -67,6 +67,7 @@
     (setsockopt fd level option optval size-of-linger)
     (values)))
 
+#-windows
 (defun set-socket-option-timeval (fd level option sec usec)
   (with-foreign-object (optval 'nix::timeval)
     (with-foreign-slots ((nix::sec nix::usec) optval nix::timeval)
@@ -94,8 +95,9 @@
     (with-socklen (optlen size-of-linger)
       (getsockopt fd level option optval optlen)
       (with-foreign-slots ((linger onoff) optval linger)
-        (values (c->lisp-bool onoff) linger)))))
+        (values (not (zerop onoff)) linger)))))
 
+#-windows
 (defun get-socket-option-timeval (fd level option)
   (with-foreign-object (optval 'nix::timeval)
     (with-socklen (optlen nix::size-of-timeval)
@@ -171,8 +173,8 @@
   (send-buffer       so-sndbuf    :int)
   (receive-low-water so-rcvlowat  :int)
   (send-low-water    so-sndlowat  :int)
-  (receive-timeout   so-rcvtimeo  :timeval)
-  (send-timeout      so-sndtimeo  :timeval)
+  #-windows (receive-timeout   so-rcvtimeo  :timeval)
+  #-windows (send-timeout      so-sndtimeo  :timeval)
   (reuse-address     so-reuseaddr :bool))
 
 ;;;; Linux-specific Options

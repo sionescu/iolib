@@ -257,6 +257,8 @@
   socket)
 
 (defmethod bind-address ((socket local-socket) (address local-address) &key)
+  #+windows (error "This platform does not support local sockets.")
+  #-windows
   (with-sockaddr-un (sun (address-name address))
     (bind (fd-of socket) sun size-of-sockaddr-un))
   socket)
@@ -325,6 +327,9 @@
   (values socket))
 
 (defmethod connect ((socket local-socket) (address local-address) &key)
+  #+windows
+  (error "This platform does not support local sockets.")
+  #-windows
   (with-sockaddr-un (sun (address-name address))
     (%connect (fd-of socket) sun size-of-sockaddr-un))
   (values socket))
@@ -375,6 +380,7 @@
                         end-of-record dont-route dont-wait no-signal
                         out-of-band #+linux more #+linux confirm)
   #+darwin (declare (ignore no-signal)) ; better warn?
+  #+windows (declare (ignore dont-wait no-signal end-of-record)) ; ditto
   (check-type start unsigned-byte
               "a non-negative unsigned integer")
   (check-type end (or unsigned-byte null)
@@ -382,10 +388,10 @@
   (when (or remote-port remote-address)
     (check-type remote-address address "a network address")
     (check-type remote-port (unsigned-byte 16) "a valid IP port number"))
-  (let ((flags (logior (if end-of-record msg-eor 0)
+  (let ((flags (logior #-windows (if end-of-record msg-eor 0)
                        (if dont-route msg-dontroute 0)
-                       (if dont-wait  msg-dontwait 0)
-                       #-darwin (if no-signal  msg-nosignal 0)
+                       #-windows (if dont-wait  msg-dontwait 0)
+                       #-(or darwin windows) (if no-signal  msg-nosignal 0)
                        (if out-of-band msg-oob 0)
                        #+linux (if more msg-more 0)
                        #+linux (if confirm msg-confirm 0))))
@@ -417,11 +423,12 @@
 
 (defun calc-recvfrom-flags (out-of-band peek wait-all dont-wait no-signal)
   #+darwin (declare (ignore no-signal)) ; better warn?
+  #+windows (declare (ignore wait-all dont-wait no-signal)) ; ditto
   (logior (if out-of-band msg-oob 0)
           (if peek        msg-peek 0)
-          (if wait-all    msg-waitall 0)
-          (if dont-wait   msg-dontwait 0)
-          #-darwin (if no-signal msg-nosignal 0)))
+          #-windows (if wait-all    msg-waitall 0)
+          #-windows (if dont-wait   msg-dontwait 0)
+          #-(or windows darwin) (if no-signal msg-nosignal 0)))
 
 (defun %do-recvfrom (buffer ss fd flags start end)
   (multiple-value-bind (buff start-offset bufflen)

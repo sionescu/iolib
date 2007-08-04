@@ -90,19 +90,36 @@ ADDRESS-NAME reader."))
       (princ (aref vector 2) s) (princ #\. s)
       (princ (aref vector 3) s))))
 
+#+windows
+(defun %ipv6-string-to-vector (string)
+  (with-foreign-object (in6-sockaddr 'sockaddr-in6)
+    (bzero in6-sockaddr size-of-sockaddr-in6)
+    (with-foreign-object (length :int)
+      (setf (mem-ref length :int) size-of-sockaddr-in6)
+      (handler-case
+          (wsa-string-to-address string af-inet6 (null-pointer) in6-sockaddr
+                                 length)
+        (socket-error () (error 'parse-error)))
+      (in6-addr-to-ipv6-array
+       (foreign-slot-value in6-sockaddr 'sockaddr-in6 'addr)))))
+
+#+windows
+(handler-case (%ipv6-string-to-vector "::")
+  (parse-error () (pushnew 'ipv6-disabled *features*)))
+
+#-windows
+(defun %ipv6-string-to-vector (string)
+  (with-foreign-object (in6-addr :uint16 8)
+    (bzero in6-addr 16)
+    (handler-case (inet-pton af-inet6 string-pointer in6-addr)
+      (posix-error () (error 'parse-error)))
+    (in6-addr-to-ipv6-array in6-addr)))
+
 (defun colon-separated-to-vector (string)
   "Convert a colon-separated IPv6 address to
 a (simple-array (unsigned-byte 16) 8)."
   (check-type string string)
-  (with-foreign-object (in6-addr :uint16 8)
-    (with-foreign-string (string-pointer string)
-      (nix:bzero in6-addr 16)
-      (handler-case
-          (inet-pton af-inet6           ; address family
-                     string-pointer     ; name
-                     in6-addr)          ; pointer to struct in6_addr
-        (posix-error () (error 'parse-error))))
-    (in6-addr-to-ipv6-array in6-addr)))
+  (%ipv6-string-to-vector string))
 
 (defun ipv4-on-ipv6-mapped-vector-p (vector)
   (and (dotimes (i 5 t)

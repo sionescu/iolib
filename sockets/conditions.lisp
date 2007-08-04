@@ -23,6 +23,12 @@
 
 (in-package :net.sockets)
 
+;;; we need these early on, can't wait for winsock.lisp.
+#+windows
+(progn
+  (load-foreign-library "Ws2_32.dll")
+  (load-foreign-library "msvcrt.dll"))
+
 (defgeneric error-code (err))
 
 (defmethod error-code ((err system-error))
@@ -58,11 +64,10 @@
 
 (defmethod print-object ((socket-error socket-error) stream)
   (print-unreadable-object (socket-error stream :type t :identity nil)
-    (let ((code (nix:system-error-code socket-error))
-          (identifier (nix:system-error-identifier socket-error)))
+    (let ((code (nix:system-error-code socket-error)))
       (format stream "~S ~S ~S"
               (or code "[No code]")
-              identifier
+              (nix:system-error-identifier socket-error)
               (or #-windows (nix:strerror code)
                   #+windows (get-wsa-error-string code)
                   "[Can't get error string.]")))))
@@ -76,10 +81,16 @@
          :identifier ,identifier)
        (:documentation ,(or documentation "")))))
 
+(define-condition unknown-socket-error (socket-error)
+  ()
+  (:documentation "Error signalled upon finding an unknown error."))
+
 (defun lookup-socket-error (keyword)
   (or (cdr (assoc keyword *socket-error-map*))
-      (error "Unknown socket error: ~S" keyword)))
+      (make-instance 'unknown-socket-error :identifier keyword
+                     :code (foreign-enum-value 'socket-error-values keyword))))
 
+(define-socket-error socket-invalid-argument              :einval)
 (define-socket-error socket-address-in-use-error          :eaddrinuse)
 (define-socket-error socket-address-not-available-error   :eaddrnotavail)
 (define-socket-error socket-network-down-error            :enetdown)
@@ -125,6 +136,8 @@
     (let ((kw (foreign-enum-keyword 'socket-error-values errno :errorp nil)))
       (if kw
           (error (lookup-socket-error kw))
+          ;; this branch is probably mostly unused now. Should
+          ;; probably sinal an UNKOWN-SOCKET-ERROR here instead.
           (nix:posix-error errno)))))
 
 ;;;; Resolver Conditions

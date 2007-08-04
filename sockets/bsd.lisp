@@ -44,39 +44,52 @@
                                    :error-generator signal-socket-error)
      ,@args))
 
+#-windows
+(defctype fd :int)
+
+#+windows
+(progn
+  (define-foreign-type fd-type ()
+    ()
+    (:actual-type :int)
+    (:simple-parser fd))
+
+  (defmethod translate-to-foreign (fd (type fd-type))
+    (get-osfhandle fd)))
+
 ;;;; sys/socket.h
 
 (define-socket-call "accept" :int
   "Accept an incoming connection, returning the file descriptor."
-  (socket  :int)
+  (socket  fd)
   (address :pointer) ; sockaddr-foo
   (addrlen :pointer))
 
 (define-socket-call "bind" :int
   "Bind a socket to a particular local address."
-  (fd      :int)
+  (fd      fd)
   (address :pointer)
   (addrlen socklen))
 
 (define-socket-call ("connect" %connect) :int
   "Create an outgoing connection on a given socket."
-  (socket  :int)
+  (socket  fd)
   (address :pointer) ; sockaddr-foo
   (addrlen socklen))
 
 (define-socket-call "getpeername" :int
-  (socket  :int)
+  (socket  fd)
   (address :pointer)
   (addrlen :pointer))
 
 (define-socket-call "getsockname" :int
-  (socket  :int)
+  (socket  fd)
   (address :pointer)
   (addrlen :pointer))
 
 (define-socket-call "getsockopt" :int
   "Retrieve socket configuration."
-  (fd      :int)
+  (fd      fd)
   (level   :int)
   (optname :int)
   (optval  :pointer)
@@ -84,41 +97,43 @@
 
 (define-socket-call "listen" :int
   "Mark a bound socket as listening for incoming connections."
-  (socket  :int)
+  (socket  fd)
   (backlog :int))
 
 (define-socket-call "recv" ssize
-  (socket :int)
+  (socket fd)
   (buffer :pointer)
   (length size)
   (flags  :int))
 
 (define-socket-call "recvfrom" ssize
-  (socket  :int)
+  (socket  fd)
   (buffer  :pointer)
   (length  size)
   (flags   :int)
   (address :pointer)
   (addrlen :pointer))
 
+#-(and) ; unused
 (define-socket-call "recvmsg" ssize
-  (socket  :int)
+  (socket  fd)
   (message :pointer)
   (flags   :int))
 
 (define-socket-call "send" ssize
-  (socket :int)
+  (socket fd)
   (buffer :pointer)
   (length size)
   (flags  :int))
 
+#-(and) ; unused
 (define-socket-call "sendmsg" ssize
-  (socket  :int)
+  (socket  fd)
   (message :pointer)
   (flags   :int))
 
 (define-socket-call "sendto" ssize
-  (socket   :int)
+  (socket   fd)
   (buffer   :pointer)
   (length   size)
   (flags    :int)
@@ -127,35 +142,36 @@
 
 (define-socket-call "setsockopt" :int
   "Configure a socket."
-  (fd      :int)
+  (fd      fd)
   (level   :int)
   (optname :int)
   (optval  :pointer)
   (optlen  socklen))
 
 (define-socket-call ("shutdown" %shutdown) :int
-  (socket :int)
+  (socket fd)
   (how    :int))
 
+;;; SOCKET is emulated in winsock.lisp.
+#-windows
 (define-socket-call "socket" :int
   "Create a BSD socket."
   (domain   :int)  ; af-*
   (type     :int)  ; sock-*
   (protocol :int))
 
-#+darwin
-(cl-posix::unsupported-function sockatmark)
-
-#-darwin
+#-(and) ; unused
 (define-socket-call "sockatmark" :int
-  (socket :int))
+  (socket fd))
 
+#-(and) ; unused
 (define-socket-call ("socketpair" %socketpair) :int
   (domain   :int)  ; af-*
   (type     :int)  ; sock-*
   (protocol :int)
   (filedes  :pointer))
 
+#-(and) ; unused
 (defun socketpair (domain type protocol)
   (with-foreign-object (filedes :int 2)
     (%socketpair domain type protocol filedes)
@@ -164,7 +180,7 @@
 
 ;;;; netinet/un.h
 
-;;; export?
+#-windows
 (defconstant unix-path-max
   (- size-of-sockaddr-un (foreign-slot-offset 'sockaddr-un 'path)))
 
@@ -219,12 +235,14 @@
 
 ;;;; arpa/inet.h
 
+#-(and) ; unused
 (define-socket-call "inet_ntop" :string
   (family :int)
   (src    :pointer)
   (dest   :pointer)
   (size   socklen))
 
+#-windows
 (defcfun "inet_pton"
     (errno-wrapper :int :error-predicate (lambda (x) (not (plusp x))))
   (family :int)

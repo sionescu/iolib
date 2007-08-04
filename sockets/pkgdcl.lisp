@@ -60,6 +60,7 @@
    #:system-error
    #:unknown-interface
    #:unknown-protocol
+   #:unknown-socket-error
 
    ;; Condition Accessors
    #:address-type

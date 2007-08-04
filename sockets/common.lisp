@@ -130,6 +130,7 @@
      (make-sockaddr-in6 ,var ,address ,port)
      ,@body))
 
+#-windows
 (defun make-sockaddr-un (sun string)
   (declare (type string string))
   (nix:bzero sun size-of-sockaddr-un)
@@ -141,6 +142,7 @@
                       (mem-aref c-string :uint8 off)))))
   (values sun))
 
+#-windows
 (defmacro with-sockaddr-un ((var address) &body body)
   `(with-foreign-object (,var 'sockaddr-un)
      (make-sockaddr-un ,var ,address)
@@ -160,6 +162,7 @@
                            :name (in6-addr-to-ipv6-array addr))
             (ntohs port))))
 
+#-windows
 (defun sockaddr-un->sockaddr (sun)
   (with-foreign-slots ((path) sun sockaddr-un)
     (let ((name (make-string (1- unix-path-max)))
@@ -183,13 +186,13 @@
     (ecase family
       (#.af-inet (sockaddr-in->sockaddr ss))
       (#.af-inet6 (sockaddr-in6->sockaddr ss))
-      (#.af-local (sockaddr-un->sockaddr ss)))))
+      #-windows (#.af-local (sockaddr-un->sockaddr ss)))))
 
 (defun sockaddr->sockaddr-storage (ss sockaddr &optional (port 0))
   (etypecase sockaddr
     (ipv4-address (make-sockaddr-in ss (address-name sockaddr) port))
     (ipv6-address (make-sockaddr-in6 ss (address-name sockaddr) port))
-    (local-address (make-sockaddr-un ss (address-name sockaddr)))))
+    #-windows (local-address (make-sockaddr-un ss (address-name sockaddr)))))
 
 ;;;; Misc
 

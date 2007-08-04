@@ -27,50 +27,84 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
+;;; This file contains a lot of unused types and constants that should
+;;; be cleaned up or at least commented out.
+
 #-windows
 (include "sys/socket.h" "sys/un.h" "netinet/in.h" "netinet/in_systm.h"
          "netinet/ip.h" "net/if.h" "netinet/tcp.h" "netdb.h" "errno.h"
          "arpa/inet.h")
 
-#+windows
-(include "Winsock2.h" "Ws2tcpip.h")
+#+windows (include "Winsock2.h" "Ws2tcpip.h")
 
 (in-package #:bsd-sockets)
 
 ;;; TODO: check if I didn't miss any from CL-POSIX.  --luis
 (constantenum socket-error-values
-  ((:enotsock "ENOTSOCK"))
-  ((:edestaddrreq "EDESTADDRREQ"))
-  ((:emsgsize "EMSGSIZE"))
-  ((:eprototype "EPROTOTYPE"))
-  ((:enoprotoopt "ENOPROTOOPT"))
-  ((:eremote "EREMOTE"))
-  ((:enolink "ENOLINK"))
-  ((:epfnosupport "EPFNOSUPPORT"))
-  ((:eafnosupport "EAFNOSUPPORT"))
-  ((:eaddrinuse "EADDRINUSE"))
-  ((:eaddrnotavail "EADDRNOTAVAIL"))
-  ((:enetdown "ENETDOWN"))
-  ((:enetunreach "ENETUNREACH"))
-  ((:enetreset "ENETRESET"))
-  ((:econnaborted "ECONNABORTED"))
-  ((:econnreset "ECONNRESET"))
-  ((:eisconn "EISCONN"))
-  ((:enotconn "ENOTCONN"))
-  ((:eshutdown "ESHUTDOWN"))
-  ((:etoomanyrefs "ETOOMANYREFS"))
-  ((:etimedout "ETIMEDOUT"))
-  ((:econnrefused "ECONNREFUSED"))
-  ((:ehostdown "EHOSTDOWN"))
-  ((:ehostunreach "EHOSTUNREACH"))
+  ((:eprotonosupport "EPROTONOSUPPORT" "WSAEPROTONOSUPPORT"))
+  ((:esocktnosupport "ESOCKTNOSUPPORT" "WSAESOCKTNOSUPPORT"))
+  ((:enotsock "ENOTSOCK" "WSAENOTSOCK"))
+  ((:edestaddrreq "EDESTADDRREQ" "WSAEDESTADDRREQ"))
+  ((:emsgsize "EMSGSIZE" "WSAEMSGSIZE"))
+  ((:eprototype "EPROTOTYPE" "WSAEPROTOTYPE"))
+  ((:enoprotoopt "ENOPROTOOPT" "WSAENOPROTOOPT"))
+  ((:eremote "EREMOTE" "WSAEREMOTE"))
+  #-windows ((:enolink "ENOLINK"))
+  ((:epfnosupport "EPFNOSUPPORT" "WSAEPFNOSUPPORT"))
+  ((:eafnosupport "EAFNOSUPPORT" "WSAEAFNOSUPPORT"))
+  ((:eaddrinuse "EADDRINUSE" "WSAEADDRINUSE"))
+  ((:eaddrnotavail "EADDRNOTAVAIL" "WSAEADDRNOTAVAIL"))
+  ((:enetdown "ENETDOWN" "WSAENETDOWN"))
+  ((:enetunreach "ENETUNREACH" "WSAENETUNREACH"))
+  ((:enetreset "ENETRESET" "WSAENETRESET"))
+  ((:econnaborted "ECONNABORTED" "WSAECONNABORTED"))
+  ((:econnreset "ECONNRESET" "WSAECONNRESET"))
+  ((:eisconn "EISCONN" "WSAEISCONN"))
+  ((:enotconn "ENOTCONN" "WSAENOTCONN"))
+  ((:eshutdown "ESHUTDOWN" "WSAESHUTDOWN"))
+  ((:etoomanyrefs "ETOOMANYREFS" "WSAETOOMANYREFS"))
+  ((:etimedout "ETIMEDOUT" "WSAETIMEDOUT"))
+  ((:econnrefused "ECONNREFUSED" "WSAECONNREFUSED"))
+  ((:ehostdown "EHOSTDOWN" "WSAEHOSTDOWN"))
+  ((:ehostunreach "EHOSTUNREACH" "WSAEHOSTUNREACH"))
   ((:enonet "ENONET") :optional t)
-  ((:enobufs "ENOBUFS"))
-  ((:eopnotsupp "EOPNOTSUPP")))
+  ((:enobufs "ENOBUFS" "WSAENOBUFS"))
+  ((:eopnotsupp "EOPNOTSUPP" "WSAEOPNOTSUPP"))
+  ;; The following are here because of Winsock only and I'm not 100%
+  ;; if they are correct.  TODO: check these. So, for portability, we
+  ;; probably really want to define here every possibly error even if
+  ;; they are repeated from CL-POSIX otherwise we'll be generating
+  ;; different conditions (POSIX-ERROR vs. SOCKET-ERROR) on different
+  ;; platforms.
+  ((:eagain "EAGAIN" "WSAEWOULDBLOCK")) ; is this right?
+  ((:ebadf "EBADF" "WSAEBADF"))
+  ((:eintr "EINTR" "WSAEINTR"))
+  ((:einval "EINVAL" "WSAEINVAL"))
+  ((:enomem "ENOMEM" "WSAENOBUFS"))
+  ((:eacces "EACCES" "WSAEACCES"))
+  ((:efault "EFAULT" "WSAEFAULT"))
+  ((:emfile "EMFILE" "WSAEMFILE"))
+  ((:einprogress "EINPROGRESS" "WSAEINPROGRESS"))
+  ((:ealready "EALREADY" "WSAEALREADY"))
+  ((:eloop "ELOOP" "WSAELOOP"))
+  ((:enametoolong "ENAMETOOLONG" "WSAENAMETOOLONG"))
+  ((:enotempty "ENOTEMPTY" "WSAENOTEMPTY"))
+  ((:eusers "EUSERS" "WSAEUSERS"))
+  ((:edquot "EDQUOT" "WSAEDQUOT"))
+  ((:estale "ESTALE" "WSAESTALE"))
+  #+windows ((:eproclim "WSAEPROCLIM"))
+  #+windows ((:ediscon "WSAEDISCON"))
+  #+windows ((:enomre "WSAENOMORE"))
+  #+windows ((:ecancelled "WSAECANCELLED"))
+  #+windows ((:einvalidproctable "WSAEINVALIDPROCTABLE"))
+  #+windows ((:einvalidprovider "WSAEINVALIDPROVIDER"))
+  #+windows ((:eproviderfailedinit "WSAEPROVIDERFAILEDINIT"))
+  #+windows ((:erefused "WSAEREFUSED")))
 
 ;;;; sys/socket.h
 
-(ctype socklen   "socklen_t")
-(ctype sa-family "sa_family_t")
+(ctype socklen "socklen_t")
+(ctype sa-family #-windows "sa_family_t" #+windows "short")
 
 ;;; socket() - socket address family
 (constant (af-unspec "AF_UNSPEC" "PF_UNSPEC"))
@@ -83,7 +117,7 @@
           :optional t)
 (constant (af-route "AF_ROUTE" "PF_ROUTE")
           :documentation "Routing sockets" :optional t)
-(constant (af-key "AF_KEY" "PF_KEY"))
+#-windows (constant (af-key "AF_KEY" "PF_KEY"))
 (constant (af-netlink "AF_NETLINK" "PF_NETLINK")
           :documentation "Linux Netlink sockets" :optional t)
 
@@ -105,10 +139,10 @@
 (constant (ipproto-raw "IPPROTO_RAW"))
 (constant (ipproto-tcp "IPPROTO_TCP"))
 (constant (ipproto-udp "IPPROTO_UDP"))
-#-darwin (constant (ipproto-sctp "IPPROTO_SCTP"))
+#-(or windows darwin) (constant (ipproto-sctp "IPPROTO_SCTP"))
 
 (cstruct sockaddr "struct sockaddr"
-  (family "sa_family" :type sa-family))
+  (family "sa_family" :type #-windows sa-family #+windows :ushort))
 
 (cstruct sockaddr-storage "struct sockaddr_storage"
   (family "ss_family" :type sa-family))
@@ -171,7 +205,7 @@
 (constant (so-sndbuf "SO_SNDBUF"))
 (constant (so-sndlowat "SO_SNDLOWAT"))
 (constant (so-sndtimeo "SO_SNDTIMEO"))
-(constant (so-timestamp "SO_TIMESTAMP"))
+#-windows (constant (so-timestamp "SO_TIMESTAMP"))
 (constant (so-type "SO_TYPE"))
 (constant (so-useloopback "SO_USELOOPBACK") :optional t)      ; freebsd
 (constant (tcp-cork "TCP_CORK") :optional t)                  ; linux
@@ -190,30 +224,33 @@
 (constant (tcp-window "TCP_WINDOW") :optional t)              ; linux
 
 ;;; shutdown()
-(constant (shut-rd "SHUT_RD"))
-(constant (shut-wr "SHUT_WR"))
-(constant (shut-rdwr "SHUT_RDWR"))
+(constant (shut-rd "SHUT_RD" "SD_RECEIVE"))
+(constant (shut-wr "SHUT_WR" "SD_SEND"))
+(constant (shut-rdwr "SHUT_RDWR" "SD_BOTH"))
 
 ;;; recvmsg/sendmsg()
-(constant (msg-ctrunc "MSG_CTRUNC"))                 ; recvmsg
-(constant (msg-dontroute "MSG_DONTROUTE"))           ;         sendmsg
-(constant (msg-eor "MSG_EOR"))                       ; recvmsg sendmsg
-(constant (msg-oob "MSG_OOB"))                       ; recvmsg sendmsg
-(constant (msg-peek "MSG_PEEK"))                     ; recvmsg
-(constant (msg-trunc "MSG_TRUNC"))                   ; recvmsg
-(constant (msg-waitall "MSG_WAITALL"))               ; recvmsg
-(constant (msg-dontwait "MSG_DONTWAIT"))             ; recvmsg sendmsg
-#-darwin (constant (msg-nosignal "MSG_NOSIGNAL"))    ;         sendmsg
-(constant (msg-errqueue "MSG_ERRQUEUE") :optional t) ; recvmsg
-(constant (msg-more "MSG_MORE") :optional t)         ;         sendmsg
-(constant (msg-confirm "MSG_CONFIRM") :optional t)   ; sendmsg sendmsg
-(constant (msg-proxy "MSG_PROXY") :optional t)       ;
-(constant (msg-fin "MSG_FIN") :optional t)           ;
-(constant (msg-syn "MSG_SYN") :optional t)           ;
-(constant (msg-eof "MSG_EOF") :optional t)           ;
-(constant (msg-nbio "MSG_NBIO") :optional t)         ;
-(constant (msg-compat "MSG_COMPAT") :optional t)     ;
+(constant (msg-dontroute "MSG_DONTROUTE"))            ;         sendmsg
+(constant (msg-oob "MSG_OOB"))                        ; recvmsg sendmsg
+(constant (msg-peek "MSG_PEEK"))                      ; recvmsg
+(constant (msg-errqueue "MSG_ERRQUEUE") :optional t)  ; recvmsg
+(constant (msg-more "MSG_MORE") :optional t)          ;         sendmsg
+(constant (msg-confirm "MSG_CONFIRM") :optional t)    ; sendmsg sendmsg
+(constant (msg-proxy "MSG_PROXY") :optional t)        ;
+(constant (msg-fin "MSG_FIN") :optional t)            ;
+(constant (msg-syn "MSG_SYN") :optional t)            ;
+(constant (msg-eof "MSG_EOF") :optional t)            ;
+(constant (msg-nbio "MSG_NBIO") :optional t)          ;
+(constant (msg-compat "MSG_COMPAT") :optional t)      ;
+#-windows
+(progn
+  (constant (msg-trunc "MSG_TRUNC"))                  ; recvmsg
+  (constant (msg-waitall "MSG_WAITALL"))              ; recvmsg
+  (constant (msg-dontwait "MSG_DONTWAIT"))            ; recvmsg sendmsg
+  #-darwin (constant (msg-nosignal "MSG_NOSIGNAL"))   ;         sendmsg
+  (constant (msg-eor "MSG_EOR"))                      ; recvmsg sendmsg
+  (constant (msg-ctrunc "MSG_CTRUNC")))               ; recvmsg
 
+#-(and) ; unused
 (cstruct msghdr "struct msghdr"
   (name       "msg_name"       :type :pointer)
   (namelen    "msg_namelen"    :type socklen)
@@ -223,14 +260,16 @@
   (controllen "msg_controllen" :type socklen)
   (flags      "msg_flags"      :type :int))
 
+#-(and) ; unused
 (cstruct cmsghdr "struct cmsghdr"
   (len   "cmsg_len"   :type socklen)
   (level "cmsg_level" :type :int)
   (type  "cmsg_type"  :type :int))
 
+#-(and) ; unused
 (constant (cmgroup-max "CMGROUP_MAX") :optional t)
 
-#+freebsd
+#+(or (or) freebsd) ; unused
 (cstruct cmsgcred "struct cmsgcred"
   (pid     "cmcred_pid"     :type pid)
   (uid     "cmcred_uid"     :type uid)
@@ -239,6 +278,7 @@
   (ngroups "cmcred_ngroups" :type :short)
   (groups  "cmcred_groups"  :type gid :count :auto))
 
+#-(and) ; unused
 (constant (scm-rights "SCM_RIGHTS"))
 (constant (scm-credentials "SCM_CREDENTIALS") :optional t)
 
@@ -258,7 +298,6 @@
   (ngroups "sc_ngroups" :type :int)
   (groups  "sc_groups"  :type gid :count :auto))
 
-
 (cstruct linger "struct linger"
   "SO_LINGER manipulation record."
   (onoff  "l_onoff"  :type :int)
@@ -271,6 +310,7 @@
 
 ;;;; from sys/un.h
 
+#-windows
 (cstruct sockaddr-un "struct sockaddr_un"
   "A UNIX-domain socket address."
   (family "sun_family" :type sa-family)
@@ -284,8 +324,8 @@
 
 ;;;; from netinet/in.h
 
-(ctype in-port "in_port_t")
-(ctype in-addr "in_addr_t")
+(ctype in-port #-windows "in_port_t" #+windows "u_short")
+(ctype in-addr #-windows "in_addr_t" #+windows "u_long")
 
 (cstruct sockaddr-in "struct sockaddr_in"
   "An IPv4 socket address."
@@ -310,15 +350,17 @@
   (addr     "sin6_addr"     :type in6-addr)
   (scope-id "sin6_scope_id" :type :uint32))
 
-(constant (inaddr-any "INADDR_ANY"))
-(constant (inaddr-broadcast "INADDR_BROADCAST"))
-(constant (inaddr-none "INADDR_NONE"))
-(constant (in-loopbacknet "IN_LOOPBACKNET"))
-(constant (inaddr-loopback "INADDR_LOOPBACK"))
-(constant (inaddr-unspec-group "INADDR_UNSPEC_GROUP"))
-(constant (inaddr-allhosts-group "INADDR_ALLHOSTS_GROUP"))
-(constant (inaddr-allrtrs-group "INADDR_ALLRTRS_GROUP"))
-(constant (inaddr-max-local-group "INADDR_MAX_LOCAL_GROUP"))
+#-(and) ; unused
+(progn
+  (constant (inaddr-any "INADDR_ANY"))
+  (constant (inaddr-broadcast "INADDR_BROADCAST"))
+  (constant (inaddr-none "INADDR_NONE"))
+  (constant (in-loopbacknet "IN_LOOPBACKNET"))
+  (constant (inaddr-loopback "INADDR_LOOPBACK"))
+  (constant (inaddr-unspec-group "INADDR_UNSPEC_GROUP"))
+  (constant (inaddr-allhosts-group "INADDR_ALLHOSTS_GROUP"))
+  (constant (inaddr-allrtrs-group "INADDR_ALLRTRS_GROUP"))
+  (constant (inaddr-max-local-group "INADDR_MAX_LOCAL_GROUP")))
 
 (constant (inet-addrstrlen "INET_ADDRSTRLEN"))
 (constant (inet6-addrstrlen "INET6_ADDRSTRLEN"))
@@ -329,12 +371,12 @@
 (constant (ipv6-multicast-if "IPV6_MULTICAST_IF"))
 (constant (ipv6-multicast-loop "IPV6_MULTICAST_LOOP"))
 (constant (ipv6-unicast-hops "IPV6_UNICAST_HOPS"))
-(constant (ipv6-v6only "IPV6_V6ONLY"))
+#-windows (constant (ipv6-v6only "IPV6_V6ONLY"))
 
 ;;;; from netinet/tcp.h
 
 (constant (tcp-nodelay "TCP_NODELAY"))
-(constant (tcp-maxseg "TCP_MAXSEG"))
+#-windows (constant (tcp-maxseg "TCP_MAXSEG"))
 #+linux
 (constant (tcp-cork "TCP_CORK"))
 (constant (tcp-keepidle "TCP_KEEPIDLE") :optional t)
@@ -344,7 +386,7 @@
 (constant (tcp-linger2 "TCP_LINGER2") :optional t)
 (constant (tcp-defer-accept "TCP_DEFER_ACCEPT") :optional t)
 (constant (tcp-window-clamp "TCP_WINDOW_CLAMP") :optional t)
-#-darwin (constant (tcp-info "TCP_INFO"))
+#-(or windows darwin) (constant (tcp-info "TCP_INFO"))
 (constant (tcp-quickack "TCP_QUICKACK") :optional t)
 
 #+linux
@@ -379,11 +421,11 @@
 (constant (ai-passive "AI_PASSIVE"))
 (constant (ai-canonname "AI_CANONNAME"))
 (constant (ai-numerichost "AI_NUMERICHOST"))
-#-darwin (constant (ai-numericserv "AI_NUMERICSERV"))
-(constant (ai-v4mapped "AI_V4MAPPED"))
+#-(or windows darwin) (constant (ai-numericserv "AI_NUMERICSERV"))
+#-windows (constant (ai-v4mapped "AI_V4MAPPED"))
 (constant (ai-v4mapped-cfg "AI_V4MAPPED_CFG") :optional t) ; freebsd
-(constant (ai-all "AI_ALL"))
-(constant (ai-addrconfig "AI_ADDRCONFIG"))
+#-windows (constant (ai-all "AI_ALL"))
+#-windows (constant (ai-addrconfig "AI_ADDRCONFIG"))
 
 (constant (ni-maxhost "NI_MAXHOST"))
 (constant (ni-maxserv "NI_MAXSERV"))
@@ -397,11 +439,11 @@
 (constant (ni-dgram "NI_DGRAM"))
 
 ;;; error codes
-(constant (netdb-success "NETDB_SUCCESS"))
-(constant (netdb-internal "NETDB_INTERNAL"))
+#-windows (constant (netdb-success "NETDB_SUCCESS"))
+#-windows (constant (netdb-internal "NETDB_INTERNAL"))
 
 (constantenum addrinfo-errors
-  ((:netdb-success "NETDB_SUCCESS"))
+  #-windows ((:netdb-success "NETDB_SUCCESS"))
   ((:eai-addrfamily "EAI_ADDRFAMILY") :optional t) ; linux
   ((:eai-again "EAI_AGAIN"))
   ((:eai-badflags "EAI_BADFLAGS"))
@@ -412,7 +454,7 @@
   ((:eai-nodata "EAI_NODATA") :optional t)         ; linux
   ((:eai-service "EAI_SERVICE"))
   ((:eai-socktype "EAI_SOCKTYPE"))
-  ((:eai-system "EAI_SYSTEM"))
+  ((:eai-system "EAI_SYSTEM" #+windows "EAI_FAIL"))
   ((:eai-badhints "EAI_BADHINTS") :optional t)     ; freebsd
   ((:eai-protocol "EAI_PROTOCOL") :optional t)     ; freebsd
   ((:eai-max "EAI_MAX") :optional t)               ; freebsd
@@ -425,9 +467,12 @@
 
 ;;;; from net/if.h
 
-(cstruct if-nameindex "struct if_nameindex"
-  (index "if_index" :type :unsigned-int)
-  (name  "if_name"  :type :string))
+;;; On windows platforms, this is only supported on Vista and later.
+#-windows
+(progn
+  (cstruct if-nameindex "struct if_nameindex"
+           (index "if_index" :type :unsigned-int)
+           (name  "if_name"  :type :string))
 
-(constant (ifnamesize "IF_NAMESIZE"))
-(constant (ifnamsiz "IFNAMSIZ"))
+  (constant (ifnamesize "IF_NAMESIZE"))
+  (constant (ifnamsiz "IFNAMSIZ")))

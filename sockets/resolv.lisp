@@ -177,9 +177,9 @@ determines the IPv6 behaviour, defaults to *IPV6*."))
              ((nil) (values af-inet 0))
              ;; freebsd 6.1 rejects AI_V4MAPPED and AI_ALL (weird thing)
              ;; therefore I'll use AF_UNSPEC and do the mappings myself
-             ((t) #-bsd (values af-inet6
-                                (logior ai-v4mapped ai-all))
-                  #+bsd (values af-unspec 0))
+             ((t) #-(or windows bsd) (values af-inet6
+                                             (logior ai-v4mapped ai-all))
+                  #+(or windows bsd) (values af-unspec 0))
              (:ipv6 (values af-inet6 0)))))
     (multiple-value-bind (vector type) (address-to-vector host)
       (case type
@@ -187,8 +187,7 @@ determines the IPv6 behaviour, defaults to *IPV6*."))
         (:ipv6 (lookup-host-u16-vector-8 vector ipv6))
         (t (multiple-value-bind (family flags)
                (decide-family-and-flags)
-             (setf flags (logior flags ai-canonname
-                                 ai-addrconfig))
+             #-windows (setf flags (logior flags ai-canonname ai-addrconfig))
              (let* ((addrinfo (get-address-info
                                :node host
                                :hint-flags flags
@@ -257,13 +256,13 @@ remaining address list as the second return value."
         (foreign-slot-value ptr 'servent 'name ))))
 
 #-darwin
-(defun %get-service-name (port protocol)
+(defun %get-service-name (port-arg protocol)
   (with-foreign-object (sin 'sockaddr-in)
     (nix:bzero sin size-of-sockaddr-in)
     (with-foreign-slots
         ((family port) sin sockaddr-in)
       (setf family af-inet
-            port (htons port)))
+            port (htons port-arg)))
     (nth-value 1 (get-name-info sin
                                 :flags (case protocol
                                          (:udp ni-dgram)
