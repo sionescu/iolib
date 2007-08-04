@@ -104,7 +104,7 @@
 
 (defun make-sockaddr-in (sin ub8-vector &optional (port 0))
   (declare (type ipv4-array ub8-vector) (type ub16 port))
-  (nix:bzero sin size-of-sockaddr-in)
+  (bzero sin size-of-sockaddr-in)
   (with-foreign-slots ((family addr port) sin sockaddr-in)
     (setf family af-inet)
     (setf addr (htonl (vector-to-integer ub8-vector)))
@@ -118,7 +118,7 @@
 
 (defun make-sockaddr-in6 (sin6 ub16-vector &optional (port 0))
   (declare (type ipv6-array ub16-vector) (type ub16 port))
-  (nix:bzero sin6 size-of-sockaddr-in6)
+  (bzero sin6 size-of-sockaddr-in6)
   (with-foreign-slots ((family addr port) sin6 sockaddr-in6)
     (setf family af-inet6)
     (copy-simple-array-ub16-to-alien-vector ub16-vector addr)
@@ -133,7 +133,7 @@
 #-windows
 (defun make-sockaddr-un (sun string)
   (declare (type string string))
-  (nix:bzero sun size-of-sockaddr-un)
+  (bzero sun size-of-sockaddr-un)
   (with-foreign-slots ((family path) sun sockaddr-un)
     (setf family af-local)
     (with-foreign-string (c-string string)

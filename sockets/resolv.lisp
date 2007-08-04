@@ -33,7 +33,7 @@
                          (hint-type 0) (hint-protocol 0))
   (with-foreign-objects ((hints 'addrinfo)
                          (res :pointer))
-    (nix:bzero hints size-of-addrinfo)
+    (bzero hints size-of-addrinfo)
     (with-foreign-slots ((flags family socktype
                           protocol)
                          hints addrinfo)
@@ -258,7 +258,7 @@ remaining address list as the second return value."
 #-darwin
 (defun %get-service-name (port-arg protocol)
   (with-foreign-object (sin 'sockaddr-in)
-    (nix:bzero sin size-of-sockaddr-in)
+    (bzero sin size-of-sockaddr-in)
     (with-foreign-slots
         ((family port) sin sockaddr-in)
       (setf family af-inet
@@ -308,9 +308,10 @@ remaining address list as the second return value."
   "Lookup a service by port or name.  PROTOCOL should be one
 of :TCP, :UDP or :ANY."
   (check-type protocol (member :tcp :udp :any))
-  (if (parse-number-or-nil port-or-name :ub16)
-      (lookup-service-number parsed-number protocol)
-      (lookup-service-name port-or-name protocol)))
+  (let ((parsed-number (parse-number-or-nil port-or-name :ub16)))
+    (if 
+        (lookup-service-number parsed-number protocol)
+        (lookup-service-name port-or-name protocol))))
 
 ;;;; Protocol Lookup
 

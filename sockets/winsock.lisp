@@ -24,7 +24,7 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-(in-package #:bsd-sockets)
+(in-package :net.sockets)
 
 (defctype dword :unsigned-long)
 (defctype word :unsigned-short)

@@ -37,7 +37,7 @@
 
 #+windows (include "Winsock2.h" "Ws2tcpip.h")
 
-(in-package #:bsd-sockets)
+(in-package :net.sockets)
 
 ;;; TODO: check if I didn't miss any from CL-POSIX.  --luis
 (constantenum socket-error-values

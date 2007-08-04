@@ -46,8 +46,8 @@
   :serial t
   :components
   ((:file "pkgdcl")
-   (:file "common")
    (:grovel-file "grovel")
+   (:file "common")
    (:file "conditions")
    (:file "bsd")
    #+windows (:file "winsock")

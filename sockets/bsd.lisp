@@ -27,7 +27,7 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-(in-package #:bsd-sockets)
+(in-package :net.sockets)
 
 ;;; Simple wrapper around DEFCFUN that uses the stdcall calling
 ;;; convention on windows.
