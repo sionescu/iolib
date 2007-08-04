@@ -325,6 +325,7 @@
                      (foreign-string-to-lisp
                       (iobuf-data ib)
                       :offset (iobuf-start ib)
+                      :count (iobuf-length ib)
                       :encoding (babel:external-format-encoding ef)
                       :max-chars 1))
              (babel:end-of-input-in-character ()
@@ -383,6 +384,7 @@
                   (foreign-string-to-lisp
                    (iobuf-data ib)
                    :offset (iobuf-start ib)
+                   :count (iobuf-length ib)
                    :encoding (babel:external-format-encoding ef)
                    :max-chars 1))
           (babel:end-of-input-in-character ()
