@@ -25,8 +25,9 @@
 
 (defpackage :net.sockets
   (:nicknames #:sockets)
-  (:use #:common-lisp :cffi :alexandria :split-sequence :io.streams)
+  (:use #:common-lisp :cffi :alexandria :split-sequence :io.streams :cl-posix-ffi)
   (:import-from #:cl-posix #:system-error #:posix-error #:system-error-message)
+  (:shadow #:listen)
   (:export
    ;; Conditions
    #:posix-error

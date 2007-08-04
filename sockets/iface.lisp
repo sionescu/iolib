@@ -56,25 +56,25 @@
 (defun list-network-interfaces ()
   "Returns a list of network interfaces currently available."
   (with-foreign-object (ifptr :pointer)
-    (setf ifptr (nix:if-nameindex))
+    (setf ifptr (if-nameindex))
     (unless (null-pointer-p ifptr)
       (loop :for i :from 0
             :for name := (foreign-slot-value
-                          (mem-aref ifptr 'nix::if-nameindex i)
-                                 'nix::if-nameindex 'nix::name)
+                          (mem-aref ifptr 'if-nameindex i)
+                                 'if-nameindex 'name)
             :for index := (foreign-slot-value
-                           (mem-aref ifptr 'nix::if-nameindex i)
-                                  'nix::if-nameindex 'nix::index)
+                           (mem-aref ifptr 'if-nameindex i)
+                                  'if-nameindex 'index)
             :while (plusp index)
             :collect (make-interface name index)
-            :finally (nix:if-freenameindex ifptr)))))
+            :finally (if-freenameindex ifptr)))))
 
 (defun get-interface-by-index (index)
   (check-type index unsigned-byte "an unsigned integer")
-  (with-foreign-object (buff :uint8 nix::ifnamesize)
+  (with-foreign-object (buff :uint8 ifnamesize)
     (let (retval)
       (handler-case
-          (setf retval (nix:if-indextoname index buff))
+          (setf retval (if-indextoname index buff))
         (nix:enxio (err)
           (error 'unknown-interface
                  :code (nix:system-error-code err)
@@ -86,7 +86,7 @@
   (check-type name string "a string")
   (let (retval)
     (handler-case
-        (setf retval (nix:if-nametoindex name))
+        (setf retval (if-nametoindex name))
       (nix:enodev (err)
         (error 'unknown-interface
                :code (nix:system-error-code err)

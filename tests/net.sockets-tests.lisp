@@ -354,7 +354,7 @@
 ;;;
 ;;; note: on Darwin, this can be achieved by uncommenting the echo
 ;;; service in /etc/inetd.conf and running:
-;;;   xinetd -dontfork -inetd_compat
+;;;   sudo xinetd -dontfork -inetd_compat
 (deftest simple-tcp-client
     (with-socket (s :family :ipv4 :remote-host #(127 0 0 1) :remote-port 7)
       (let ((data (make-string 200)))

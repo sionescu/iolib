@@ -23,8 +23,11 @@
 
 (in-package :common-lisp-user)
 
+(eval-when (:load-toplevel :execute)
+  (asdf:oos 'asdf:load-op :cffi-grovel))
+
 (defpackage #:net.sockets-system
-  (:use #:common-lisp))
+  (:use #:common-lisp :cffi-grovel))
 
 (in-package #:net.sockets-system)
 
@@ -44,7 +47,10 @@
   :components
   ((:file "pkgdcl")
    (:file "common")
+   (:grovel-file "grovel")
    (:file "conditions")
+   (:file "bsd")
+   #+windows (:file "winsock")
    (:file "config")
    (:file "iface")
    (:file "address")

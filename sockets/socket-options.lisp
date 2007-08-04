@@ -50,58 +50,56 @@
 (defun set-socket-option-bool (fd level option value)
   (with-foreign-object (optval :int)
     (setf (mem-ref optval :int) (lisp->c-bool value))
-    (nix:setsockopt fd level option optval nix::size-of-int)
+    (setsockopt fd level option optval size-of-int)
     (values)))
 
 (defun set-socket-option-int (fd level option value)
   (with-foreign-object (optval :int)
     (setf (mem-ref optval :int) value)
-    (nix:setsockopt fd level option optval nix::size-of-int)
+    (setsockopt fd level option optval size-of-int)
     (values)))
 
-(defun set-socket-option-linger (fd level option onoff linger)
-  (with-foreign-object (optval 'nix::linger)
-    (with-foreign-slots
-        ((nix::linger nix::onoff) optval nix::linger)
-      (setf nix::onoff (lisp->c-bool onoff)
-            nix::linger linger))
-    (nix:setsockopt fd level option optval nix::size-of-linger)
+(defun set-socket-option-linger (fd level option new-onoff new-linger)
+  (with-foreign-object (optval 'linger)
+    (with-foreign-slots ((linger onoff) optval linger)
+      (setf onoff (lisp->c-bool new-onoff)
+            linger new-linger))
+    (setsockopt fd level option optval size-of-linger)
     (values)))
 
 (defun set-socket-option-timeval (fd level option sec usec)
   (with-foreign-object (optval 'nix::timeval)
-    (with-foreign-slots
-        ((nix::sec nix::usec) optval nix::timeval)
+    (with-foreign-slots ((nix::sec nix::usec) optval nix::timeval)
       (setf nix::sec sec
             nix::usec usec))
-    (nix:setsockopt fd level option optval nix::size-of-timeval)
+    (setsockopt fd level option optval nix::size-of-timeval)
     (values)))
 
 ;;;; Get Helpers
 
 (defun get-socket-option-bool (fd level option)
   (with-foreign-object (optval :int)
-    (with-socklen (optlen nix::size-of-int)
-      (nix:getsockopt fd level option optval optlen)
-      (values (c->lisp-bool (mem-ref optval :int))))))
+    (with-socklen (optlen size-of-int)
+      (getsockopt fd level option optval optlen)
+      (mem-ref optval :boolean))))
 
 (defun get-socket-option-int (fd level option)
   (with-foreign-object (optval :int)
-    (with-socklen (optlen nix::size-of-int)
-      (nix:getsockopt fd level option optval optlen)
-      (values (mem-ref optval :int)))))
+    (with-socklen (optlen size-of-int)
+      (getsockopt fd level option optval optlen)
+      (mem-ref optval :int))))
 
 (defun get-socket-option-linger (fd level option)
-  (with-foreign-object (optval 'nix::linger)
-    (with-socklen (optlen nix::size-of-linger)
-      (nix:getsockopt fd level option optval optlen)
-      (with-foreign-slots ((nix::linger nix::onoff) optval nix::linger)
-        (values (c->lisp-bool nix::onoff) nix::linger)))))
+  (with-foreign-object (optval 'linger)
+    (with-socklen (optlen size-of-linger)
+      (getsockopt fd level option optval optlen)
+      (with-foreign-slots ((linger onoff) optval linger)
+        (values (c->lisp-bool onoff) linger)))))
 
 (defun get-socket-option-timeval (fd level option)
   (with-foreign-object (optval 'nix::timeval)
     (with-socklen (optlen nix::size-of-timeval)
-      (nix:getsockopt fd level option optval optlen)
+      (getsockopt fd level option optval optlen)
       (with-foreign-slots ((nix::sec nix::usec) optval nix::timeval)
         (values nix::sec nix::usec)))))
 
@@ -117,16 +115,14 @@
 (defmacro define-get-sockopt (os eql-name helper-get level optname)
   `(defmethod get-socket-option ((socket socket) (option-name (eql ,eql-name)))
      ,(if (alexandria:featurep os)
-          `(with-socket-error-filter
-             (,helper-get (socket-fd socket) ,level ,optname))
+          `(,helper-get (socket-fd socket) ,level ,optname)
           `(error 'option-not-available option-name))))
 
 (defmacro define-set-sockopt (os eql-name args helper-set level optname)
   `(defmethod set-socket-option
        ((socket socket) (option-name (eql ,eql-name)) &key ,@args)
      ,@(if (alexandria:featurep os)
-           `((with-socket-error-filter
-               (,helper-set (socket-fd socket) ,level ,optname ,@args)))
+           `((,helper-set (socket-fd socket) ,level ,optname ,@args))
            `((declare (ignore ,@args))
              (error 'option-not-available option-name)))))
 
@@ -159,41 +155,41 @@
 
 ;;;; Generic options
 
-(define-socket-options :get nix::sol-socket :unix
-  (accept-connections nix::so-acceptconn :bool)
-  (error              nix::so-error      :int)
-  (type               nix::so-type       :int))
+(define-socket-options :get sol-socket :unix
+  (accept-connections so-acceptconn :bool)
+  (error              so-error      :int)
+  (type               so-type       :int))
 
-(define-socket-options :get-and-set nix::sol-socket :unix
-  (broadcast         nix::so-broadcast :bool)
-  (debug             nix::so-debug     :bool)
-  (dont-route        nix::so-dontroute :bool)
-  (keep-alive        nix::so-keepalive :bool)
-  (linger            nix::so-linger    :linger)
-  (oob-inline        nix::so-oobinline :bool)
-  (receive-buffer    nix::so-rcvbuf    :int)
-  (send-buffer       nix::so-sndbuf    :int)
-  (receive-low-water nix::so-rcvlowat  :int)
-  (send-low-water    nix::so-sndlowat  :int)
-  (receive-timeout   nix::so-rcvtimeo  :timeval)
-  (send-timeout      nix::so-sndtimeo  :timeval)
-  (reuse-address     nix::so-reuseaddr :bool))
+(define-socket-options :get-and-set sol-socket :unix
+  (broadcast         so-broadcast :bool)
+  (debug             so-debug     :bool)
+  (dont-route        so-dontroute :bool)
+  (keep-alive        so-keepalive :bool)
+  (linger            so-linger    :linger)
+  (oob-inline        so-oobinline :bool)
+  (receive-buffer    so-rcvbuf    :int)
+  (send-buffer       so-sndbuf    :int)
+  (receive-low-water so-rcvlowat  :int)
+  (send-low-water    so-sndlowat  :int)
+  (receive-timeout   so-rcvtimeo  :timeval)
+  (send-timeout      so-sndtimeo  :timeval)
+  (reuse-address     so-reuseaddr :bool))
 
 ;;;; Linux-specific Options
 
-(define-socket-options :set nix::sol-socket :linux
-  (bsd-compatible nix::so-bsdcompat    :bool)
-  (bind-to-device nix::so-bindtodevice :int))
+(define-socket-options :set sol-socket :linux
+  (bsd-compatible so-bsdcompat    :bool)
+  (bind-to-device so-bindtodevice :int))
 
 (define-socket-option priority :get-and-set
-  nix::so-priority nix::sol-socket :int :linux)
+  so-priority sol-socket :int :linux)
 
 ;;;; FreeBSD-specific options
 
-(define-socket-options :get-and-set nix::sol-socket :freebsd
-  (reuse-port   nix::so-reuseport   :bool)
-  (use-loopback nix::so-useloopback :bool)
-  (no-sigpipe   nix::so-nosigpipe   :bool))
+(define-socket-options :get-and-set sol-socket :freebsd
+  (reuse-port   so-reuseport   :bool)
+  (use-loopback so-useloopback :bool)
+  (no-sigpipe   so-nosigpipe   :bool))
 
 ;;;; TODO
 
@@ -220,29 +216,29 @@
 ;;;; TCP Options
 
 (define-socket-option tcp-nodelay :get-and-set
-  nix::tcp-nodelay nix::ipproto-tcp :bool :unix)
+  tcp-nodelay ipproto-tcp :bool :unix)
 
 (define-socket-option tcp-maxseg :get-and-set
-  nix::tcp-maxseg nix::ipproto-tcp :int (:or :linux :freebsd))
+  tcp-maxseg ipproto-tcp :int (:or :linux :freebsd))
 
 ;;;; Linux-specific TCP Options
 
-(define-socket-options :get-and-set nix::ipproto-tcp :linux
-  (tcp-cork         nix::tcp-cork         :bool)
-  (tcp-defer-accept nix::tcp-defer-accept :int)
-  (tcp-keepcnt      nix::tcp-keepcnt      :int)
-  (tcp-keepidle     nix::tcp-keepidle     :int)
-  (tcp-keepintvl    nix::tcp-keepintvl    :int)
-  (tcp-linger2      nix::tcp-linger2      :int)
-  (tcp-quickack     nix::tcp-quickack     :bool)
-  (tcp-syncnt       nix::tcp-syncnt       :int)
-  (tcp-window-clamp nix::tcp-window-clamp :int))
+(define-socket-options :get-and-set ipproto-tcp :linux
+  (tcp-cork         tcp-cork         :bool)
+  (tcp-defer-accept tcp-defer-accept :int)
+  (tcp-keepcnt      tcp-keepcnt      :int)
+  (tcp-keepidle     tcp-keepidle     :int)
+  (tcp-keepintvl    tcp-keepintvl    :int)
+  (tcp-linger2      tcp-linger2      :int)
+  (tcp-quickack     tcp-quickack     :bool)
+  (tcp-syncnt       tcp-syncnt       :int)
+  (tcp-window-clamp tcp-window-clamp :int))
 
 ;; TODO: implement "struct tcp_info" helper
 ;; (define-socket-option tcp-info         :get         et::tcp-info         et:ipproto-tcp :tcp-info :linux)
 
 ;;;; FreeBSD-specific TCP Options
 
-(define-socket-options :get-and-set nix::ipproto-tcp :freebsd
-  (tcp-noopt  nix::tcp-noopt  :bool)
-  (tcp-nopush nix::tcp-nopush :bool))
+(define-socket-options :get-and-set ipproto-tcp :freebsd
+  (tcp-noopt  tcp-noopt  :bool)
+  (tcp-nopush tcp-nopush :bool))

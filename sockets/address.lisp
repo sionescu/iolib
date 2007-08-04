@@ -98,9 +98,9 @@ a (simple-array (unsigned-byte 16) 8)."
     (with-foreign-string (string-pointer string)
       (nix:bzero in6-addr 16)
       (handler-case
-          (nix:inet-pton nix::af-inet6  ; address family
-                         string-pointer ; name
-                         in6-addr)      ; pointer to struct in6_addr
+          (inet-pton af-inet6           ; address family
+                     string-pointer     ; name
+                     in6-addr)          ; pointer to struct in6_addr
         (posix-error () (error 'parse-error))))
     (in6-addr-to-ipv6-array in6-addr)))
 

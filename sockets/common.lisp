@@ -104,86 +104,86 @@
 
 (defun make-sockaddr-in (sin ub8-vector &optional (port 0))
   (declare (type ipv4-array ub8-vector) (type ub16 port))
-  (nix:bzero sin nix::size-of-sockaddr-in)
-  (with-foreign-slots ((nix::family nix::addr nix::port) sin nix::sockaddr-in)
-    (setf nix::family nix::af-inet)
-    (setf nix::addr (htonl (vector-to-integer ub8-vector)))
-    (setf nix::port (htons port)))
+  (nix:bzero sin size-of-sockaddr-in)
+  (with-foreign-slots ((family addr port) sin sockaddr-in)
+    (setf family af-inet)
+    (setf addr (htonl (vector-to-integer ub8-vector)))
+    (setf port (htons port)))
   (values sin))
 
 (defmacro with-sockaddr-in ((var address &optional (port 0)) &body body)
-  `(with-foreign-object (,var 'nix::sockaddr-in)
+  `(with-foreign-object (,var 'sockaddr-in)
      (make-sockaddr-in ,var ,address ,port)
      ,@body))
 
 (defun make-sockaddr-in6 (sin6 ub16-vector &optional (port 0))
   (declare (type ipv6-array ub16-vector) (type ub16 port))
-  (nix:bzero sin6 nix::size-of-sockaddr-in6)
-  (with-foreign-slots ((nix::family nix::addr nix::port) sin6 nix::sockaddr-in6)
-    (setf nix::family nix::af-inet6)
-    (copy-simple-array-ub16-to-alien-vector ub16-vector nix::addr)
-    (setf nix::port (htons port)))
+  (nix:bzero sin6 size-of-sockaddr-in6)
+  (with-foreign-slots ((family addr port) sin6 sockaddr-in6)
+    (setf family af-inet6)
+    (copy-simple-array-ub16-to-alien-vector ub16-vector addr)
+    (setf port (htons port)))
   (values sin6))
 
 (defmacro with-sockaddr-in6 ((var address &optional port) &body body)
-  `(with-foreign-object (,var 'nix::sockaddr-in6)
+  `(with-foreign-object (,var 'sockaddr-in6)
      (make-sockaddr-in6 ,var ,address ,port)
      ,@body))
 
 (defun make-sockaddr-un (sun string)
   (declare (type string string))
-  (nix:bzero sun nix::size-of-sockaddr-un)
-  (with-foreign-slots ((nix::family nix::path) sun nix::sockaddr-un)
-    (setf nix::family nix::af-local)
+  (nix:bzero sun size-of-sockaddr-un)
+  (with-foreign-slots ((family path) sun sockaddr-un)
+    (setf family af-local)
     (with-foreign-string (c-string string)
-      (loop :for off :below (1- nix::unix-path-max)
-            :do (setf (mem-aref nix::path :uint8 off)
+      (loop :for off :below (1- unix-path-max)
+            :do (setf (mem-aref path :uint8 off)
                       (mem-aref c-string :uint8 off)))))
   (values sun))
 
 (defmacro with-sockaddr-un ((var address) &body body)
-  `(with-foreign-object (,var 'nix::sockaddr-un)
+  `(with-foreign-object (,var 'sockaddr-un)
      (make-sockaddr-un ,var ,address)
      ,@body))
 
 ;;;; Conversion functions for SOCKADDR_* structs
 
 (defun sockaddr-in->sockaddr (sin)
-  (with-foreign-slots ((nix::addr nix::port) sin nix::sockaddr-in)
+  (with-foreign-slots ((addr port) sin sockaddr-in)
     (values (make-instance 'ipv4-address
-                           :name (integer-to-vector (ntohl nix::addr)))
-            (ntohs nix::port))))
+                           :name (integer-to-vector (ntohl addr)))
+            (ntohs port))))
 
 (defun sockaddr-in6->sockaddr (sin6)
-  (with-foreign-slots ((nix::addr nix::port) sin6 nix::sockaddr-in6)
+  (with-foreign-slots ((addr port) sin6 sockaddr-in6)
     (values (make-instance 'ipv6-address
-                           :name (in6-addr-to-ipv6-array nix::addr))
-            (ntohs nix::port))))
+                           :name (in6-addr-to-ipv6-array addr))
+            (ntohs port))))
 
 (defun sockaddr-un->sockaddr (sun)
-  (with-foreign-slots ((nix::path) sun nix::sockaddr-un)
-    (let ((name (make-string (1- nix::unix-path-max)))
+  (with-foreign-slots ((path) sun sockaddr-un)
+    (let ((name (make-string (1- unix-path-max)))
           (abstract nil))
-      (if (zerop (mem-aref nix::path :uint8 0))
+      (if (zerop (mem-aref path :uint8 0))
           ;; abstract address
           (progn
             (setf abstract t)
-            (loop :for sindex :from 0 :below (1- nix::unix-path-max)
-                  :for pindex :from 1 :below nix::unix-path-max
+            (loop :for sindex :from 0 :below (1- unix-path-max)
+                  :for pindex :from 1 :below unix-path-max
                   :do (setf (schar name sindex)
-                            (code-char (mem-aref nix::path :uint8 pindex)))))
+                            (code-char (mem-aref path :uint8 pindex)))))
           ;; address is in the filesystem
-          (setf name (foreign-string-to-lisp nix::path)))
+          (setf name (foreign-string-to-lisp path)))
       (make-instance 'local-address
                      :name name
                      :abstract abstract))))
 
 (defun sockaddr-storage->sockaddr (ss)
-  (with-foreign-slots ((nix::family) ss nix::sockaddr-storage)
-    (ecase nix::family
-      (#.nix::af-inet (sockaddr-in->sockaddr ss))
-      (#.nix::af-inet6 (sockaddr-in6->sockaddr ss))
-      (#.nix::af-local (sockaddr-un->sockaddr ss)))))
+  (with-foreign-slots ((family) ss sockaddr-storage)
+    (ecase family
+      (#.af-inet (sockaddr-in->sockaddr ss))
+      (#.af-inet6 (sockaddr-in6->sockaddr ss))
+      (#.af-local (sockaddr-un->sockaddr ss)))))
 
 (defun sockaddr->sockaddr-storage (ss sockaddr &optional (port 0))
   (etypecase sockaddr
@@ -219,19 +219,10 @@
                          (:ub16 'ub16) (:ub32 'ub32)))
          (values parsed))))
 
-(defun c->lisp-bool (val)
-  (if (zerop val) nil t))
-
 (defun lisp->c-bool (val)
   (if val 1 0))
 
-(defun addrerr-value (keyword)
-  (foreign-enum-value 'nix::addrinfo-errors keyword))
-
-(defun unixerr-value (keyword)
-  (foreign-enum-value 'nix::errno-values keyword))
-
 (defmacro with-socklen ((var value) &body body)
-  `(with-foreign-object (,var 'nix::socklen)
-     (setf (mem-ref ,var 'nix::socklen) ,value)
+  `(with-foreign-object (,var 'socklen)
+     (setf (mem-ref ,var 'socklen) ,value)
      ,@body))

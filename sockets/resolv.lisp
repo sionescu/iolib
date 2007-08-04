@@ -23,81 +23,6 @@
 
 (in-package :net.sockets)
 
-;;;; Resolver Conditions
-
-(define-constant +resolver-error-map+
-  '((:eai-again      . resolver-again-error)
-    (:eai-fail       . resolver-fail-error)
-    (:eai-noname     . resolver-no-name-error)
-    (:eai-nodata     . resolver-no-name-error)
-    (:eai-addrfamily . resolver-no-name-error)
-    (:eai-service    . resolver-no-service-error))
-  :test 'equal)
-
-(defun resolver-error-condition (id)
-  (cdr (assoc id +resolver-error-map+)))
-
-(defmacro resolver-error-code (id)
-  `(addrerr-value ,id))
-
-(define-condition resolver-error (system-error)
-  ((data :initarg :data :reader resolver-error-data))
-  (:documentation
-   "Signaled when an error occurs while trying to resolve an address."))
-
-(defmacro define-resolver-error (name code identifier format-string
-                                 &optional documentation)
-  `(progn
-     (define-condition ,name (resolver-error)
-       ((code :initform ,code)
-        (identifier :initform ,identifier))
-       (:report (lambda (condition stream)
-                  (format stream ,format-string (resolver-error-data condition))
-                  (print-message-if-not-null condition stream)))
-       (:documentation ,documentation))))
-
-(define-resolver-error resolver-again-error (resolver-error-code :eai-again)
-  :resolver-again
-  "Temporary failure occurred while resolving: ~S"
-  "Condition signaled when a temporary failure occurred.")
-
-(define-resolver-error resolver-fail-error (resolver-error-code :eai-fail)
-  :resolver-fail
-  "Non recoverable error occurred while resolving: ~S"
-  "Condition signaled when a non-recoverable error occurred.")
-
-(define-resolver-error resolver-no-name-error (resolver-error-code :eai-noname)
-  :resolver-no-name
-  "Host or service not found: ~S"
-  "Condition signaled when a host or service was not found.")
-
-(define-resolver-error resolver-no-service-error
-    (resolver-error-code :eai-service) :resolver-no-service
-  "Service not found for specific socket type: ~S"
-  "Condition signaled when a service was not found for the socket type
-requested.")
-
-(define-resolver-error resolver-unknown-error 0 :resolver-unknown
-  "Unknown error while resolving: ~S"
-  "Condition signaled when an unknown error is signaled while resolving
-an address.")
-
-(defun resolver-error (identifier &key data message)
-  (let ((condition-class (resolver-error-condition identifier)))
-    (if condition-class
-        (error condition-class
-               :code (resolver-error-code identifier)
-               :identifier identifier
-               :data data
-               :message message)
-        (error 'resolver-unknown-error
-               :code (or (ignore-errors
-                           (resolver-error-code identifier))
-                         0)
-               :identifier identifier
-               :data data
-               :message message))))
-
 (define-constant +max-ipv4-value+ (1- (expt 2 32))
   :documentation "Integer denoting 255.255.255.255")
 
@@ -106,32 +31,32 @@ an address.")
 (defun get-address-info (&key (node (null-pointer)) (service (null-pointer))
                          (hint-flags 0) (hint-family 0)
                          (hint-type 0) (hint-protocol 0))
-  (with-foreign-objects ((hints 'nix::addrinfo)
+  (with-foreign-objects ((hints 'addrinfo)
                          (res :pointer))
-    (nix:bzero hints nix::size-of-addrinfo)
-    (with-foreign-slots ((nix::flags nix::family nix::socktype
-                          nix::protocol)
-                         hints nix::addrinfo)
-      (setf nix::flags    hint-flags
-            nix::family   hint-family
-            nix::socktype hint-type
-            nix::protocol hint-protocol)
-      (nix:getaddrinfo node service hints res)
+    (nix:bzero hints size-of-addrinfo)
+    (with-foreign-slots ((flags family socktype
+                          protocol)
+                         hints addrinfo)
+      (setf flags    hint-flags
+            family   hint-family
+            socktype hint-type
+            protocol hint-protocol)
+      (getaddrinfo node service hints res)
       (make-pointer (pointer-address (mem-ref res :pointer))))))
 
 (defun get-name-info (sockaddr &key (want-host t) want-service (flags 0))
   (assert (or want-host want-service))
-  (let ((salen nix::size-of-sockaddr-storage))
-    (with-foreign-objects ((host :char nix::ni-maxhost)
-                           (service :char nix::ni-maxserv))
-      (nix:getnameinfo sockaddr salen
-                       host (if want-host nix::ni-maxhost 0)
-                       service (if want-service nix::ni-maxserv 0)
-                       flags)
+  (let ((salen size-of-sockaddr-storage))
+    (with-foreign-objects ((host :char ni-maxhost)
+                           (service :char ni-maxserv))
+      (getnameinfo sockaddr salen
+                   host (if want-host ni-maxhost 0)
+                   service (if want-service ni-maxserv 0)
+                   flags)
       (values (and want-host (foreign-string-to-lisp
-                              host #|:count nix::ni-maxhost|#))
+                              host #|:count ni-maxhost|#))
               (and want-service (foreign-string-to-lisp
-                                 service #|:count nix::ni-maxserv|#))))))
+                                 service #|:count ni-maxserv|#))))))
 
 (defclass host ()
   ((truename :initarg :truename  :reader host-truename
@@ -168,66 +93,60 @@ an address.")
 
 (defun lookup-host-u8-vector-4 (host ipv6)
   (coercef host 'ub8-sarray)
-  (handler-case
-      (ecase ipv6
-        ((nil)
-         ;; Darwin's getnameinfo() seems buggy.  Signals a EAI_FAMILY
-         ;; error on test LOOKUP-HOST.4.  We use gethostbyaddr() here
-         ;; instead as a workaround.  FIXME: handle errors properly.
-         #+darwin
-         (with-foreign-object (addr 'nix::in-addr-struct)
-           (setf (foreign-slot-value addr 'nix::in-addr-struct 'nix::addr)
-                 (htonl (vector-to-integer host)))
-           (let ((ptr (nix:gethostbyaddr addr 4 nix::af-inet)))
-             (if (null-pointer-p ptr)
-                 (resolver-error -1 :data host)
-                 (make-host (foreign-slot-value
-                             ptr 'nix::hostent 'nix::name)
-                            (list (make-address (copy-seq host)))))))
-         #-darwin
-         (with-foreign-object (sin 'nix::sockaddr-storage)
-           (make-sockaddr-in sin host)
-           (make-host (get-name-info sin :flags nix::ni-namereqd)
-                      (list (make-address (copy-seq host))))))
-        ((t)
-         (with-foreign-object (sin6 'nix::sockaddr-storage)
-           (let ((ipv6addr (map-ipv4-vector-to-ipv6 host)))
-             (make-sockaddr-in6 sin6 ipv6addr)
-             (make-host (get-name-info sin6 :flags nix::ni-namereqd)
-                        (list (make-address ipv6addr))))))
-        ((:ipv6)
-         (resolver-error
-          :eai-fail :data host
-          :message "Received IPv4 address but IPv6-only was requested.")))
-    (nix:resolv-error (err)
-      (resolver-error (nix:system-error-identifier err) :data host))))
+  (ecase ipv6
+    ((nil)
+     ;; Darwin's getnameinfo() seems buggy.  Signals a EAI_FAMILY
+     ;; error on test LOOKUP-HOST.4.  We use gethostbyaddr() here
+     ;; instead as a workaround.  FIXME: handle errors properly.
+     #+darwin
+     (with-foreign-object (addr 'in-addr-struct)
+       (setf (foreign-slot-value addr 'in-addr-struct 'addr)
+             (htonl (vector-to-integer host)))
+       (let ((ptr (gethostbyaddr addr 4 af-inet)))
+         (if (null-pointer-p ptr)
+             (resolver-error -1 :data host)
+             (make-host (foreign-slot-value
+                         ptr 'hostent 'name)
+                        (list (make-address (copy-seq host)))))))
+     #-darwin
+     (with-foreign-object (sin 'sockaddr-storage)
+       (make-sockaddr-in sin host)
+       (make-host (get-name-info sin :flags ni-namereqd)
+                  (list (make-address (copy-seq host))))))
+    ((t)
+     (with-foreign-object (sin6 'sockaddr-storage)
+       (let ((ipv6addr (map-ipv4-vector-to-ipv6 host)))
+         (make-sockaddr-in6 sin6 ipv6addr)
+         (make-host (get-name-info sin6 :flags ni-namereqd)
+                    (list (make-address ipv6addr))))))
+    ((:ipv6)
+     (resolver-error
+      :eai-fail :data host
+      :message "Received IPv4 address but IPv6-only was requested."))))
 
 (defun lookup-host-u16-vector-8 (host ipv6)
   (coercef host 'ub16-sarray)
-  (handler-case
-      (ecase ipv6
-        ((nil)
-         (resolver-error
-          :eai-fail :data host
-          :message "Received IPv6 address but IPv4-only was requested."))
-        ((:ipv6 t)
-         (with-foreign-object (sin6 'nix::sockaddr-storage)
-           (make-sockaddr-in6 sin6 host)
-           (make-host (get-name-info sin6 :flags nix::ni-namereqd)
-                      (list (make-address (copy-seq host)))))))
-    (nix:resolv-error (err)
-      (resolver-error (nix:system-error-identifier err) :data host))))
+  (ecase ipv6
+    ((nil)
+     (resolver-error
+      :eai-fail :data host
+      :message "Received IPv6 address but IPv4-only was requested."))
+    ((:ipv6 t)
+     (with-foreign-object (sin6 'sockaddr-storage)
+       (make-sockaddr-in6 sin6 host)
+       (make-host (get-name-info sin6 :flags ni-namereqd)
+                  (list (make-address (copy-seq host))))))))
 
 (defun make-host-from-addrinfo (addrinfo)
   (let ((canonname (foreign-slot-value
-                    addrinfo 'nix::addrinfo 'nix::canonname))
+                    addrinfo 'addrinfo 'canonname))
         (addrlist
          (loop :for addrptr := addrinfo
-               :then (foreign-slot-value addrptr 'nix::addrinfo 'nix::next)
+               :then (foreign-slot-value addrptr 'addrinfo 'next)
                :while (not (null-pointer-p addrptr))
                :collect (sockaddr-storage->sockaddr
                         (foreign-slot-value
-                         addrptr 'nix::addrinfo 'nix::addr)))))
+                         addrptr 'addrinfo 'addr)))))
     (make-host (if (null-pointer-p canonname)
                    nil
                    (foreign-string-to-lisp canonname))
@@ -255,40 +174,36 @@ determines the IPv6 behaviour, defaults to *IPV6*."))
   (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration")
   (flet ((decide-family-and-flags ()
            (case ipv6
-             ((nil) (values nix::af-inet 0))
+             ((nil) (values af-inet 0))
              ;; freebsd 6.1 rejects AI_V4MAPPED and AI_ALL (weird thing)
              ;; therefore I'll use AF_UNSPEC and do the mappings myself
-             ((t) #-bsd (values nix::af-inet6
-                                (logior nix::ai-v4mapped nix::ai-all))
-                  #+bsd (values nix::af-unspec 0))
-             (:ipv6 (values nix::af-inet6 0)))))
+             ((t) #-bsd (values af-inet6
+                                (logior ai-v4mapped ai-all))
+                  #+bsd (values af-unspec 0))
+             (:ipv6 (values af-inet6 0)))))
     (multiple-value-bind (vector type) (address-to-vector host)
       (case type
         (:ipv4 (lookup-host-u8-vector-4 vector ipv6))
         (:ipv6 (lookup-host-u16-vector-8 vector ipv6))
         (t (multiple-value-bind (family flags)
                (decide-family-and-flags)
-             (setf flags (logior flags nix::ai-canonname
-                                 nix::ai-addrconfig))
-             (handler-case
-                 (let* ((addrinfo (get-address-info
-                                   :node host
-                                   :hint-flags flags
-                                   :hint-family family
-                                   :hint-type nix::sock-stream
-                                   :hint-protocol nix::ipproto-ip))
-                        (hostobj (make-host-from-addrinfo addrinfo)))
-                   (when (string-not-equal (host-truename hostobj) host)
-                     (setf (slot-value hostobj 'aliases) (list host)))
-                   (nix:freeaddrinfo addrinfo)
-                   ;; mapping IPv4 addresses onto IPv6
-                   #+bsd
-                   (when (eq ipv6 t)
-                     (map-host-ipv4-addresses-to-ipv6 hostobj))
-                   hostobj)
-               (nix:resolv-error (err)
-                 (resolver-error (nix:system-error-identifier err)
-                                 :data host)))))))))
+             (setf flags (logior flags ai-canonname
+                                 ai-addrconfig))
+             (let* ((addrinfo (get-address-info
+                               :node host
+                               :hint-flags flags
+                               :hint-family family
+                               :hint-type sock-stream
+                               :hint-protocol ipproto-ip))
+                    (hostobj (make-host-from-addrinfo addrinfo)))
+               (when (string-not-equal (host-truename hostobj) host)
+                 (setf (slot-value hostobj 'aliases) (list host)))
+               (freeaddrinfo addrinfo)
+               ;; mapping IPv4 addresses onto IPv6
+               #+bsd
+               (when (eq ipv6 t)
+                 (map-host-ipv4-addresses-to-ipv6 hostobj))
+               (values hostobj))))))))
 
 ;;; FIXME: Doesn't return aliases, why?
 (defmethod lookup-host (host &key (ipv6 *ipv6*))
@@ -333,25 +248,25 @@ remaining address list as the second return value."
 
 #+darwin
 (defun %get-service-name (port protocol)
-  (let ((ptr (nix:getservbyport port (ecase protocol
-                                       (:tcp "tcp")
-                                       (:udp "udp")
-                                       (:any (cffi:null-pointer))))))
+  (let ((ptr (getservbyport port (ecase protocol
+                                   (:tcp "tcp")
+                                   (:udp "udp")
+                                   (:any (cffi:null-pointer))))))
     (if (null-pointer-p ptr)
         (resolver-error -1 :data port) ; FIXME: wrong error
-        (foreign-slot-value ptr 'nix::servent 'nix::name ))))
+        (foreign-slot-value ptr 'servent 'name ))))
 
 #-darwin
 (defun %get-service-name (port protocol)
-  (with-foreign-object (sin 'nix::sockaddr-in)
-    (nix:bzero sin nix::size-of-sockaddr-in)
+  (with-foreign-object (sin 'sockaddr-in)
+    (nix:bzero sin size-of-sockaddr-in)
     (with-foreign-slots
-        ((nix::family nix::port) sin nix::sockaddr-in)
-      (setf nix::family nix::af-inet
-            nix::port (htons port)))
+        ((family port) sin sockaddr-in)
+      (setf family af-inet
+            port (htons port)))
     (nth-value 1 (get-name-info sin
                                 :flags (case protocol
-                                         (:udp nix::ni-dgram)
+                                         (:udp ni-dgram)
                                          (t 0))
                                 :want-host nil :want-service t))))
 
@@ -363,25 +278,25 @@ remaining address list as the second return value."
 (defun lookup-service-name (port protocol)
   (flet ((protocol-type-to-int (protocol)
            (case protocol
-             (:tcp nix::sock-stream)
-             (:udp nix::sock-dgram)
+             (:tcp sock-stream)
+             (:udp sock-dgram)
              (:any 0)))
          (socket-type-from-int (alien-val)
            (case alien-val
-             (#.nix::sock-stream :tcp)
-             (#.nix::sock-dgram :udp)
+             (#.sock-stream :tcp)
+             (#.sock-dgram :udp)
              (t :unknown))))
     (let* ((addrinfo (get-address-info
                       :service port
                       :hint-type (protocol-type-to-int protocol)))
            (port-number (ntohs (foreign-slot-value
                                 (foreign-slot-value addrinfo
-                                                    'nix::addrinfo 'nix::addr)
-                                'nix::sockaddr-in 'nix::port)))
+                                                    'addrinfo 'addr)
+                                'sockaddr-in 'port)))
            (true-protocol
             (socket-type-from-int
-             (foreign-slot-value addrinfo 'nix::addrinfo 'nix::socktype))))
-      (nix:freeaddrinfo addrinfo)
+             (foreign-slot-value addrinfo 'addrinfo 'socktype))))
+      (freeaddrinfo addrinfo)
       (make-service port port-number true-protocol))))
 
 ;;; This tries to parse stuff like "22" as a number instead of a
@@ -394,14 +309,9 @@ remaining address list as the second return value."
   "Lookup a service by port or name.  PROTOCOL should be one
 of :TCP, :UDP or :ANY."
   (check-type protocol (member :tcp :udp :any))
-  (let ((parsed-number (parse-number-or-nil port-or-name :ub16)))
-    (handler-case
-        (if parsed-number
-            (lookup-service-number parsed-number protocol)
-            (lookup-service-name port-or-name protocol))
-      (nix:resolv-error (err)
-        (resolver-error (nix:system-error-identifier err)
-                        :data port-or-name)))))
+  (if (parse-number-or-nil port-or-name :ub16)
+      (lookup-service-number parsed-number protocol)
+      (lookup-service-name port-or-name protocol)))
 
 ;;;; Protocol Lookup
 
@@ -431,13 +341,13 @@ of :TCP, :UDP or :ANY."
   (:documentation "Condition raised when a network protocol is not found."))
 
 (defun make-protocol-from-protoent (protoent)
-  (with-foreign-slots ((nix::name nix::proto nix::aliases)
-                       protoent nix::protoent)
+  (with-foreign-slots ((name proto aliases)
+                       protoent protoent)
     (let ((alias-strings
            (loop :for i :from 0
-                 :for alias := (mem-aref nix::aliases :string i)
+                 :for alias := (mem-aref aliases :string i)
                  :while alias :collect alias)))
-      (make-protocol nix::name nix::proto alias-strings))))
+      (make-protocol name proto alias-strings))))
 
 ;;; Again, why bother parsing numbers in strings? --luis
 (defun lookup-protocol (name-or-number)
@@ -447,7 +357,7 @@ UNKNOWN-PROTOCOL error if no protocol is found."
     (handler-case
         (make-protocol-from-protoent
          (if parsed-number
-             (nix:getprotobynumber parsed-number)
-             (nix:getprotobyname name-or-number)))
+             (getprotobynumber parsed-number)
+             (getprotobyname name-or-number)))
       (posix-error ()
         (error 'unknown-protocol :name name-or-number)))))

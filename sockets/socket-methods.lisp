@@ -44,12 +44,12 @@
 
 (defun translate-make-socket-keywords-to-constants (family type protocol)
   (let ((sf (ecase family
-              (:ipv4  nix::af-inet)
-              (:ipv6  nix::af-inet6)
-              (:local nix::af-local)))
+              (:ipv4  af-inet)
+              (:ipv6  af-inet6)
+              (:local af-local)))
         (st (ecase type
-              (:stream   nix::sock-stream)
-              (:datagram nix::sock-dgram)))
+              (:stream   sock-stream)
+              (:datagram sock-dgram)))
         (sp (cond
               ((integerp protocol) protocol)
               ((eql protocol :default) 0)
@@ -85,8 +85,7 @@
                  (multiple-value-bind (sf st sp)
                      (translate-make-socket-keywords-to-constants
                       family type protocol)
-                   (with-socket-error-filter
-                     (nix:socket sf st sp)))))
+                   (socket sf st sp))))
     (setf fam family
           proto protocol)))
 
@@ -188,24 +187,22 @@
 
 (defmethod socket-open-p ((socket socket))
   (when (fd-of socket)
-    (with-socket-error-filter
-        (handler-case
-            (with-foreign-object (ss 'nix::sockaddr-storage)
-              (nix:bzero ss nix::size-of-sockaddr-storage)
-              (with-socklen (size nix::size-of-sockaddr-storage)
-                (nix:getsockname (fd-of socket) ss size)
-                t))
-          (nix:ebadf ())
-          #+freebsd (nix:econnreset ())))))
+    (handler-case
+        (with-foreign-object (ss 'sockaddr-storage)
+          (bzero ss size-of-sockaddr-storage)
+          (with-socklen (size size-of-sockaddr-storage)
+            (getsockname (fd-of socket) ss size)
+            t))
+      (nix:ebadf ())
+      #+freebsd (nix:econnreset ()))))
 
 ;;;; GETSOCKNAME
 
 (defmethod local-name ((socket socket))
-  (with-foreign-object (ss 'nix::sockaddr-storage)
-    (nix:bzero ss nix::size-of-sockaddr-storage)
-    (with-socklen (size nix::size-of-sockaddr-storage)
-      (with-socket-error-filter
-        (nix:getsockname (fd-of socket) ss size))
+  (with-foreign-object (ss 'sockaddr-storage)
+    (bzero ss size-of-sockaddr-storage)
+    (with-socklen (size size-of-sockaddr-storage)
+      (getsockname (fd-of socket) ss size)
       (sockaddr-storage->sockaddr ss))))
 
 (defmethod local-address ((socket socket))
@@ -217,11 +214,10 @@
 ;;;; GETPEERNAME
 
 (defmethod remote-name ((socket socket))
-  (with-foreign-object (ss 'nix::sockaddr-storage)
-    (nix:bzero ss nix::size-of-sockaddr-storage)
-    (with-socklen (size nix::size-of-sockaddr-storage)
-      (with-socket-error-filter
-          (nix:getpeername (fd-of socket) ss size))
+  (with-foreign-object (ss 'sockaddr-storage)
+    (bzero ss size-of-sockaddr-storage)
+    (with-socklen (size size-of-sockaddr-storage)
+      (getpeername (fd-of socket) ss size)
       (sockaddr-storage->sockaddr ss))))
 
 (defmethod remote-address ((socket socket))
@@ -240,13 +236,11 @@
 
 (defun bind-ipv4-address (fd address port)
   (with-sockaddr-in (sin address port)
-    (with-socket-error-filter
-      (nix:bind fd sin nix::size-of-sockaddr-in))))
+    (bind fd sin size-of-sockaddr-in)))
 
 (defun bind-ipv6-address (fd address port)
   (with-sockaddr-in6 (sin6 address port)
-    (with-socket-error-filter
-      (nix:bind fd sin6 nix::size-of-sockaddr-in6))))
+    (bind fd sin6 size-of-sockaddr-in6)))
 
 (defmethod bind-address ((socket internet-socket) (address ipv4-address)
                          &key (port 0))
@@ -255,18 +249,17 @@
                          (map-ipv4-vector-to-ipv6 (address-name address))
                          port)
       (bind-ipv4-address (fd-of socket) (address-name address) port))
-  (values socket))
+  socket)
 
 (defmethod bind-address ((socket internet-socket) (address ipv6-address)
                          &key (port 0))
   (bind-ipv6-address (fd-of socket) (address-name address) port)
-  (values socket))
+  socket)
 
 (defmethod bind-address ((socket local-socket) (address local-address) &key)
   (with-sockaddr-un (sun (address-name address))
-    (with-socket-error-filter
-      (nix:bind (fd-of socket) sun nix::size-of-sockaddr-un)))
-  (values socket))
+    (bind (fd-of socket) sun size-of-sockaddr-un))
+  socket)
 
 (defmethod bind-address :after ((socket socket) (address address) &key)
   (setf (slot-value socket 'bound) t))
@@ -277,8 +270,7 @@
   (unless backlog (setf backlog (min *default-backlog-size*
                                      +max-backlog-size+)))
   (check-type backlog unsigned-byte "a non-negative integer")
-  (with-socket-error-filter
-    (nix:listen (fd-of socket) backlog))
+  (listen (fd-of socket) backlog)
   (setf (slot-value socket 'listening) t)
   (values socket))
 
@@ -296,13 +288,12 @@
            (make-instance (active-class socket)
                           :external-format (external-format-of socket)
                           :file-descriptor fd)))
-    (with-foreign-object (ss 'nix::sockaddr-storage)
-      (nix:bzero ss nix::size-of-sockaddr-storage)
-      (with-socklen (size nix::size-of-sockaddr-storage)
-        (with-socket-error-filter
-          (handler-case
-              (make-client-socket (nix:accept (fd-of socket) ss size))
-            (nix:ewouldblock ())))))))
+    (with-foreign-object (ss 'sockaddr-storage)
+      (bzero ss size-of-sockaddr-storage)
+      (with-socklen (size size-of-sockaddr-storage)
+        (handler-case
+            (make-client-socket (accept (fd-of socket) ss size))
+          (nix:ewouldblock ()))))))
 
 ;;;; CONNECT
 
@@ -313,13 +304,11 @@
 
 (defun ipv4-connect (fd address port)
   (with-sockaddr-in (sin address port)
-    (with-socket-error-filter
-      (nix:connect fd sin nix::size-of-sockaddr-in))))
+    (%connect fd sin size-of-sockaddr-in)))
 
 (defun ipv6-connect (fd address port)
   (with-sockaddr-in6 (sin6 address port)
-    (with-socket-error-filter
-      (nix:connect fd sin6 nix::size-of-sockaddr-in6))))
+    (%connect fd sin6 size-of-sockaddr-in6)))
 
 (defmethod connect ((socket internet-socket) (address ipv4-address)
                     &key (port 0))
@@ -337,8 +326,7 @@
 
 (defmethod connect ((socket local-socket) (address local-address) &key)
   (with-sockaddr-un (sun (address-name address))
-    (with-socket-error-filter
-      (nix:connect (fd-of socket) sun nix::size-of-sockaddr-un)))
+    (%connect (fd-of socket) sun size-of-sockaddr-un))
   (values socket))
 
 (defmethod connect ((socket passive-socket) address &key)
@@ -347,26 +335,24 @@
 
 (defmethod socket-connected-p ((socket socket))
   (when (fd-of socket)
-    (with-socket-error-filter
-        (handler-case
-            (with-foreign-object (ss 'nix::sockaddr-storage)
-              (nix:bzero ss nix::size-of-sockaddr-storage)
-              (with-socklen (size nix::size-of-sockaddr-storage)
-                (nix:getpeername (fd-of socket) ss size)
-                t))
-          (nix:enotconn ())))))
+    (handler-case
+        (with-foreign-object (ss 'sockaddr-storage)
+          (bzero ss size-of-sockaddr-storage)
+          (with-socklen (size size-of-sockaddr-storage)
+            (getpeername (fd-of socket) ss size)
+            t))
+      (socket-not-connected-error () nil))))
 
 ;;;; SHUTDOWN
 
 (defmethod shutdown ((socket active-socket) direction)
   (check-type direction (member :read :write :read-write)
               "valid direction specifier")
-  (with-socket-error-filter
-    (nix:shutdown (fd-of socket)
-                  (ecase direction
-                    (:read nix::shut-rd)
-                    (:write nix::shut-wr)
-                    (:read-write nix::shut-rdwr))))
+  (%shutdown (fd-of socket)
+             (ecase direction
+               (:read shut-rd)
+               (:write shut-wr)
+               (:read-write shut-rdwr)))
   (values socket))
 
 (defmethod shutdown ((socket passive-socket) direction)
@@ -396,32 +382,27 @@
   (when (or remote-port remote-address)
     (check-type remote-address address "a network address")
     (check-type remote-port (unsigned-byte 16) "a valid IP port number"))
-  (let ((flags (logior (if end-of-record nix::msg-eor 0)
-                       (if dont-route nix::msg-dontroute 0)
-                       (if dont-wait  nix::msg-dontwait 0)
-                       #-darwin (if no-signal  nix::msg-nosignal 0)
-                       (if out-of-band nix::msg-oob 0)
-                       #+linux (if more nix::msg-more 0)
-                       #+linux (if confirm nix::msg-confirm 0))))
+  (let ((flags (logior (if end-of-record msg-eor 0)
+                       (if dont-route msg-dontroute 0)
+                       (if dont-wait  msg-dontwait 0)
+                       #-darwin (if no-signal  msg-nosignal 0)
+                       (if out-of-band msg-oob 0)
+                       #+linux (if more msg-more 0)
+                       #+linux (if confirm msg-confirm 0))))
     (when (and (ipv4-address-p remote-address)
                (eql (socket-family socket) :ipv6))
       (setf remote-address (map-ipv4-address-to-ipv6 remote-address)))
     (multiple-value-bind (buff start-offset bufflen)
         (%normalize-send-buffer buffer start end (external-format-of socket))
-      (with-foreign-object (ss 'nix::sockaddr-storage)
-        (nix:bzero ss nix::size-of-sockaddr-storage)
+      (with-foreign-object (ss 'sockaddr-storage)
+        (bzero ss size-of-sockaddr-storage)
         (when remote-address
           (sockaddr->sockaddr-storage ss remote-address remote-port))
         (with-pointer-to-vector-data (buff-sap buff)
           (incf-pointer buff-sap start-offset)
-          (with-socket-error-filter
-            (return-from socket-send
-              (nix:sendto
-               (fd-of socket)
-               buff-sap bufflen
-               flags
-               (if remote-address ss (null-pointer))
-               (if remote-address nix::size-of-sockaddr-storage 0)))))))))
+          (sendto (fd-of socket) buff-sap bufflen flags
+                  (if remote-address ss (null-pointer))
+                  (if remote-address size-of-sockaddr-storage 0)))))))
 
 (defmethod socket-send (buffer (socket passive-socket) &key)
   (declare (ignore buffer))
@@ -436,26 +417,24 @@
 
 (defun calc-recvfrom-flags (out-of-band peek wait-all dont-wait no-signal)
   #+darwin (declare (ignore no-signal)) ; better warn?
-  (logior (if out-of-band nix::msg-oob 0)
-          (if peek        nix::msg-peek 0)
-          (if wait-all    nix::msg-waitall 0)
-          (if dont-wait   nix::msg-dontwait 0)
-          #-darwin (if no-signal nix::msg-nosignal 0)))
+  (logior (if out-of-band msg-oob 0)
+          (if peek        msg-peek 0)
+          (if wait-all    msg-waitall 0)
+          (if dont-wait   msg-dontwait 0)
+          #-darwin (if no-signal msg-nosignal 0)))
 
 (defun %do-recvfrom (buffer ss fd flags start end)
   (multiple-value-bind (buff start-offset bufflen)
       (%normalize-receive-buffer buffer start end)
-    (with-socklen (size nix::size-of-sockaddr-storage)
-      (nix:bzero ss nix::size-of-sockaddr-storage)
+    (with-socklen (size size-of-sockaddr-storage)
+      (bzero ss size-of-sockaddr-storage)
       (with-pointer-to-vector-data (buff-sap buff)
         (incf-pointer buff-sap start-offset)
-        (with-socket-error-filter
-          (return-from %do-recvfrom
-            (nix:recvfrom fd buff-sap bufflen flags ss size)))))))
+        (recvfrom fd buff-sap bufflen flags ss size)))))
 
 (defmethod socket-receive ((buffer array) (socket stream-socket) &key (start 0)
                            end out-of-band peek wait-all dont-wait no-signal)
-  (with-foreign-object (ss 'nix::sockaddr-storage)
+  (with-foreign-object (ss 'sockaddr-storage)
     (let* ((flags (calc-recvfrom-flags out-of-band peek wait-all
                                        dont-wait no-signal))
            (bytes-received (%do-recvfrom buffer ss (fd-of socket) flags
@@ -465,7 +444,7 @@
 (defmethod socket-receive ((buffer array) (socket datagram-socket)
                            &key (start 0) end out-of-band peek wait-all
                            dont-wait no-signal)
-  (with-foreign-object (ss 'nix::sockaddr-storage)
+  (with-foreign-object (ss 'sockaddr-storage)
     (let* ((flags (calc-recvfrom-flags out-of-band peek wait-all dont-wait
                                        no-signal))
            (bytes-received (%do-recvfrom buffer ss (fd-of socket) flags
@@ -485,9 +464,7 @@
     (error "You can only disconnect active datagram sockets.")))
 
 (defmethod disconnect ((socket datagram-socket))
-  (with-foreign-object (sin 'nix::sockaddr-in)
-    (nix:bzero sin nix::size-of-sockaddr-in)
-    (setf (foreign-slot-value sin 'nix::sockaddr-in 'nix::addr)
-          nix::af-unspec)
-    (with-socket-error-filter
-      (nix:connect (fd-of socket) sin nix::size-of-sockaddr-in))))
+  (with-foreign-object (sin 'sockaddr-in)
+    (bzero sin size-of-sockaddr-in)
+    (setf (foreign-slot-value sin 'sockaddr-in 'addr) af-unspec)
+    (%connect (fd-of socket) sin size-of-sockaddr-in)))
