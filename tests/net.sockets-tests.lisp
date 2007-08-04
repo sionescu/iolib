@@ -72,7 +72,6 @@
     (address-to-vector "242.1.211.3")
   #(242 1 211 3) :ipv4)
 
-#-sockets::ipv6-disabled
 (deftest address-to-vector.3
     (address-to-vector "::")
   #(0 0 0 0 0 0 0 0) :ipv6)
@@ -89,7 +88,6 @@
   t)
 
 ;;; RT: should signal a PARSE-ERROR when given an invalid string.
-#-sockets::ipv6-disabled
 (deftest ensure-address.1
     (handler-case (ensure-address "ff0x::114")
       (parse-error () t))
@@ -141,14 +139,12 @@
       (type-error () t))
   t)
 
-#-sockets::ipv6-disabled
 (deftest address-to-string.1
     (mapcar (lambda (x) (address-to-string (make-address x)))
             '(#(127 0 0 1) #(255 255 255 255) #(0 0 0 0 0 0 0 0)
               #(0 0 0 0 0 0 0 1) #(1 0 0 0 0 0 0 0)))
   ("127.0.0.1" "255.255.255.255" "::" "::1" "1::"))
 
-#-sockets::ipv6-disabled
 (deftest vector-to-colon-separated.1
     (let ((ip  #(0 0 0 255 255 255 0 0)))
       (values (vector-to-colon-separated ip)
@@ -160,12 +156,10 @@
     (address= +ipv4-loopback+ (make-address #(127 0 0 1)))
   t)
 
-#-sockets::ipv6-disabled
 (deftest address=.2
     (address= +ipv6-loopback+ (ensure-address "::1"))
   t)
 
-#-sockets::ipv6-disabled
 (deftest copy-address.1
     (loop for designator in (list "127.0.0.1" +max-ipv4-value+ "::" "::1")
           for addr1 = (ensure-address designator)
@@ -181,19 +175,16 @@
       (type-error () t))
   t)
 
-#-sockets::ipv6-disabled
 (deftest address.unspecified.1
     (every #'inet-address-unspecified-p
            (mapcar #'ensure-address '("0.0.0.0" "::" "0:0:0:0:0:0:0:0")))
   t)
 
-#-sockets::ipv6-disabled
 (deftest address.loopback.1
     (every #'inet-address-loopback-p
            (mapcar #'ensure-address '("127.0.0.1" "::1" "0:0::1")))
   t)
 
-#-sockets::ipv6-disabled
 (deftest address.multicast.1
     (every #'inet-address-multicast-p
            (mapcar #'ensure-address
@@ -201,10 +192,14 @@
                      "ff02::2" "ff0a::114" "ff05::1:3")))
   t)
 
-#-sockets::ipv6-disabled
 (deftest address.ipv6-ipv4-mapped.1
     (ipv6-ipv4-mapped-p (ensure-address "::ffff:127.0.0.1"))
   t)
+
+(deftest address.ipv6.1
+    (address-to-vector "::1.2.3.4")
+  #(0 0 0 0 0 0 #x0102 #x0304)
+  :ipv6)
 
 ;;;; Host Lookup
 

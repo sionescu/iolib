@@ -90,36 +90,69 @@ ADDRESS-NAME reader."))
       (princ (aref vector 2) s) (princ #\. s)
       (princ (aref vector 3) s))))
 
-#+windows
-(defun %ipv6-string-to-vector (string)
-  (with-foreign-object (in6-sockaddr 'sockaddr-in6)
-    (bzero in6-sockaddr size-of-sockaddr-in6)
-    (with-foreign-object (length :int)
-      (setf (mem-ref length :int) size-of-sockaddr-in6)
-      (handler-case
-          (wsa-string-to-address string af-inet6 (null-pointer) in6-sockaddr
-                                 length)
-        (socket-error () (error 'parse-error)))
-      (in6-addr-to-ipv6-array
-       (foreign-slot-value in6-sockaddr 'sockaddr-in6 'addr)))))
-
-#+windows
-(handler-case (%ipv6-string-to-vector "::")
-  (parse-error () (pushnew 'ipv6-disabled *features*)))
-
-#-windows
-(defun %ipv6-string-to-vector (string)
-  (with-foreign-object (in6-addr :uint16 8)
-    (bzero in6-addr 16)
-    (handler-case (inet-pton af-inet6 string in6-addr)
-      (posix-error () (error 'parse-error)))
-    (in6-addr-to-ipv6-array in6-addr)))
-
+;;; TODO: add tests against inet_pton().  Optimize if necessary.
+;;; <http://java.sun.com/javase/6/docs/api/java/net/Inet6Address.html#format>
 (defun colon-separated-to-vector (string)
-  "Convert a colon-separated IPv6 address to
-a (simple-array (unsigned-byte 16) 8)."
+  "Convert a colon-separated IPv6 address to a (simple-array ub16 8)."
   (check-type string string)
-  (%ipv6-string-to-vector string))
+  (when (< (length string) 2)
+    (error 'parse-error))
+  (flet ((handle-trailing-and-leading-colons (string)
+           (let ((start 0)
+                 (end (length string))
+                 (trailing-colons-p nil))
+             (when (char= #\: (char string 0))
+               (if (char= #\: (char string 1))
+                   (incf start)
+                   (error 'parse-error)))
+             (when (char= #\: (char string (- end 1)))
+               (setq trailing-colons-p t)
+               (if (char= #\: (char string (- end 2)))
+                   (decf end)
+                   (error 'parse-error)))
+             (values start end trailing-colons-p)))
+         (emptyp (string)
+           (= 0 (length string)))
+         ;; we need to use this instead of dotted-to-vector because
+         ;; abbreviated IPv4 addresses are invalid in this context.
+         (ipv4-string-to-ub16-list (string)
+           (let ((tokens (split-sequence #\. string)))
+             (when (= (length tokens) 4)
+               (let ((ipv4 (map 'vector
+                                (lambda (string)
+                                  (let ((x (ignore-errors
+                                             (parse-integer string))))
+                                    (if (or (null x) (not (<= 0 x #xff)))
+                                        (error 'parse-error)
+                                        x)))
+                                tokens)))
+                 (list (dpb (aref ipv4 0) (byte 8 8) (aref ipv4 1))
+                       (dpb (aref ipv4 2) (byte 8 8) (aref ipv4 3)))))))
+         (parse-hex-ub16 (string)
+           (let ((x (ignore-errors (parse-integer string :radix 16))))
+             (if (or (null x) (not (<= 0 x #xffff)))
+                 (error 'parse-error)
+                 x))))
+    (multiple-value-bind (start end trailing-colons-p)
+        (handle-trailing-and-leading-colons string)
+      (let* ((vector (make-array 8 :element-type 'ub16 :initial-element 0))
+             (tokens (split-sequence #\: string :start start :end end))
+             (empty-tokens (count-if #'emptyp tokens))
+             (token-count (length tokens)))
+        (unless trailing-colons-p
+          (let ((ipv4 (ipv4-string-to-ub16-list (car (last tokens)))))
+            (when ipv4
+              (incf token-count)
+              (setq tokens (nconc (butlast tokens) ipv4)))))
+        (when (or (> token-count 8) (> empty-tokens 1)
+                  (and (zerop empty-tokens) (/= token-count 8)))
+          (error 'parse-error))
+        (loop for i from 0 and token in tokens do
+              (cond
+                ((integerp token) (setf (aref vector i) token))
+                ((emptyp token) (incf i (- 8 token-count)))
+                (t (setf (aref vector i) (parse-hex-ub16 token)))))
+        vector))))
 
 (defun ipv4-on-ipv6-mapped-vector-p (vector)
   (and (dotimes (i 5 t)
