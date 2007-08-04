@@ -47,10 +47,10 @@
   :components
   ((:file "pkgdcl")
    (:grovel-file "grovel")
-   (:file "common")
-   (:file "conditions")
    (:file "bsd")
    #+windows (:file "winsock")
+   (:file "common")
+   (:file "conditions")
    (:file "config")
    #-windows (:file "iface")
    (:file "address")
