@@ -34,7 +34,10 @@
   (declare (ignore slot-names))
   (check-type input-buffer-size buffer-index)
   (check-type output-buffer-size buffer-index)
-  (when (open-stream-p s) (close s))
+  ;; Commented this form out.  What's it for?  It doesn't allow us to
+  ;; initialize streams with FDs as initargs, since those streams will
+  ;; be open right away.
+  #- (and) (when (open-stream-p s) (close s))
   (with-accessors ((ib input-buffer-of) (ob output-buffer-of)
                    (ef external-format-of)) s
     (setf ib (allocate-iobuf input-buffer-size)
@@ -289,10 +292,10 @@
 
 (defconstant +max-octets-per-char+ 6)
 
-;; FIXME: currently we return :EOF when read(2) returns 0
-;;        we should distinguish hard end-of-files (EOF and buffer empty)
-;;        from soft end-of-files (EOF and *some* bytes still in the buffer
-;;        but not enough to make a full character)
+;;; FIXME: currently we return :EOF when read(2) returns 0
+;;;        we should distinguish hard end-of-files (EOF and buffer empty)
+;;;        from soft end-of-files (EOF and *some* bytes still in the buffer
+;;;        but not enough to make a full character)
 (defmethod stream-read-char ((stream dual-channel-gray-stream))
   (with-accessors ((fd input-fd-of) (ib input-buffer-of)
                    (unread-index ibuf-unread-index-of)
@@ -310,7 +313,7 @@
               ;; Some encodings such as CESU or Java's modified UTF-8 take
               ;; as much as 6 bytes per character. Make sure we have enough
               ;; space to collect read-ahead bytes if required.
-              ((< 0 (iobuf-end-space-length ib) +max-octets-per-char+)
+              ((< (iobuf-length ib) +max-octets-per-char+)
                (iobuf-copy-data-to-start ib)
                (setf unread-index 0)))
         ;; line-end handling
@@ -358,6 +361,9 @@
           (ret nil)
           (eof nil))
       (block nil
+        ;; BUG: this comparision is probably buggy, FIXME.  A similar
+        ;; bug was fixed in STREAM-READ-CHAR.  Must write a test for
+        ;; this one first.
         (when (< 0 (iobuf-end-space-length ib) 4)
           (iobuf-copy-data-to-start ib))
         (when (and (iomux:fd-ready-p fd :read)
@@ -460,12 +466,11 @@
 (defun %write-line-terminator (stream line-terminator)
   (case line-terminator
     (:lf (%write-simple-array-ub8 stream +unix-line-terminator+ 0 1))
-    (:cr (%write-simple-array-ub8 stream +dos-line-terminator+  0 2))
-    (:crlf (%write-simple-array-ub8 stream +mac-line-terminator+  0 1))))
+    (:cr (%write-simple-array-ub8 stream +mac-line-terminator+ 0 1))
+    (:crlf (%write-simple-array-ub8 stream +dos-line-terminator+ 0 2))))
 
 (defmethod stream-write-string ((stream dual-channel-gray-stream)
-                                (string string)
-                                &optional (start 0) end)
+                                (string string) &optional (start 0) end)
   (check-bounds string start end)
   (when (< start end)
     (let* ((octets nil)

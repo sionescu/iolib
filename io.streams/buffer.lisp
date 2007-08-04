@@ -86,7 +86,9 @@
    (iobuf-data iobuf)
    (inc-pointer (iobuf-data iobuf)
                 (iobuf-start iobuf))
-   (iobuf-length iobuf)))
+   (iobuf-length iobuf))
+  (setf (iobuf-end iobuf) (iobuf-length iobuf))
+  (setf (iobuf-start iobuf) 0))
 
 ;;; BREF, (SETF BREF) and BUFFER-COPY *DO NOT* check boundaries
 ;;; that must be done by their callers
