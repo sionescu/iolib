@@ -13,6 +13,8 @@
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :version "0.5.4"
   :licence "LLGPL-2.1"
-  :depends-on (:iolib-posix
+  :depends-on (:cl-posix
                :net.sockets
-               :net.dns-client))
+               ;; comment out until it's brought back up to date
+               ;; :net.dns-client
+               ))
