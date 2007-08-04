@@ -111,7 +111,7 @@ ADDRESS-NAME reader."))
 (defun %ipv6-string-to-vector (string)
   (with-foreign-object (in6-addr :uint16 8)
     (bzero in6-addr 16)
-    (handler-case (inet-pton af-inet6 string-pointer in6-addr)
+    (handler-case (inet-pton af-inet6 string in6-addr)
       (posix-error () (error 'parse-error)))
     (in6-addr-to-ipv6-array in6-addr)))
 
