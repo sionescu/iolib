@@ -415,7 +415,7 @@
                   :type nil
                   :defaults
                   (asdf:system-definition-pathname
-                   (asdf:find-system '#:bsd-sockets-tests))))))
+                   (asdf:find-system '#:net.sockets-tests))))))
       (ignore-errors (delete-file file))
       (with-socket (p :family :local :connect :passive :local-filename file)
         (with-socket (a :family :local :remote-filename file)

@@ -102,13 +102,13 @@
 
 ;;;; Constructors for SOCKADDR_* structs
 
-(defun make-sockaddr-in (sin ub8-vector &optional (port 0))
-  (declare (type ipv4-array ub8-vector) (type ub16 port))
+(defun make-sockaddr-in (sin ub8-vector &optional (portno 0))
+  (declare (type ipv4-array ub8-vector) (type ub16 portno))
   (bzero sin size-of-sockaddr-in)
   (with-foreign-slots ((family addr port) sin sockaddr-in)
     (setf family af-inet)
     (setf addr (htonl (vector-to-integer ub8-vector)))
-    (setf port (htons port)))
+    (setf port (htons portno)))
   (values sin))
 
 (defmacro with-sockaddr-in ((var address &optional (port 0)) &body body)
@@ -116,13 +116,13 @@
      (make-sockaddr-in ,var ,address ,port)
      ,@body))
 
-(defun make-sockaddr-in6 (sin6 ub16-vector &optional (port 0))
-  (declare (type ipv6-array ub16-vector) (type ub16 port))
+(defun make-sockaddr-in6 (sin6 ub16-vector &optional (portno 0))
+  (declare (type ipv6-array ub16-vector) (type ub16 portno))
   (bzero sin6 size-of-sockaddr-in6)
   (with-foreign-slots ((family addr port) sin6 sockaddr-in6)
     (setf family af-inet6)
     (copy-simple-array-ub16-to-alien-vector ub16-vector addr)
-    (setf port (htons port)))
+    (setf port (htons portno)))
   (values sin6))
 
 (defmacro with-sockaddr-in6 ((var address &optional port) &body body)

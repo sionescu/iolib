@@ -205,7 +205,7 @@
   (call-next-method event-base :only-once only-once))
 
 (defun recalculate-timeouts (timeouts)
-  (let ((now (get-monotonic-time)))
+  (let ((now (nix:get-monotonic-time)))
     (dolist (ev (queue-head timeouts))
       (event-recalc-abs-timeout ev now))))
 
@@ -233,7 +233,7 @@
           (and only-once (setf exit-p t)))
         (setf (values deletion-list dispatch-list)
               (filter-expired-events (expired-events timeouts
-                                                     (get-monotonic-time))))
+                                                     (nix:get-monotonic-time))))
         (dispatch-timeouts dispatch-list)
         (remove-events event-base deletion-list)
         (queue-sort timeouts #'< #'event-abs-timeout)))))
@@ -284,7 +284,7 @@ have been received, NIL otherwise."
     (values deletion-list dispatch-list)))
 
 (defun events-calc-min-rel-timeout (timeouts)
-  (let* ((now (get-monotonic-time))
+  (let* ((now (nix:get-monotonic-time))
          (first-valid-event (find-if #'(lambda (to)
                                        (or (null to) (< now to)))
                                      (queue-head timeouts)
