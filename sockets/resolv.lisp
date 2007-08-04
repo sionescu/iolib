@@ -309,7 +309,7 @@ remaining address list as the second return value."
 of :TCP, :UDP or :ANY."
   (check-type protocol (member :tcp :udp :any))
   (let ((parsed-number (parse-number-or-nil port-or-name :ub16)))
-    (if 
+    (if parsed-number
         (lookup-service-number parsed-number protocol)
         (lookup-service-name port-or-name protocol))))
 
