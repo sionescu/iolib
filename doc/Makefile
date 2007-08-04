@@ -1,9 +1,9 @@
 # -*- Mode: Makefile; tab-width: 4; indent-tabs-mode: t -*-
 
-MANUAL := "io.streams"
-SYSTEM := "io.streams"
-PACKAGES := io.streams
-TITLE := "Io.Streams Manual"
+MANUAL := "iolib"
+SYSTEM := "iolib"
+PACKAGES := sockets io.streams
+TITLE := "IOLib Manual"
 CSS := "default"
 
 export LISP ?= sbcl

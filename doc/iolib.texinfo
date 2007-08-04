@@ -1,7 +1,7 @@
 \input texinfo   @c -*-texinfo-*-
 @c %**start of header
-@setfilename io.streams.info
-@settitle IO.Streams Manual
+@setfilename iolib.info
+@settitle IOLib Manual
 
 @c @exampleindent 2
 @c @documentencoding utf-8
@@ -11,7 +11,7 @@
 @c for install-info
 @c @dircategory %%INFO-CATEGORY%%
 @c @direntry
-@c * io.streams:           %%PROJECT-DESCRIPTION%%
+@c * net.sockets:           %%PROJECT-DESCRIPTION%%
 @c @end direntry
 
 @include macros.texinfo
@@ -27,7 +27,7 @@
 @end copying
 
 @titlepage
-@title IO.Streams Manual
+@title IOLib Manual
 @subtitle draft version
 @c @author John Doe
 @page
@@ -39,38 +39,30 @@
 
 @ifnottex
 @node Top
-@top io.streams
+@top net.sockets
 @insertcopying
 @end ifnottex
 
 @c Top Menu
 @menu
 * Overview::                    
-* IO Streams::                  
+* Streams::                     
+* Sockets::                     
 * Comprehensive Index::         
 @end menu
-
 
 @node Overview
 @chapter Overview
 
-Describe this library here.
+Describe IOLib here.
 
-@node IO Streams
-@chapter IO Streams
+@node Streams
+@chapter Streams
+@include streams.texinfo
 
-@section Stream Classes
-
-@include include/class-io.streams-dual-channel-gray-stream.texinfo
-@include include/class-io.streams-dual-channel-single-fd-gray-stream.texinfo
-@include include/class-io.streams-dual-channel-fd-mixin.texinfo
-@include include/class-io.streams-dual-channel-single-fd-mixin.texinfo
-
-@section Stream Accessors
-
-@include include/fun-io.streams-fd-non-blocking.texinfo
-@include include/fun-io.streams-input-fd-non-blocking.texinfo
-@include include/fun-io.streams-output-fd-non-blocking.texinfo
+@node Sockets
+@chapter Sockets
+@include sockets.texinfo
 
 @c We call this node ``Comprehensive Index'' so that texinfo's HTML
 @c output doesn't generate an index.html that'd overwrite the manual's
