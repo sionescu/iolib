@@ -56,18 +56,28 @@
 (deftype stream-position () '(unsigned-byte 64))
 
 (defclass dual-channel-fd-mixin ()
-  ((input-fd  :initform nil :accessor input-fd-of)
-   (output-fd :initform nil :accessor output-fd-of)))
+  ((input-fd  :initform nil :initarg :input-fd :accessor input-fd-of
+              :documentation "placeholder")
+   (output-fd :initform nil :initarg :output-fd :accessor output-fd-of
+              :documentation "placeholder"))
+  (:documentation "placeholder"))
 
-(defgeneric input-fd-non-blocking (socket))
+(defgeneric input-fd-non-blocking (socket)
+  (:documentation "placeholder"))
+
 (defgeneric (setf input-fd-non-blocking) (mode fd-mixin))
 
-(defgeneric output-fd-non-blocking (socket))
+(defgeneric output-fd-non-blocking (socket)
+  (:documentation "placeholder"))
+
 (defgeneric (setf output-fd-non-blocking) (mode fd-mixin))
 
-(defclass dual-channel-single-fd-mixin (dual-channel-fd-mixin) ())
+(defclass dual-channel-single-fd-mixin (dual-channel-fd-mixin)
+  ()
+  (:documentation "placeholder"))
 
 (defgeneric fd-of (stream)
+  (:documentation "placeholder")
   (:method ((stream dual-channel-single-fd-mixin))
     (with-accessors ((fd-in  input-fd-of)
                      (fd-out output-fd-of)) stream
@@ -75,6 +85,7 @@
       (values fd-in))))
 
 (defgeneric (setf fd-of) (fd stream)
+  (:documentation "placeholder")
   (:method (fd (stream dual-channel-single-fd-mixin))
     (with-accessors ((fd-in  input-fd-of)
                      (fd-out output-fd-of)) stream
@@ -82,7 +93,9 @@
       (setf fd-in fd fd-out fd)
       (values fd-in))))
 
-(defgeneric fd-non-blocking (fd-mixin))
+(defgeneric fd-non-blocking (fd-mixin)
+  (:documentation "placeholder"))
+
 (defgeneric (setf fd-non-blocking) (mode fd-mixin))
 
 ;;;; Bivalent Socket Gray Stream
@@ -93,8 +106,9 @@
                                     fundamental-binary-output-stream
                                     fundamental-character-input-stream
                                     fundamental-character-output-stream)
-  ((external-format :initarg :external-format
-                    :reader external-format-of)
+  ((external-format :initform :default :initarg :external-format
+                    :reader external-format-of
+                    :documentation "placehold")
    ;; Input buffer.
    (input-buffer :initform nil :type (or iobuf null)
                  :accessor input-buffer-of)
@@ -107,6 +121,12 @@
    ;; Last read char buffer index.
    (ibuf-unread-index :initform 0 :type buffer-index
                       :accessor ibuf-unread-index-of))
-  (:default-initargs :external-format :default))
+  (:documentation "placeholder"))
 
-(defgeneric (setf external-format-of) (external-format stream))
+(defgeneric (setf external-format-of) (external-format stream)
+  (:documentation "placeholder"))
+
+(defclass dual-channel-single-fd-gray-stream
+    (dual-channel-gray-stream dual-channel-single-fd-mixin)
+  ()
+  (:documentation "placeholder"))

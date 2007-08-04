@@ -26,13 +26,29 @@
 (defpackage :io.streams
   (:use #:common-lisp :cffi :alexandria :trivial-gray-streams)
   (:export
-   #:ub8 #:ub16 #:ub32 #:sb8 #:sb16 #:sb32
-   #:ub8-sarray #:ub8-vector #:ub16-sarray
-   #:external-format-of
-   #:fd-mixin
+   ;; Classes
    #:dual-channel-fd-mixin
+   #:dual-channel-gray-stream
    #:dual-channel-single-fd-mixin
-   #:input-fd #:input-fd-of #:input-fd-non-blocking
-   #:output-fd #:output-fd-of #:output-fd-non-blocking
-   #:fd-of #:fd-non-blocking
-   #:dual-channel-gray-stream))
+   #:dual-channel-single-fd-gray-stream
+
+   ;; Types
+   #:sb16
+   #:sb32
+   #:sb8
+   #:ub16
+   #:ub16-sarray
+   #:ub32
+   #:ub8
+   #:ub8-sarray
+   #:ub8-vector
+
+   ;; Accessors
+   #:external-format-of
+   #:fd-non-blocking
+   #:fd-of
+   #:input-fd-non-blocking
+   #:input-fd-of
+   #:output-fd-non-blocking
+   #:output-fd-of
+   ))

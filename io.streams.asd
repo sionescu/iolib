@@ -32,7 +32,7 @@
   :description "Gray streams."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
-  :depends-on (:cl-posix :io.multiplex :cffi :trivial-gray-streams)
+  :depends-on (:cl-posix :io.multiplex :cffi :trivial-gray-streams :alexandria)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "io.streams"))
                              *load-truename*)
   :serial t
