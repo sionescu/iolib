@@ -52,7 +52,7 @@
       (getnameinfo sockaddr salen
                    host (if want-host ni-maxhost 0)
                    service (if want-service ni-maxserv 0)
-                   flags)
+                   (logior flags ni-namereqd))
       (values (and want-host (foreign-string-to-lisp
                               host #|:count ni-maxhost|#))
               (and want-service (foreign-string-to-lisp
@@ -111,13 +111,13 @@
      #-darwin
      (with-foreign-object (sin 'sockaddr-storage)
        (make-sockaddr-in sin host)
-       (make-host (get-name-info sin :flags ni-namereqd)
+       (make-host (get-name-info sin)
                   (list (make-address (copy-seq host))))))
     ((t)
      (with-foreign-object (sin6 'sockaddr-storage)
        (let ((ipv6addr (map-ipv4-vector-to-ipv6 host)))
          (make-sockaddr-in6 sin6 ipv6addr)
-         (make-host (get-name-info sin6 :flags ni-namereqd)
+         (make-host (get-name-info sin6)
                     (list (make-address ipv6addr))))))
     ((:ipv6)
      (resolver-error
@@ -134,7 +134,7 @@
     ((:ipv6 t)
      (with-foreign-object (sin6 'sockaddr-storage)
        (make-sockaddr-in6 sin6 host)
-       (make-host (get-name-info sin6 :flags ni-namereqd)
+       (make-host (get-name-info sin6)
                   (list (make-address (copy-seq host))))))))
 
 (defun make-host-from-addrinfo (addrinfo)
