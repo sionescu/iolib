@@ -495,7 +495,7 @@ of a file descriptor."))
   (defconstant +socket-error+ -1)
   (defconstant +wsaenotsock+ 10038)
 
-  (defcfun ("WaitForMultipleObjects" %wait :cconv :stdcall) dword
+  (defcfun ("MsgWaitForMultipleObjects" %wait :cconv :stdcall) dword
     (count    dword)
     (handles  :pointer)
     (wait-all bool)
@@ -514,7 +514,7 @@ of a file descriptor."))
     (event :int))
 
   ;; this one is probably completely broken
-  (defun wait-for-multiple-objects (handle timeout)
+  (defun %wait-for-single-object (handle timeout)
     (let ((ret (with-foreign-object (phandle :int)
                  (setf (mem-ref phandle :int) handle)
                  (%wait 1 phandle t (timeout->milisec timeout)))))
@@ -537,7 +537,7 @@ of a file descriptor."))
                  (if (= (wsa-get-last-error) +wsaenotsock+)
                      (wait-for-multiple-objects handle timeout)
                      (error 'poll-error :fd fd))
-                 (let ((ret (wait-for-multiple-objects ev timeout)))
+                 (let ((ret (%wait-for-single-object ev timeout)))
                    (ecase event-type
                      (:read (values ret nil))
                      (:write (values nil ret))))))
