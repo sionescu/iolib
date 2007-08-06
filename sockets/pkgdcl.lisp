@@ -25,10 +25,11 @@
 
 (defpackage :net.sockets
   (:nicknames #:sockets)
-  (:use #:common-lisp :cffi :alexandria :split-sequence :io.streams :cl-posix-ffi)
-  (:import-from #:cl-posix #:system-error #:posix-error #:system-error-message
-                #:pid #:gid #:uid #:size #:ssize)
-  (:import-from #:cl-posix-ffi #:size-of-int #:bzero)
+  (:use #:common-lisp :cffi :alexandria :split-sequence :io.streams)
+  (:import-from #:osicat-posix #:system-error #:posix-error
+                #:system-error-message #:errno-wrapper
+                #:pid #:gid #:uid #:size #:ssize #:bzero)
+  (:import-from #:osicat-sys #:size-of-int)
   (:shadow #:listen)
   (:export
    ;; Conditions

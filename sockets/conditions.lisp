@@ -32,17 +32,17 @@
 (defgeneric error-code (err))
 
 (defmethod error-code ((err system-error))
-  (nix:system-error-code err))
+  (osicat-sys:system-error-code err))
 
 (defgeneric error-identifier (err))
 
 (defmethod error-identifier ((err system-error))
-  (nix:system-error-identifier err))
+  (osicat-sys:system-error-identifier err))
 
 (defgeneric error-message (err))
 
 (defmethod error-message ((err system-error))
-  (nix:system-error-message err))
+  (osicat-sys:system-error-message err))
 
 (defun print-message-if-not-null (condition stream
                                   &optional (eof-place :before))
@@ -64,10 +64,10 @@
 
 (defmethod print-object ((socket-error socket-error) stream)
   (print-unreadable-object (socket-error stream :type t :identity nil)
-    (let ((code (nix:system-error-code socket-error)))
+    (let ((code (osicat-sys:system-error-code socket-error)))
       (format stream "~S ~S ~S"
               (or code "[No code]")
-              (nix:system-error-identifier socket-error)
+              (osicat-sys:system-error-identifier socket-error)
               (or #-windows (nix:strerror code)
                   #+windows (get-wsa-error-string code)
                   "[Can't get error string.]")))))

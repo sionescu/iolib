@@ -51,7 +51,7 @@
   (let ((flags (calc-epoll-flags fd-entry))
         (fd (fd-entry-fd fd-entry)))
     (with-foreign-object (ev 'nix::epoll-event)
-      (cl-posix-ffi:memset ev 0 nix::size-of-epoll-event)
+      (nix:bzero ev nix::size-of-epoll-event)
       (setf (foreign-slot-value ev 'nix::epoll-event 'nix::events)
             flags)
       (setf (foreign-slot-value
@@ -70,7 +70,7 @@
   (let ((flags (calc-epoll-flags fd-entry))
         (fd (fd-entry-fd fd-entry)))
     (with-foreign-object (ev 'nix::epoll-event)
-      (cl-posix-ffi:memset ev 0 nix::size-of-epoll-event)
+      (nix:bzero ev nix::size-of-epoll-event)
       (setf (foreign-slot-value ev 'nix::epoll-event 'nix::events)
             flags)
       (setf (foreign-slot-value
@@ -99,8 +99,7 @@
 
 (defmethod harvest-events ((mux epoll-multiplexer) timeout)
   (with-foreign-object (events 'nix::epoll-event *epoll-max-events*)
-    (cl-posix-ffi:memset events 0
-                         (* *epoll-max-events* nix::size-of-epoll-event))
+    (nix:bzero events (* *epoll-max-events* nix::size-of-epoll-event))
     (let (ready-fds)
       (nix:repeat-upon-condition-decreasing-timeout
           ((nix:eintr) tmp-timeout timeout)

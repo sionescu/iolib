@@ -82,7 +82,7 @@
 
 (defun iobuf-copy-data-to-start (iobuf)
   (declare (type iobuf iobuf))
-  (cl-posix-ffi:memmove
+  (nix:memmove
    (iobuf-data iobuf)
    (inc-pointer (iobuf-data iobuf)
                 (iobuf-start iobuf))
@@ -109,7 +109,7 @@
            (type buffer-index soff doff length))
   (let ((dst-ptr (iobuf-data dst)))
     (with-pointer-to-vector-data (src-ptr src)
-      (cl-posix-ffi:memcpy
+      (nix:memcpy
        (inc-pointer dst-ptr doff)
        (inc-pointer src-ptr soff)
        length))))
@@ -120,7 +120,7 @@
            (type buffer-index soff doff length))
   (let ((src-ptr (iobuf-data src)))
     (with-pointer-to-vector-data (dst-ptr dst)
-      (cl-posix-ffi:memcpy
+      (nix:memcpy
        (inc-pointer dst-ptr doff)
        (inc-pointer src-ptr soff)
        length))))

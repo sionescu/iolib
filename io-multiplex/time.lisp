@@ -49,7 +49,7 @@
 
 (defun abs-timeout (timeout)
   (when timeout
-    (+ (nix:get-monotonic-time) (normalize-timeout timeout))))
+    (+ (osicat:get-monotonic-time) (normalize-timeout timeout))))
 
 (defun calc-min-timeout (t1 t2)
   (if t1

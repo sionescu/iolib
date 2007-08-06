@@ -21,18 +21,11 @@
 ;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;;; Boston, MA 02110-1301, USA
 
-(in-package :common-lisp-user)
-
-(defpackage #:io.streams.system
-  (:use #:common-lisp))
-
-(in-package #:io.streams.system)
-
 (asdf:defsystem :io.streams
   :description "Gray streams."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
-  :depends-on (:cl-posix :io.multiplex :cffi :trivial-gray-streams :alexandria)
+  :depends-on (:cffi :osicat :io.multiplex :trivial-gray-streams :alexandria)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "io.streams"))
                              *load-truename*)
   :serial t

@@ -40,7 +40,7 @@
 (defun do-kqueue-event-request (kqueue-fd fd-entry filter request-type)
   (let ((fd (fd-entry-fd fd-entry)))
     (with-foreign-object (kev 'nix::kevent)
-      (cl-posix-ffi:memset kev 0 nix::size-of-kevent)
+      (nix:bzero kev nix::size-of-kevent)
       (nix:ev-set kev fd filter request-type 0 0 (null-pointer))
       (nix:kevent kqueue-fd
                   kev 1
@@ -100,7 +100,7 @@
 (defmethod harvest-events ((mux kqueue-multiplexer) timeout)
   (with-foreign-objects ((events 'nix::kevent *kqueue-max-events*)
                          (ts 'nix::timespec))
-    (cl-posix-ffi:memset events 0 (* *kqueue-max-events* nix::size-of-kevent))
+    (nix:bzero events (* *kqueue-max-events* nix::size-of-kevent))
     (let (ready-fds)
       (nix:repeat-upon-condition-decreasing-timeout
           ((nix:eintr) tmp-timeout timeout)

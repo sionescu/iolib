@@ -77,8 +77,8 @@
           (setf retval (if-indextoname index buff))
         (nix:enxio (err)
           (error 'unknown-interface
-                 :code (nix:system-error-code err)
-                 :identifier (nix:system-error-identifier err)
+                 :code (osicat-sys:system-error-code err)
+                 :identifier (osicat-sys:system-error-identifier err)
                  :index index)))
       (make-interface (copy-seq retval) index))))
 
@@ -89,8 +89,8 @@
         (setf retval (if-nametoindex name))
       (nix:enodev (err)
         (error 'unknown-interface
-               :code (nix:system-error-code err)
-               :identifier (nix:system-error-identifier err)
+               :code (osicat-sys:system-error-code err)
+               :identifier (osicat-sys:system-error-identifier err)
                :name name)))
     (make-interface (copy-seq name) retval)))
 

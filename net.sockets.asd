@@ -36,7 +36,7 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
-  :depends-on (:cl-posix
+  :depends-on (:osicat
                :babel
                :io.streams
                :alexandria

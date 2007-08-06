@@ -38,7 +38,7 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
-  :depends-on (:cl-posix :alexandria)
+  :depends-on (:osicat :alexandria)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "io-multiplex"))
                              *load-truename*)
   :serial t

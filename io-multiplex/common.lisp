@@ -205,7 +205,7 @@
   (call-next-method event-base :only-once only-once))
 
 (defun recalculate-timeouts (timeouts)
-  (let ((now (nix:get-monotonic-time)))
+  (let ((now (osicat:get-monotonic-time)))
     (dolist (ev (queue-head timeouts))
       (event-recalc-abs-timeout ev now))))
 
@@ -233,7 +233,7 @@
           (and only-once (setf exit-p t)))
         (setf (values deletion-list dispatch-list)
               (filter-expired-events (expired-events timeouts
-                                                     (nix:get-monotonic-time))))
+                                                     (osicat:get-monotonic-time))))
         (dispatch-timeouts dispatch-list)
         (remove-events event-base deletion-list)
         (queue-sort timeouts #'< #'event-abs-timeout)))))
@@ -284,7 +284,7 @@ have been received, NIL otherwise."
     (values deletion-list dispatch-list)))
 
 (defun events-calc-min-rel-timeout (timeouts)
-  (let* ((now (nix:get-monotonic-time))
+  (let* ((now (osicat:get-monotonic-time))
          (first-valid-event (find-if #'(lambda (to)
                                        (or (null to) (< now to)))
                                      (queue-head timeouts)
@@ -553,7 +553,7 @@ of a file descriptor."))
                                   nix::pollout nix::pollhup))))
          (poll-error (unix-err)
            (error 'poll-error :fd fd
-                  :identifier (nix:system-error-identifier unix-err))))
+                  :identifier (osicat-sys:system-error-identifier unix-err))))
     (let ((readp nil) (writep nil))
       (with-foreign-object (pollfd 'nix::pollfd)
         (nix:bzero pollfd nix::size-of-pollfd)
