@@ -74,7 +74,7 @@
 
 (defgeneric read-bytes (transport))
 
-(defgeneric write-bytes (transport))
+(defgeneric write-bytes (transport bytes &key start end))
 
 (defmethod read-bytes ((c tcp-transport))
   (with-accessors ((rb read-buffer-of)
@@ -85,13 +85,15 @@
       (on-connection-ready proto))
     (multiple-value-bind (buf byte-num)
         (handler-case
-            (socket-receive temp-buf sock
-                            :start (start-of rb)
+            ;; append to the buffer
+            (socket-receive (data-of rb) sock
+                            :start (end-of rb)
                             :end (size-of rb))
           ;; either a spurious event, or the socket has
           ;; just connected and there is no data to receive
           (nix:ewouldblock ()
             (return-from read-bytes))
+          ;; FIXME: perhaps we might be a little more sophisticated here
           (socket-error (err)
             (on-connection-lost proto err)))
       (cond
@@ -100,6 +102,11 @@
          (on-connection-end proto))
         ;; good data
         ((plusp byte-num)
+         ;; increment the end pointer of the buffer
+         (incf (end-of rb) byte-num)
+         ;; FIXME: we're both buffering the data *and* calling
+         ;; ON-MESSAGE-RECEIVED with an array displaced to
+         ;; the data just received. perhaps we should separate the two
          (on-message-received
           proto
           (make-array byte-num :element-type '(unsigned-byte 8)
