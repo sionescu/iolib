@@ -152,6 +152,20 @@
               (vector-to-colon-separated ip :upcase)))
   "::ff:ff:ff:0:0" "::ff:ff:ff:0:0" "::FF:FF:FF:0:0")
 
+(deftest colon-separated-to-vector.1
+    (mapcar #'colon-separated-to-vector
+            '(":ff::ff:" "::" "::1" "1::" ":2:3:4:5:6:7:8" "1:2:3:4:5:6:7:"
+              ":1::2:" "::127.0.0.1" ":1::127.0.0.1"))
+  (#(0 #xff 0 0 0 0 #xff 0)
+    #(0 0 0 0 0 0 0 0)
+    #(0 0 0 0 0 0 0 1)
+    #(1 0 0 0 0 0 0 0)
+    #(0 2 3 4 5 6 7 8)
+    #(1 2 3 4 5 6 7 0)
+    #(0 1 0 0 0 0 2 0)
+    #(0 0 0 0 0 0 #x7f00 1)
+    #(0 1 0 0 0 0 #x7f00 1)))
+
 (deftest address=.1
     (address= +ipv4-loopback+ (make-address #(127 0 0 1)))
   t)
