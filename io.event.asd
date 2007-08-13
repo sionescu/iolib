@@ -26,7 +26,7 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
-  :depends-on (:io.multiplex :net.sockets)
+  :depends-on (:io.streams :io.multiplex :net.sockets)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "io.event"))
                              *load-truename*)
   :serial t
@@ -34,4 +34,5 @@
   ((:file "pkgdcl")
    (:file "io-buffer")
    (:file "io-channel")
-   (:file "io-protocol")))
+   (:file "io-protocol")
+   (:file "server-factory")))

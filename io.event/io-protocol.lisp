@@ -21,15 +21,26 @@
 ;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;;; Boston, MA 02110-1301, USA
 
-(in-package :io.multiplex)
+(in-package :io.event)
 
 (defclass io-protocol ()
-     ((transport :accessor transport-of)))
+  ((transport :initarg :transport
+              :accessor transport-of)))
 
-(defgeneric on-connection-ready (protocol))
+(defclass stream-protocol () ())
+
+(defgeneric on-protocol-start (protocol))
+
+(defgeneric on-protocol-stop (protocol))
+
+(defgeneric on-connection-made (protocol))
 
 (defgeneric on-connection-lost (protocol reason))
 
 (defgeneric on-connection-end (protocol))
 
 (defgeneric on-message-received (protocol message))
+
+(defclass datagram-protocol () ())
+
+(defgeneric on-datagram-received (protocol datagram address))

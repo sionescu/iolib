@@ -25,7 +25,7 @@
 
 (defpackage :io.event
   (:nicknames #:evie)
-  (:use #:common-lisp :io.multiplex :net.sockets)
+  (:use #:common-lisp :io.streams :io.multiplex :net.sockets)
   (:export
    ;; classes
    ))
