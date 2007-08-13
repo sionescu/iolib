@@ -21,31 +21,32 @@
 ;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;;; Boston, MA 02110-1301, USA
 
-(in-package :io.multiplex)
+(in-package :io.event)
 
 ;;;; IO-Channel
 
-;;; FIXME: for the moment channels are read/write
-;;;        this will probably have to change
-
 (defclass io-channel ()
-     ((protocol :accessor protocol-of)))
+  ((event-loop :initarg :event-loop
+               :accessor event-loop-of)
+   (protocol :accessor protocol-of)
+   (read-handler :accessor read-handler-of)
+   (write-handler :accessor write-handler-of)
+   (error-handler :accessor error-handler-of)))
 
 (defconstant +default-read-window-size+ 8192)
 
 (defclass io-buffered-channel (io-channel)
-     ((read-buffer :accessor read-buffer-of)
-      (read-buffered-p :initarg :read-buffered-p
-                      :accessor read-buffered-p)
-      (read-window-size :initarg :read-window-size
-                        :accessor read-window-size-of)
-      (write-buffer :accessor write-buffer-of)
-      (write-buffered-p :initarg :write-buffered-p
-                       :accessor write-buffered-p))
-  (:default-initargs
-      :read-buffered-p t
-      :write-buffered-p t
-      :read-window-size +default-read-window-size+))
+  ((read-buffer :accessor read-buffer-of)
+   (read-buffered-p :initarg :read-buffered-p
+                    :accessor read-buffered-p)
+   (read-window-size :initarg :read-window-size
+                     :accessor read-window-size-of)
+   (write-buffer :accessor write-buffer-of)
+   (write-buffered-p :initarg :write-buffered-p
+                     :accessor write-buffered-p))
+  (:default-initargs :read-buffered-p t
+                     :write-buffered-p t
+                     :read-window-size +default-read-window-size+))
 
 (defmethod initialize-instance :after ((channel io-buffered-channel) &key
                                        read-buffer-size write-buffer-size)
@@ -58,61 +59,84 @@
 
 ;;;; Socket-Transport
 
-(defclass socket-transport (io-buffered-channel)
-     ((socket :accessor socket-of)))
+(defclass socket-transport (io-channel)
+  ((socket :initarg :socket :accessor socket-of)))
 
-;;; FIXME: apply not good
-(defmethod initialize-instance ((transport socket-transport)
-                                &rest args)
-  (apply #'make-socket args))
+(defclass tcp-transport (io-buffered-channel socket-transport)
+  ((status :initform :unconnected
+           :accessor status-of)))
 
-(defclass tcp-transport (socket-transport)
-     ((status :initform :unconnected
-              :accessor status-of)))
+(defmethod initialize-instance :after ((transport tcp-transport) &key)
+  (setf (read-handler-of transport)
+        (add-fd (event-loop-of transport)
+                (fd-of (socket-of transport))
+                :read
+                #'(lambda (fd event)
+                    (declare (ignore fd event))
+                    (on-transport-readable transport))))
+  (setf (write-handler-of transport)
+        (add-fd (event-loop-of transport)
+                (fd-of (socket-of transport))
+                :write
+                #'(lambda (fd event)
+                    (declare (ignore fd event))
+                    (on-transport-writable transport))))
+  (setf (error-handler-of transport)
+        (add-fd (event-loop-of transport)
+                (fd-of (socket-of transport))
+                :error
+                #'(lambda (fd event)
+                    (declare (ignore fd event))
+                    (on-transport-error transport)))))
 
 (defclass udp-transport (socket-transport) ())
 
-(defgeneric read-bytes (transport))
+(defgeneric on-transport-readable (transport))
 
-(defgeneric write-bytes (transport bytes &key start end))
+(defgeneric on-transport-writable (transport))
 
-(defmethod read-bytes ((c tcp-transport))
-  (with-accessors ((rb read-buffer-of)
-                   (sock socket-of)
+(defgeneric on-transport-error (transport))
+
+(defmethod on-transport-readable ((c tcp-transport))
+  (with-accessors ((sock socket-of)
                    (proto protocol-of)
                    (status status-of)) c
-    (when (eq status :unconnected)
-      (on-connection-ready proto))
-    (multiple-value-bind (buf byte-num)
-        (handler-case
-            ;; append to the buffer
-            (socket-receive (data-of rb) sock
-                            :start (end-of rb)
-                            :end (size-of rb))
-          ;; either a spurious event, or the socket has
-          ;; just connected and there is no data to receive
-          (nix:ewouldblock ()
-            (return-from read-bytes))
-          ;; FIXME: perhaps we might be a little more sophisticated here
-          (socket-error (err)
-            (on-connection-lost proto err)))
+    (assert (eq status :connected))
+    (let ((buffer (make-array +default-read-window-size+
+                              :element-type '(unsigned-byte 8)))
+          (byte-num 0))
+      (declare (type unsigned-byte byte-num))
+      (handler-case
+          (setf (values buffer byte-num) (socket-receive buffer sock))
+        ;; a spurious event !
+        (nix:ewouldblock ()
+          (error "Got a transport-readable event but recv() returned EWOULDBLOCK !"))
+        ;; FIXME: perhaps we might be a little more sophisticated here
+        (socket-error (err)
+          (setf status :disconnected)
+          (on-connection-lost proto err)))
       (cond
         ;; EOF
         ((zerop byte-num)
+         (setf status :disconnected)
          (on-connection-end proto))
         ;; good data
         ((plusp byte-num)
-         ;; increment the end pointer of the buffer
-         (incf (end-of rb) byte-num)
-         ;; FIXME: we're both buffering the data *and* calling
-         ;; ON-MESSAGE-RECEIVED with an array displaced to
-         ;; the data just received. perhaps we should separate the two
-         (on-message-received
-          proto
-          (make-array byte-num :element-type '(unsigned-byte 8)
-                      :displaced-to (data-of rb)
-                      :displaced-index-offset )))))))
+         (on-message-received proto buffer))))))
 
-(defmethod write-bytes ((c tcp-transport)
-                        bytes &key start end)
-  )
+;;; FIXME: deal with full write kernel buffers
+(defmethod on-transport-writable ((c tcp-transport))
+  (with-accessors ((sock socket-of)
+                   (proto protocol-of)
+                   (status status-of)) c
+    ;; not exactly complete: infact subsequent :WRITE
+    ;; events must be handled
+    (when (eq status :unconnected)
+      (on-connection-made proto)
+      (setf status :connected))))
+
+;;; FIXME: complete it
+(defmethod on-transport-error ((c tcp-transport))
+  (let ((error-code (get-socket-option (socket-of c)
+                                       :error)))
+    ))

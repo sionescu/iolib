@@ -21,13 +21,13 @@
 ;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;;; Boston, MA 02110-1301, USA
 
-(in-package :io.multiplex)
+(in-package :io.event)
 
 (defclass io-buffer ()
-     ((data :accessor data-of)
-      (size :accessor size-of)
-      (start :initarg :start :accessor start-of)
-      (end :initarg :end :accessor end-of))
+  ((data :accessor data-of)
+   (size :accessor size-of)
+   (start :initarg :start :accessor start-of)
+   (end :initarg :end :accessor end-of))
   (:default-initargs :start 0 :end 0))
 
 (defvar *default-buffer-size* 4096)
