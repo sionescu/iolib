@@ -1,6 +1,6 @@
 ;;;; -*- Mode: lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; tests.lisp --- IO.STREAMS test suite.
+;;; streams.lisp --- IO.STREAMS test suite.
 ;;;
 ;;; Copyright (c) 2006-2007, Dr. Edmund Weitz.  All rights reserved.
 ;;; Copyright (c) 2007, Luis Oliveira  <loliveira@common-lisp.net>
@@ -29,13 +29,7 @@
 ;;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-(in-package :common-lisp-user)
-
-(defpackage #:io.streams-tests
-  (:use #:common-lisp :rt :io.streams :alexandria
-        :trivial-gray-streams))
-
-(in-package #:io.streams-tests)
+(in-package #:iolib-tests)
 
 (defclass my-file-stream (dual-channel-single-fd-gray-stream)
   ((path :initarg :path :reader file-stream-path)))
@@ -56,6 +50,7 @@
                                               (:input :error)
                                               ((:io :output) :create)))
                          (external-format :default))
+  (declare (ignore if-does-not-exist))
   ;; move OPEN to INITIALIZE-INSTANCE
   (let ((fd (nix:open path
                       (logior (ecase direction
@@ -80,10 +75,11 @@
        (with-open-stream (,var ,stream)
          ,@body))))
 
-(defvar *this-dir*
+(defvar *data-dir*
   (let ((sys-pn (asdf:system-definition-pathname
-                 (asdf:find-system 'io.streams-tests))))
-    (make-pathname :directory (append (pathname-directory sys-pn) '("tests"))
+                 (asdf:find-system 'iolib-tests))))
+    (make-pathname :directory (append (pathname-directory sys-pn)
+                                      '("tests" "data"))
                    :defaults sys-pn)))
 
 (defvar *test-dir*
@@ -171,9 +167,9 @@
 ;;; check if the outcome is as expected.  Uses various variants of the
 ;;; :DIRECTION keyword when opening the files."
 (defun compare-files (path-in external-format-in path-out external-format-out)
-  (let ((full-path-in (merge-pathnames path-in *this-dir*))
+  (let ((full-path-in (merge-pathnames path-in *data-dir*))
         (full-path-out (merge-pathnames path-out *test-dir*))
-        (full-path-orig (merge-pathnames path-out *this-dir*)))
+        (full-path-orig (merge-pathnames path-out *data-dir*)))
     (dolist (direction-out '(:output :io) t)
       (dolist (direction-in '(:input :io))
         (let ((description (format nil "Test ~S ~A [~A] --> ~A [~A]"
@@ -188,7 +184,7 @@
             (format *error-output* "~&;;   Test failed!!!~%")
             (return-from compare-files nil)))))))
 
-(deftest big-comparision-test
+(deftest big-stream-comparision-test
     (let ((args-list (loop for (file-name symbols) in *test-files*
                            nconc (create-test-combinations file-name symbols))))
       (loop for args in args-list

@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
 ;;;
-;;; tests.lisp --- net.sockets test suite.
+;;; sockets.lisp --- net.sockets test suite.
 ;;;
 ;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
@@ -31,13 +31,7 @@
 ;;;    released into the public domain in jurisdictions where this is
 ;;;    possible, or under the FreeBSD licence where not.
 
-(in-package #:common-lisp-user)
-
-(defpackage #:net.sockets-tests
-  (:nicknames #:sockets-tests)
-  (:use #:common-lisp #:rtest :net.sockets))
-
-(in-package #:net.sockets-tests)
+(in-package #:iolib-tests)
 
 ;;; A couple of these tests require an echo server.  You can either
 ;;; compile and run the provided tests/echo-server.c or enabled the
@@ -424,7 +418,7 @@
                   :type nil
                   :defaults
                   (asdf:system-definition-pathname
-                   (asdf:find-system '#:net.sockets-tests))))))
+                   (asdf:find-system '#:iolib-tests))))))
       (ignore-errors (delete-file file))
       (with-socket (p :family :local :connect :passive :local-filename file)
         (with-socket (a :family :local :remote-filename file)

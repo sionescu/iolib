@@ -24,11 +24,13 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-(asdf:defsystem :net.sockets-tests
-  :description "Socket library test suite."
+(defsystem iolib-tests
+  :description "IOLib test suite."
   :licence "MIT"
-  :depends-on (:net.sockets :rt)
+  :depends-on (io.streams net.sockets rt)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "tests"))
                              *load-truename*)
   :components
-  ((:file "net.sockets-tests")))
+  ((:file "pkgdcl")
+   (:file "streams" :depends-on ("pkgdcl"))
+   (:file "sockets" :depends-on ("pkgdcl"))))

@@ -1,6 +1,6 @@
-;;;; -*- Mode: lisp; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; io.streams-tests.asd --- ASDF system definition.
+;;; pkgdcl.lisp --- Package definition.
 ;;;
 ;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
@@ -24,12 +24,8 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-(asdf:defsystem io.streams-tests
-  :description "Test suite for io-streams."
-  :author "Luis Oliveira <loliveira@common-lisp.net>"
-  :licence "BSD"
-  :depends-on (:rt :io.streams :alexandria)
-  :pathname (merge-pathnames (make-pathname :directory '(:relative "tests"))
-                             *load-truename*)
-  :components
-  ((:file "io.streams-tests")))
+(in-package #:cl-user)
+
+(defpackage #:iolib-tests
+  (:use #:common-lisp #:rtest #:net.sockets #:io.streams
+        #:trivial-gray-streams #:alexandria))
