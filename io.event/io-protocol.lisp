@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
 ;;;
-;;; io-protocol.lisp - Manage an I/O protocol.
+;;; io-protocol.lisp --- Manage an I/O protocol.
 ;;;
 ;;; Copyright (C) 2007, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
@@ -23,24 +23,81 @@
 
 (in-package :io.event)
 
+;;;; Base Protocol Class
+
 (defclass io-protocol ()
-  ((transport :initarg :transport
-              :accessor transport-of)))
+  ((transport :initarg :transport :accessor transport-of))
+  (:documentation ""))
 
-(defclass stream-protocol () ())
+(defgeneric on-protocol-start (protocol)
+  (:documentation ""))
 
-(defgeneric on-protocol-start (protocol))
+(defgeneric on-protocol-stop (protocol)
+  (:documentation ""))
 
-(defgeneric on-protocol-stop (protocol))
+;;;; Stream Protocol
 
-(defgeneric on-connection-made (protocol))
+(defclass stream-protocol (io-protocol)
+  ()
+  (:documentation ""))
 
-(defgeneric on-connection-lost (protocol reason))
+(defgeneric on-connection-made (protocol)
+  (:documentation "")
+  ;; default empty method
+  (:method ((sp stream-protocol))
+    (values)))
 
-(defgeneric on-connection-end (protocol))
+(defgeneric on-connection-lost (protocol reason)
+  (:documentation "")
+  ;; default empty method
+  (:method ((sp stream-protocol) reason)
+    (declare (ignore reason))
+    (values)))
 
-(defgeneric on-message-received (protocol message))
+(defgeneric on-connection-end (protocol)
+  (:documentation "")
+  ;; default empty method
+  (:method ((sp stream-protocol))
+    (values)))
 
-(defclass datagram-protocol () ())
+(defgeneric on-data-received (protocol data)
+  (:documentation "")
+  ;; default empty method
+  (:method ((sp stream-protocol) data)
+    (declare (ignore data))
+    (values)))
 
-(defgeneric on-datagram-received (protocol datagram address))
+;;;; Datagram Protocol
+
+(defclass datagram-protocol (io-protocol)
+  ()
+  (:documentation ""))
+
+(defgeneric on-datagram-received (protocol datagram address)
+  (:documentation ""))
+
+;;;; Debug Mixins
+
+;;; seemed like a good idea at first but so far it's less useful than
+;;; plain TRACE.
+
+(defclass protocol-debug-mixin ()
+  ()
+  (:documentation ""))
+
+(defmethod on-connection-made :before ((p protocol-debug-mixin))
+  (format *debug-io* "~&Connection made: ~S~%" p))
+
+(defmethod on-connection-end :after ((p protocol-debug-mixin))
+  (format *debug-io* "~&Connection end: ~S~%" p))
+
+(defmethod on-data-received :before ((p protocol-debug-mixin) data)
+  (format *debug-io* "~&Data received: ~A bytes~%" (length data)))
+
+(defun debug-protocols ()
+  (trace on-data-received
+         on-transport-writable
+         on-transport-readable
+         on-transport-error
+         on-connection-made
+         on-connection-end))

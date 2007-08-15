@@ -27,5 +27,40 @@
   (:nicknames #:evie)
   (:use #:common-lisp :io.streams :io.multiplex :net.sockets)
   (:export
-   ;; classes
+   ;; Transports
+   #:io-channel
+   #:io-buffered-channel
+   #:socket-transport
+   #:tcp-transport
+   #:udp-transport
+
+   #:on-transport-readable
+   #:on-transport-writable
+   #:on-transport-error
+
+   ;; Protocols
+   #:io-protocol
+   #:stream-protocol
+   #:datagram-protocol
+   #:protocol-debug-mixin
+
+   #:transport-of
+   #:on-protocol-start
+   #:on-procotol-stop
+   #:on-connection-made
+   #:on-connection-lost
+   #:on-connection-end
+   #:on-data-received
+   #:on-datagram-received
+
+   ;; Event Managers
+   #:event-manager
+   #:protocol-manager-mixin
+   #:server
+   #:tcp-server
+   #:client
+
+   ;; Event Loop
+   #:event-loop
+   #:listen-tcp
    ))
