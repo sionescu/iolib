@@ -64,21 +64,25 @@
 (defmethod (setf socket-fd) (fd (socket socket))
   (setf (fd-of socket) fd))
 
-;; TODO: we should add some sort of finalizer here to avoid leaking
-;; sockets FDs and buffers.  Something along these lines:
-;;   (when finalize
-;;     (trivial-garbage:finalize socket (lambda () (close socket))))
-;;
-;; However SBCL's semantics don't allow this, since that reference to
-;; the socket will prevent it from being garbage collected.  So we'd
-;; need to get all necessary information into a closure or something
-;; (foreign pointers, FDs, etc) in order to do that closing.
-(defmethod shared-initialize :after ((socket socket) slot-names
-                                     &key file-descriptor family type
-                                     (protocol :default))
-  (declare (ignore slot-names))
-  (when (socket-open-p socket)
-    (close socket))
+;;; TODO: we should add some sort of finalizer here to avoid leaking
+;;; sockets FDs and buffers.  Something along these lines:
+;;;   (when finalize
+;;;     (trivial-garbage:finalize socket (lambda () (close socket))))
+;;;
+;;; However SBCL's semantics don't allow this, since that reference to
+;;; the socket will prevent it from being garbage collected.  So we'd
+;;; need to get all necessary information into a closure or something
+;;; (foreign pointers, FDs, etc) in order to do that closing.
+;;;
+;;; Changed from SHARED-INITIALIZE to INITIALIZE-INSTANCE.  Since it
+;;; was breaking CHANGE-CLASS.  We don't really want to check those
+;;; keywords in REINITIALIZE-INSTANCE or do we?
+(defmethod initialize-instance :after ((socket socket)
+                                       &key file-descriptor family type
+                                       (protocol :default))
+  ;; what's this for?
+  ;; (when (socket-open-p socket)
+  ;;     (close socket))
   (with-accessors ((fd fd-of) (fam socket-family) (proto socket-protocol))
       socket
     (setf fd (or file-descriptor
@@ -93,9 +97,8 @@
   (setf (slot-value socket 'external-format)
         (babel:ensure-external-format external-format)))
 
-(defmethod shared-initialize :after ((socket passive-socket) slot-names
-                                     &key external-format)
-  (declare (ignore slot-names))
+(defmethod initialize-instance :after ((socket passive-socket)
+                                       &key external-format)
   (setf (external-format-of socket) external-format))
 
 (defmethod socket-type ((socket stream-socket))
