@@ -33,7 +33,7 @@
 
 (defclass event-base ()
   ((mux :initform (make-instance *best-available-multiplexer*)
-        :reader mux-of)
+        :initarg :mux :reader mux-of)
    (fds :initform (make-hash-table :test 'eql)
         :reader fds-of)
    (timeouts :initform (make-queue)
@@ -42,33 +42,50 @@
          :accessor exit-p)
    (exit-when-empty :initarg :exit-when-empty
                     :accessor exit-when-empty-p))
-  (:default-initargs :exit-when-empty nil))
+  (:default-initargs :exit-when-empty nil)
+  (:documentation "An event base ..."))
 
 (defmethod print-object ((base event-base) stream)
   (print-unreadable-object (base stream :type nil :identity t)
     (format stream "event base, ~A FDs monitored, using: ~A"
-            (hash-table-count (fds-of base))
+            ;; kludge: quick fix for printing closed event bases
+            (when (fds-of base) (hash-table-count (fds-of base)))
             (mux-of base))))
 
+(defmethod initialize-instance :after ((base event-base) &key)
+  (with-slots (mux) base
+    (when (symbolp mux)
+      (setq mux (make-instance mux)))))
+
+;;; KLUDGE: CLOSE is for streams. --luis
+;;;
+;;; Also, we might want to close FDs here.  Or have a version/argument
+;;; that handles that.  Or... add finalizers to the fd streams.
 (defmethod close ((event-base event-base) &key abort)
   (declare (ignore abort))
   (with-accessors ((mux mux-of)) event-base
-    (close mux)
+    (close-multiplexer mux)
     (dolist (slot '(fds timeouts exit))
       (setf (slot-value event-base slot) nil))
     event-base))
 
-(defgeneric add-fd (base fd event-type function &key timeout persistent))
+(defgeneric add-fd (base fd event-type function &key timeout persistent)
+  (:documentation ""))
 
-(defgeneric add-timeout (event-base function timeout &key persistent))
+(defgeneric add-timeout (event-base function timeout &key persistent)
+  (:documentation ""))
 
-(defgeneric remove-event (event-base event))
+(defgeneric remove-event (event-base event)
+  (:documentation ""))
 
-(defgeneric remove-events (event-base event-list))
+(defgeneric remove-events (event-base event-list)
+  (:documentation ""))
 
-(defgeneric event-dispatch (event-base &key &allow-other-keys))
+(defgeneric event-dispatch (event-base &key &allow-other-keys)
+  (:documentation ""))
 
 (defgeneric exit-event-loop (event-base &key delay)
+  (:documentation "")
   (:method ((event-base event-base) &key (delay 0))
     (add-timeout event-base
                  #'(lambda (fd event-type)
@@ -77,11 +94,13 @@
                  delay :persistent nil)))
 
 (defgeneric event-base-empty-p (event-base)
+  (:documentation "")
   (:method ((event-base event-base))
     (and (zerop (hash-table-count (fds-of event-base)))
          (queue-empty-p (timeouts-of event-base)))))
 
 (defgeneric fd-entry-of (event-base fd)
+  (:documentation "")
   (:method ((event-base event-base) fd)
     (gethash fd (fds-of event-base))))
 
@@ -186,6 +205,7 @@
 
 (defmacro with-fd-handler ((event-base fd event-type function &optional timeout)
                            &body body)
+  ""
   (once-only (event-base)
     (with-unique-names (event)
       `(let (,event)
@@ -201,7 +221,8 @@
 (defmethod event-dispatch :around ((event-base event-base)
                                    &key timeout only-once)
   (setf (exit-p event-base) nil)
-  (when timeout (exit-event-loop event-base :delay timeout))
+  (when timeout
+    (exit-event-loop event-base :delay timeout))
   (call-next-method event-base :only-once only-once))
 
 (defun recalculate-timeouts (timeouts)
@@ -232,15 +253,15 @@
         (when (dispatch-fd-events-once event-base poll-timeout)
           (and only-once (setf exit-p t)))
         (setf (values deletion-list dispatch-list)
-              (filter-expired-events (expired-events timeouts
-                                                     (osicat:get-monotonic-time))))
+              (filter-expired-events
+               (expired-events timeouts (osicat:get-monotonic-time))))
         (dispatch-timeouts dispatch-list)
         (remove-events event-base deletion-list)
         (queue-sort timeouts #'< #'event-abs-timeout)))))
 
+;;; Waits for events and dispatches them.  Returns T if some events
+;;; have been received, NIL otherwise.
 (defun dispatch-fd-events-once (event-base timeout)
-  "Waits for events and dispatches them. Returns T if some events
-have been received, NIL otherwise."
   (with-accessors ((mux mux-of) (fds fds-of) (timeouts timeouts-of))
       event-base
     (let ((deletion-list ())
@@ -286,7 +307,7 @@ have been received, NIL otherwise."
 (defun events-calc-min-rel-timeout (timeouts)
   (let* ((now (osicat:get-monotonic-time))
          (first-valid-event (find-if #'(lambda (to)
-                                       (or (null to) (< now to)))
+                                         (or (null to) (< now to)))
                                      (queue-head timeouts)
                                      :key #'event-abs-timeout)))
     (when (and first-valid-event

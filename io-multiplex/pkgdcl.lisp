@@ -27,18 +27,29 @@
   (:nicknames #:iomux)
   (:use #:common-lisp :cffi :alexandria)
   (:export
-   ;; classes
-   #:event-base #:event
+   ;; Classes
+   #:event
+   #:event-base
    #:multiplexer
    #:select-multiplexer
-   #+linux #:epoll-multiplexer
    #+bsd #:kqueue-multiplexer
+   #+linux #:epoll-multiplexer
 
-   #:add-fd #:add-timeout
-   #:remove-event #:event-dispatch
-   #:exit-event-loop #:*default-event-loop-timeout*
+   ;; Event-base Operations
+   #:*default-event-loop-timeout*
+   #:add-fd
+   #:add-timeout
    #:event-base-empty-p
+   #:event-dispatch
+   #:exit-event-loop
+   #:remove-event
 
-   #:wait-until-fd-ready #:fd-ready-p
-   #:fd-readablep #:fd-writablep
-   #:poll-error #:poll-error-fd #:poll-error-identifier))
+   ;; Operations on FDs
+   #:fd-readablep
+   #:fd-ready-p
+   #:fd-writablep
+   #:poll-error
+   #:poll-error-fd
+   #:poll-error-identifier
+   #:wait-until-fd-ready
+   ))
