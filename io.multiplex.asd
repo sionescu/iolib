@@ -39,8 +39,9 @@
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
   :depends-on (:osicat :alexandria)
-  :pathname (merge-pathnames (make-pathname :directory '(:relative "io-multiplex"))
-                             *load-truename*)
+  :pathname (merge-pathnames
+             (make-pathname :directory '(:relative "io-multiplex"))
+             *load-truename*)
   :serial t
   :components
   ((:file "pkgdcl")
