@@ -26,6 +26,7 @@
 
 (defsystem iolib-tests
   :description "IOLib test suite."
+  :author "Luis Oliveira <loliveira@common-lisp.net>"
   :licence "MIT"
   :depends-on (io.streams net.sockets rt)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "tests"))
@@ -33,4 +34,5 @@
   :components
   ((:file "pkgdcl")
    (:file "streams" :depends-on ("pkgdcl"))
-   (:file "sockets" :depends-on ("pkgdcl"))))
+   (:file "sockets" :depends-on ("pkgdcl"))
+   (:file "events" :depends-on ("pkgdcl"))))

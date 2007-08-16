@@ -28,4 +28,4 @@
 
 (defpackage #:iolib-tests
   (:use #:common-lisp #:rtest #:net.sockets #:io.streams
-        #:trivial-gray-streams #:alexandria))
+        #:trivial-gray-streams #:alexandria #:io.multiplex))
