@@ -63,7 +63,6 @@
         args
       (ecase connect
         (:active
-         (assert (xnor local-host local-port))
          (assert (xnor remote-host remote-port))
          (%close-on-error (socket)
            (setf socket (create-socket :family family :type :stream
@@ -72,19 +71,18 @@
            (when nodelay (set-socket-option socket :tcp-nodelay :value t))
            (when local-host
              (setf address (convert-or-lookup-inet-address local-host))
-             (bind-address socket address :port local-port
+             (bind-address socket address :port (or local-port 0)
                            :reuse-address reuse-address))
            (when remote-host
              (setf address (convert-or-lookup-inet-address remote-host))
              (connect socket address :port remote-port))))
         (:passive
-         (assert (xnor local-host local-port))
          (%close-on-error (socket)
            (setf socket (create-socket :family family :type :stream
                                        :connect :passive :external-format ef))
            (when local-host
              (setf address (convert-or-lookup-inet-address local-host))
-             (bind-address socket address :port local-port
+             (bind-address socket address :port (or local-port 0)
                            :reuse-address reuse-address)
              (socket-listen socket :backlog backlog))))))
     (values socket)))
