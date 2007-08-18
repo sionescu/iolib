@@ -1,8 +1,9 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
 ;;;
-;;; io-protocol.lisp --- Manage an I/O protocol.
+;;; protocol.lisp --- Protocol classes and generic functions.
 ;;;
 ;;; Copyright (C) 2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -25,75 +26,91 @@
 
 ;;;; Base Protocol Class
 
-(defclass io-protocol ()
+(defclass protocol ()
   ((transport :initarg :transport :accessor transport-of))
   (:documentation ""))
 
-(defgeneric on-protocol-start (protocol)
-  (:documentation ""))
+;;; What would the semantics for these GFs be?  Namely, how would
+;;; ON-PROTOCOL-START differ from INITIALIZE-INSTANCE?
 
-(defgeneric on-protocol-stop (protocol)
-  (:documentation ""))
+;; (defgeneric on-protocol-start (protocol))
+;; (defgeneric on-protocol-stop (protocol))
 
 ;;;; Stream Protocol
 
-(defclass stream-protocol (io-protocol)
+(defclass stream-protocol (protocol)
   ()
   (:documentation ""))
 
-(defgeneric on-connection-made (protocol)
+;;; These generic functions all take a TRANSPORT argument because a
+;;; PROTOCOL may need to deal with multiple TRANSPORTS (per
+;;; connection).  FTP would be an example of such a PROTOCOL.
+
+(defgeneric on-connection-made (protocol transport)
   (:documentation "")
   ;; default empty method
-  (:method ((sp stream-protocol))
+  (:method ((sp stream-protocol) transport)
+    (declare (ignore transport))
     (values)))
 
-(defgeneric on-connection-lost (protocol reason)
+(defgeneric on-connection-lost (protocol transport reason)
   (:documentation "")
   ;; default empty method
-  (:method ((sp stream-protocol) reason)
-    (declare (ignore reason))
+  (:method ((sp stream-protocol) transport reason)
+    (declare (ignore transport reason))
     (values)))
 
-(defgeneric on-connection-end (protocol)
+(defgeneric on-connection-end (protocol transport)
   (:documentation "")
   ;; default empty method
-  (:method ((sp stream-protocol))
+  (:method ((sp stream-protocol) transport)
+    (declare (ignore transport))
     (values)))
 
-(defgeneric on-data-received (protocol data)
+(defgeneric on-data-received (protocol transport data)
   (:documentation "")
-  ;; default empty method
-  (:method ((sp stream-protocol) data)
-    (declare (ignore data))
+  ;; default empty method, though perhaps we should make it issue a
+  ;; warning, since it's probably a good bet that we want to do
+  ;; something with the data we receive.
+  (:method ((sp stream-protocol) transport data)
+    (declare (ignore transport data))
     (values)))
 
 ;;;; Datagram Protocol
 
-(defclass datagram-protocol (io-protocol)
+(defclass datagram-protocol (protocol)
   ()
   (:documentation ""))
 
-(defgeneric on-datagram-received (protocol datagram address)
-  (:documentation ""))
+(defgeneric on-datagram-received (protocol transport datagram address port)
+  (:documentation "")
+  ;; default empty method.  Again, same issue as with ON-DATA-RECEIVED.
+  (:method ((dp datagram-protocol) transport datagram address port)
+    (declare (ignore transport datagram address port))
+    (values)))
 
 ;;;; Debug Mixins
 
-;;; seemed like a good idea at first but so far it's less useful than
-;;; plain TRACE.
+;;; This seemed like a good idea at first but so far it's less useful
+;;; than plain TRACE.
 
 (defclass protocol-debug-mixin ()
   ()
   (:documentation ""))
 
-(defmethod on-connection-made :before ((p protocol-debug-mixin))
+(defmethod on-connection-made :before ((p protocol-debug-mixin) protocol)
+  (declare (ignore protocol))
   (format *debug-io* "~&Connection made: ~S~%" p))
 
-(defmethod on-connection-end :after ((p protocol-debug-mixin))
+(defmethod on-connection-end :after ((p protocol-debug-mixin) protocol)
+  (declare (ignore protocol))
   (format *debug-io* "~&Connection end: ~S~%" p))
 
-(defmethod on-data-received :before ((p protocol-debug-mixin) data)
+(defmethod on-data-received :before ((p protocol-debug-mixin) protocol data)
+  (declare (ignore protocol))
   (format *debug-io* "~&Data received: ~A bytes~%" (length data)))
 
+#-(and)
 (defun debug-protocols ()
   (trace on-data-received
          on-transport-writable

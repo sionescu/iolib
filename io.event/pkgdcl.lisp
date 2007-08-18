@@ -28,8 +28,8 @@
   (:use #:common-lisp :io.streams :io.multiplex :net.sockets)
   (:export
    ;; Transports
-   #:io-channel
-   #:io-buffered-channel
+   #:transport
+   #:buffered-transport
    #:socket-transport
    #:tcp-transport
    #:udp-transport
@@ -38,29 +38,36 @@
    #:on-transport-writable
    #:on-transport-error
 
+   #:write-data
+   #:write-datagram
+
    ;; Protocols
-   #:io-protocol
+   #:protocol
    #:stream-protocol
    #:datagram-protocol
    #:protocol-debug-mixin
 
    #:transport-of
-   #:on-protocol-start
-   #:on-procotol-stop
+   ;; #:on-protocol-start
+   ;; #:on-procotol-stop
    #:on-connection-made
    #:on-connection-lost
    #:on-connection-end
    #:on-data-received
    #:on-datagram-received
 
-   ;; Event Managers
-   #:event-manager
-   #:protocol-manager-mixin
+   ;; Factories
+   #:factory
+   #:protocol-factory-mixin
    #:server
+   #:network-server
    #:tcp-server
+   #:udp-server
    #:client
 
-   ;; Event Loop
-   #:event-loop
+   #:on-server-connection-received
+   #:on-server-connection-made
+
    #:listen-tcp
+   #:listen-udp
    ))

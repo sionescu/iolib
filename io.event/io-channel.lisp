@@ -1,8 +1,9 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
 ;;;
-;;; io-channel.lisp - Manage a single I/O channel.
+;;; io-channel.lisp --- Transport protocol.
 ;;;
 ;;; Copyright (C) 2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -23,32 +24,45 @@
 
 (in-package :io.event)
 
-;;;; IO Channel
+;;;; Transport
 
-(defclass io-channel ()
-  ((event-loop :initarg :event-loop
-               :accessor event-loop-of)
+(defclass transport ()
+  ((event-base :initarg :event-base :accessor event-base-of)
    (protocol :accessor protocol-of)
    (read-handler :accessor read-handler-of)
    (write-handler :accessor write-handler-of)
    (error-handler :accessor error-handler-of)))
 
-(defconstant +default-read-window-size+ 8192)
+(defgeneric on-transport-readable (transport)
+  (:documentation ""))
 
-(defclass io-buffered-channel (io-channel)
+(defgeneric on-transport-writable (transport)
+  (:documentation ""))
+
+(defgeneric on-transport-error (transport)
+  (:documentation ""))
+
+(defgeneric write-data (data transport &key &allow-other-keys)
+  (:documentation ""))
+
+(defconstant +default-read-window-size+ 8192
+  "")
+
+(defclass buffered-transport (transport)
   ((read-buffer :accessor read-buffer-of)
    (read-buffered-p :initarg :read-buffered-p
-                    :accessor read-buffered-p)
+                    :accessor read-buffered-p
+                    :initform t)
    (read-window-size :initarg :read-window-size
-                     :accessor read-window-size-of)
+                     :accessor read-window-size-of
+                     :initform t)
    (write-buffer :accessor write-buffer-of)
    (write-buffered-p :initarg :write-buffered-p
-                     :accessor write-buffered-p))
-  (:default-initargs :read-buffered-p t
-                     :write-buffered-p t
-                     :read-window-size +default-read-window-size+))
+                     :accessor write-buffered-p
+                     :initform +default-read-window-size+))
+  (:documentation ""))
 
-(defmethod initialize-instance :after ((channel io-buffered-channel) &key
+(defmethod initialize-instance :after ((channel buffered-transport) &key
                                        read-buffer-size write-buffer-size)
   (when (read-buffered-p channel)
     (setf (read-buffer-of channel)
@@ -59,84 +73,133 @@
 
 ;;;; Socket Transport
 
-;;; probably a bad idea.  maybe a sign that having different classes
-;;; for different kinds of sockets is a funky abstraction?
-(defclass socket-transport (io-channel sockets::socket-stream-internet-active)
-  ())
+(defclass socket-transport (transport)
+  ((socket :initarg :socket :accessor socket-of))
+  (:documentation ""))
 
-(defgeneric on-transport-readable (transport))
-(defgeneric on-transport-writable (transport))
-(defgeneric on-transport-error (transport))
+(defmethod initialize-instance :after ((transport socket-transport) &key)
+  (macrolet ((handler (event callback)
+               `(add-fd (event-base-of transport) (fd-of (socket-of transport))
+                        ,event (lambda (fd event)
+                                 (declare (ignore fd event))
+                                 (,callback transport)))))
+    (setf (read-handler-of transport) (handler :read on-transport-readable)
+          (write-handler-of transport) (handler :write on-transport-writable)
+          (error-handler-of transport) (handler :error on-transport-error))))
 
 ;;;; TCP Transport
 
-(defclass tcp-transport (io-buffered-channel socket-transport)
-  ((status :initform :unconnected :accessor status-of)))
-
-(defmethod shared-initialize :after ((transport tcp-transport) slots &key)
-  (declare (ignore slots))
-  (write-line "tcp-transport initialize-instance")
-  (setf (read-handler-of transport)
-        (add-fd (event-loop-of transport) (fd-of transport) :read
-                (lambda (fd event)
-                  (declare (ignore fd event))
-                  (on-transport-readable transport))))
-  (setf (write-handler-of transport)
-        (add-fd (event-loop-of transport) (fd-of transport) :write
-                (lambda (fd event)
-                  (declare (ignore fd event))
-                  (on-transport-writable transport))))
-  (setf (error-handler-of transport)
-        (add-fd (event-loop-of transport) (fd-of transport) :error
-                (lambda (fd event)
-                  (declare (ignore fd event))
-                  (on-transport-error transport)))))
+;;; Unbuffered, for now.
+(defclass tcp-transport (#-(and) buffered-transport socket-transport)
+  ((status :initform :unconnected :accessor status-of))
+  (:documentation ""))
 
 (defmethod on-transport-readable ((c tcp-transport))
-  (with-accessors ((proto protocol-of) (status status-of)) c
-    (assert (eq status :connected))
-    (let ((buffer (make-array +default-read-window-size+
-                              :element-type '(unsigned-byte 8)))
-          (byte-num 0))
-      (declare (type unsigned-byte byte-num))
-      (handler-case
-          (setf (values buffer byte-num) (socket-receive buffer c))
-        ;; a spurious event !
-        (nix:ewouldblock ()
-          (error "Got a transport-readable event but recv() returned ~
-                  EWOULDBLOCK !"))
-        ;; FIXME: perhaps we might be a little more sophisticated here
-        (socket-error (err)
-          (setf status :disconnected)
-          (on-connection-lost proto err)))
-      (cond
-        ;; EOF
-        ((zerop byte-num)
-         (setf status :disconnected)
-         (on-connection-end proto))
-        ;; good data
-        ((plusp byte-num)
-         (on-data-received proto
-                           (make-array byte-num
-                                       :element-type (array-element-type buffer)
-                                       :displaced-to buffer
-                                       :displaced-index-offset 0)))))))
+  (when (eq (status-of c) :connected)
+    (warn "ON-TRANSPORT-READABLE on non-connected socket")
+    (return-from on-transport-readable))
+  (let ((buffer (make-array +default-read-window-size+
+                            :element-type '(unsigned-byte 8)))
+        (byte-num 0))
+    (declare (type unsigned-byte byte-num))
+    (handler-case
+        (setf (values buffer byte-num) (socket-receive buffer (socket-of c)))
+      ;; a spurious event!
+      (nix:ewouldblock ()
+        (warn "Got a transport-readable event but recv() returned ~
+               EWOULDBLOCK!"))
+      ;; FIXME: perhaps we might be a little more sophisticated here
+      (socket-error (err)
+        (setf (status-of c) :disconnected)
+        (on-connection-lost (protocol-of c) c err)))
+    (cond
+      ;; EOF
+      ((zerop byte-num)
+       (setf (status-of c) :disconnected)
+       (on-connection-end (protocol-of c) c))
+      ;; good data
+      ((plusp byte-num)
+       (on-data-received (protocol-of c) c
+                         (make-array byte-num
+                                     :element-type (array-element-type buffer)
+                                     :displaced-to buffer
+                                     :displaced-index-offset 0))))))
+
+(defmethod write-data (data (c tcp-transport) &key)
+  (handler-case
+      (let ((count (socket-send data (socket-of c))))
+        (when (/= count (length data))
+          ;; here it should copy what it didn't manage to send,
+          ;; and then write it out ON-TRANSPORT-WRITABLE.
+          (warn "WRITE-DATA didn't send everything")))
+    (nix:ewouldblock ()
+      (warn "WRITE-DATA EWOULDBLOCK"))))
 
 ;;; FIXME: deal with full write kernel buffers
 (defmethod on-transport-writable ((c tcp-transport))
-  (with-accessors ((proto protocol-of) (status status-of)) c
-    ;; not exactly complete: infact subsequent :WRITE
-    ;; events must be handled
-    (when (eq status :unconnected)
-      (on-connection-made proto)
-      (setf status :connected))))
+  ;; not exactly complete: infact subsequent :WRITE
+  ;; events must be handled
+  (when (eq (status-of c) :unconnected)
+    (on-connection-made (protocol-of c) c)
+    (setf (status-of c) :connected)))
 
 ;;; FIXME: complete it
 (defmethod on-transport-error ((c tcp-transport))
-  (let ((error-code (get-socket-option c :error)))
-    ))
+  (let ((error-code (get-socket-option (socket-of c) :error)))
+    (warn "got socket error: ~A" error-code)))
 
 ;;;; UDP Transport
 
 (defclass udp-transport (socket-transport)
-  ())
+  ()
+  (:documentation ""))
+
+(defmethod on-transport-readable ((c udp-transport))
+  (handler-case
+      (multiple-value-bind (buffer byte-num address port)
+          (socket-receive (make-array +default-read-window-size+
+                                      :element-type '(unsigned-byte 8))
+                          (socket-of c))
+        (on-datagram-received
+         (protocol-of c) c
+         (make-array byte-num
+                     :element-type (array-element-type buffer)
+                     :displaced-to buffer
+                     :displaced-index-offset 0)
+         address
+         port))
+    ;; a spurious event!
+    (nix:ewouldblock ()
+      (warn "Got a transport-readable event but recv() returned ~
+             EWOULDBLOCK!"))
+    ;; FIXME: perhaps we might be a little more sophisticated here
+    (socket-error (err)
+      (warn "got error: ~S" err))))
+
+;;; we can probably just use WRITE-DATA with :REMOTE-ADDRESS and
+;;; :REMOTE-PORT instead of this separate function.
+(defgeneric write-datagram (datagram address port transport
+                            &key &allow-other-keys)
+  (:documentation "")
+  (:method (datagram address port (c udp-transport) &key)
+    (handler-case
+        (let ((count (socket-send datagram (socket-of c)
+                                  :remote-address address
+                                  :remote-port port)))
+          (when (/= count (length datagram))
+            ;; here it should copy what it didn't manage to send,
+            ;; and then write it out ON-TRANSPORT-WRITABLE.
+            (warn "WRITE-DATA didn't send everything")))
+      (nix:ewouldblock ()
+        (warn "WRITE-DATA EWOULDBLOCK"))
+      (socket-error (err)
+        (warn "write-datagram: got ~S" err)))))
+
+;;; FIXME: deal with full write kernel buffers
+(defmethod on-transport-writable ((c udp-transport))
+  )
+
+;;; FIXME: complete it
+(defmethod on-transport-error ((c udp-transport))
+  (let ((error-code (get-socket-option (socket-of c) :error)))
+    (warn "got socket error: ~A" error-code)))

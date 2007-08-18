@@ -3,6 +3,7 @@
 ;;; server-factory.lisp --- TCP server factories.
 ;;;
 ;;; Copyright (C) 2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -23,27 +24,30 @@
 
 (in-package :io.event)
 
-;;;; Server
+;;;; Base Factory Classes
 
-(defclass event-manager ()
+(defclass factory ()
   ()
-  (:documentation ""))
+  (:documentation "Factories manage stuff."))
 
-(defclass protocol-manager-mixin ()
+(defclass protocol-factory-mixin ()
   ((protocol :initarg :protocol :accessor protocol-of))
   (:documentation ""))
 
-#- (and)
-(defmethod initialize-instance :after ((pmm protocol-manager-mixin) &key)
-  (with-slots (protocol) pmm
-    (unless (typep protocol 'io-protocol)
-      (setq protocol (make-instance protocol)))))
+;;;; Server
 
-(defclass server (event-manager protocol-manager-mixin)
+(defclass server (factory protocol-factory-mixin)
   ()
   (:documentation ""))
 
-(defclass tcp-server (server)
+(defclass network-server (server)
+  ((default-local-port :initform 0 :initarg :default-local-port
+                       :accessor default-local-port-of))
+  (:documentation ""))
+
+;;;; TCP Server
+
+(defclass tcp-server (network-server)
   ((connections :initform nil :accessor connections-of))
   (:documentation ""))
 
@@ -51,77 +55,93 @@
   (print-unreadable-object (tcp-server stream :type t :identity t)
     (format stream "~A connection" (length (connections-of tcp-server)))))
 
-;;; wtf?
-#- (and)
-(defgeneric on-connection-received (factory event-base socket))
-
-#- (and)
-(defmethod on-connection-received ((factory server-factory)
-                                   (event-loop event-base)
-                                   (socket active-socket))
-  )
-
-(defclass client (event-manager protocol-manager-mixin)
-  ()
+(defgeneric on-server-connection-received (tcp-server event-base peer)
   (:documentation ""))
 
-;;;; Event Loop
+(defmethod on-server-connection-received ((server tcp-server) (eb event-base)
+                                          peer)
+  "Default main method for TCP-SERVERs.  Instantiates a new
+PROTOCOL and respective TRANSPORT, sets them up and pushes the
+new PROTOCOL onto the SERVER's connection list."
+  (let* ((transport (make-instance 'tcp-transport :event-base eb :socket peer))
+         (protocol (make-instance (protocol-of server) :transport transport)))
+    (setf (protocol-of transport) protocol)
+    (push protocol (connections-of server))))
 
-(defclass event-loop (event-base)
-  ((sockets :initform (make-hash-table :test #'eql)
-            :accessor sockets-of)
-   (protocols :initform (make-hash-table :test #'eql)
-              :accessor protocols-of)))
+;;; Badly named, maybe.
+(defgeneric on-server-connection-error (tcp-server event-base)
+  (:documentation "")
+  (:method ((server tcp-server) event-base)
+    (declare (ignore event-base))
+    (warn "Got an error on the server socket: ~S" server)))
 
-(defun listen-tcp (event-loop &key host port server)
-  (check-type event-loop event-loop)
-  (check-type port (unsigned-byte 16))
-  (check-type server tcp-server)
-  (let* ((host (ensure-address host))
-         (socket (make-socket :family (address-type host)
-                              :type :stream :connect :passive
-                              :local-host host :local-port port)))
+(defgeneric listen-tcp (server event-base &rest socket-options)
+  (:documentation ""))
+
+(defmethod listen-tcp ((server tcp-server) (base event-base)
+                       &rest socket-options)
+  (let ((socket (apply #'make-socket
+                       :connect :passive
+                       :local-port (getf socket-options :local-port
+                                         (default-local-port-of server))
+                       :local-host (getf socket-options :local-host
+                                         +ipv4-unspecified+)
+                       socket-options)))
     (setf (fd-non-blocking socket) t)
-    (setf (gethash (fd-of socket) (sockets-of event-loop)) socket)
-    (add-fd event-loop (fd-of socket) :read
+    (add-fd base (fd-of socket) :read
             (lambda (fd event)
               (declare (ignore fd))
               (ecase event
                 (:read
                  (let ((peer (accept-connection socket)))
                    (when peer
-                     ;; The transport sets things up.
-                     (let* ((transport (change-class peer 'tcp-transport
-                                                     :event-loop event-loop))
-                            (protocol (make-instance (protocol-of server)
-                                                     :transport transport)))
-                       ;; how tricky (or how bad an idea) would it be
-                       ;; to have the transport, socket and
-                       ;; protocol/connection all be the same object?
-                       (setf (protocol-of transport) protocol)
-                       ;; why save protocols in the event-loop?
-                       ;; (setf (gethash (fd-of peer) (protocols-of event-loop))
-                       ;;       (cons peer protocol))
-                       (push protocol (connections-of server))
-                       #- (and)
-                       (add-fd event-loop (fd-of peer) :read
-                               (lambda (fd event)
-                                 (declare (ignore fd))
-                                 (ecase event
-                                   (:read
-                                    (on-data-received protocol
-                                                      #(104 101 108 108 111 33 13 10)))
-                                   (:error
-                                    (warn "connection error")))))
-                       ))))
+                     (on-server-connection-received server base peer))))
                 (:error
-                 (error "Got an error on the server socket: ~A~%" socket)))))))
+                 (on-server-connection-error server base)))))
+    socket))
 
-(defvar *default-event-loop* (make-instance 'event-loop))
+;; (defvar *default-event-base* (make-instance 'event-base))
 
-;;; quick hack
-(defun run-tcp-server (server &rest listen-tcp-args)
-  (apply #'listen-tcp *default-event-loop*
-         :server (make-instance server)
-         listen-tcp-args)
-  (event-dispatch *default-event-loop*))
+;;; testing
+(defun run-tcp-server (server &rest socket-options)
+  (let ((event-base (make-instance 'event-base)))
+    (apply 'listen-tcp (make-instance server) event-base socket-options)
+    (event-dispatch event-base)))
+
+;;;; UDP Server
+
+(defclass udp-server (network-server)
+  ((datagram-protocol :accessor datagram-protocol-of))
+  (:documentation ""))
+
+(defgeneric listen-udp (server event-base &rest socket-options)
+  (:documentation ""))
+
+(defmethod listen-udp ((server udp-server) (base event-base)
+                       &rest socket-options)
+  (let ((socket (apply #'make-socket
+                       :type :datagram
+                       :local-port (getf socket-options :local-port
+                                         (default-local-port-of server))
+                       :local-host (getf socket-options :local-host
+                                         +ipv4-unspecified+)
+                       socket-options)))
+    (setf (fd-non-blocking socket) t)
+    (let* ((transport (make-instance
+                       'udp-transport :event-base base :socket socket))
+           (protocol (make-instance (protocol-of server) :transport transport)))
+      (setf (protocol-of transport) protocol
+            (datagram-protocol-of server) protocol))
+    socket))
+
+;;; testing
+(defun run-udp-server (server &rest socket-options)
+  (let ((event-base (make-instance 'event-base)))
+    (apply 'listen-udp (make-instance server) event-base socket-options)
+    (event-dispatch event-base)))
+
+;;;; Client
+
+(defclass client (factory protocol-factory-mixin)
+  ()
+  (:documentation ""))
