@@ -400,13 +400,23 @@
 ;;; FIXME: figure out why this test blocks with the inetd services on
 ;;; my machines, on both Darwin and Linux/x86-64.  Works with
 ;;; echo-server.c though --luis
-(deftest simple-udp-client
+(deftest simple-udp-client.1
     (with-socket (s :remote-host *echo-address* :remote-port *echo-port*
                     :type :datagram :family :ipv4)
       (let ((data (make-array '(200) :element-type '(unsigned-byte 8))))
         (socket-send "here is some text" s)
         (socket-receive data s)
         ;; (format t "~&Got ~S back from UDP echo server~%" data)
+        (> (length data) 0)))
+  t)
+
+(deftest simple-udp-client.2
+    (with-socket (s :type :datagram :family :ipv4)
+      (let ((data (make-array 100 :element-type '(unsigned-byte 8))))
+        (socket-send "here is some more text" s
+                     :remote-address *echo-address*
+                     :remote-port *echo-port*)
+        (socket-receive data s)
         (> (length data) 0)))
   t)
 
