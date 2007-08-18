@@ -27,54 +27,43 @@
 (in-package #:cl-user)
 
 (defpackage #:net.echo
-  (:use #:cl #:io.event #:net.sockets))
+  (:use #:cl #:io.event)
+  (:export #:echo-server))
 
 (in-package #:net.echo)
 
 ;;;; Echo Server
 
-(defclass echo-server (tcp-server)
+(defclass echo-server (tcp-server udp-server)
   ()
-  (:default-initargs :protocol 'echo-server-stream-protocol)
-  (:documentation "Uses the TCP protocol by default."))
+  (:default-initargs :protocol 'echo-server-protocol
+                     :default-local-port 8)
+  (:documentation "Echo server."))
 
-(defclass echo-server-stream-protocol (stream-protocol)
+(defclass echo-server-protocol (stream-protocol datagram-protocol)
   ()
-  (:documentation "Echo protocol implementation. (TCP)"))
+  (:documentation "Server implementation of the Echo protocol. (TCP and UDP)"))
 
-(defmethod on-data-received ((con echo-server-stream-protocol) data)
-  (write-sequence data (transport-of con))
-  (finish-output (transport-of con)))
+(defmethod on-data-received ((con echo-server-protocol) transport data)
+  (write-data data transport))
 
-
-
-
-
-
-
-;;;; ....
-
-(defclass echo-server-datagram-protocol (datagram-protocol)
-  ()
-  (:documentation "Echo protocol implementation. (UDP)"))
-
-(defmethod)
+(defmethod on-datagram-received ((con echo-server-protocol)
+                                 transport datagram address port)
+  (write-datagram datagram address port transport))
 
 ;;;; Echo Client
 
-(defclass echo-client (client)
+#||
+(defclass echo-client (tcp-client)
   ()
-  (:default-initargs :protocol 'echo-client-stream-protocol)
+  (:default-initargs :protocol 'echo-client-protocol
+                     :default-remote-port 8)
   (:documentation "Uses the TCP protocol by default."))
 
-(defclass echo-client-stream-protocol (stream-protocol)
+(defclass echo-client-protocol (stream-protocol)
   ()
-  (:documentation ""))
+  (:default-initargs :default-remote-port 8)
+  (:documentation "Client implementation of the Echo protocol. (TCP and UDP)"))
 
-(defmethod )
-
-(defclass echo-client-datagram-protocol (datagram-protocol)
-  ()
-  (:documentation ""))
-
-(defmethod)
+(defmethod on-data-received ((con echo-client-protocol)))
+||#
