@@ -33,6 +33,6 @@
   :components
   ((:file "pkgdcl")
    (:file "io-buffer")
-   (:file "io-channel")
-   (:file "io-protocol")
-   (:file "server-factory")))
+   (:file "protocol")
+   (:file "transport")
+   (:file "factory")))
