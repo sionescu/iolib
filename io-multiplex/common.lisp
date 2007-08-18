@@ -25,14 +25,14 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *available-multiplexers* nil)
-  (defvar *best-available-multiplexer* nil))
+  (defvar *default-multiplexer* nil))
 
 (defvar *maximum-event-loop-timeout* 1)
 
 ;;;; EVENT-BASE
 
 (defclass event-base ()
-  ((mux :initform (make-instance *best-available-multiplexer*)
+  ((mux :initform (make-instance *default-multiplexer*)
         :initarg :mux :reader mux-of)
    (fds :initform (make-hash-table :test 'eql)
         :reader fds-of)
@@ -44,6 +44,14 @@
                     :accessor exit-when-empty-p))
   (:default-initargs :exit-when-empty nil)
   (:documentation "An event base ..."))
+
+(defmacro with-event-base ((var &rest initargs) &body body)
+  "Binds VAR to a new EVENT-BASE, instantiated with INITARGS,
+within the extent of BODY.  Closes VAR."
+  `(let ((,var (make-instance 'event-base ,@initargs)))
+     (unwind-protect
+          (progn ,@body)
+       (close ,var))))
 
 (defmethod print-object ((base event-base) stream)
   (print-unreadable-object (base stream :type nil :identity t)
@@ -69,7 +77,7 @@
       (setf (slot-value event-base slot) nil))
     event-base))
 
-(defgeneric add-fd (base fd event-type function &key timeout persistent)
+(defgeneric add-fd (base fd event-type function &key timeout one-shot)
   (:documentation ""))
 
 (defgeneric add-timeout (event-base function timeout &key persistent)
@@ -142,14 +150,14 @@
          :write-add)))
 
 (defmethod add-fd ((event-base event-base) fd event-type function
-                   &key timeout persistent)
+                   &key timeout one-shot)
   (check-type fd unsigned-byte)
   (check-type event-type fd-event)
   (let ((fd-limit (fd-limit-of (mux-of event-base))))
     (when (and fd-limit (> fd fd-limit))
       (error "Cannot add such a large FD: ~A" fd)))
   (let ((current-entry (fd-entry-of event-base fd))
-        (event (make-event fd event-type function persistent
+        (event (make-event fd event-type function (not one-shot)
                            (abs-timeout timeout)
                            (normalize-timeout timeout)))
         (edge-change nil))
@@ -172,9 +180,9 @@
 (defmethod add-timeout ((event-base event-base) function timeout
                         &key persistent)
   (assert timeout)
-  (%add-event event-base (make-event nil :timeout function persistent
-                                     (abs-timeout timeout)
-                                     (normalize-timeout timeout))))
+  (%add-event event-base
+              (make-event nil :timeout function persistent
+                          (abs-timeout timeout) (normalize-timeout timeout))))
 
 (defun calc-possible-edge-change-when-removing (fd-entry event-type)
   (cond ((and (eql event-type :read)
@@ -212,19 +220,20 @@
          (unwind-protect
               (progn
                 (setf ,event (add-fd ,event-base ,fd ,event-type ,function
-                                     :persistent t
                                      :timeout ,timeout))
                 ,@body)
            (when ,event
              (remove-event ,event-base ,event)))))))
 
 (defmethod event-dispatch :around ((event-base event-base)
-                                   &key timeout only-once)
+                                   &key timeout one-shot)
   (setf (exit-p event-base) nil)
   (when timeout
     (exit-event-loop event-base :delay timeout))
-  (call-next-method event-base :only-once only-once))
+  (call-next-method event-base :one-shot one-shot))
 
+;; broken?
+#-(and)
 (defun recalculate-timeouts (timeouts)
   (let ((now (osicat:get-monotonic-time)))
     (dolist (ev (queue-head timeouts))
@@ -238,7 +247,7 @@
   (dolist (ev event-list)
     (remove-event event-base ev)))
 
-(defmethod event-dispatch ((event-base event-base) &key only-once)
+(defmethod event-dispatch ((event-base event-base) &key one-shot)
   (with-accessors ((mux mux-of) (fds fds-of)
                    (exit-p exit-p) (exit-when-empty exit-when-empty-p)
                    (timeouts timeouts-of)) event-base
@@ -249,12 +258,21 @@
            (deletion-list () ())
            (dispatch-list () ()))
           ((or exit-p (and exit-when-empty (event-base-empty-p event-base))))
-        (recalculate-timeouts timeouts)
-        (when (dispatch-fd-events-once event-base poll-timeout)
-          (and only-once (setf exit-p t)))
+        ;; this seemed completely broken:
+        #-(and) (recalculate-timeouts)
+        ;; ONE-SHOT used to mean that once an /FD event/ was
+        ;; dispatched the loop would exit.  I'm changing that to exit
+        ;; for timeout events as well.  Bad idea?
+        ;;
+        ;; something is (SETFing (EXIT-P EVENT-BAST) NIL) and that is
+        ;; causing the events to actually be dispatched twice.  Why?
+        (when (and (dispatch-fd-events-once event-base poll-timeout) one-shot)
+          (setq exit-p t))
         (setf (values deletion-list dispatch-list)
               (filter-expired-events
                (expired-events timeouts (osicat:get-monotonic-time))))
+        (when (and dispatch-list one-shot)
+          (setq exit-p t))
         (dispatch-timeouts dispatch-list)
         (remove-events event-base deletion-list)
         (queue-sort timeouts #'< #'event-abs-timeout)))))
@@ -400,6 +418,8 @@
     (when (and ev-to timeout)
       (< timeout ev-to))))
 
+;; broken?
+#-(and)
 (defun event-recalc-abs-timeout (event now)
   (setf (event-abs-timeout event)
         (+ now (event-timeout event))))
@@ -419,7 +439,10 @@
   ((fd :reader fd-of)
    (fd-limit :initform (get-fd-limit)
              :initarg :fd-limit
-             :reader fd-limit-of)))
+             :reader fd-limit-of)
+   (closedp :accessor multiplexer-closedp
+            :initform nil))
+  (:documentation ""))
 
 (defgeneric monitor-fd (mux fd-entry)
   (:method ((mux multiplexer) fd-entry)
@@ -445,8 +468,12 @@
 
 (defgeneric close-multiplexer (mux)
   (:method-combination progn :most-specific-last)
+  (:method :around ((mux multiplexer))
+    (unless (multiplexer-closedp mux)
+      (call-next-method)
+      (setf (multiplexer-closedp mux) t)))
   (:method progn ((mux multiplexer))
-    (when (slot-value mux 'fd)
+    (when (and (slot-boundp mux 'fd) (not (null (fd-of mux))))
       (nix:close (fd-of mux))
       (setf (slot-value mux 'fd) nil))
     mux))
@@ -472,8 +499,8 @@
 (defmacro define-multiplexer (name priority superclasses slots &rest options)
   `(progn
      (defclass ,name ,superclasses ,slots ,@options)
-     (pushnew (cons ,priority ',name)
-              *available-multiplexers*)))
+     (pushnew (cons ,priority ',name) *available-multiplexers*
+              :test #'equal)))
 
 ;;;; Misc
 

@@ -102,6 +102,8 @@
           (let (peer)
             (waiting-for-event (base (fd-of passive) :read)
               (setq peer (accept-connection passive)))
-            (assert (socket-open-p peer)))))
+            (assert (socket-open-p peer)))
+          ;; TODO: send and receive some stuff
+          ))
       nil)
   nil)

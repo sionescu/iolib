@@ -24,5 +24,5 @@
 (in-package :io.multiplex)
 
 ;;; TODO: do real detecting here
-(setf *best-available-multiplexer*
+(setf *default-multiplexer*
       (cdar (sort *available-multiplexers* #'< :key #'car)))

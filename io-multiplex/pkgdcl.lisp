@@ -36,6 +36,8 @@
    #+linux #:epoll-multiplexer
 
    ;; Event-base Operations
+   #:*available-multiplexers*
+   #:*default-multiplexer*
    #:*default-event-loop-timeout*
    #:add-fd
    #:add-timeout
@@ -43,6 +45,7 @@
    #:event-dispatch
    #:exit-event-loop
    #:remove-event
+   #:with-event-base
 
    ;; Operations on FDs
    #:fd-readablep
