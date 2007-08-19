@@ -28,7 +28,7 @@
 
 (defclass transport ()
   ((event-base :initarg :event-base :accessor event-base-of)
-   (protocol :accessor protocol-of)
+   (protocol :initarg :protocol :accessor protocol-of)
    (read-handler :accessor read-handler-of)
    (write-handler :accessor write-handler-of)
    (error-handler :accessor error-handler-of)))
@@ -43,6 +43,9 @@
   (:documentation ""))
 
 (defgeneric write-data (data transport &key &allow-other-keys)
+  (:documentation ""))
+
+(defgeneric close-transport (transport &key &allow-other-keys)
   (:documentation ""))
 
 (defconstant +default-read-window-size+ 8192
@@ -87,6 +90,12 @@
           (write-handler-of transport) (handler :write on-transport-writable)
           (error-handler-of transport) (handler :error on-transport-error))))
 
+(defmethod close-transport ((c socket-transport) &key abort)
+  (remove-event (event-base-of c) (read-handler-of c))
+  (remove-event (event-base-of c) (write-handler-of c))
+  (remove-event (event-base-of c) (error-handler-of c))
+  (close (socket-of c) :abort abort))
+
 ;;;; TCP Transport
 
 ;;; Unbuffered, for now.
@@ -95,7 +104,7 @@
   (:documentation ""))
 
 (defmethod on-transport-readable ((c tcp-transport))
-  (when (eq (status-of c) :connected)
+  (unless (eq (status-of c) :connected)
     (warn "ON-TRANSPORT-READABLE on non-connected socket")
     (return-from on-transport-readable))
   (let ((buffer (make-array +default-read-window-size+
@@ -139,14 +148,17 @@
 (defmethod on-transport-writable ((c tcp-transport))
   ;; not exactly complete: infact subsequent :WRITE
   ;; events must be handled
-  (when (eq (status-of c) :unconnected)
-    (on-connection-made (protocol-of c) c)
-    (setf (status-of c) :connected)))
+  (cond ((eq (status-of c) :unconnected)
+         (on-connection-made (protocol-of c) c)
+         (setf (status-of c) :connected))
+        (t (warn "tcp on-transport-writable: implement me"))))
 
-;;; FIXME: complete it
-(defmethod on-transport-error ((c tcp-transport))
-  (let ((error-code (get-socket-option (socket-of c) :error)))
-    (warn "got socket error: ~A" error-code)))
+(defmethod on-transport-error ((transport tcp-transport))
+  ;; are we supposed to close the socket now?
+  (on-connection-lost (protocol-of transport)
+                      transport
+                      (sockets::lookup-socket-error
+                       (get-socket-option (socket-of transport) :error))))
 
 ;;;; UDP Transport
 
@@ -197,7 +209,7 @@
 
 ;;; FIXME: deal with full write kernel buffers
 (defmethod on-transport-writable ((c udp-transport))
-  )
+  (warn "udp on-transport-writable: implement me"))
 
 ;;; FIXME: complete it
 (defmethod on-transport-error ((c udp-transport))

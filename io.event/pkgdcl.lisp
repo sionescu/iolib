@@ -3,6 +3,7 @@
 ;;; pkgdcl.lisp --- Package definition.
 ;;;
 ;;; Copyright (C) 2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -25,7 +26,7 @@
 
 (defpackage :io.event
   (:nicknames #:evie)
-  (:use #:common-lisp :io.streams :io.multiplex :net.sockets)
+  (:use #:common-lisp :io.streams :io.multiplex :net.sockets :alexandria)
   (:export
    ;; Transports
    #:transport
@@ -40,6 +41,7 @@
 
    #:write-data
    #:write-datagram
+   #:close-transport
 
    ;; Protocols
    #:protocol
@@ -58,16 +60,29 @@
 
    ;; Factories
    #:factory
-   #:protocol-factory-mixin
    #:server
    #:network-server
    #:tcp-server
    #:udp-server
    #:client
+   #:network-client
+   #:tcp-client
+   #:udp-client
 
    #:on-server-connection-received
-   #:on-server-connection-made
+   #:on-server-connection-error
 
    #:listen-tcp
    #:listen-udp
+
+   #:add-connection
+
+   #:init-default-event-base
+
+   ;; Deferreds
+   #:with-async-handler
+   #:with-deferred-result
+   #:deferred
+   #:result-callback-of
+   #:error-callback-of
    ))

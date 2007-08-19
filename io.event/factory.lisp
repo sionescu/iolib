@@ -27,16 +27,13 @@
 ;;;; Base Factory Classes
 
 (defclass factory ()
-  ()
+  ((protocol :initarg :protocol :accessor protocol-of)
+   (event-base :initarg :event-base :accessor event-base-of))
   (:documentation "Factories manage stuff."))
-
-(defclass protocol-factory-mixin ()
-  ((protocol :initarg :protocol :accessor protocol-of))
-  (:documentation ""))
 
 ;;;; Server
 
-(defclass server (factory protocol-factory-mixin)
+(defclass server (factory)
   ()
   (:documentation ""))
 
@@ -51,9 +48,9 @@
   ((connections :initform nil :accessor connections-of))
   (:documentation ""))
 
-(defmethod print-object ((tcp-server server) stream)
-  (print-unreadable-object (tcp-server stream :type t :identity t)
-    (format stream "~A connection" (length (connections-of tcp-server)))))
+(defmethod print-object ((server tcp-server) stream)
+  (print-unreadable-object (server stream :type t :identity t)
+    (format stream "~A connections" (length (connections-of server)))))
 
 (defgeneric on-server-connection-received (tcp-server event-base peer)
   (:documentation ""))
@@ -142,6 +139,89 @@ new PROTOCOL onto the SERVER's connection list."
 
 ;;;; Client
 
-(defclass client (factory protocol-factory-mixin)
+(defvar *current-event-base*)
+
+;;; KLUDGE: think this through.
+(defun init-default-event-base (&rest options)
+  (setq *current-event-base*
+        (apply #'make-instance 'event-base options)))
+
+(defclass client (factory)
   ()
   (:documentation ""))
+
+;;; KLUDGE: think this through.
+(defmethod event-base-of ((client client))
+  *current-event-base*)
+
+(defclass network-client (client)
+  ((default-remote-port :initform 0 :initarg :default-remote-port
+                        :accessor default-remote-port-of))
+  (:documentation ""))
+
+;;; Could eventually share stuff with TCP-SERVER.
+(defclass tcp-client (network-client)
+  ((connections :initform nil :accessor connections-of))
+  (:documentation ""))
+
+(defgeneric add-connection (client protocol &rest socket-options))
+
+(defmethod add-connection ((client tcp-client) protocol &rest options)
+  (let ((trans (make-instance 'tcp-transport
+                              :event-base (event-base-of client)
+                              :socket (apply #'make-socket options)
+                              :protocol protocol)))
+    (setf (transport-of protocol) trans)))
+
+;;;; Deferred
+
+(defclass deferred-mixin ()
+  ((deferred :initarg :deferred :accessor deferred-of))
+  (:documentation ""))
+
+(defclass deferred ()
+  ((result-callback :accessor result-callback-of
+                    :initform
+                    (lambda (&rest values)
+                      (warn "Unhandled deferred callback: ~S" values))
+                    :documentation "")
+   (error-callback :accessor error-callback-of :initform #'error
+                   :documentation ""))
+  (:documentation ""))
+
+;;; Any better syntax suggestions?
+(defmacro with-async-handler (return-vars form error-clauses &body body)
+  (with-unique-names (result-deferred)
+    `(let ((,result-deferred ,form))
+       (setf (result-callback-of ,result-deferred)
+             (lambda ,return-vars ,@body))
+       (setf (error-callback-of ,result-deferred)
+             (lambda (some-error)
+               (handler-case
+                   (error some-error)
+                 ,@error-clauses)))
+       ,result-deferred)))
+
+;;; This macro is potentially very confusing for the user.  Depending
+;;; on whether *CURRENT-EVENT-BASE* is bound it'll either return the
+;;; deferred object or run an event loop and actually return the value
+;;; (or signal an error) instead.  On that note, maybe
+;;; WITH-ASYNC-HANDLER should check whether it actually got a deferred
+;;; object.
+(defmacro with-deferred-result (() &body body)
+  (with-unique-names (body-fn)
+    `(flet ((,body-fn () ,@body))
+       (if (boundp '*current-event-base*)
+           (,body-fn)
+           (call-synchronously-with-fresh-event-base #',body-fn)))))
+
+(defun call-synchronously-with-fresh-event-base (function)
+  (with-event-base (*current-event-base* :exit-when-empty t)
+    (let (return-values error)
+      (with-async-handler (&rest values) (funcall function)
+          ((error (c) (setq error c)))
+        (setq return-values values))
+      (event-dispatch *current-event-base*)
+      (if error
+          (error error)
+          (apply #'values return-values)))))

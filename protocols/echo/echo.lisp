@@ -37,12 +37,12 @@
 (defclass echo-server (tcp-server udp-server)
   ()
   (:default-initargs :protocol 'echo-server-protocol
-                     :default-local-port 8)
-  (:documentation "Echo server."))
+                     :default-local-port 7)
+  (:documentation "ECHO server."))
 
 (defclass echo-server-protocol (stream-protocol datagram-protocol)
   ()
-  (:documentation "Server implementation of the Echo protocol. (TCP and UDP)"))
+  (:documentation "Server implementation of the ECHO protocol. (TCP and UDP)"))
 
 (defmethod on-data-received ((con echo-server-protocol) transport data)
   (write-data data transport))
@@ -53,17 +53,30 @@
 
 ;;;; Echo Client
 
-#||
 (defclass echo-client (tcp-client)
   ()
   (:default-initargs :protocol 'echo-client-protocol
-                     :default-remote-port 8)
-  (:documentation "Uses the TCP protocol by default."))
+                     :default-remote-port 7)
+  (:documentation "ECHO client."))
 
-(defclass echo-client-protocol (stream-protocol)
-  ()
-  (:default-initargs :default-remote-port 8)
-  (:documentation "Client implementation of the Echo protocol. (TCP and UDP)"))
+(defvar *default-echo-client* (make-instance 'echo-client))
 
-(defmethod on-data-received ((con echo-client-protocol)))
-||#
+(defclass echo-client-protocol (stream-protocol deferred)
+  ((request :initarg :request :accessor request-of))
+  (:documentation "Client implementation of the ECHO protocol. (TCP and UDP)"))
+
+(defmethod on-connection-made ((con echo-client-protocol) transport)
+  (write-data (request-of con) transport))
+
+(defmethod on-data-received ((con echo-client-protocol) transport data)
+  (close-transport transport)
+  (funcall (result-callback-of con) data))
+
+(defmethod on-connection-lost ((con echo-client) transport reason)
+  (funcall (result-callback-of con) reason))
+
+(defun get-echo (data host &optional (port 7) (client *default-echo-client*))
+  (with-deferred-result ()
+    (let ((protocol (make-instance 'echo-client-protocol :request data)))
+      (add-connection client protocol :remote-host host :remote-port port)
+      protocol)))

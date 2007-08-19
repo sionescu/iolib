@@ -26,7 +26,9 @@
 
 ;;;; Base Protocol Class
 
-(defclass protocol ()
+;;; Calling it IO-PROTOCOL in order to avoid clashing with
+;;; the SOCKETS:PROTOCOL class.
+(defclass io-protocol ()
   ((transport :initarg :transport :accessor transport-of))
   (:documentation ""))
 
@@ -38,7 +40,7 @@
 
 ;;;; Stream Protocol
 
-(defclass stream-protocol (protocol)
+(defclass stream-protocol (io-protocol)
   ()
   (:documentation ""))
 
@@ -78,7 +80,7 @@
 
 ;;;; Datagram Protocol
 
-(defclass datagram-protocol (protocol)
+(defclass datagram-protocol (io-protocol)
   ()
   (:documentation ""))
 
