@@ -68,8 +68,9 @@
   (:documentation "Class representing a host: name, aliases and addresses."))
 
 (defmethod initialize-instance :after ((host host) &key)
-  (with-slots (addresses) host
-    (setf addresses (alexandria:ensure-list addresses))))
+  (when (slot-boundp host 'addresses)
+    (with-slots (addresses) host
+      (setf addresses (alexandria:ensure-list addresses)))))
 
 (defun host-random-address (host)
   "Returns a random address from HOST's address list."
@@ -166,10 +167,12 @@
 
 ;;;; External Interface
 
+#+net-sockets-use-old-lookup-host
 (defgeneric lookup-host (name-or-address &key ipv6)
   (:documentation "Looks up a host by name or address.  IPV6
 determines the IPv6 behaviour, defaults to *IPV6*."))
 
+#+net-sockets-use-old-lookup-host
 (defmethod lookup-host ((host string) &key (ipv6 *ipv6*))
   (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration")
   (flet ((decide-family-and-flags ()
@@ -205,6 +208,7 @@ determines the IPv6 behaviour, defaults to *IPV6*."))
                (values hostobj))))))))
 
 ;;; FIXME: Doesn't return aliases, why?
+#+net-sockets-use-old-lookup-host
 (defmethod lookup-host (host &key (ipv6 *ipv6*))
   (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration")
   (multiple-value-bind (vector type) (address-to-vector host)

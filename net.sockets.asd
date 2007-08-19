@@ -59,4 +59,6 @@
    (:file "base-sockets")
    (:file "socket-options")
    (:file "socket-methods")
+   #-net-sockets-use-old-lookup-host
+   (:file "dns-client")
    (:file "make-socket")))
