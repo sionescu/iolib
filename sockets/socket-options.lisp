@@ -116,14 +116,14 @@
 
 (defmacro define-get-sockopt (os eql-name helper-get level optname)
   `(defmethod get-socket-option ((socket socket) (option-name (eql ,eql-name)))
-     ,(if (alexandria:featurep os)
+     ,(if (or (eq os :any) (alexandria:featurep os))
           `(,helper-get (socket-fd socket) ,level ,optname)
           `(error 'option-not-available option-name))))
 
 (defmacro define-set-sockopt (os eql-name args helper-set level optname)
   `(defmethod set-socket-option
        ((socket socket) (option-name (eql ,eql-name)) &key ,@args)
-     ,@(if (alexandria:featurep os)
+     ,@(if (or (eq os :any) (alexandria:featurep os))
            `((,helper-set (socket-fd socket) ,level ,optname ,@args))
            `((declare (ignore ,@args))
              (error 'option-not-available option-name)))))
@@ -157,12 +157,12 @@
 
 ;;;; Generic options
 
-(define-socket-options :get sol-socket :unix
+(define-socket-options :get sol-socket :any
   (accept-connections so-acceptconn :bool)
   (error              so-error      :int)
   (type               so-type       :int))
 
-(define-socket-options :get-and-set sol-socket :unix
+(define-socket-options :get-and-set sol-socket :any
   (broadcast         so-broadcast :bool)
   (debug             so-debug     :bool)
   (dont-route        so-dontroute :bool)
@@ -218,7 +218,7 @@
 ;;;; TCP Options
 
 (define-socket-option tcp-nodelay :get-and-set
-  tcp-nodelay ipproto-tcp :bool :unix)
+  tcp-nodelay ipproto-tcp :bool :any)
 
 (define-socket-option tcp-maxseg :get-and-set
   tcp-maxseg ipproto-tcp :int (:or :linux :freebsd))

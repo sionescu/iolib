@@ -188,6 +188,7 @@
 (defmethod close ((socket socket) &key abort)
   (declare (ignore socket abort)))
 
+;;; FIXME: this approach doesn't work on windows.
 (defmethod socket-open-p ((socket socket))
   (when (fd-of socket)
     (handler-case
@@ -196,8 +197,9 @@
           (with-socklen (size size-of-sockaddr-storage)
             (getsockname (fd-of socket) ss size)
             t))
-      (nix:ebadf ())
-      #+freebsd (nix:econnreset ()))))
+      (nix:ebadf () nil)
+      #+freebsd (nix:econnreset () nil)
+      #+windows (socket-invalid-argument () nil))))
 
 ;;;; GETSOCKNAME
 

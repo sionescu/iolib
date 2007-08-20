@@ -812,6 +812,7 @@ invalid offset."))
 the latter does not contain dots.")
 
 (defun send-query (socket-type buffer nameserver timeout)
+  #+windows (declare (ignore timeout))
   (let ((socket (make-socket :type socket-type
                              :ipv6 (ipv6-address-p nameserver)))
         (input-buffer (make-array +dns-datagram-size+
@@ -820,6 +821,9 @@ the latter does not contain dots.")
          (progn
            (connect socket nameserver :port 53)
            (socket-send buffer socket)
+           ;; FIXME: implement this option on windows. See:
+           ;; <http://support.microsoft.com/?scid=kb%3Ben-us%3B181610>
+           #-windows
            (set-socket-option socket :receive-timeout :sec timeout :usec 0)
            (socket-receive input-buffer socket))
       (close socket))))
@@ -1060,14 +1064,18 @@ the latter does not contain dots.")
 ;;; KLUDGE: add caching, don't overwrite the specials mindlessly, etc.
 (defmethod dns-lookup-host :before (host &key &allow-other-keys)
   (setf (values *dns-nameservers* *dns-domain* *dns-search-domain*)
-        (search-etc-resolv-conf *resolv-file*)))
+        #-windows (search-etc-resolv-conf *resolv-file*)
+        #+windows
+        (values (list (ensure-address (get-first-dns-server))) nil nil)))
 
 (defmethod dns-lookup-host ((host string) &key (ipv6 *ipv6*))
-  (or (search-etc-hosts-name *hosts-file* host ipv6)
+  #+windows (declare (ignore ipv6))
+  (or #-windows (search-etc-hosts-name *hosts-file* host ipv6)
       (dns-query host :type :a)))
 
 (defun dns-lookup-host-ip (vector ipv6)
-  (or (search-etc-hosts-ip *hosts-file* vector ipv6)
+  #+windows (declare (ignore ipv6))
+  (or #-windows (search-etc-hosts-ip *hosts-file* vector ipv6)
       (dns-query vector :type :ptr)))
 
 (defmethod dns-lookup-host ((host ipv4-address) &key (ipv6 *ipv6*))

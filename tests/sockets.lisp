@@ -343,7 +343,7 @@
   nil t t :ipv4 :default) ; why isn't it :TCP?
 
 (deftest make-socket.3
-    (with-socket (s)
+    (with-socket (s :family :ipv4)
       (typep s 'socket))
   t)
 
@@ -361,7 +361,7 @@
   t)
 
 (deftest sockopt.1
-    (with-socket (s)
+    (with-socket (s :family :ipv4)
       (setf (socket-option s :reuse-address) t)
       (socket-option s :reuse-address))
   t)

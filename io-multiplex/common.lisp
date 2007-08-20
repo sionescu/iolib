@@ -530,7 +530,7 @@ of a file descriptor."))
   (defctype dword :unsigned-long)
   (defctype bool (:boolean :int))
 
-  (cl-posix-ffi:defsyscall "get_osfhandle" :long
+  (osicat-posix::defsyscall "get_osfhandle" :long
     (fd :int))
 
   (defconstant +wait-failed+ #xffffffff)

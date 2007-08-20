@@ -30,10 +30,10 @@
 (defctype word :unsigned-short)
 (defctype group :unsigned-int)
 
-(defsyscall "get_osfhandle" :int
+(osicat-posix::defsyscall "get_osfhandle" :int
   (fd :int))
 
-(defsyscall "open_osfhandle" :int
+(osicat-posix::defsyscall "open_osfhandle" :int
   (handle :intptr)
   (flags :int))
 
@@ -183,3 +183,54 @@
   (dpb minor (byte 8 8) major))
 
 (defvar *wsa-startup-call* (wsa-startup (make-wsa-version 2 2)))
+
+;;;; Network Info
+
+(defconstant max-hostname-len 128)
+(defconstant max-domain-name-len 128)
+(defconstant max-scope-id-len 256)
+
+(defcstruct ip-address-string
+  (string :char :count #.(* 4 4)))
+
+(defctype ip-mask-string ip-address-string)
+
+(defcstruct ip-addr-string
+  (next :pointer)
+  (ip-address ip-address-string)
+  (ip-mask ip-mask-string)
+  (context dword))
+
+(defcstruct fixed-info
+  (host-name :char :count #.(+ max-hostname-len 4))
+  (domain-name :char :count #.(+ max-domain-name-len 4))
+  (current-dns-server (:pointer ip-addr-string))
+  (dns-server-list ip-addr-string)
+  (node-type :uint)
+  (scope-id :char :count #.(+ max-scope-id-len 4))
+  (enable-routing :uint)
+  (enable-proxy :uint)
+  (enable-dns :uint))
+
+(load-foreign-library "Iphlpapi.dll")
+
+(deforeign ("GetNetworkParams" %get-network-params) dword
+  (fixed-info fixed-info)
+  (out-buf-len (:pointer :ulong)))
+
+(defconstant error-success 0)
+(defconstant error-buffer-overflow 111)
+
+;;; just getting the DNS servers for now.
+(defun get-first-dns-server ()
+  (with-foreign-object (len :ulong)
+    (assert (eql error-buffer-overflow
+                 (%get-network-params (null-pointer) len)))
+    (with-foreign-pointer (ptr (mem-ref len :ulong))
+      (assert (eql error-success (%get-network-params ptr len)))
+      (values
+       (foreign-string-to-lisp
+        (foreign-slot-pointer (foreign-slot-value
+                               ptr 'fixed-info 'dns-server-list)
+                              'ip-addr-string 'ip-address)
+        :encoding :ascii)))))
