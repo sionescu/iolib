@@ -102,11 +102,11 @@ address object, NIL is returned.")
 (defgeneric inet-address-multicast-p (address)
   (:documentation "Returns T if ADDRESS is an multicast internet address.")
   (:method ((address ipv4-address))
-    (eql (logand (aref (address-name address) 0) #xE0)
-         #xE0))
+    (= (logand (aref (address-name address) 0) #xE0)
+       #xE0))
   (:method ((address ipv6-address))
-    (eql (logand (aref (address-name address) 0) #xFF00)
-         #xFF00)))
+    (= (logand (aref (address-name address) 0) #xFF00)
+       #xFF00)))
 
 (defgeneric inet-address-unicast-p (address)
   (:documentation "Returns T if ADDRESS is an unicast internet address.")
@@ -129,75 +129,75 @@ mapped address."
 (defun ipv6-interface-local-multicast-p (address)
   "Returns T if ADDRESS is an interface-local IPv6 address."
   (check-type address ipv6-address)
-  (eql (logand (aref (address-name address) 0) #xff0f)
-       #xff01))
+  (= (logand (aref (address-name address) 0) #xFF0F)
+     #xFF01))
 
 (defun ipv6-link-local-multicast-p (address)
   "Returns T if ADDRESS is a link-local IPv6 address."
   (check-type address ipv6-address)
-  (eql (logand (aref (address-name address) 0) #xff0f)
-       #xff02))
+  (= (logand (aref (address-name address) 0) #xFF0F)
+     #xFF02))
 
 (defun ipv6-admin-local-multicast-p (address)
   "Returns T if ADDRESS is a admin-local multicast IPv6 address."
   (check-type address ipv6-address)
-  (eql (logand (aref (address-name address) 0) #xff0f)
-       #xff04))
+  (= (logand (aref (address-name address) 0) #xFF0F)
+     #xFF04))
 
 (defun ipv6-site-local-multicast-p (address)
   "Returns T if ADDRESS is an site-local multicast IPv6 address."
   (check-type address ipv6-address)
-  (eql (logand (aref (address-name address) 0) #xff0f)
-       #xff05))
+  (= (logand (aref (address-name address) 0) #xFF0F)
+     #xFF05))
 
 (defun ipv6-organization-local-multicast-p (address)
   "Returns T if ADDRESS is an organization-local multicast IPv6 address."
   (check-type address ipv6-address)
-  (eql (logand (aref (address-name address) 0) #xff0f)
-       #xff08))
+  (= (logand (aref (address-name address) 0) #xFF0F)
+     #xFF08))
 
 (defun ipv6-global-multicast-p (address)
   "Returns T if ADDRESS is a global multicast IPv6 address."
   (check-type address ipv6-address)
-  (eql (logand (aref (address-name address) 0) #xff0f)
-       #xff0e))
+  (= (logand (aref (address-name address) 0) #xFF0F)
+     #xFF0E))
 
 (defun ipv6-reserved-multicast-p (address)
   "Returns T if ADDRESS is a reserved multicast IPv6 address."
   (check-type address ipv6-address)
-  (member (logand (aref (address-name address) 0) #xff0f)
-          '(#xff00 #xff03 #xff0f)))
+  (member (logand (aref (address-name address) 0) #xFF0F)
+          '(#xFF00 #xFF03 #xFF0F)))
 
 (defun ipv6-unassigned-multicast-p (address)
   "Returns T if ADDRESS is an unassigned multicast IPv6 address."
   (check-type address ipv6-address)
-  (member (logand (aref (address-name address) 0) #xff0f)
-          '(#xff06 #xff07 #xff09 #xff0a #xff0b #xff0c #xff0d)))
+  (member (logand (aref (address-name address) 0) #xFF0F)
+          '(#xFF06 #xFF07 #xFF09 #xFF0A #xFF0B #xFF0C #xFF0D)))
 
 (defun ipv6-transient-multicast-p (address)
   "Returns T if ADDRESS is a transient multicast IPv6 address."
   (check-type address ipv6-address)
-  (eql (logand (aref (address-name address) 0) #xff10)
-       #xff10))
+  (= (logand (aref (address-name address) 0) #xFF10)
+     #xFF10))
 
 (defun ipv6-solicited-node-multicast-p (address)
   "Returns T if ADDRESS is a solicited-node multicast IPv6 address."
   (check-type address ipv6-address)
   (let ((vec (address-name address)))
-    (and (eql (aref vec 0) #xff02)    ; link-local permanent multicast
-         (eql (aref vec 5) 1)
-         (eql (logand (aref vec 6) #xff00)
-              #xff00))))
+    (and (= (aref vec 0) #xFF02)      ; link-local permanent multicast
+         (= (aref vec 5) 1)
+         (= (logand (aref vec 6) #xFF00)
+            #xFF00))))
 
 (defun ipv6-link-local-unicast-p (address)
   "Returns T if ADDRESS is an link-local unicast IPv6 address."
   (check-type address ipv6-address)
-  (eql (aref (address-name address) 0) #xfe80))
+  (= (aref (address-name address) 0) #xFE80))
 
 (defun ipv6-site-local-unicast-p (address)
   "Returns T if ADDRESS is an site-local unicast IPv6 address."
   (check-type address ipv6-address)
-  (eql (aref (address-name address) 0) #xfec0))
+  (= (aref (address-name address) 0) #xFEC0))
 
 (defun ipv6-global-unicast-p (address)
   "Returns T if ADDRESS is an global unicasst IPv6 address."
