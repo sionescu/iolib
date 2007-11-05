@@ -424,26 +424,33 @@ invalid offset."))
 (defgeneric decode-flags (message)
   (:method ((msg dns-message))
     (let (flags)
-      (push (if (response-field msg) :response :query) flags)
       (push (if (eql (opcode-field msg) +opcode-standard+)
-                :opcode-standard :opcode-unknown)
+                :op/s :op/u)
             flags)
-      (when (authoritative-field msg) (push :authoritative flags))
-      (when (truncated-field msg) (push :truncated flags))
-      (when (recursion-desired-field msg) (push :recursion-desired flags))
-      (when (recursion-available-field msg) (push :recursion-available flags))
-      (push (or (rcode-field msg) :rcode-unknown) flags)
+      (when (authoritative-field msg) (push :auth flags))
+      (when (truncated-field msg) (push :trunc flags))
+      (when (recursion-desired-field msg) (push :rd flags))
+      (when (recursion-available-field msg) (push :ra flags))
+      (push (or (rcode-field msg) :rc/u) flags)
       (nreverse flags))))
 
 (defmethod initialize-instance :after ((msg dns-message) &key
                                        (qdcount 0) (ancount 0)
                                        (nscount 0) (arcount 0))
   (with-slots (id flags decoded-flags question answer authority additional) msg
-    (setf decoded-flags (decode-flags msg))
-    (setf question (make-array qdcount :adjustable t :fill-pointer 0))
-    (setf answer (make-array ancount :adjustable t :fill-pointer 0))
-    (setf authority (make-array nscount :adjustable t :fill-pointer 0))
-    (setf additional (make-array arcount :adjustable t :fill-pointer 0))))
+    (setf decoded-flags (decode-flags msg)
+          question      (make-array qdcount :adjustable t :fill-pointer 0)
+          answer        (make-array ancount :adjustable t :fill-pointer 0)
+          authority     (make-array nscount :adjustable t :fill-pointer 0)
+          additional    (make-array arcount :adjustable t :fill-pointer 0))))
+
+(defmethod print-object ((msg dns-message) stream)
+  (print-unreadable-object (msg stream :type nil :identity nil)
+    (with-slots (id decoded-flags question qdcount ancount nscount arcount) msg
+      (format stream "DNS ~A Id: ~A, Question: ~A Flags: ~S, Sections: QD(~A) AN(~A) NS(~A) AD(~A)"
+              (if (response-field msg) :response :query)
+              id question decoded-flags
+              qdcount ancount nscount arcount))))
 
 (defclass dns-record ()
   ((name  :initarg :name  :accessor dns-record-name)
@@ -457,6 +464,11 @@ invalid offset."))
      (check-type class (member :in) "a valid record class")))
 
 (defclass dns-question (dns-record) ())
+
+(defmethod print-object ((question dns-question) stream)
+  (print-unreadable-object (question stream :type nil :identity nil)
+    (with-slots (name type class) question
+      (format stream "~S ~A ~A" name type class))))
 
 (defmethod initialize-instance :after ((record dns-question) &key)
   (with-slots (name) record
@@ -542,6 +554,12 @@ invalid offset."))
 (defclass dns-rr (dns-record)
   ((ttl  :initarg :ttl  :accessor dns-rr-ttl)
    (data :initarg :data :accessor dns-rr-data)))
+
+(defmethod print-object ((rr dns-rr) stream)
+  (print-unreadable-object (rr stream :type nil :identity nil)
+    (with-slots (name type class ttl data) rr
+      (format stream "~S ~A ~A: ~A" name type class
+              (decode-rr rr)))))
 
 (defmethod initialize-instance :after ((rr dns-rr) &key)
   (with-slots (ttl) rr
@@ -876,6 +894,10 @@ the latter does not contain dots.")
 
 (defgeneric %decode-rr (rr type class))
 
+(defmethod %decode-rr ((rr dns-rr) type class)
+  (declare (ignore type class))
+  (cons (dns-rr-ttl rr) (dns-rr-data rr)))
+
 (defmethod %decode-rr ((rr dns-rr) (type (eql :cname)) class)
   (declare (ignore class))
   (let ((cname (dns-rr-data rr)))
@@ -904,10 +926,6 @@ the latter does not contain dots.")
     (cons (dns-rr-ttl rr)
           (cons preference
                 (subseq name 0 (1- (length name)))))))
-
-(defmethod %decode-rr ((rr dns-rr) (type (eql :txt)) class)
-  (declare (ignore class))
-  (cons (dns-rr-ttl rr) (dns-rr-data rr)))
 
 (defun decode-rr (rr)
   (%decode-rr rr (dns-record-type rr) (dns-record-class rr)))
