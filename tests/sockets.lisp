@@ -146,6 +146,18 @@
               (vector-to-colon-separated ip :upcase)))
   "::ff:ff:ff:0:0" "::ff:ff:ff:0:0" "::FF:FF:FF:0:0")
 
+(deftest vector-to-colon-separated.2
+    (vector-to-colon-separated #(1 2 3 4 5 0 6 7))
+  "1:2:3:4:5::6:7")
+
+(deftest vector-to-colon-separated.3
+    (vector-to-colon-separated #(0 2 3 4 5 0 6 7))
+  ":2:3:4:5::6:7")
+
+(deftest vector-to-colon-separated.4
+    (vector-to-colon-separated #(1 2 3 4 5 0 6 0))
+  "1:2:3:4:5::6:")
+
 (deftest colon-separated-to-vector.1
     (mapcar #'colon-separated-to-vector
             '(":ff::ff:" "::" "::1" "1::" ":2:3:4:5:6:7:8" "1:2:3:4:5:6:7:"
