@@ -59,5 +59,14 @@
    (:file "base-sockets")
    (:file "socket-options")
    (:file "socket-methods")
-   (:file "dns-client")
+   (:module :dns
+     :serial t
+     :components
+     ((:file "common")
+      (:file "hosts")
+      (:file "nameservers")
+      (:file "dynamic-buffer")
+      (:file "message")
+      (:file "query")
+      (:file "lookup")))
    (:file "make-socket")))

@@ -1,0 +1,436 @@
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;
+;;; message.lisp --- DNS message creation.
+;;;
+;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;;
+;;; This code is free software; you can redistribute it and/or
+;;; modify it under the terms of the version 2.1 of
+;;; the GNU Lesser General Public License as published by
+;;; the Free Software Foundation, as clarified by the
+;;; preamble found here:
+;;;     http://opensource.franz.com/preamble.html
+;;;
+;;; This program is distributed in the hope that it will be useful,
+;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;; GNU General Public License for more details.
+;;;
+;;; You should have received a copy of the GNU Lesser General
+;;; Public License along with this library; if not, write to the
+;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+;;; Boston, MA 02110-1301, USA
+
+(in-package :net.sockets)
+
+(defclass dns-message ()
+  ((id    :initform 0 :initarg :id    :accessor dns-message-id)
+   (flags :initform 0 :initarg :flags :accessor dns-message-flags)
+   (decoded-flags :reader decoded-flags)
+   (qdcount :initarg :qdcount :reader dns-message-question-count)
+   (ancount :initarg :ancount :reader dns-message-answer-count)
+   (nscount :initarg :nscount :reader dns-message-authority-count)
+   (arcount :initarg :arcount :reader dns-message-additional-count)
+   (question   :reader dns-message-question)
+   (answer     :reader dns-message-answer)
+   (authority  :reader dns-message-authority)
+   (additional :reader dns-message-additional))
+  (:default-initargs :qdcount 1 :ancount 0 :nscount 0 :arcount 0))
+
+(defmacro define-flags-bitfield (name offset length &optional (type :integer))
+  (let ((method-name (format-symbol t "~A-FIELD" name)))
+    `(progn
+       (defgeneric ,method-name (message)
+         (:method ((message dns-message))
+           ,(ecase type
+                   (:integer `(ldb (byte ,length ,offset)
+                                   (dns-message-flags message)))
+                   (:boolean `(logbitp ,offset (dns-message-flags message)))
+                   (:rcode `(rcode-id
+                             (ldb (byte ,length ,offset)
+                                  (dns-message-flags message)))))))
+       (defgeneric (setf ,method-name) (value message)
+         (:method (value (message dns-message))
+           ,(ecase type
+                   (:integer `(setf (ldb (byte ,length ,offset)
+                                         (dns-message-flags message))
+                                    value))
+                   (:boolean `(setf (ldb (byte ,length ,offset)
+                                         (dns-message-flags message))
+                                    (lisp->c-bool value)))
+                   (:rcode `(setf (ldb (byte ,length ,offset)
+                                       (dns-message-flags message))
+                                  (rcode-number value)))))))))
+
+(define-flags-bitfield response 15 1 :boolean)
+(define-flags-bitfield opcode 11 4 :integer)
+(define-flags-bitfield authoritative 10 1 :boolean)
+(define-flags-bitfield truncated 9 1 :boolean)
+(define-flags-bitfield recursion-desired 8 1 :boolean)
+(define-flags-bitfield recursion-available 7 1 :boolean)
+(define-flags-bitfield rcode 0 4 :rcode)
+
+(defgeneric decode-flags (message)
+  (:method ((msg dns-message))
+    (let (flags)
+      (push (if (eql (opcode-field msg) +opcode-standard+)
+                :op/s :op/u)
+            flags)
+      (when (authoritative-field msg) (push :auth flags))
+      (when (truncated-field msg) (push :trunc flags))
+      (when (recursion-desired-field msg) (push :rd flags))
+      (when (recursion-available-field msg) (push :ra flags))
+      (push (or (rcode-field msg) :rc/u) flags)
+      (nreverse flags))))
+
+(defmethod initialize-instance :after ((msg dns-message) &key
+                                       (qdcount 0) (ancount 0)
+                                       (nscount 0) (arcount 0))
+  (with-slots (id flags decoded-flags question answer authority additional) msg
+    (setf decoded-flags (decode-flags msg)
+          question      (make-array qdcount :adjustable t :fill-pointer 0)
+          answer        (make-array ancount :adjustable t :fill-pointer 0)
+          authority     (make-array nscount :adjustable t :fill-pointer 0)
+          additional    (make-array arcount :adjustable t :fill-pointer 0))))
+
+(defmethod print-object ((msg dns-message) stream)
+  (print-unreadable-object (msg stream :type nil :identity nil)
+    (with-slots (id decoded-flags question qdcount ancount nscount arcount) msg
+      (format stream "DNS ~A Id: ~A, Question: ~A Flags: ~S, Sections: QD(~A) AN(~A) NS(~A) AD(~A)"
+              (if (response-field msg) :response :query)
+              id question decoded-flags
+              qdcount ancount nscount arcount))))
+
+(defclass dns-record ()
+  ((name  :initarg :name  :accessor dns-record-name)
+   (type  :initarg :type  :accessor dns-record-type)
+   (class :initarg :class :accessor dns-record-class)))
+
+(defmethod initialize-instance :after ((record dns-record) &key)
+  (with-slots (name type class) record
+     (check-type name string "a string")
+     (check-type type (satisfies valid-type-p) "a valid record type")
+     (check-type class (member :in) "a valid record class")))
+
+(defclass dns-question (dns-record) ())
+
+(defmethod print-object ((question dns-question) stream)
+  (print-unreadable-object (question stream :type nil :identity nil)
+    (with-slots (name type class) question
+      (format stream "~S ~A ~A" name type class))))
+
+(defmethod initialize-instance :after ((record dns-question) &key)
+  (with-slots (name) record
+     (let ((name-length (length name)))
+       (when (char-not-equal (aref name (1- name-length))
+                             #\.)
+         (setf name (concatenate 'string name (string #\.)))))))
+
+;;;; Constructors
+
+(defun make-question (qname qtype qclass)
+  (make-instance 'dns-question
+                 :name qname
+                 :type qtype
+                 :class qclass))
+
+(defun make-query (id question &optional recursion-desired)
+  (let ((msg (make-instance 'dns-message :id id)))
+    (setf (opcode-field msg) +opcode-standard+)
+    (setf (recursion-desired-field msg) recursion-desired)
+    (vector-push-extend question (dns-message-question msg))
+    (values msg)))
+
+;;;; DNS types
+
+(defgeneric write-dns-string (buffer string)
+  (:method ((buffer dynamic-buffer) (string string))
+    (write-ub8 buffer (length string))
+    ;; Probably want to use punnycode here.
+    (write-vector buffer (babel:string-to-octets string :encoding :ascii))))
+
+(defun domain-name-to-dns-format (domain-name)
+  (let* ((octets (babel:string-to-octets domain-name :encoding :ascii))
+         (tmp-vec (make-array (1+ (length octets)) :element-type 'ub8)))
+    (replace tmp-vec octets :start1 1)
+    (let ((vector-length (length tmp-vec)))
+      (loop :for start-off := 1 :then (1+ end-off)
+            :for end-off := (or (position (char-code #\.) tmp-vec
+                                          :start start-off)
+                                vector-length)
+            :do (setf (aref tmp-vec (1- start-off)) (- end-off start-off))
+            :when (>= end-off vector-length) do (loop-finish)))
+    (values tmp-vec)))
+
+(defgeneric write-domain-name (buffer name)
+  (:method ((buffer dynamic-buffer)
+            (domain-name string))
+    (write-vector buffer (domain-name-to-dns-format domain-name))))
+
+(defgeneric write-record (buffer record)
+  (:method ((buffer dynamic-buffer)
+            (record dns-question))
+    (with-slots (name type class) record
+      (write-domain-name buffer name)
+      (write-ub16 buffer (query-type-number type))
+      (write-ub16 buffer (query-class-number class)))))
+
+(defgeneric write-message-header (buffer message)
+  (:method ((buffer dynamic-buffer)
+            (message dns-message))
+    (with-slots (id flags question answer authority additional)
+        message
+      (write-ub16 buffer id)
+      (write-ub16 buffer flags)
+      (write-ub16 buffer (length question))
+      (write-ub16 buffer (length answer))
+      (write-ub16 buffer (length authority))
+      (write-ub16 buffer (length additional)))))
+
+(defgeneric write-dns-message (message)
+  (:method ((message dns-message))
+    (with-slots (question) message
+      (with-dynamic-buffer (buffer)
+        (write-message-header buffer message)
+        (write-record buffer (aref question 0))))))
+
+;;;; Resource Record Encoding
+
+(defclass dns-rr (dns-record)
+  ((ttl  :initarg :ttl  :accessor dns-rr-ttl)
+   (data :initarg :data :accessor dns-rr-data)))
+
+(defmethod print-object ((rr dns-rr) stream)
+  (print-unreadable-object (rr stream :type nil :identity nil)
+    (with-slots (name type class ttl data) rr
+      (format stream "~S ~A ~A: ~A" name type class
+              (decode-rr rr)))))
+
+(defmethod initialize-instance :after ((rr dns-rr) &key)
+  (with-slots (ttl) rr
+    (check-type ttl (unsigned-byte 32) "a valid TTL")))
+
+(defgeneric add-question (message question)
+  (:method ((message dns-message)
+            (question dns-question))
+    (vector-push-extend question (dns-message-question message))))
+
+(defgeneric add-answer-rr (message record)
+  (:method ((message dns-message)
+            (record dns-rr))
+    (vector-push-extend record (dns-message-answer message))))
+
+(defgeneric add-authority-rr (message record)
+  (:method ((message dns-message)
+            (record dns-rr))
+    (vector-push-extend record (dns-message-authority message))))
+
+(defgeneric add-additional-rr (message record)
+  (:method ((message dns-message)
+            (record dns-rr))
+    (vector-push-extend record (dns-message-additional message))))
+
+
+(define-condition dns-message-error (error) ()
+  (:documentation
+   "Signaled when a format error is encountered while parsing a DNS message"))
+
+(defgeneric read-dns-string (buffer)
+  (:method ((buffer dynamic-buffer))
+    (let ((length (read-ub8 buffer)))
+      (babel:octets-to-string (read-vector buffer length) :encoding :ascii))))
+
+(defun read-dns-pointer-recursively (sequence position
+                                     &optional (depth 5))
+  (when (or (<= depth 0)                          ; too deep recursion
+            (>= position (length sequence)))      ; invalid offset
+    (error 'dns-message-error))
+  (let* ((value (aref sequence position))
+         (ms2bits (logand value #xC0)))
+    (cond
+      ;; it's not a pointer
+      ((zerop ms2bits) (cons position (< depth 5)))
+      ;; it's a pointer
+      ((eql ms2bits #xC0)
+       ;; there must be at least two bytes to read
+       (when (>= position (1+ (length sequence)))
+         (error 'dns-message-error))
+       (read-dns-pointer-recursively
+        sequence
+        (logand (read-ub16-from-vector sequence position)
+                (lognot #xC000))
+        (1- depth)))
+      ;; the most significant 2 bits are either 01 or 10
+      (t (error 'dns-message-error)))))
+
+(defun join (connector strings)
+  (concatenate 'string (car strings)
+               (reduce (lambda (str1 str2)
+                         (concatenate 'string str1 connector str2))
+                       (cdr strings)
+                       :initial-value "")))
+
+(defgeneric dns-domain-name-to-string (buffer)
+  (:method ((buffer dynamic-buffer))
+    (let (string offset pointer-seen)
+      (labels ((%deref-dns-string (pointer rec)
+                 (when (not pointer-seen)
+                   (if rec
+                       (progn
+                         (setf pointer-seen t)
+                         (setf offset (+ (read-cursor-of buffer) 2)))
+                       (setf offset (+ (read-cursor-of buffer) 1))))
+                 (dynamic-buffer-seek-read-cursor buffer :offset pointer)
+                 (setf string (read-dns-string buffer)))
+               (%read-tags ()
+                 (loop :for (pointer . rec) := (read-dns-pointer-recursively
+                                                (sequence-of buffer)
+                                                (read-cursor-of buffer))
+                       :do (%deref-dns-string pointer rec)
+                       :collect string
+                       :until (string= string ""))))
+        (values (join "." (%read-tags)) offset)))))
+
+(defgeneric read-domain-name (buffer)
+  (:method ((buffer dynamic-buffer))
+    (multiple-value-bind (string offset)
+        (dns-domain-name-to-string buffer)
+      (dynamic-buffer-seek-read-cursor buffer :offset offset)
+      (values string))))
+
+(defgeneric read-question (buffer)
+  (:method ((buffer dynamic-buffer))
+    (let ((name (read-domain-name buffer))
+          (type (query-type-id (read-ub16 buffer)))
+          (class (query-class-id (read-ub16 buffer))))
+      (make-question name type class))))
+
+(defgeneric read-rr-data (buffer type class &optional length))
+
+(defmethod read-rr-data ((buffer dynamic-buffer)
+                         (type (eql :a)) (class (eql :in))
+                         &optional resource-length)
+  (unless (= resource-length 4)
+    (error 'dns-message-error))
+  (let ((address (make-array 4 :element-type 'ub8)))
+    (dotimes (i 4)
+      (setf (aref address i) (read-ub8 buffer)))
+    address))
+
+(defmethod read-rr-data ((buffer dynamic-buffer)
+                         (type (eql :aaaa)) (class (eql :in))
+                         &optional resource-length)
+  (unless (= resource-length 16)
+    (error 'dns-message-error))
+  (let ((address (make-array 8 :element-type '(unsigned-byte 16))))
+    (dotimes (i 8)
+      (setf (aref address i) (read-ub16 buffer)))
+    address))
+
+(defmethod read-rr-data ((buffer dynamic-buffer)
+                         (type (eql :cname)) (class (eql :in))
+                         &optional resource-length)
+  (declare (ignore resource-length))
+  (read-domain-name buffer))            ; CNAME
+
+(defmethod read-rr-data ((buffer dynamic-buffer)
+                         (type (eql :hinfo)) (class (eql :in))
+                         &optional resource-length)
+  (declare (ignore resource-length))
+  (list (read-dns-string buffer)        ; CPU
+        (read-dns-string buffer)))      ; OS
+
+(defmethod read-rr-data ((buffer dynamic-buffer)
+                         (type (eql :mx)) (class (eql :in))
+                         &optional resource-length)
+  (declare (ignore resource-length))
+  (list (read-ub16 buffer)              ; PREFERENCE
+        (read-domain-name buffer)))     ; EXCHANGE
+
+(defmethod read-rr-data ((buffer dynamic-buffer)
+                         (type (eql :ns)) (class (eql :in))
+                         &optional resource-length)
+  (declare (ignore resource-length))
+  (read-domain-name buffer))            ; NSDNAME
+
+(defmethod read-rr-data ((buffer dynamic-buffer)
+                         (type (eql :ptr)) (class (eql :in))
+                         &optional resource-length)
+  (declare (ignore resource-length))
+  (read-domain-name buffer))            ; PTRDNAME
+
+(defmethod read-rr-data ((buffer dynamic-buffer)
+                         (type (eql :soa)) (class (eql :in))
+                         &optional resource-length)
+  (declare (ignore type class resource-length))
+  (list (read-domain-name buffer)       ; MNAME
+        (read-domain-name buffer)       ; RNAME
+        (read-ub32 buffer)              ; SERIAL
+        (read-ub32 buffer)              ; REFRESH
+        (read-ub32 buffer)              ; RETRY
+        (read-ub32 buffer)              ; EXPIRE
+        (read-ub32 buffer)))            ; MINIMUM
+
+(defmethod read-rr-data ((buffer dynamic-buffer)
+                         (type (eql :txt)) (class (eql :in))
+                         &optional resource-length)
+  (declare (ignore type class))
+  (loop :for string := (read-dns-string buffer) ; TXT-DATA
+        :for total-length := (1+ (length string))
+        :then (+ total-length 1 (length string))
+        :collect string
+        :until (>= total-length resource-length)
+        :finally (when (> total-length resource-length)
+                   (error 'dns-message-error))))
+
+(defmethod read-rr-data ((buffer dynamic-buffer)
+                         type class &optional resource-length)
+  (declare (ignore buffer type class resource-length))
+  (error 'dns-message-error))
+
+(defgeneric read-dns-rr (buffer)
+  (:method ((buffer dynamic-buffer))
+    (let* ((name (read-domain-name buffer))
+           (type (query-type-id (read-ub16 buffer)))
+           (class (query-class-id (read-ub16 buffer)))
+           (ttl (read-ub32 buffer))
+           (rdlen (read-ub16 buffer))
+           (rdata (read-rr-data buffer type class rdlen)))
+      (make-instance 'dns-rr
+                     :name name
+                     :type type
+                     :class class
+                     :ttl ttl
+                     :data rdata))))
+
+(defgeneric read-message-header (buffer)
+  (:method ((buffer dynamic-buffer))
+    (let ((id (read-ub16 buffer))
+          (flags (read-ub16 buffer))
+          (qdcount (read-ub16 buffer))
+          (ancount (read-ub16 buffer))
+          (nscount (read-ub16 buffer))
+          (arcount (read-ub16 buffer)))
+      (make-instance 'dns-message
+                     :id id :flags flags
+                     :qdcount qdcount :ancount ancount
+                     :nscount nscount :arcount arcount))))
+
+(defgeneric read-dns-message (buffer)
+  (:method ((buffer dynamic-buffer))
+    (defparameter *msg* buffer)
+    (let ((msg (read-message-header buffer)))
+      (with-slots (qdcount ancount nscount arcount) msg
+        (loop :for i :below (dns-message-question-count msg)
+              :for q := (read-question buffer)
+              :do (add-question msg q))
+        (loop :for i :below (dns-message-answer-count msg)
+              :for rr := (read-dns-rr buffer)
+              :do (add-answer-rr msg rr))
+        (loop :for i :below (dns-message-authority-count msg)
+              :for rr := (read-dns-rr buffer)
+              :do (add-authority-rr msg rr))
+        (loop :for i :below (dns-message-additional-count msg)
+              :for rr := (read-dns-rr buffer)
+              :do (add-additional-rr msg rr)))
+      (values msg))))
