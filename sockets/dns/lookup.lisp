@@ -57,30 +57,30 @@
 ;;; wrong.  It's very likely that it isn't complete because my
 ;;; knowledge of DNS is almost nil.  --luis
 
-(defun lookup-host (host &key (ipv6 *ipv6*))
-  "Looks up a host by name or address.  IPV6 determines the IPv6
-behaviour, defaults to *IPV6*."
-  (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration")
-  (let ((reply (dns-lookup-host host :ipv6 ipv6)))
-    (when (typep reply 'host)
-      (return-from lookup-host reply))
-    ;; or check the :NAME-ERROR flag?
-    (cond ((member :name-error (decoded-flags reply))
-           (error 'resolver-no-name-error :data nil :message nil))
-          ((member :server-failure (decoded-flags reply))
-           (error 'resolver-fail-error :data nil :message nil)))
-    (flet ((rtd (string)
-             ;; remove trailing dot
-             (assert (> (length string) 1))
-             (assert (char= #\. (char string (1- (length string)))))
-             (subseq string 0 (1- (length string)))))
-      (loop :with aliases := nil :and truename := nil :and addresses := nil
-            :for record :across (dns-message-answer reply) :do
-            (case (dns-record-type record)
-              (:cname (push (rtd (dns-record-name record)) aliases))
-              (:a (setq truename (rtd (dns-record-name record)))
-                  (push (ensure-address (dns-rr-data record)) addresses))
-              (:ptr (setq truename (rtd (dns-rr-data record)))
-                    ;; is this right?
-                    (push (ensure-address host) addresses)))
-            :finally (return (make-host truename addresses aliases))))))
+;; (defun lookup-host (host &key (ipv6 *ipv6*))
+;;   "Looks up a host by name or address.  IPV6 determines the IPv6
+;; behaviour, defaults to *IPV6*."
+;;   (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration")
+;;   (let ((reply (dns-lookup-host host :ipv6 ipv6)))
+;;     (when (typep reply 'host)
+;;       (return-from lookup-host reply))
+;;     ;; or check the :NAME-ERROR flag?
+;;     (cond ((member :name-error (decoded-flags reply))
+;;            (error 'resolver-no-name-error :data nil :message nil))
+;;           ((member :server-failure (decoded-flags reply))
+;;            (error 'resolver-fail-error :data nil :message nil)))
+;;     (flet ((rtd (string)
+;;              ;; remove trailing dot
+;;              (assert (> (length string) 1))
+;;              (assert (char= #\. (char string (1- (length string)))))
+;;              (subseq string 0 (1- (length string)))))
+;;       (loop :with aliases := nil :and truename := nil :and addresses := nil
+;;             :for record :across (dns-message-answer reply) :do
+;;             (case (dns-record-type record)
+;;               (:cname (push (rtd (dns-record-name record)) aliases))
+;;               (:a (setq truename (rtd (dns-record-name record)))
+;;                   (push (ensure-address (dns-rr-data record)) addresses))
+;;               (:ptr (setq truename (rtd (dns-rr-data record)))
+;;                     ;; is this right?
+;;                     (push (ensure-address host) addresses)))
+;;             :finally (return (make-host truename addresses aliases))))))

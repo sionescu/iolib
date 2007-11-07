@@ -75,3 +75,8 @@
   (car (rassoc number +rcode-map+)))
 
 (defconstant +dns-datagram-size+ 512)
+
+(defun space-char-p (char)
+  (declare (type character char))
+  (or (char-equal char #\Space)
+      (char-equal char #\Tab)))

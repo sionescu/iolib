@@ -31,11 +31,6 @@
       (read-sequence big-string fin)
       (values big-string))))
 
-(defun space-char-p (char)
-  (declare (type character char))
-  (or (char-equal char #\Space)
-      (char-equal char #\Tab)))
-
 (defun split-string-by-spaces (string &key (start 0) end empty-seqs)
   (declare (type string string)
            (type unsigned-byte start)

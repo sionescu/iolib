@@ -23,6 +23,7 @@
 
 (in-package :net.sockets)
 
+(defvar *resolv-file-timestamp* nil)
 (defvar *resolv-file* "/etc/resolv.conf")
 
 (defvar *dns-nameservers* nil
@@ -35,17 +36,37 @@
   "A domain name to be appended to the name to be searched when
 the latter does not contain dots.")
 
-;;; Only parses NAMESERVER, DOMAIN and SEARCH directives, for now.
-(defun search-etc-resolv-conf (file)
-  (with-open-file (s file :direction :input)
-    (let (nameservers domain search-domain)
-      (loop :for line := (read-line s nil nil) :while line :do
-            (let ((tokens (split-sequence #\Space line)))
-              ;; case sensitive?
-              (switch ((first tokens) :test #'string-equal)
-                ("nameserver" (ignore-some-conditions (parse-error)
-                                (push (ensure-address (second tokens))
-                                      nameservers)))
-                ("domain" (setq domain (second tokens)))
-                ("search" (setq search-domain (second tokens))))))
-      (values (nreverse nameservers) domain search-domain))))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  ;; Only parses NAMESERVER, DOMAIN and SEARCH directives, for now.
+  (defun search-etc-resolv-conf (&optional (file *resolv-file*))
+    (flet ((split-tokens (line) (split-sequence-if #'space-char-p line
+                                                   :remove-empty-subseqs t)))
+      (let (nameservers domain search-domain)
+        (iterate ((tokens (#msplit-tokens (scan-file file #'read-line))))
+          (switch ((first tokens) :test #'string-equal)
+            ("nameserver" (ignore-some-conditions (parse-error)
+                            (push (ensure-address (second tokens))
+                                  nameservers)))
+            ("domain" (setf domain (second tokens)))
+            ("search" (setf search-domain (second tokens))))
+          (return-from search-etc-resolv-conf
+            (values (nreverse nameservers) domain search-domain))))))
+
+  (defun resolv-conf-oldp ()
+    (let ((ts (file-write-date *resolv-file*)))
+      (values (or (not *resolv-file-timestamp*)
+                  (/= *resolv-file-timestamp* ts))
+              ts)))
+
+  (defun update-dns-parameters ()
+    (multiple-value-bind (oldp ts) (resolv-conf-oldp)
+      (when oldp
+        (multiple-value-bind (ns domain search) (search-etc-resolv-conf)
+          (setf *dns-nameservers* (or ns +ipv4-loopback+)
+                ;; everything after the first dot
+                *dns-domain* (cdr (split-sequence #\. domain :count 2))
+                *dns-search-domain* search
+                *resolv-file-timestamp* ts)
+          (values *dns-nameservers* *dns-domain* *dns-search-domain*))))))
+
+(update-dns-parameters)

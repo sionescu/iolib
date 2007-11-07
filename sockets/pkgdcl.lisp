@@ -25,7 +25,7 @@
 
 (defpackage :net.sockets
   (:nicknames #:sockets)
-  (:use #:common-lisp :cffi :alexandria :split-sequence :io.streams)
+  (:use #:common-lisp :cffi :alexandria :split-sequence :io.streams :series)
   (:import-from #:osicat-posix #:system-error #:posix-error
                 #:system-error-message #:errno-wrapper
                 #:pid #:gid #:uid #:size #:ssize #:bzero)
@@ -216,4 +216,9 @@
    ;; Specials
    #:*default-backlog-size*
    #:*ipv6*
+   #:*dns-nameservers*
+   #:*dns-domain*
+   #:*dns-search-domain*
    ))
+
+(series::install)

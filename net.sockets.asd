@@ -40,7 +40,8 @@
                :babel
                :io.streams
                :alexandria
-               :split-sequence)
+               :split-sequence
+               :series)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "sockets"))
                              *load-truename*)
   :serial t
@@ -63,8 +64,8 @@
      :serial t
      :components
      ((:file "common")
-      (:file "hosts")
       (:file "nameservers")
+      (:file "hosts")
       (:file "dynamic-buffer")
       (:file "message")
       (:file "query")
