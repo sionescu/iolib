@@ -197,7 +197,7 @@
 ;;;; Misc
 
 (defmacro check-bounds (sequence start end)
-  (alexandria:with-unique-names (length)
+  (with-unique-names (length)
     `(let ((,length (length ,sequence)))
        (unless ,end
          (setq ,end ,length))

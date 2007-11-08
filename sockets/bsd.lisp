@@ -35,7 +35,7 @@
   (multiple-value-bind (lisp-name c-name options)
       (cffi::parse-name-and-options name-and-opts)
     #+windows
-    (alexandria:appendf options '(:calling-convention :stdcall))
+    (appendf options '(:calling-convention :stdcall))
     `(defcfun (,c-name ,lisp-name ,@options) ,return-type
        ,@args)))
 

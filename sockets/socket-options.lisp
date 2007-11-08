@@ -116,14 +116,14 @@
 
 (defmacro define-get-sockopt (os eql-name helper-get level optname)
   `(defmethod get-socket-option ((socket socket) (option-name (eql ,eql-name)))
-     ,(if (or (eq os :any) (alexandria:featurep os))
+     ,(if (or (eq os :any) (featurep os))
           `(,helper-get (socket-fd socket) ,level ,optname)
           `(error 'option-not-available option-name))))
 
 (defmacro define-set-sockopt (os eql-name args helper-set level optname)
   `(defmethod set-socket-option
        ((socket socket) (option-name (eql ,eql-name)) &key ,@args)
-     ,@(if (or (eq os :any) (alexandria:featurep os))
+     ,@(if (or (eq os :any) (featurep os))
            `((,helper-set (socket-fd socket) ,level ,optname ,@args))
            `((declare (ignore ,@args))
              (error 'option-not-available option-name)))))
@@ -133,9 +133,9 @@
            (type symbol argtype)
            (type (or symbol list) os))
   (flet ((make-helper-name (action value-type)
-           (alexandria:format-symbol t "~A~A~A"
-                                     action '#:-socket-option- value-type)))
-    (let ((eql-name (alexandria:make-keyword name))
+           (format-symbol t "~A~A~A"
+                          action '#:-socket-option- value-type)))
+    (let ((eql-name (make-keyword name))
           (args (second (assoc argtype +helper-args-map+)))
           (helper-get (make-helper-name :get argtype))
           (helper-set (make-helper-name :set argtype)))

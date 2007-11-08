@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
 ;;;
-;;; hosts.lisp --- Static host list management.
+;;; hosts.lisp --- Static host lookup.
 ;;;
 ;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
@@ -24,6 +24,38 @@
 (in-package :net.sockets)
 
 (defvar *hosts-file* "/etc/hosts")
+
+(defclass host ()
+  ((truename :initarg :truename  :reader host-truename
+             :documentation "The name of the host.")
+   (aliases :initarg :aliases   :reader host-aliases
+            :documentation "A list of aliases.")
+   (addresses :initarg :addresses :reader host-addresses
+              :documentation "A list of addresses."))
+  (:documentation "Class representing a host: name, aliases and addresses."))
+
+(defmethod initialize-instance :after ((host host) &key)
+  (when (slot-boundp host 'addresses)
+    (with-slots (addresses) host
+      (setf addresses (ensure-list addresses)))))
+
+(defun host-random-address (host)
+  "Returns a random address from HOST's address list."
+  (random-elt (host-addresses host)))
+
+(defun make-host (truename addresses &optional aliases)
+  "Instantiates a HOST object."
+  (make-instance 'host
+                 :truename truename
+                 :aliases aliases
+                 :addresses addresses))
+
+(defmethod print-object ((host host) stream)
+  (print-unreadable-object (host stream :type t :identity nil)
+    (with-slots (truename aliases addresses) host
+      (format stream "Canonical name: ~S. Aliases: ~:[None~;~:*~{~S~^, ~}~].~%~
+                      Addresses: ~{~A~^, ~}"
+              truename aliases addresses))))
 
 (defun load-file (path)
   (with-open-file (fin path)
@@ -76,6 +108,18 @@
         (:ipv6 (eql len 8))
         ((nil) (eql len 4))
         (otherwise t)))))
+
+(defun map-host-ipv4-addresses-to-ipv6 (hostobj)
+  (declare (type host hostobj))
+  (with-slots (addresses) hostobj
+    (setf addresses
+          (mapcar (lambda (address)
+                    (if (ipv4-address-p address)
+                        (make-address (map-ipv4-vector-to-ipv6
+                                       (address-name address)))
+                        address))
+                  addresses)))
+  (values hostobj))
 
 (defun search-etc-hosts-ip (file ip ipv6)
   (car

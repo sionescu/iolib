@@ -208,7 +208,7 @@ address. CASE may be :DOWNCASE or :UPCASE."
 
 (defmacro ignore-parse-errors (&body body)
   ;; return first value only
-  `(values (alexandria:ignore-some-conditions (parse-error) ,@body)))
+  `(values (ignore-some-conditions (parse-error) ,@body)))
 
 (defun string-address-to-vector (address)
   "Convert a string address (dotted or colon-separated) to a vector address.

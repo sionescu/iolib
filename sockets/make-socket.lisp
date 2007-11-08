@@ -50,10 +50,20 @@
                    :external-format external-format)))
 
 (defmacro %close-on-error ((obj) &body body)
-  (alexandria:with-unique-names (flag)
+  (with-unique-names (flag)
     `(let ((,flag t))
        (unwind-protect (multiple-value-prog1 (progn ,@body) (setf ,flag nil))
          (when (and ,obj ,flag) (close ,obj :abort t))))))
+
+(defun convert-or-lookup-inet-address (address &optional (ipv6 *ipv6*))
+  "If ADDRESS is an inet-address designator, it is converted, if
+necessary, to an INET-ADDRESS object and returned.  Otherwise it
+is assumed to be a host name which is then looked up in order to
+return its primary address as the first return value and the
+remaining address list as the second return value."
+  (or (ignore-errors (ensure-address address :internet))
+      (let ((addresses (host-addresses (lookup-host address :ipv6 ipv6))))
+        (values (car addresses) (cdr addresses)))))
 
 (declaim (inline %make-internet-stream-socket))
 (defun %make-internet-stream-socket (args connect ef)

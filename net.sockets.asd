@@ -56,16 +56,21 @@
    #-windows (:file "iface")
    (:file "address")
    (:file "address-predicates")
-   (:file "resolv")
    (:file "base-sockets")
    (:file "socket-options")
+   (:module :namedb
+     :components
+     ((:file "etc-files")
+      (:file "file-monitor")
+      (:file "protocols" :depends-on ("etc-files" "file-monitor"))
+      (:file "services" :depends-on ("etc-files" "file-monitor"))
+      (:file "hosts" :depends-on ("etc-files" "file-monitor"))))
    (:file "socket-methods")
    (:module :dns
      :serial t
      :components
      ((:file "common")
       (:file "nameservers")
-      (:file "hosts")
       (:file "dynamic-buffer")
       (:file "message")
       (:file "query")
