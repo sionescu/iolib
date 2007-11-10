@@ -30,8 +30,10 @@
 
 (defun split-etc-tokens (line)
   (declare (type string line))
-  (split-sequence-if #'space-char-p line
-                     :remove-empty-subseqs t))
+  (let ((comment-start (position #\# line)))
+    (split-sequence-if #'space-char-p line
+                       :remove-empty-subseqs t
+                       :start 0 :end comment-start)))
 
 (defmacro serialize-etc-file (file)
   `(#msplit-etc-tokens (scan-file ,file #'read-line)))
