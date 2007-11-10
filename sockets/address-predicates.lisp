@@ -62,6 +62,10 @@
 return T for other low-level address representations."
   (typep address 'address))
 
+(defun inet-address-p (address)
+  "Returns T if ADDRESS is an Inet address object."
+  (typep address 'inet-address))
+
 (defun ipv4-address-p (address)
   "Returns T if ADDRESS is an IPv4 address object."
   (typep address 'ipv4-address))

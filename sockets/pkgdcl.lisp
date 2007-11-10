@@ -117,6 +117,7 @@
    #:addressp
    #:inet-address-loopback-p
    #:inet-address-multicast-p
+   #:inet-address-p
    #:inet-address-type
    #:inet-address-unicast-p
    #:inet-address-unspecified-p
