@@ -23,6 +23,8 @@
 
 (in-package :net.sockets)
 
+(defvar *resolv.conf-file* "/etc/resolv.conf")
+
 (defvar *dns-nameservers* nil
   "List of the DNS nameservers to use.")
 
@@ -34,31 +36,31 @@
 the latter does not contain dots.")
 
 ;;; Only parses NAMESERVER, DOMAIN and SEARCH directives, for now.
-(defun search-etc-resolv-conf (file)
+(defun parse-/etc/resolv.conf (file)
   (let (nameservers domain search-domain)
     (flet ((parse-one-line (tokens)
-             (switch ((first tokens) :test #'string-equal)
-               ("nameserver" (ignore-some-conditions (parse-error)
-                               (push (ensure-address (second tokens))
-                                     nameservers)))
-               ("domain" (setf domain (second tokens)))
-               ("search" (setf search-domain (second tokens))))))
+             (when (< (length tokens) 2) (error 'parse-error))
+             (destructuring-bind (option value &rest more-values) tokens
+               (switch (option :test #'string-equal)
+                 ("nameserver" (ignore-some-conditions (parse-error)
+                                 (push (ensure-address value)
+                                       nameservers)))
+                 ("domain" (setf domain value))
+                 ("search" (setf search-domain value))))))
       (iterate ((tokens (serialize-etc-file file)))
-        (parse-one-line tokens)
-        (return-from search-etc-resolv-conf
-          (values (nreverse nameservers) domain search-domain))))))
+        (ignore-errors (parse-one-line tokens)))
+      (values (nreverse nameservers) domain search-domain))))
 
 (defun update-dns-parameters (file)
   (multiple-value-bind (ns domain search)
-      (search-etc-resolv-conf file)
+      (parse-/etc/resolv.conf file)
     (setf *dns-nameservers* (or ns +ipv4-loopback+)
           ;; everything after the first dot
           *dns-domain* (cdr (split-sequence #\. domain :count 2))
           *dns-search-domain* search)
     (values *dns-nameservers* *dns-domain* *dns-search-domain*)))
 
-(defvar *resolv-file* "/etc/resolv.conf")
-(defvar *resolv-conf*
+(defvar *resolv.conf-monitor*
   (make-instance 'file-monitor
-                 :file *resolv-file*
+                 :file *resolv.conf-file*
                  :update-fn 'update-dns-parameters))
