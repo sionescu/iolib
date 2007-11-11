@@ -60,7 +60,7 @@
     (:tcp (eq :tcp (make-keyword (string-upcase thing))))
     (:udp (eq :udp (make-keyword (string-upcase thing))))))
 
-(defun find-service (tokens predicate)
+(defun find-service-in-parsed-lines (tokens predicate)
   (when (< (length tokens) 2) (error 'parse-error))
   (destructuring-bind (name port/proto &rest aliases) tokens
     (multiple-value-bind (port proto) (split-port/proto port/proto)
@@ -75,7 +75,7 @@
                   (= pnum service)))))
     (iterate ((tokens (serialize-etc-file file)))
       (ignore-some-conditions (parse-error)
-        (let ((proto (find-service tokens #'good-proto-p)))
+        (let ((proto (find-service-in-parsed-lines tokens #'good-proto-p)))
           (when proto (return-from lookup-service-on-disk-by-number
                         proto)))))))
 
@@ -87,7 +87,7 @@
                     (member service aliases :test #'string=)))))
     (iterate ((tokens (serialize-etc-file file)))
       (ignore-some-conditions (parse-error)
-        (let ((proto (find-service tokens #'good-proto-p)))
+        (let ((proto (find-service-in-parsed-lines tokens #'good-proto-p)))
           (when proto (return-from lookup-service-on-disk-by-name
                         proto)))))))
 
@@ -116,33 +116,33 @@
     (:any (or (gethash thing *tcp-services-cache-by-number*)
               (gethash thing *udp-services-cache-by-number*)))))
 
-(declaim (inline get-service-cache))
-(defun get-service-cache (protocol type)
-  (ecase type
-    (:name (ecase protocol
-             (:tcp *tcp-services-cache-by-name*)
-             (:udp *udp-services-cache-by-name*)))
-    (:number (ecase protocol
-               (:tcp *tcp-services-cache-by-number*)
-               (:udp *udp-services-cache-by-number*)))))
+(defun find-service (thing protocol cache-fn disk-fn)
+  (or (funcall cache-fn thing protocol)
+      (let ((service (funcall disk-fn *services-file* thing protocol)))
+        (flet ((get-cache (type)
+                 (ecase type
+                   (:name (ecase (service-protocol service)
+                            (:tcp *tcp-services-cache-by-name*)
+                            (:udp *udp-services-cache-by-name*)))
+                   (:number (ecase (service-protocol service)
+                              (:tcp *tcp-services-cache-by-number*)
+                              (:udp *udp-services-cache-by-number*))))))
+          (when service
+            (setf (gethash (service-name service) (get-cache :name))
+                  service)
+            (setf (gethash (service-port service) (get-cache :number))
+                  service)
+            (values service))))))
 
 (defun lookup-service-by-name (thing protocol)
-  (or (find-service-name-in-cache thing protocol)
-      (let ((service (lookup-service-on-disk-by-name
-                      *services-file* thing protocol)))
-        (when service
-          (setf (gethash thing (get-service-cache (service-protocol service) :name))
-                service)
-          (values service)))))
+  (find-service thing protocol
+                #'find-service-name-in-cache
+                #'lookup-service-on-disk-by-name))
 
 (defun lookup-service-by-number (thing protocol)
-  (or (find-service-number-in-cache thing protocol)
-      (let ((service (lookup-service-on-disk-by-number
-                      *services-file* thing protocol)))
-        (when service
-          (setf (gethash thing (get-service-cache (service-protocol service) :number))
-                service)
-          (values service)))))
+  (find-service thing protocol
+                #'find-service-number-in-cache
+                #'lookup-service-on-disk-by-number))
 
 (defun lookup-service (service &optional (protocol :tcp))
   "Lookup a service by port or name.  PROTOCOL should be one
