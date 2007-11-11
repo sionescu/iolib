@@ -26,18 +26,26 @@
 (defvar *hosts-file* "/etc/hosts")
 
 (defclass host ()
-  ((truename :initarg :truename  :reader host-truename
+  ((truename :initform nil :initarg :truename
+             :accessor host-truename
              :documentation "The name of the host.")
-   (aliases :initarg :aliases   :reader host-aliases
+   (aliases :initform nil :initarg :aliases
+            :accessor host-aliases
             :documentation "A list of aliases.")
-   (addresses :initarg :addresses :reader host-addresses
+   (addresses :initform nil :initarg :addresses
+              :accessor host-addresses
               :documentation "A list of addresses."))
   (:documentation "Class representing a host: name, aliases and addresses."))
 
 (defmethod initialize-instance :after ((host host) &key)
-  (when (slot-boundp host 'addresses)
-    (with-slots (addresses) host
-      (setf addresses (ensure-list addresses)))))
+  (with-accessors ((name host-truename) (aliases host-aliases)
+                   (addresses host-addresses)) host
+    (flet ((namep (h) (and (stringp h) (plusp (length h)))))
+      (assert (namep name))
+      (assert (every #'namep aliases))
+      (assert addresses)
+      (setf addresses (ensure-list addresses))
+      (map-into addresses #'ensure-address addresses))))
 
 (defun host-random-address (host)
   "Returns a random address from HOST's address list."
@@ -53,65 +61,14 @@
 (defmethod print-object ((host host) stream)
   (print-unreadable-object (host stream :type t :identity nil)
     (with-slots (truename aliases addresses) host
-      (format stream "Canonical name: ~S. Aliases: ~:[None~;~:*~{~S~^, ~}~].~%~
-                      Addresses: ~{~A~^, ~}"
+      (format stream "Canonical name: ~S. Aliases: ~:[None~;~:*~{~S~^, ~}~]. Addresses: ~{~A~^, ~}"
               truename aliases addresses))))
 
-(defun load-file (path)
-  (with-open-file (fin path)
-    (let ((big-string (make-string (file-length fin))))
-      (read-sequence big-string fin)
-      (values big-string))))
-
-(defun split-string-by-spaces (string &key (start 0) end empty-seqs)
-  (declare (type string string)
-           (type unsigned-byte start)
-           (type (or unsigned-byte null) end))
-  (let ((substring-length (or end (length string))))
-    (assert (>= substring-length start))
-    (loop :with substr-start := (1- start) :and substr-end := (1- start)
-          :with dummy-char := #\Space
-          :for index :upto substring-length
-          :for char := (if (eql index substring-length)
-                           dummy-char
-                           (char string index))
-          :when (and (space-char-p char)
-                     (setf substr-start (1+ substr-end)
-                           substr-end   index)
-                     (or (> substr-end substr-start) empty-seqs))
-          :collect (subseq string substr-start substr-end))))
-
-(defun search-in-etc-file (path predicate &optional (match-all t))
-  (let ((file (load-file path))
-        results)
-    (with-input-from-string (string-stream file)
-      (loop :for line := (read-line string-stream nil nil)
-            :for comment-start := (or (position #\# line)
-                                      (length line))
-            :while line :do
-            (destructuring-bind (&optional col1 col2 &rest other-cols)
-                (split-string-by-spaces
-                 line :empty-seqs nil :end comment-start)
-              (when col2                ; skip invalid lines
-                (let ((result (funcall predicate col1 col2 other-cols)))
-                  (when result
-                    (push result results)
-                    (unless match-all
-                      (loop-finish))))))
-            :finally (setf results (nreverse results))))
-    (values results)))
-
-(defun vector-ipv6-good-p (vector ipv6)
-  (when vector
-    (let ((len (length vector)))
-      (case ipv6
-        (:ipv6 (eql len 8))
-        ((nil) (eql len 4))
-        (otherwise t)))))
+(defvar *hosts-cache* ())
 
 (defun map-host-ipv4-addresses-to-ipv6 (hostobj)
   (declare (type host hostobj))
-  (with-slots (addresses) hostobj
+  (with-accessors ((addresses host-addresses)) hostobj
     (setf addresses
           (mapcar (lambda (address)
                     (if (ipv4-address-p address)
@@ -121,56 +78,42 @@
                   addresses)))
   (values hostobj))
 
-(defun search-etc-hosts-ip (file ip ipv6)
-  (car
-   (search-in-etc-file
-    file
-    (lambda (col1 col2 other-cols)
-      (let ((vector (string-address-to-vector col1)))
-        (when (and (vector-ipv6-good-p vector ipv6)
-                   (vector-equal vector ip))
-          (let ((host
-                 (make-host col2 (make-address vector) other-cols)))
-            (if (eql ipv6 t)
-                (map-host-ipv4-addresses-to-ipv6 host)
-                host)))))
-    nil)))
+(defun parse-/etc/hosts (file)
+  (let (hosts)
+    (flet ((parse-one-line (tokens)
+             (when (< (length tokens) 2) (error 'parse-error))
+             (destructuring-bind (address cname &rest aliases) tokens
+               (push (make-host cname (ensure-address address) aliases)
+                     hosts))))
+      (iterate ((tokens (serialize-etc-file file)))
+        (ignore-errors (parse-one-line tokens)))
+      (nreverse hosts))))
 
-(defun merge-lines-into-one-host (lines ipv6)
-  (flet ((pushnew-alias (alias place cname)
-           (when (string-not-equal alias cname)
-             (pushnew alias place :test #'string-equal)
-             place)))
-    (let (ips aliases host)
-      (destructuring-bind (first-ip cname first-aliases) (car lines)
-        (setf ips (list first-ip))
-        (mapc (lambda (alias)
-                (setf aliases (pushnew-alias alias aliases cname)))
-              first-aliases)
-        (mapc (lambda (line)
-                (destructuring-bind (ip alias more-aliases) line
-                  (pushnew ip ips)
-                  (mapc (lambda (alias)
-                          (setf aliases (pushnew-alias alias aliases cname)))
-                        (cons alias more-aliases))))
-              (cdr lines))
-        (setf host (make-host cname
-                              (mapcar #'make-address (nreverse ips))
-                              (nreverse aliases)))
-        (if (eql ipv6 t)
-            (map-host-ipv4-addresses-to-ipv6 host)
-            host)))))
+(defun update-hosts-list (file)
+  (setf *hosts-cache* (parse-/etc/hosts file)))
 
-(defun search-etc-hosts-name (file name ipv6)
-  (let ((lines (search-in-etc-file
-                file
-                (lambda (col1 col2 other-cols)
-                  (let ((vector (string-address-to-vector col1)))
-                    (when (and (vector-ipv6-good-p vector ipv6)
-                               (or (string-equal name col2)
-                                   (member name other-cols
-                                           :test #'string-equal)))
-                      (list vector col2 other-cols))))
-                t)))
-    (when lines
-      (merge-lines-into-one-host lines ipv6))))
+(defun search-host-by-name (name ipv6)
+  (check-type name string)
+  (flet ((compatible-address-p (address)
+           (ecase ipv6
+             ((t)   (inet-address-p address))
+             ((nil) (ipv4-address-p address))
+             (:ipv6 (ipv6-address-p address)))))
+    (find-if #'(lambda (host)
+                 (and (or (string= name (host-truename host))
+                          (member name (host-aliases host)
+                                  :test #'string=))
+                      (compatible-address-p (car (host-addresses host)))))
+             *hosts-cache*)))
+
+(defun search-host-by-address (address)
+  (let ((address (ensure-address address)))
+    (find-if #'(lambda (host)
+                 (address= (car (host-addresses host))
+                           address))
+             *hosts-cache*)))
+
+(defvar *hosts-monitor*
+  (make-instance 'file-monitor
+                 :file *hosts-file*
+                 :update-fn 'update-hosts-list))
