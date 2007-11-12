@@ -36,7 +36,7 @@
       (values (< (timestamp-of monitor) mtime)
               mtime))))
 
-(defgeneric update (monitor)
+(defgeneric update-monitor (monitor)
   (:method ((monitor file-monitor))
     (multiple-value-bind (oldp mtime) (oldp monitor)
       (when oldp
