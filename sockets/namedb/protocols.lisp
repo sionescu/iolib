@@ -101,6 +101,16 @@
                  #'(lambda (p) (gethash p *protocols-cache-by-number*))
                  #'lookup-protocol-on-disk-by-number))
 
+(defun purge-protocols-cache (&optional file)
+  (declare (ignore file))
+  (map 'nil #'clrhash (list *protocols-cache-by-name*
+                            *protocols-cache-by-number*)))
+
+(defvar *protocols-monitor*
+  (make-instance 'file-monitor
+                 :file *protocols-file*
+                 :update-fn 'purge-protocols-cache))
+
 (defun lookup-protocol (protocol)
   "Lookup a protocol by name or number.  Signals an
 UNKNOWN-PROTOCOL error if no protocol is found."
@@ -113,13 +123,3 @@ UNKNOWN-PROTOCOL error if no protocol is found."
                  (unsigned-byte (lookup-protocol-by-number protocol))
                  (string        (lookup-protocol-by-name protocol)))))
     (or proto (error 'unknown-protocol :name protocol))))
-
-(defun purge-protocols-cache (&optional file)
-  (declare (ignore file))
-  (map 'nil #'clrhash (list *protocols-cache-by-name*
-                            *protocols-cache-by-number*)))
-
-(defvar *protocols-monitor*
-  (make-instance 'file-monitor
-                 :file *protocols-file*
-                 :update-fn 'purge-protocols-cache))

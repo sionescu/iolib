@@ -144,6 +144,18 @@
                 #'find-service-number-in-cache
                 #'lookup-service-on-disk-by-number))
 
+(defun purge-services-cache (&optional file)
+  (declare (ignore file))
+  (map 'nil #'clrhash (list *tcp-services-cache-by-name*
+                            *tcp-services-cache-by-number*
+                            *udp-services-cache-by-name*
+                            *udp-services-cache-by-number*)))
+
+(defvar *services-monitor*
+  (make-instance 'file-monitor
+                 :file *services-file*
+                 :update-fn 'purge-services-cache))
+
 (defun lookup-service (service &optional (protocol :tcp))
   "Lookup a service by port or name.  PROTOCOL should be one
 of :TCP, :UDP or :ANY."
@@ -157,15 +169,3 @@ of :TCP, :UDP or :ANY."
                 (unsigned-byte (lookup-service-by-number service protocol))
                 (string        (lookup-service-by-name service protocol)))))
     (or serv (error 'unknown-service :name service))))
-
-(defun purge-services-cache (&optional file)
-  (declare (ignore file))
-  (map 'nil #'clrhash (list *tcp-services-cache-by-name*
-                            *tcp-services-cache-by-number*
-                            *udp-services-cache-by-name*
-                            *udp-services-cache-by-number*)))
-
-(defvar *services-monitor*
-  (make-instance 'file-monitor
-                 :file *services-file*
-                 :update-fn 'purge-services-cache))
