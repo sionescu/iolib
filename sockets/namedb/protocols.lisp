@@ -104,10 +104,13 @@
 (defun lookup-protocol (protocol)
   "Lookup a protocol by name or number.  Signals an
 UNKNOWN-PROTOCOL error if no protocol is found."
-  (let* ((parsed-number (parse-number-or-nil protocol))
-         (proto (if parsed-number
-                    (lookup-protocol-by-number parsed-number)
-                    (lookup-protocol-by-name protocol))))
+  (when (keywordp protocol)
+    (setf protocol (string-downcase protocol)))
+  (let ((parsed-number (parse-number-or-nil protocol)))
+    (when parsed-number (setf protocol parsed-number)))
+  (let ((proto (etypecase protocol
+                 (unsigned-byte (lookup-protocol-by-number protocol))
+                 (string        (lookup-protocol-by-name protocol)))))
     (or proto (error 'unknown-protocol :name protocol))))
 
 (defun purge-protocols-cache ()

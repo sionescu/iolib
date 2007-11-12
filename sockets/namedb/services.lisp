@@ -148,10 +148,13 @@
   "Lookup a service by port or name.  PROTOCOL should be one
 of :TCP, :UDP or :ANY."
   (check-type protocol (member :tcp :udp :any))
-  (let* ((parsed-number (parse-number-or-nil service :ub16))
-         (serv (if parsed-number
-                   (lookup-service-by-number parsed-number protocol)
-                   (lookup-service-by-name service protocol))))
+  (when (keywordp service)
+    (setf service (string-downcase service)))
+  (let ((parsed-number (parse-number-or-nil service :ub16)))
+    (when parsed-number (setf service parsed-number)))
+  (let ((serv (etypecase service
+                (unsigned-byte (lookup-service-by-number service protocol))
+                (string        (lookup-service-by-name service protocol)))))
     (or serv (error 'unknown-service :name service))))
 
 (defun purge-services-cache ()
