@@ -152,12 +152,14 @@ of :TCP, :UDP or :ANY."
     (setf service (string-downcase service)))
   (let ((parsed-number (parse-number-or-nil service :ub16)))
     (when parsed-number (setf service parsed-number)))
+  (update-monitor *services-monitor*)
   (let ((serv (etypecase service
                 (unsigned-byte (lookup-service-by-number service protocol))
                 (string        (lookup-service-by-name service protocol)))))
     (or serv (error 'unknown-service :name service))))
 
-(defun purge-services-cache ()
+(defun purge-services-cache (&optional file)
+  (declare (ignore file))
   (map 'nil #'clrhash (list *tcp-services-cache-by-name*
                             *tcp-services-cache-by-number*
                             *udp-services-cache-by-name*

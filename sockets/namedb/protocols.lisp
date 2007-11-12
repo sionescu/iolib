@@ -108,12 +108,14 @@ UNKNOWN-PROTOCOL error if no protocol is found."
     (setf protocol (string-downcase protocol)))
   (let ((parsed-number (parse-number-or-nil protocol)))
     (when parsed-number (setf protocol parsed-number)))
+  (update-monitor *protocols-monitor*)
   (let ((proto (etypecase protocol
                  (unsigned-byte (lookup-protocol-by-number protocol))
                  (string        (lookup-protocol-by-name protocol)))))
     (or proto (error 'unknown-protocol :name protocol))))
 
-(defun purge-protocols-cache ()
+(defun purge-protocols-cache (&optional file)
+  (declare (ignore file))
   (map 'nil #'clrhash (list *protocols-cache-by-name*
                             *protocols-cache-by-number*)))
 
