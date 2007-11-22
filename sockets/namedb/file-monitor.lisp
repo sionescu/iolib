@@ -40,6 +40,7 @@
   (:method ((monitor file-monitor))
     (multiple-value-bind (oldp mtime) (oldp monitor)
       (when oldp
+        (funcall (update-fn-of monitor) (file-of monitor))
         (multiple-value-prog1
-            (funcall (update-fn-of monitor) (file-of monitor))
+            (values (timestamp-of monitor) mtime)
           (setf (timestamp-of monitor) mtime))))))
