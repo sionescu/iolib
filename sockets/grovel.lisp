@@ -31,8 +31,8 @@
 ;;; be cleaned up or at least commented out.
 
 #-windows
-(include "sys/socket.h" "sys/un.h" "netinet/in.h" "netinet/in_systm.h"
-         "netinet/ip.h" "net/if.h" "netinet/tcp.h" "netdb.h" "errno.h"
+(include "sys/socket.h" "sys/un.h" "netinet/in.h"
+         "net/if.h" "netinet/tcp.h" "netdb.h" "errno.h"
          "arpa/inet.h")
 
 #+windows (include "Winsock2.h" "Ws2tcpip.h")

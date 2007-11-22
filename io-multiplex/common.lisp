@@ -505,8 +505,8 @@ within the extent of BODY.  Closes VAR."
 ;;;; Misc
 
 ;;; FIXME: Until a way to autodetect platform features is implemented
-#+darwin
-(defconstant nix::pollrdhup 0)
+#+(or darwin freebsd)
+(define-constant nix::pollrdhup 0)
 
 (define-condition poll-error (error)
   ((fd :initarg :fd :reader poll-error-fd)
