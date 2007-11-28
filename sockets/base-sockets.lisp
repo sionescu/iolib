@@ -65,9 +65,9 @@
 
 (defgeneric shutdown (socket direction))
 
-(defgeneric socket-send (buffer socket &key &allow-other-keys))
+(defgeneric socket-send (buffer socket &rest args &key &allow-other-keys))
 
-(defgeneric socket-receive (buffer socket &key &allow-other-keys))
+(defgeneric socket-receive (buffer socket &rest args &key &allow-other-keys))
 
 (defclass passive-socket (socket)
   ((listening :initform nil :reader socket-listening-p :type boolean)

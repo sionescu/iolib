@@ -371,6 +371,43 @@
 
 ;;;; SEND
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun compute-flags (flags args)
+    (loop :with flag-combination := 0
+          :for cons :on args :by #'cddr
+          :for flag := (car cons)
+          :for val := (cadr cons)
+          :for const := (cdr (assoc flag flags))
+          :when const :do
+       (when (not (constantp val)) (return-from compute-flags))
+       (setf flag-combination (logior flag-combination const))
+       :finally (return flag-combination)))
+
+  (defmacro define-socket-flag (place name value platform)
+    (let ((val (cond ((or (not platform)
+                          (featurep platform)) value)
+                     ((not (featurep platform) 0)))))
+      `(push (cons ,name ,val) ,place))))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defparameter *sendmsg-flags* nil)
+
+  (defmacro define-sendmsg-flags (&rest forms)
+    (flet ((dflag (form)
+             (destructuring-bind (name value &optional platform) form
+               `(define-socket-flag *sendmsg-flags* ,name ,value ,platform))))
+      `(progn
+         ,@(mapcar #'dflag forms))))
+
+  (define-sendmsg-flags
+    (:end-of-record msg-eor       (:not :windows))
+    (:dont-route    msg-dontroute)
+    (:dont-wait     msg-dontwait  (:not :windows))
+    (:no-signal     msg-nosignal  (:not (:or :darwin :windows)))
+    (:out-of-band   msg-oob)
+    (:more          msg-more      :linux)
+    (:confirm       msg-confirm   :linux)))
+
 (defun %normalize-send-buffer (buff start end ef)
   (check-bounds buff start end)
   (etypecase buff
@@ -378,64 +415,70 @@
     (ub8-vector (values (coerce buff 'ub8-sarray)
                         start (- end start)))
     (string     (values (%to-octets buff ef start end)
-                        0 (- end start)))))
+                        0 (- end start)))
+    (vector (values (coerce buff 'ub8-sarray)
+                    start (- end start)))))
 
-(defmethod socket-send ((buffer array) (socket active-socket)
-                        &key (start 0) end remote-address remote-port
-                        end-of-record dont-route dont-wait no-signal
-                        out-of-band #+linux more #+linux confirm)
-  #+darwin (declare (ignore no-signal)) ; better warn?
-  #+windows (declare (ignore dont-wait no-signal end-of-record)) ; ditto
-  (check-type start unsigned-byte
-              "a non-negative unsigned integer")
-  (check-type end (or unsigned-byte null)
-              "a non-negative unsigned integer or NIL")
-  (when (or remote-port remote-address)
-    (check-type remote-address address "a network address")
-    (check-type remote-port (unsigned-byte 16) "a valid IP port number"))
-  (let ((flags (logior #-windows (if end-of-record msg-eor 0)
-                       (if dont-route msg-dontroute 0)
-                       #-windows (if dont-wait  msg-dontwait 0)
-                       #-(or darwin windows) (if no-signal  msg-nosignal 0)
-                       (if out-of-band msg-oob 0)
-                       #+linux (if more msg-more 0)
-                       #+linux (if confirm msg-confirm 0))))
-    (when (and (ipv4-address-p remote-address)
-               (eql (socket-family socket) :ipv6))
-      (setf remote-address (map-ipv4-address-to-ipv6 remote-address)))
-    (multiple-value-bind (buff start-offset bufflen)
-        (%normalize-send-buffer buffer start end (external-format-of socket))
-      (with-foreign-object (ss 'sockaddr-storage)
-        (bzero ss size-of-sockaddr-storage)
-        (when remote-address
-          (sockaddr->sockaddr-storage ss remote-address remote-port))
-        (with-pointer-to-vector-data (buff-sap buff)
-          (incf-pointer buff-sap start-offset)
-          (sendto (fd-of socket) buff-sap bufflen flags
-                  (if remote-address ss (null-pointer))
-                  (if remote-address size-of-sockaddr-storage 0)))))))
+(defun %socket-send (buffer socket start end remote-address remote-port flags)
+  (when (typep socket 'passive-socket)
+    (error "You cannot send data on a passive socket."))
+  (check-type start unsigned-byte "a non-negative unsigned integer")
+  (check-type end (or unsigned-byte null) "a non-negative unsigned integer or NIL")
+  (check-type remote-address (or address null) "a network address or NIL")
+  (check-type remote-port (unsigned-byte 16) "a valid IP port number")
+  (when (and (ipv4-address-p remote-address)
+             (eq (socket-family socket) :ipv6))
+    (setf remote-address (map-ipv4-address-to-ipv6 remote-address)))
+  (multiple-value-bind (buff start-offset bufflen)
+      (%normalize-send-buffer buffer start end (external-format-of socket))
+    (with-foreign-object (ss 'sockaddr-storage)
+      (bzero ss size-of-sockaddr-storage)
+      (when remote-address
+        (sockaddr->sockaddr-storage ss remote-address remote-port))
+      (with-pointer-to-vector-data (buff-sap buff)
+        (incf-pointer buff-sap start-offset)
+        (sendto (fd-of socket) buff-sap bufflen flags
+                (if remote-address ss (null-pointer))
+                (if remote-address size-of-sockaddr-storage 0))))))
 
-(defmethod socket-send (buffer (socket passive-socket) &key)
-  (declare (ignore buffer))
-  (error "You cannot send data on a passive socket."))
+(defmethod socket-send ((buffer array) (socket active-socket) &rest args
+                        &key (start 0) end remote-address (remote-port 0) &allow-other-keys)
+  (%socket-send buffer socket start end remote-address remote-port
+                (compute-flags *sendmsg-flags* args)))
+
+(define-compiler-macro socket-send (&whole form buffer socket &rest args
+                                    &key (start 0) end remote-address (remote-port 0)
+                                    &allow-other-keys)
+  (let ((flags (compute-flags *sendmsg-flags* args)))
+    (cond (flags `(%socket-send ,buffer ,socket ,start ,end
+                                ,remote-address ,remote-port ,flags))
+          (t form))))
 
 ;;;; RECV
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defparameter *recvfrom-flags* nil)
+
+  (defmacro define-recvfrom-flags (&rest forms)
+    (flet ((dflag (form)
+             (destructuring-bind (name value &optional platform) form
+               `(define-socket-flag *recvfrom-flags* ,name ,value ,platform))))
+      `(progn
+         ,@(mapcar #'dflag forms))))
+
+  (define-recvfrom-flags
+    (:out-of-band msg-oob)
+    (:peek        msg-peek)
+    (:wait-all    msg-waitall  (:not :windows))
+    (:dont-wait   msg-dontwait (:not :windows))
+    (:no-signal   msg-nosignal (:not (:or :darwin :windows)))))
 
 (defun %normalize-receive-buffer (buff start end)
   (check-bounds buff start end)
   (etypecase buff
     ((simple-array ub8 (*)) (values buff start (- end start)))))
 
-(defun calc-recvfrom-flags (out-of-band peek wait-all dont-wait no-signal)
-  #+darwin (declare (ignore no-signal)) ; better warn?
-  #+windows (declare (ignore wait-all dont-wait no-signal)) ; ditto
-  (logior (if out-of-band msg-oob 0)
-          (if peek        msg-peek 0)
-          #-windows (if wait-all    msg-waitall 0)
-          #-windows (if dont-wait   msg-dontwait 0)
-          #-(or windows darwin) (if no-signal msg-nosignal 0)))
-
-(defun %do-recvfrom (buffer ss fd flags start end)
+(defun %socket-receive-bytes (buffer ss fd flags start end)
   (multiple-value-bind (buff start-offset bufflen)
       (%normalize-receive-buffer buffer start end)
     (with-socklen (size size-of-sockaddr-storage)
@@ -444,30 +487,41 @@
         (incf-pointer buff-sap start-offset)
         (recvfrom fd buff-sap bufflen flags ss size)))))
 
-(defmethod socket-receive ((buffer array) (socket stream-socket) &key (start 0)
-                           end out-of-band peek wait-all dont-wait no-signal)
+(declaim (inline %socket-receive-stream-socket))
+(defun %socket-receive-stream-socket (buffer socket start end flags)
   (with-foreign-object (ss 'sockaddr-storage)
-    (let* ((flags (calc-recvfrom-flags out-of-band peek wait-all
-                                       dont-wait no-signal))
-           (bytes-received (%do-recvfrom buffer ss (fd-of socket) flags
-                                         start end)))
+    (let ((bytes-received (%socket-receive-bytes buffer ss (fd-of socket) flags
+                                                 start end)))
       (values buffer bytes-received))))
 
-(defmethod socket-receive ((buffer array) (socket datagram-socket)
-                           &key (start 0) end out-of-band peek wait-all
-                           dont-wait no-signal)
+(declaim (inline %socket-receive-datagram-socket))
+(defun %socket-receive-datagram-socket (buffer socket start end flags)
   (with-foreign-object (ss 'sockaddr-storage)
-    (let* ((flags (calc-recvfrom-flags out-of-band peek wait-all dont-wait
-                                       no-signal))
-           (bytes-received (%do-recvfrom buffer ss (fd-of socket) flags
-                                         start end)))
+    (let ((bytes-received (%socket-receive-bytes buffer ss (fd-of socket) flags
+                                                 start end)))
       (multiple-value-bind (remote-address remote-port)
           (sockaddr-storage->sockaddr ss)
         (values buffer bytes-received remote-address remote-port)))))
 
-(defmethod socket-receive (buffer (socket passive-socket) &key)
-  (declare (ignore buffer))
-  (error "You cannot receive data from a passive socket."))
+(defun %socket-receive (buffer socket start end flags)
+  (when (typep socket 'passive-socket)
+    (error "You cannot receive data from a passive socket."))
+  (etypecase socket
+    (stream-socket (%socket-receive-stream-socket
+                    buffer socket start end flags))
+    (datagram-socket (%socket-receive-datagram-socket
+                      buffer socket start end flags))))
+
+(defmethod socket-receive ((buffer array) (socket active-socket)
+                           &rest args &key (start 0) end flags &allow-other-keys)
+  (%socket-receive buffer socket start end
+                   (compute-flags *recvfrom-flags* args)))
+
+(define-compiler-macro socket-receive (&whole form buffer socket &rest args
+                                       &key (start 0) end flags &allow-other-keys)
+  (let ((flags (compute-flags *recvfrom-flags* args)))
+    (cond (flags `(%socket-receive ,buffer ,socket ,start ,end ,flags))
+          (t form))))
 
 ;;;; Datagram Sockets
 
