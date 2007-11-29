@@ -1,6 +1,6 @@
 ;;;; -*- Mode: lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; bsd.lisp --- Bindings for BSD sockets (and Winsock).
+;;; bsd.lisp --- Bindings for BSD sockets.
 ;;;
 ;;; Copyright (C) 2005-2006, Matthew Backes  <lucca@accela.net>
 ;;; Copyright (C) 2005-2006, Dan Knapp  <dankna@accela.net> and
@@ -29,13 +29,9 @@
 
 (in-package :net.sockets)
 
-;;; Simple wrapper around DEFCFUN that uses the stdcall calling
-;;; convention on windows.
 (defmacro deforeign (name-and-opts return-type &body args)
   (multiple-value-bind (lisp-name c-name options)
       (cffi::parse-name-and-options name-and-opts)
-    #+windows
-    (appendf options '(:calling-convention :stdcall))
     `(defcfun (,c-name ,lisp-name ,@options) ,return-type
        ,@args)))
 
@@ -44,18 +40,8 @@
                                    :error-generator signal-socket-error)
      ,@args))
 
-#-windows
 (defctype fd :int)
 
-#+windows
-(progn
-  (define-foreign-type fd-type ()
-    ()
-    (:actual-type :int)
-    (:simple-parser fd))
-
-  (defmethod translate-to-foreign (fd (type fd-type))
-    (get-osfhandle fd)))
 
 ;;;; sys/socket.h
 
@@ -153,7 +139,6 @@
   (how    :int))
 
 ;;; SOCKET is emulated in winsock.lisp.
-#-windows
 (define-socket-call "socket" :int
   "Create a BSD socket."
   (domain   :int)  ; af-*
@@ -180,7 +165,6 @@
 
 ;;;; netinet/un.h
 
-#-windows
 (defconstant unix-path-max
   (- size-of-sockaddr-un (foreign-slot-offset 'sockaddr-un 'path)))
 
@@ -211,10 +195,6 @@
   (port  :int)
   (proto :string))
 
-;;; Winsock's getnameinfo() return values are compatible with POSIX
-;;; even though they have WSA_* counterparts.
-;;;
-;;; <http://msdn2.microsoft.com/en-us/library/ms738532.aspx>
 (defcfun "getnameinfo"
     (errno-wrapper :int
                    :error-predicate (lambda (x) (not (zerop x)))
@@ -242,7 +222,6 @@
   (dest   :pointer)
   (size   socklen))
 
-#-windows
 (defcfun "inet_pton"
     (errno-wrapper :int :error-predicate (lambda (x) (not (plusp x))))
   (family :int)
@@ -251,19 +230,16 @@
 
 ;;;; net/if.h
 
-;;; On windows, these functions are only available on Vista or later.
-#-windows
-(progn
-  (defcfun "if_nametoindex"
-      (errno-wrapper :unsigned-int :error-predicate zerop)
-    (ifname :string))
+(defcfun "if_nametoindex"
+    (errno-wrapper :unsigned-int :error-predicate zerop)
+  (ifname :string))
 
-  (define-socket-call "if_indextoname" :string
-    (ifindex :unsigned-int)
-    (ifname  :pointer))
+(define-socket-call "if_indextoname" :string
+  (ifindex :unsigned-int)
+  (ifname  :pointer))
 
-  (define-socket-call "if_nameindex" :pointer
-    "Return all network interface names and indexes")
+(define-socket-call "if_nameindex" :pointer
+  "Return all network interface names and indexes")
 
-  (define-socket-call "if_freenameindex" :void
-    (ptr :pointer)))
+(define-socket-call "if_freenameindex" :void
+  (ptr :pointer))

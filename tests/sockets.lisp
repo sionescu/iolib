@@ -432,7 +432,6 @@
         (> (length data) 0)))
   t)
 
-#-windows
 (deftest simple-local-sockets
     (let ((file (namestring
                  (make-pathname

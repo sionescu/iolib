@@ -25,21 +25,10 @@
 
 ;;;; Get and Set O_NONBLOCK
 
-#+windows
-(progn
-  (defun %get-fd-nonblock-mode (fd)
-    (declare (ignore fd))
-    (error "nonblock stuff not implemented on windows yet"))
-  (defun %set-fd-nonblock-mode (fd mode)
-    (declare (ignore fd mode))
-    (error "nonblock stuff not implemented on windows yet")))
-
-#-windows
 (defun %get-fd-nonblock-mode (fd)
   (let ((current-flags (nix:fcntl fd nix::f-getfl)))
     (logtest nix::o-nonblock current-flags)))
 
-#-windows
 (defun %set-fd-nonblock-mode (fd mode)
   (let* ((current-flags (nix:fcntl fd nix::f-getfl))
          (new-flags (if mode

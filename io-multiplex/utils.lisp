@@ -23,14 +23,12 @@
 
 (in-package :io.multiplex)
 
-#-windows
 (defun timeout->timeval (timeout tv)
   (with-foreign-slots ((nix::sec nix::usec) tv nix::timeval)
     (multiple-value-bind (sec usec) (decode-timeout timeout)
      (setf nix::sec  sec
            nix::usec usec))))
 
-#-windows
 (defun timeout->timespec (timeout ts)
   (with-foreign-slots ((nix::sec nix::nsec) ts nix::timespec)
     (multiple-value-bind (sec usec) (decode-timeout timeout)

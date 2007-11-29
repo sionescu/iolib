@@ -188,7 +188,6 @@
 (defmethod close ((socket socket) &key abort)
   (declare (ignore socket abort)))
 
-;;; FIXME: this approach doesn't work on windows.
 (defmethod socket-open-p ((socket socket))
   (when (fd-of socket)
     (handler-case
@@ -198,8 +197,7 @@
             (getsockname (fd-of socket) ss size)
             t))
       (nix:ebadf () nil)
-      #+freebsd (nix:econnreset () nil)
-      #+windows (socket-invalid-argument () nil))))
+      #+freebsd (nix:econnreset () nil))))
 
 ;;;; GETSOCKNAME
 
@@ -262,10 +260,8 @@
   socket)
 
 (defmethod bind-address ((socket local-socket) (address local-address) &key)
-  #+windows (error "This platform does not support local sockets.")
-  #-windows
   (with-sockaddr-un (sun (address-name address))
-    (bind (fd-of socket) sun size-of-sockaddr-un))
+      (bind (fd-of socket) sun size-of-sockaddr-un))
   socket)
 
 (defmethod bind-address :after ((socket socket) (address address) &key)
@@ -332,9 +328,6 @@
   (values socket))
 
 (defmethod connect ((socket local-socket) (address local-address) &key)
-  #+windows
-  (error "This platform does not support local sockets.")
-  #-windows
   (with-sockaddr-un (sun (address-name address))
     (%connect (fd-of socket) sun size-of-sockaddr-un))
   (values socket))

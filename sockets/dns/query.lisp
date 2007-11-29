@@ -42,9 +42,6 @@
          (progn
            (connect socket nameserver :port 53)
            (socket-send buffer socket)
-           ;; FIXME: implement this option on windows. See:
-           ;; <http://support.microsoft.com/?scid=kb%3Ben-us%3B181610>
-           #-windows
            (set-socket-option socket :receive-timeout :sec timeout :usec 0)
            (socket-receive input-buffer socket))
       (close socket))))

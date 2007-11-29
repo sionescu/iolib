@@ -23,12 +23,6 @@
 
 (in-package :net.sockets)
 
-;;; we need these early on, can't wait for winsock.lisp.
-#+windows
-(progn
-  (load-foreign-library "Ws2_32.dll")
-  (load-foreign-library "msvcrt.dll"))
-
 (defgeneric error-code (err))
 
 (defmethod error-code ((err system-error))
@@ -59,7 +53,6 @@
 
 (defvar *socket-error-map* nil)
 
-;;; Should we really be subclassing POSIX-ERROR even on windows? Maybe.
 (define-condition socket-error (nix:posix-error) ())
 
 (defmethod print-object ((socket-error socket-error) stream)
@@ -68,8 +61,7 @@
       (format stream "~S ~S ~S"
               (or code "[No code]")
               (osicat-sys:system-error-identifier socket-error)
-              (or #-windows (nix:strerror code)
-                  #+windows (get-wsa-error-string code)
+              (or (nix:strerror code)
                   "[Can't get error string.]")))))
 
 (defmacro define-socket-error (name identifier &optional documentation)
@@ -125,14 +117,10 @@
              (error condition)
              (error err))))))
 
-#+windows
-(defcfun ("WSAGetLastError" wsa-get-last-error :cconv :stdcall) :int)
-
 ;;; Used in the ERRNO-WRAPPER foreign type.
 (defun signal-socket-error (return-value)
   (declare (ignore return-value))
-  (let ((errno #-windows (nix:get-errno)
-               #+windows (wsa-get-last-error)))
+  (let ((errno (nix:get-errno)))
     (let ((kw (foreign-enum-keyword 'socket-error-values errno :errorp nil)))
       (if kw
           (error (lookup-socket-error kw))
