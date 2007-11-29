@@ -168,66 +168,6 @@
 (defconstant unix-path-max
   (- size-of-sockaddr-un (foreign-slot-offset 'sockaddr-un 'path)))
 
-;;;; netdb.h
-
-;;; TODO: more socket stuff, deal with this later
-
-(define-socket-call "freeaddrinfo" :void
-  (ai :pointer))
-
-(defcfun "getaddrinfo"
-    (errno-wrapper :int
-                   :error-predicate (lambda (x) (not (zerop x)))
-                   :error-generator signal-resolver-error)
-  (node    :string)
-  (service :string)
-  (hints   :pointer)
-  (result  :pointer))
-
-;;; For systems with missing or broken getaddrinfo().
-(defcfun "gethostbyaddr" hostent
-  (addr :pointer)
-  (len  socklen)
-  (type :int))
-
-;;; ditto
-(defcfun "getservbyport" servent
-  (port  :int)
-  (proto :string))
-
-(defcfun "getnameinfo"
-    (errno-wrapper :int
-                   :error-predicate (lambda (x) (not (zerop x)))
-                   :error-generator signal-resolver-error)
-  (sa         :pointer)
-  (salen      socklen)
-  (node       :pointer)
-  (nodelen    socklen)
-  (service    :pointer)
-  (servicelen socklen)
-  (flags      :int))
-
-(define-socket-call "getprotobyname" :pointer
-  (name :string))
-
-(define-socket-call "getprotobynumber" :pointer
-  (proto :int))
-
-;;;; arpa/inet.h
-
-#-(and) ; unused
-(define-socket-call "inet_ntop" :string
-  (family :int)
-  (src    :pointer)
-  (dest   :pointer)
-  (size   socklen))
-
-(defcfun "inet_pton"
-    (errno-wrapper :int :error-predicate (lambda (x) (not (plusp x))))
-  (family :int)
-  (src    :string)
-  (dest   :pointer))
-
 ;;;; net/if.h
 
 (defcfun "if_nametoindex"

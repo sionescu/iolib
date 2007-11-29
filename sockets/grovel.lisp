@@ -383,68 +383,6 @@
   ((:tcp-listen "TCP_LISTEN"))
   ((:tcp-closing "TCP_CLOSING")))
 
-;;;; from netdb.h
-
-(constant (ipport-reserved "IPPORT_RESERVED"))
-
-(cstruct addrinfo "struct addrinfo"
-  (flags     "ai_flags"     :type :int)
-  (family    "ai_family"    :type :int)
-  (socktype  "ai_socktype"  :type :int)
-  (protocol  "ai_protocol"  :type :int)
-  (addrlen   "ai_addrlen"   :type socklen)
-  (addr      "ai_addr"      :type :pointer)
-  (canonname "ai_canonname" :type :pointer)
-  (next      "ai_next"      :type :pointer))
-
-;;; addrinfo flags
-(constant (ai-passive "AI_PASSIVE"))
-(constant (ai-canonname "AI_CANONNAME"))
-(constant (ai-numerichost "AI_NUMERICHOST"))
-#-darwin (constant (ai-numericserv "AI_NUMERICSERV"))
-(constant (ai-v4mapped "AI_V4MAPPED"))
-(constant (ai-v4mapped-cfg "AI_V4MAPPED_CFG") :optional t) ; freebsd
-(constant (ai-all "AI_ALL"))
-(constant (ai-addrconfig "AI_ADDRCONFIG"))
-
-(constant (ni-maxhost "NI_MAXHOST"))
-(constant (ni-maxserv "NI_MAXSERV"))
-
-;;; nameinfo flags
-(constant (ni-nofqdn "NI_NOFQDN"))
-(constant (ni-numerichost "NI_NUMERICHOST"))
-(constant (ni-namereqd "NI_NAMEREQD"))
-(constant (ni-numericserv "NI_NUMERICSERV"))
-(constant (ni-numericscope "NI_NUMERICSCOPE") :optional t)
-(constant (ni-dgram "NI_DGRAM"))
-
-;;; error codes
-(constant (netdb-success "NETDB_SUCCESS"))
-(constant (netdb-internal "NETDB_INTERNAL"))
-
-(constantenum addrinfo-errors
-  ((:netdb-success "NETDB_SUCCESS"))
-  ((:eai-addrfamily "EAI_ADDRFAMILY") :optional t) ; linux
-  ((:eai-again "EAI_AGAIN"))
-  ((:eai-badflags "EAI_BADFLAGS"))
-  ((:eai-fail "EAI_FAIL"))
-  ((:eai-family "EAI_FAMILY"))
-  ((:eai-memory "EAI_MEMORY"))
-  ((:eai-noname "EAI_NONAME"))
-  ((:eai-nodata "EAI_NODATA") :optional t)         ; linux
-  ((:eai-service "EAI_SERVICE"))
-  ((:eai-socktype "EAI_SOCKTYPE"))
-  ((:eai-system "EAI_SYSTEM"))
-  ((:eai-badhints "EAI_BADHINTS") :optional t)     ; freebsd
-  ((:eai-protocol "EAI_PROTOCOL") :optional t)     ; freebsd
-  ((:eai-max "EAI_MAX") :optional t)               ; freebsd
-  ((:eai-overflow "EAI_OVERFLOW") :optional t))    ; linux
-
-(cstruct protoent "struct protoent"
-  (name    "p_name"    :type :string)
-  (aliases "p_aliases" :type :pointer)
-  (proto   "p_proto"   :type :int))
-
 ;;;; from net/if.h
 
 (cstruct if-nameindex "struct if_nameindex"

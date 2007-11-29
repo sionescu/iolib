@@ -128,39 +128,18 @@
           ;; probably sinal an UNKOWN-SOCKET-ERROR here instead.
           (nix:posix-error errno)))))
 
-;;;; Resolver Conditions
-
-(define-constant +resolver-error-map+
-  '((:eai-again      . resolver-again-error)
-    (:eai-fail       . resolver-fail-error)
-    (:eai-noname     . resolver-no-name-error)
-    (:eai-nodata     . resolver-no-name-error)
-    (:eai-addrfamily . resolver-no-name-error)
-    (:eai-service    . resolver-no-service-error))
-  :test 'equal)
-
-(defun resolver-error-condition (id)
-  (cdr (assoc id +resolver-error-map+)))
-
-(defun resolver-error-code (id)
-  (foreign-enum-value 'addrinfo-errors id))
-
-(define-condition resolver-error (system-error)
+(define-condition resolver-error ()
   ((data :initarg :data :reader resolver-error-data))
   (:documentation
    "Signaled when an error occurs while trying to resolve an address."))
 
 (defmacro define-resolver-error (name code identifier format-string
                                  &optional documentation)
-  `(progn
-     ;; (export ',name)
-     (define-condition ,name (resolver-error)
-       ((code :initform ,code)
-        (identifier :initform ,identifier))
-       (:report (lambda (condition stream)
-                  (format stream ,format-string (resolver-error-data condition))
-                  (print-message-if-not-null condition stream)))
-       (:documentation ,documentation))))
+  `(define-condition ,name (resolver-error) ()
+     (:report (lambda (condition stream)
+                (format stream ,format-string (resolver-error-data condition))
+                (print-message-if-not-null condition stream)))
+     (:documentation ,documentation)))
 
 (define-resolver-error resolver-again-error (resolver-error-code :eai-again)
   :resolver-again
@@ -177,36 +156,7 @@
   "Host or service not found: ~S"
   "Condition signaled when a host or service was not found.")
 
-(define-resolver-error resolver-no-service-error
-    (resolver-error-code :eai-service) :resolver-no-service
-  "Service not found for specific socket type: ~S"
-  "Condition signaled when a service was not found for the socket type
-requested.")
-
 (define-resolver-error resolver-unknown-error 0 :resolver-unknown
   "Unknown error while resolving: ~S"
   "Condition signaled when an unknown error is signaled while resolving
 an address.")
-
-(defun resolver-error (identifier &key data message)
-  (let ((condition-class (resolver-error-condition identifier)))
-    (if condition-class
-        (error condition-class
-               :code (resolver-error-code identifier)
-               :identifier identifier
-               :data data
-               :message message)
-        (error 'resolver-unknown-error
-               :code (or (ignore-errors
-                           (resolver-error-code identifier))
-                         0)
-               :identifier identifier
-               :data data
-               :message message))))
-
-;;; For use with ERRNO-WRAPPER.
-(defun signal-resolver-error (retval)
-  (let ((identifier (foreign-enum-keyword 'addrinfo-errors retval)))
-    (if (eq identifier :eai-system)
-        (nix:posix-error)
-        (resolver-error identifier))))
