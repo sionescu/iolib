@@ -107,11 +107,16 @@
              *hosts-cache*)))
 
 (defun search-host-by-address (address)
-  (let ((address (ensure-address address)))
-    (find-if #'(lambda (host)
-                 (address= (car (host-addresses host))
-                           address))
-             *hosts-cache*)))
+  (let* ((address (ensure-address address))
+         (host (find-if #'(lambda (host)
+                            (address= (car (host-addresses host))
+                                      address))
+                        *hosts-cache*)))
+    (when host
+      (values address
+              (list* (cons (host-truename host) address)
+                     (mapcar #'(lambda (a) (cons a address))
+                             (host-aliases host)))))))
 
 (defvar *hosts-monitor*
   (make-instance 'file-monitor

@@ -3,6 +3,7 @@
 ;;; lookup.lisp --- High-level name lookup.
 ;;;
 ;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -23,64 +24,55 @@
 
 (in-package :net.sockets)
 
-(defgeneric dns-lookup-host (host &key ipv6))
-
-;;; FIXME: add caching
-(defmethod dns-lookup-host :around (host &key &allow-other-keys)
-  (declare (ignore host))
-  (flet ((%setup-dns-params ()
-           #-windows (search-etc-resolv-conf *resolv-file*)
-           #+windows (ensure-address (get-first-dns-server))))
-    (multiple-value-bind (*dns-nameservers* *dns-domain* *dns-search-domain*)
-        (%setup-dns-params)
-      (call-next-method))))
-
-(defmethod dns-lookup-host ((host string) &key (ipv6 *ipv6*))
-  (declare (ignorable ipv6))
-  (or #-windows (search-etc-hosts-name *hosts-file* host ipv6)
-      (dns-query host :type :a)))
-
-(defun dns-lookup-host-ip (vector ipv6)
-  (declare (ignorable ipv6))
-  (or #-windows (search-etc-hosts-ip *hosts-file* vector ipv6)
-      (dns-query vector :type :ptr)))
-
-(defmethod dns-lookup-host ((host inet-address) &key (ipv6 *ipv6*))
-  (dns-lookup-host-ip (address-name host) ipv6))
-
-(defmethod dns-lookup-host ((host vector) &key (ipv6 *ipv6*))
-  (dns-lookup-host (ensure-address host) :ipv6 ipv6))
-
 ;;;; High-level Interface
 
-;;; TODO: caching, etc.  Also, verify that this isn't completely
-;;; wrong.  It's very likely that it isn't complete because my
-;;; knowledge of DNS is almost nil.  --luis
+;;; TODO: caching
+
+(defun remove-trailing-dot (string)
+  (assert (> (length string) 1))
+  (assert (char= #\. (char string (1- (length string)))))
+  (subseq string 0 (1- (length string))))
+
+(defun check-reply-for-errors (reply)
+  (flet ((qname-of (query)
+           (remove-trailing-dot
+            (dns-record-name (aref (dns-message-question reply) 0)))))
+    (cond ((dns-flag-p reply :name-error)
+           (error 'resolver-no-name-error :data (qname-of reply)))
+          ((dns-flag-p reply :server-failure)
+           (error 'resolver-fail-error :data (qname-of reply))))))
+
+(defun dns-lookup-host-by-address (address ipv6)
+  (let ((reply (dns-query address :type :ptr)))
+    (check-reply-for-errors reply)
+    (let ((hostname (remove-trailing-dot
+                     (dns-rr-data (aref (dns-message-answer reply) 0)))))
+      (assert (eq :ptr (dns-record-type (aref (dns-message-answer reply) 0))))
+      (values (list address)
+              (list (cons hostname address))))))
+
+(defun lookup-host-by-address (address ipv6)
+  (multiple-value-bind (addresses aliases)
+      (search-host-by-address address)
+    (cond (addresses (values addresses aliases))
+          (t (dns-lookup-host-by-address address ipv6)))))
+
+(defun dns-lookup-host-by-name (host ipv6)
+  )
+
+(defun lookup-host-by-name (host ipv6)
+  )
 
 (defun lookup-host (host &key (ipv6 *ipv6*))
   "Looks up a host by name or address.  IPV6 determines the IPv6
 behaviour, defaults to *IPV6*."
   (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration")
-  (let ((reply (dns-lookup-host host :ipv6 ipv6)))
-    (when (typep reply 'host)
-      (return-from lookup-host reply))
-    ;; or check the :NAME-ERROR flag?
-    (cond ((member :name-error (decoded-flags reply))
-           (error 'resolver-no-name-error :data nil :message nil))
-          ((member :server-failure (decoded-flags reply))
-           (error 'resolver-fail-error :data nil :message nil)))
-    (flet ((rtd (string)
-             ;; remove trailing dot
-             (assert (> (length string) 1))
-             (assert (char= #\. (char string (1- (length string)))))
-             (subseq string 0 (1- (length string)))))
-      (loop :with aliases := nil :and truename := nil :and addresses := nil
-            :for record :across (dns-message-answer reply) :do
-            (case (dns-record-type record)
-              (:cname (push (rtd (dns-record-name record)) aliases))
-              (:a (setq truename (rtd (dns-record-name record)))
-                  (push (ensure-address (dns-rr-data record)) addresses))
-              (:ptr (setq truename (rtd (dns-rr-data record)))
-                    ;; is this right?
-                    (push (ensure-address host) addresses)))
-            :finally (return (make-host truename addresses aliases))))))
+  (let ((address (ignore-some-conditions (parse-error)
+                   (ensure-address host))))
+    (update-monitor *resolv.conf-monitor*)
+    (update-monitor *hosts-monitor*)
+    (cond (address
+           (lookup-host-by-address address ipv6))
+          (t
+           (check-type host string)
+           (lookup-host-by-name host ipv6)))))

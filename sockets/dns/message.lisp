@@ -83,6 +83,10 @@
       (push (or (rcode-field msg) :rc/u) flags)
       (nreverse flags))))
 
+(defgeneric dns-flag-p (message flag)
+  (:method ((msg dns-message) flag)
+    (member flag (decoded-flags msg) :test #'eq)))
+
 (defmethod initialize-instance :after ((msg dns-message) &key
                                        (qdcount 0) (ancount 0)
                                        (nscount 0) (arcount 0))
