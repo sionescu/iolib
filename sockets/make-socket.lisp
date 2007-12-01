@@ -23,9 +23,6 @@
 
 (in-package :net.sockets)
 
-(defun xnor (x1 x2)
-  (eq (not x1) (not x2)))
-
 ;;; FIXME: protocol is sort of misinterpreted.
 ;;;
 ;;; CREATE-SOCKET is a a bit of a confusing name as it is too similar
@@ -38,10 +35,6 @@
 (defun create-socket (&key (family :internet) (type :stream) (connect :active)
                       (protocol :default) (ipv6 *ipv6*)
                       (external-format :default))
-  ;; (check-type address-family (member :internet :local))
-  (check-type type (member :stream :datagram))
-  (check-type connect (member :active :passive))
-  (check-type ipv6 (member nil t :ipv6))
   (when (or (null family) (eq family :internet))
     (setf family (if ipv6 :ipv6 :ipv4)))
   (let ((class (select-socket-type family type connect protocol)))
@@ -68,12 +61,11 @@ remaining address list as the second return value."
 (declaim (inline %make-internet-stream-socket))
 (defun %make-internet-stream-socket (args connect ef)
   (let (socket address)
-    (destructuring-bind (&key local-host local-port remote-host remote-port
+    (destructuring-bind (&key local-host (local-port 0) remote-host (remote-port 0)
                               backlog reuse-address keepalive nodelay family)
         args
       (ecase connect
         (:active
-         (assert (xnor remote-host remote-port))
          (%close-on-error (socket)
            (setf socket (create-socket :family family :type :stream
                                        :connect :active :external-format ef))
@@ -81,7 +73,7 @@ remaining address list as the second return value."
            (when nodelay (set-socket-option socket :tcp-nodelay :value t))
            (when local-host
              (setf address (convert-or-lookup-inet-address local-host))
-             (bind-address socket address :port (or local-port 0)
+             (bind-address socket address :port local-port
                            :reuse-address reuse-address))
            (when remote-host
              (setf address (convert-or-lookup-inet-address remote-host))
@@ -92,7 +84,7 @@ remaining address list as the second return value."
                                        :connect :passive :external-format ef))
            (when local-host
              (setf address (convert-or-lookup-inet-address local-host))
-             (bind-address socket address :port (or local-port 0)
+             (bind-address socket address :port local-port
                            :reuse-address reuse-address)
              (socket-listen socket :backlog backlog))))))
     (values socket)))
@@ -124,11 +116,10 @@ remaining address list as the second return value."
 (declaim (inline %make-internet-datagram-socket))
 (defun %make-internet-datagram-socket (args ef)
   (let (socket address)
-    (destructuring-bind (&key local-host local-port remote-host remote-port
+    (destructuring-bind (&key local-host (local-port 0)
+                              remote-host (remote-port 0)
                               reuse-address broadcast family)
         args
-      (assert (xnor local-host local-port))
-      (assert (xnor remote-host remote-port))
       (%close-on-error (socket)
         (setf socket (create-socket :family family :type :datagram
                                     :connect :active :external-format ef))
