@@ -137,8 +137,7 @@
                                  &optional documentation)
   `(define-condition ,name (resolver-error) ()
      (:report (lambda (condition stream)
-                (format stream ,format-string (resolver-error-data condition))
-                (print-message-if-not-null condition stream)))
+                (format stream ,format-string (resolver-error-data condition))))
      (:documentation ,documentation)))
 
 (define-resolver-error resolver-again-error (resolver-error-code :eai-again)

@@ -93,18 +93,28 @@
   (setf *hosts-cache* (parse-/etc/hosts file)))
 
 (defun search-host-by-name (name ipv6)
-  (check-type name string)
-  (flet ((compatible-address-p (address)
-           (ecase ipv6
-             ((t)   (inet-address-p address))
-             ((nil) (ipv4-address-p address))
-             (:ipv6 (ipv6-address-p address)))))
-    (find-if #'(lambda (host)
-                 (and (or (string= name (host-truename host))
-                          (member name (host-aliases host)
-                                  :test #'string=))
-                      (compatible-address-p (car (host-addresses host)))))
-             *hosts-cache*)))
+  (labels ((compatible-address-p (address)
+             (ecase ipv6
+               ((t)   (inet-address-p address))
+               ((nil) (ipv4-address-p address))
+               (:ipv6 (ipv6-address-p address))))
+           (compatible-host-p (host)
+             (and (or (string= name (host-truename host))
+                      (member name (host-aliases host)
+                              :test #'string=))
+                  (compatible-address-p (car (host-addresses host))))))
+    (let ((hosts (remove-if-not #'compatible-host-p *hosts-cache*))
+          addresses aliases)
+      (when hosts
+        (mapc #'(lambda (host)
+                  (let ((address (car (host-addresses host))))
+                    (push address addresses)
+                    (push (cons (host-truename host) address) aliases)
+                    (mapc #'(lambda (alias) (push (cons alias address) aliases))
+                          (host-aliases host))))
+              hosts)
+        (values (nreverse addresses)
+                (nreverse aliases))))))
 
 (defun search-host-by-address (address)
   (let* ((address (ensure-address address))
@@ -115,7 +125,7 @@
     (when host
       (values address
               (list* (cons (host-truename host) address)
-                     (mapcar #'(lambda (a) (cons a address))
+                     (mapcar #'(lambda (alias) (cons alias address))
                              (host-aliases host)))))))
 
 (defvar *hosts-monitor*

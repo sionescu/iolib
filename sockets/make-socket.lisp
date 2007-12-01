@@ -62,7 +62,7 @@ is assumed to be a host name which is then looked up in order to
 return its primary address as the first return value and the
 remaining address list as the second return value."
   (or (ignore-errors (ensure-address address :internet))
-      (let ((addresses (host-addresses (lookup-host address :ipv6 ipv6))))
+      (let ((addresses (lookup-host address :ipv6 ipv6)))
         (values (car addresses) (cdr addresses)))))
 
 (declaim (inline %make-internet-stream-socket))
