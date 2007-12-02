@@ -114,6 +114,7 @@
                           (host-aliases host))))
               hosts)
         (values (nreverse addresses)
+                name
                 (nreverse aliases))))))
 
 (defun search-host-by-address (address)
@@ -123,7 +124,8 @@
                                       address))
                         *hosts-cache*)))
     (when host
-      (values address
+      (values (list address)
+              (host-truename host)
               (list* (cons (host-truename host) address)
                      (mapcar #'(lambda (alias) (cons alias address))
                              (host-aliases host)))))))

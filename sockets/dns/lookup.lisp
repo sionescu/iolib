@@ -49,7 +49,7 @@
 
 (defun dns-lookup-host-by-address (address ipv6)
   (let ((reply (dns-query address :type :ptr)))
-    (check-reply-for-errors reply address)
+    (check-reply-for-errors reply address :ptr)
     (let ((hostname (remove-trailing-dot
                      (dns-rr-data (aref (dns-message-answer reply) 0)))))
       (assert (eq :ptr (dns-record-type (aref (dns-message-answer reply) 0))))
@@ -57,35 +57,39 @@
               (list (cons hostname address))))))
 
 (defun lookup-host-by-address (address ipv6)
-  (multiple-value-bind (addresses aliases)
+  (multiple-value-bind (addresses truename aliases)
       (search-host-by-address address)
-    (cond (addresses (values addresses aliases))
+    (cond (addresses (values addresses truename aliases))
           (t (dns-lookup-host-by-address address ipv6)))))
 
 (defun process-one-reply (reply query-type)
-  (let (addresses aliases)
+  (let (truename addresses aliases)
     (loop :for rr :across (dns-message-answer reply) :do
        (switch ((dns-record-type rr) :test #'eq)
-         (:cname 'ok)
+         (:cname (setf truename (dns-rr-data rr)))
          (query-type (let ((address (ensure-address (dns-rr-data rr)))
                            (name (remove-trailing-dot (dns-record-name rr))))
                        (push address addresses)
                        (push (cons name address) aliases)))
          (t (warn "Invalid RR type: ~S" (dns-record-type rr)))))
     (values (nreverse addresses)
+            (remove-trailing-dot
+             (or truename
+                 (dns-record-name (aref (dns-message-question reply) 0))))
             (nreverse aliases))))
 
 (defun dns-lookup-host-in-one-domain (host query-type)
   (let ((reply (dns-query host :type query-type)))
-    (check-reply-for-errors reply host)
-    (process-one-query reply query-type)))
+    (check-reply-for-errors reply host query-type)
+    (process-one-reply reply query-type)))
 
 (defun merge-a-and-aaaa-replies (4-reply 6-reply)
-  (multiple-value-bind (4-addresses 4-aliases)
+  (multiple-value-bind (4-addresses 4-truename 4-aliases)
       (process-one-reply 4-reply :a)
-    (multiple-value-bind (6-addresses 6-aliases)
+    (multiple-value-bind (6-addresses 6-truename 6-aliases)
         (process-one-reply 6-reply :aaaa)
       (values (nconc 4-addresses 6-addresses)
+              4-truename
               (nconc 4-aliases 6-aliases)))))
 
 (defun dns-lookup-host-in-a-and-aaaa (host)
@@ -111,9 +115,9 @@
     ((t)     (dns-lookup-host-in-a-and-aaaa host))))
 
 (defun lookup-host-by-name (host ipv6)
-  (multiple-value-bind (addresses aliases)
+  (multiple-value-bind (addresses truename aliases)
       (search-host-by-name host ipv6)
-    (cond (addresses (values addresses aliases))
+    (cond (addresses (values addresses truename aliases))
           (t (dns-lookup-host-by-name host ipv6)))))
 
 ;; TODO: * implement address selection as per RFC 3484
