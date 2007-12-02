@@ -57,6 +57,12 @@
               (list (cons hostname address))))))
 
 (defun lookup-host-by-address (address ipv6)
+  (cond ((and (eq ipv6 :ipv6)
+              (ipv4-address-p address))
+         (setf address (map-ipv4-address-to-ipv6 address)))
+        ((and (eq ipv6 nil)
+              (ipv6-ipv4-mapped-p address))
+         (setf address (map-ipv6-address-to-ipv4 address))))
   (multiple-value-bind (addresses truename aliases)
       (search-host-by-address address)
     (cond (addresses (values addresses truename aliases))
