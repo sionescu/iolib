@@ -76,11 +76,10 @@
          ,@body))))
 
 (defvar *data-dir*
-  (let ((sys-pn (asdf:system-definition-pathname
-                 (asdf:find-system 'iolib-tests))))
+  (let ((sys-pn (truename (asdf:system-definition-pathname
+                           (asdf:find-system 'iolib-tests)))))
     (make-pathname :directory (append (pathname-directory sys-pn)
-                                      '("tests" "data"))
-                   :defaults sys-pn)))
+                                      '("tests" "data")))))
 
 (defvar *test-dir*
   (ensure-directories-exist
@@ -104,7 +103,7 @@
 ;;; and the cdr is the corresponding external format.  This list
 ;;; contains all possible line-end conversions.
 (defun create-file-variants (file-name symbol)
-  (loop for eol-style in '(:lf :cr :crlf) collect
+  (loop :for eol-style :in '(:lf :cr :crlf) :collect
         (cons (format nil "~A_~(~A~)_~(~A~).txt"
                       file-name symbol eol-style)
               (babel:make-external-format symbol eol-style))))
@@ -113,12 +112,12 @@
 ;;; different encodings of the corresponding file returns a list of
 ;;; lists which can be used as arglists for COMPARE-FILES.
 (defun create-test-combinations (file-name symbols)
-  (let ((file-variants (loop for symbol in symbols
-                             nconc (create-file-variants file-name symbol))))
-    (loop for (name-in . external-format-in) in file-variants
-          nconc (loop for (name-out . external-format-out) in file-variants
-                      collect (list name-in external-format-in
-                                    name-out external-format-out)))))
+  (let ((file-variants (loop :for symbol :in symbols
+                             :nconc (create-file-variants file-name symbol))))
+    (loop :for (name-in . external-format-in) :in file-variants
+          :nconc (loop :for (name-out . external-format-out) :in file-variants
+                       :collect (list name-in external-format-in
+                                      name-out external-format-out)))))
 
 ;;; Returns a true value iff FILE1 and FILE2 have the same contents
 ;;; (viewed as binary files).
@@ -126,10 +125,10 @@
   (with-open-file (stream1 file1 :element-type '(unsigned-byte 8))
     (with-open-file (stream2 file2 :element-type '(unsigned-byte 8))
       (and (= (file-length stream1) (file-length stream2))
-           (loop for byte1 = (read-byte stream1 nil nil)
-                 for byte2 = (read-byte stream2 nil nil)
-                 while (and byte1 byte2)
-                 always (= byte1 byte2))))))
+           (loop :for byte1 := (read-byte stream1 nil nil)
+                 :for byte2 := (read-byte stream2 nil nil)
+                 :while (and byte1 byte2)
+                 :always (= byte1 byte2))))))
 
 ;;; Copies the contents of the file denoted by the pathname PATH-IN to
 ;;; the file denoted by the pathname PATH-OUT using flexi streams -
@@ -150,8 +149,8 @@
                                 :if-does-not-exist :create
                                 :if-exists :supersede
                                 :external-format external-format-out)
-      (loop for line = (read-line in nil nil)
-            while line do (write-line line out)))))
+      (loop :for line := (read-line in nil nil)
+            :while line :do (write-line line out)))))
 
 (defun ef-name (ef)
   (format nil "~A ~A"
@@ -185,9 +184,9 @@
             (return-from compare-files nil)))))))
 
 (deftest big-stream-comparision-test
-    (let ((args-list (loop for (file-name symbols) in *test-files*
-                           nconc (create-test-combinations file-name symbols))))
-      (loop for args in args-list
-            unless (apply #'compare-files args)
-            collect args))
+    (let ((args-list (loop :for (file-name symbols) :in *test-files*
+                           :nconc (create-test-combinations file-name symbols))))
+      (loop :for args :in args-list
+            :unless (apply #'compare-files args)
+            :collect args))
   nil)
