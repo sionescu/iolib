@@ -134,8 +134,7 @@
 behaviour, defaults to *IPV6*."
   (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration")
   (let ((address (if (stringp host)
-                     (ignore-some-conditions (parse-error)
-                       (ensure-address host))
+                     (ignore-parse-errors (ensure-address host))
                      (ensure-address host))))
     (update-monitor *resolv.conf-monitor*)
     (update-monitor *hosts-monitor*)
