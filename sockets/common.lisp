@@ -72,7 +72,17 @@
     ;; setting the last two bytes
     (setf (aref ipv6addr 7) (+ (ash (aref addr 2) 8)
                                (aref addr 3)))
-    ipv6addr))
+    (values ipv6addr)))
+
+(defun map-ipv6-vector-to-ipv4 (addr)
+  (declare (type ipv6-array addr))
+  (let ((ipv4addr (make-array 4 :element-type 'ub8
+                              :initial-element 0)))
+    (setf (aref ipv4addr 0) (ldb (byte 8 8) (aref addr 6)))
+    (setf (aref ipv4addr 1) (ldb (byte 8 0) (aref addr 6)))
+    (setf (aref ipv4addr 2) (ldb (byte 8 8) (aref addr 7)))
+    (setf (aref ipv4addr 3) (ldb (byte 8 0) (aref addr 7)))
+    (values ipv4addr)))
 
 ;;; From CLOCC's PORT library.
 (defun vector-to-integer (vector)

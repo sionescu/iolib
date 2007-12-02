@@ -83,6 +83,8 @@
    #:vector-to-colon-separated
    #:vector-to-dotted
    #:vector-to-integer
+   #:map-ipv4-address-to-ipv6
+   #:map-ipv6-address-to-ipv4
 
    ;; Address Classes
    #:address
