@@ -92,8 +92,9 @@
          (event-dispatch ,base :one-shot t)))))
 
 ;;; FIXME: doesn't work with SELECT.
+;;;        where ? it works here, on Linux. SIONESCU 2007.12.02
 (deftest event-base-with-sockets
-    (with-event-base (base :mux 'kqueue-multiplexer)
+    (with-event-base (base)
       (with-socket (passive :family :ipv4 :connect :passive
                             :local-host +ipv4-unspecified+)
         (with-socket (active :family :ipv4 :remote-port (local-port passive)
