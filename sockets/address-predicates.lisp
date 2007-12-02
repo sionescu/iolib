@@ -127,8 +127,8 @@ address object, NIL is returned.")
 (defun ipv6-ipv4-mapped-p (address)
   "Returns T if ADDRESS is an IPv6 address representing an IPv4
 mapped address."
-  (check-type address ipv6-address)
-  (ipv4-on-ipv6-mapped-vector-p (address-name address)))
+  (and (ipv6-address-p address)
+       (ipv4-on-ipv6-mapped-vector-p (address-name address))))
 
 (defun ipv6-interface-local-multicast-p (address)
   "Returns T if ADDRESS is an interface-local IPv6 address."
