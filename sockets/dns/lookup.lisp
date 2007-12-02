@@ -24,6 +24,9 @@
 
 (in-package :net.sockets)
 
+(define-constant +max-ipv4-value+ (1- (expt 2 32))
+  :documentation "Integer denoting 255.255.255.255")
+
 ;;;; High-level Interface
 
 ;;; TODO: caching
