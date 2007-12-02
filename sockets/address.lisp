@@ -164,47 +164,45 @@ ADDRESS-NAME reader."))
            (return nil)))
        (= (aref vector 5) #xffff)))
 
+(defun princ-ipv4-on-ipv6-mapped-address (vector s)
+  (princ "::ffff:" s)
+  (let ((*print-base* 10) (*print-pretty* nil))
+    (princ (ldb (byte 8 8) (aref vector 6)) s) (princ #\. s)
+    (princ (ldb (byte 8 0) (aref vector 6)) s) (princ #\. s)
+    (princ (ldb (byte 8 8) (aref vector 7)) s) (princ #\. s)
+    (princ (ldb (byte 8 0) (aref vector 7)) s)))
+
 (defun vector-to-colon-separated (vector &optional (case :downcase))
   "Convert an 8-element vector to a colon-separated IPv6
 address. CASE may be :DOWNCASE or :UPCASE."
   (coercef vector 'ipv6-array)
   (check-type case (member :upcase :downcase))
-  (labels ((find-zeros ()
-             (loop :for i :from 0 :upto 6
-                   :if (and (zerop (aref vector i))
-                            (zerop (aref vector (1+ i))))
-                   :do (return
-                         (values i (or (position-if #'plusp vector :start (1+ i))
-                                       8)))))
-           (princ-subvec (start end s)
+  (let ((s (make-string-output-stream)))
+    (flet ((find-zeros ()
+             (let ((start (position 0 vector :start 1 :end 7)))
+               (when start
+                 (values start
+                         (position-if #'plusp vector :start start :end 7)))))
+           (princ-subvec (start end)
              (loop :for i :from start :below end
-                   :do (princ #\: s) (princ (aref vector i) s))))
-    (let ((s (make-string-output-stream)))
+                   :do (princ (aref vector i) s) (princ #\: s))))
       (cond
         ((ipv4-on-ipv6-mapped-vector-p vector)
-         (princ "::ffff:" s)
-         (let ((*print-base* 10))
-           (princ (ldb (byte 8 8) (aref vector 6)) s) (princ #\. s)
-           (princ (ldb (byte 8 0) (aref vector 6)) s) (princ #\. s)
-           (princ (ldb (byte 8 8) (aref vector 7)) s) (princ #\. s)
-           (princ (ldb (byte 8 0) (aref vector 7)) s)))
+         (princ-ipv4-on-ipv6-mapped-address vector s))
         (t
-         (let ((*print-base* 16))
+         (let ((*print-base* 16) (*print-pretty* nil))
+           (when (plusp (aref vector 0)) (princ (aref vector 0) s))
+           (princ #\: s)
            (multiple-value-bind (start end) (find-zeros)
-             (cond (start
-                    (when (plusp start)
-                      (princ (aref vector 0) s)
-                      (princ-subvec 1 start s))
-                    (princ #\: s)
-                    (if (< end 8)
-                        (princ-subvec end 8 s)
-                        (princ #\: s)))
-                   (t (princ (aref vector 0) s)
-                      (princ-subvec 1 8 s)))))))
-      (let ((str (get-output-stream-string s)))
-        (ecase case
-          (:downcase (nstring-downcase str))
-          (:upcase (nstring-upcase str)))))))
+             (cond (start (princ-subvec 1 start)
+                          (princ #\: s)
+                          (when end (princ-subvec end 7)))
+                   (t (princ-subvec 1 7))))
+           (when (plusp (aref vector 7)) (princ (aref vector 7) s))))))
+    (let ((str (get-output-stream-string s)))
+      (ecase case
+        (:downcase (nstring-downcase str))
+        (:upcase (nstring-upcase str))))))
 
 (defmacro ignore-parse-errors (&body body)
   ;; return first value only
