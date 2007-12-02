@@ -379,7 +379,7 @@
   (defmacro define-socket-flag (place name value platform)
     (let ((val (cond ((or (not platform)
                           (featurep platform)) value)
-                     ((not (featurep platform) 0)))))
+                     ((not (featurep platform)) 0))))
       `(push (cons ,name ,val) ,place))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -506,12 +506,12 @@
                       buffer socket start end flags))))
 
 (defmethod socket-receive ((buffer array) (socket active-socket)
-                           &rest args &key (start 0) end flags &allow-other-keys)
+                           &rest args &key (start 0) end &allow-other-keys)
   (%socket-receive buffer socket start end
                    (compute-flags *recvfrom-flags* args)))
 
 (define-compiler-macro socket-receive (&whole form buffer socket &rest args
-                                       &key (start 0) end flags &allow-other-keys)
+                                       &key (start 0) end &allow-other-keys)
   (let ((flags (compute-flags *recvfrom-flags* args)))
     (cond (flags `(%socket-receive ,buffer ,socket ,start ,end ,flags))
           (t form))))
