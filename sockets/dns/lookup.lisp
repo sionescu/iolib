@@ -54,6 +54,7 @@
                      (dns-rr-data (aref (dns-message-answer reply) 0)))))
       (assert (eq :ptr (dns-record-type (aref (dns-message-answer reply) 0))))
       (values (list address)
+              hostname
               (list (cons hostname address))))))
 
 (defun lookup-host-by-address (address ipv6)
@@ -69,7 +70,8 @@
           (t (dns-lookup-host-by-address address ipv6)))))
 
 (defun process-one-reply (reply query-type)
-  (let (truename addresses aliases)
+  (let ((truename (dns-record-name (aref (dns-message-question reply) 0)))
+        addresses aliases)
     (loop :for rr :across (dns-message-answer reply) :do
        (switch ((dns-record-type rr) :test #'eq)
          (:cname (setf truename (dns-rr-data rr)))
@@ -79,9 +81,7 @@
                        (push (cons name address) aliases)))
          (t (warn "Invalid RR type: ~S" (dns-record-type rr)))))
     (values (nreverse addresses)
-            (remove-trailing-dot
-             (or truename
-                 (dns-record-name (aref (dns-message-question reply) 0))))
+            (remove-trailing-dot truename)
             (nreverse aliases))))
 
 (defun dns-lookup-host-in-one-domain (host query-type)
@@ -133,8 +133,10 @@
   "Looks up a host by name or address.  IPV6 determines the IPv6
 behaviour, defaults to *IPV6*."
   (check-type ipv6 (member nil :ipv6 t) "valid IPv6 configuration")
-  (let ((address (ignore-some-conditions (parse-error)
-                   (ensure-address host))))
+  (let ((address (if (stringp host)
+                     (ignore-some-conditions (parse-error)
+                       (ensure-address host))
+                     (ensure-address host))))
     (update-monitor *resolv.conf-monitor*)
     (update-monitor *hosts-monitor*)
     (cond (address
