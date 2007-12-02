@@ -43,7 +43,7 @@
 ;;;
 ;;; Set these appropriately if you want to point the echo tests
 ;;; somewhere else.
-(defparameter *echo-address* #(127 0 0 1))
+(defparameter *echo-address* (ensure-address #(127 0 0 1)))
 (defparameter *echo-port* 7)
 
 ;;; Returns T if one of the expected conditions occured, otherwise returns
@@ -144,7 +144,7 @@
       (values (vector-to-colon-separated ip)
               (vector-to-colon-separated ip :downcase)
               (vector-to-colon-separated ip :upcase)))
-  "::ff:ff:ff:0:0" "::ff:ff:ff:0:0" "::FF:FF:FF:0:0")
+  "::ff:ff:ff:0:" "::ff:ff:ff:0:" "::FF:FF:FF:0:")
 
 (deftest vector-to-colon-separated.2
     (vector-to-colon-separated #(1 2 3 4 5 0 6 7))
@@ -225,14 +225,15 @@
 
 #-no-internet-available
 (deftest lookup-host.1
-    (let ((host (lookup-host "a.root-servers.net" :ipv6 nil)))
-      (values (address-equal-p (car (host-addresses host)) #(198 41 0 4))
-              (host-truename host)))
+    (multiple-value-bind (addresses truename)
+        (lookup-host "a.root-servers.net" :ipv6 nil)
+      (values (address-equal-p (car addresses) #(198 41 0 4))
+              truename))
   t "a.root-servers.net")
 
 #-no-internet-available
 (deftest lookup-host.2
-    (host-truename (lookup-host #(198 41 0 4)))
+    (nth-value 1 (lookup-host #(198 41 0 4)))
   "a.root-servers.net")
 
 ;;; These days lots of people seem to be using DNS servers that don't
@@ -243,24 +244,18 @@
       (lookup-host "foo.tninkpad.telent.net."))
   t)
 
-;;; RT: LOOKUP-HOST didn't seem to like :IPV6 NIL on Darwin.
 (deftest lookup-host.4
-    (typep (lookup-host #(127 0 0 1) :ipv6 nil) 'host)
-  t)
-
-(deftest lookup-host.5
-    (address-equal-p (car (host-addresses
-                           (lookup-host #(127 0 0 1) :ipv6 nil)))
+    (address-equal-p (car (lookup-host #(127 0 0 1) :ipv6 nil))
                      #(127 0 0 1))
   t)
 
-(deftest lookup-host.6
+(deftest lookup-host.5
     (with-expected-conditions (parse-error)
       (lookup-host #(127 0 0)))
   t)
 
-(deftest lookup-host.7
-    (with-expected-conditions (resolver-fail-error)
+(deftest lookup-host.6
+    (with-expected-conditions (resolver-no-name-error)
       (lookup-host #(127 0 0 1) :ipv6 :ipv6))
   t)
 
@@ -293,7 +288,7 @@
 ;;; looks up a reserved service port
 (deftest lookup-service.3
     ;; TODO: check for a more specific error.
-    (with-expected-conditions (resolver-error)
+    (with-expected-conditions (unknown-service)
       (lookup-service 1024))
   t)
 
@@ -440,7 +435,7 @@
                   :defaults
                   (asdf:system-definition-pathname
                    (asdf:find-system '#:iolib-tests))))))
-      (ignore-errors (delete-file file))
+      ;; (ignore-errors (delete-file file))
       (with-socket (p :family :local :connect :passive :local-filename file)
         (with-socket (a :family :local :remote-filename file)
           (format a "local socket test")
@@ -460,7 +455,7 @@
 #-no-internet-available
 (deftest simple-http-client
     (handler-case
-        (with-http-stream (s "ww.telent.net" 80 "HEAD /")
+        (with-http-stream (s "www.google.com" 80 "HEAD /")
           (let ((data (make-string 200)))
             (setf data (subseq data 0 (read-buf-nonblock data s)))
             ;; (princ data)
@@ -474,7 +469,7 @@
     ;; kernel: we set a size of x and then getsockopt() returns 2x.
     ;; This is why we compare with >= instead of =
     (handler-case
-        (with-http-stream (s "ww.telent.net" 80 "HEAD/")
+        (with-http-stream (s "www.google.com" 80 "HEAD/")
           (setf (socket-option s :receive-buffer) 1975)
           (let ((data (make-string 200)))
             (setf data (subseq data 0 (read-buf-nonblock data s)))
