@@ -35,11 +35,10 @@
    ;; Conditions
    #:posix-error
    #:possible-bug
-   #:resolver-again-error
    #:resolver-error
+   #:resolver-again-error
    #:resolver-fail-error
    #:resolver-no-name-error
-   #:resolver-no-service-error
    #:resolver-unknown-error
    #:socket-address-in-use-error
    #:socket-address-not-available-error
@@ -63,6 +62,7 @@
    #:system-error
    #:unknown-interface
    #:unknown-protocol
+   #:unknown-service
    #:unknown-socket-error
 
    ;; Condition Accessors
