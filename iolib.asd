@@ -31,3 +31,9 @@
                ;; comment out until it's brought back up to date
                ;; :net.dns-client
                ))
+
+(defmethod perform ((o test-op) (c (eql (find-system :iolib))))
+  (operate 'test-op :iolib-tests))
+
+(defmethod operation-done-p ((o test-op) (c (eql (find-system :iolib))))
+  nil)

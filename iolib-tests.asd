@@ -36,3 +36,10 @@
    (:file "streams" :depends-on ("pkgdcl"))
    (:file "sockets" :depends-on ("pkgdcl"))
    (:file "events" :depends-on ("pkgdcl"))))
+
+(defmethod perform ((o test-op) (c (eql (find-system :iolib-tests))))
+  (operate 'load-op :iolib-tests)
+  (funcall (intern (symbol-name '#:do-tests) '#:rt)))
+
+(defmethod operation-done-p ((o test-op) (c (eql (find-system :iolib-tests))))
+  nil)
