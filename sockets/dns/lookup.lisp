@@ -47,7 +47,7 @@
   (let ((condition (reply-error-condition reply query-type)))
     (and condition (error condition :data host))))
 
-(defun dns-lookup-host-by-address (address ipv6)
+(defun dns-lookup-host-by-address (address)
   (let ((reply (dns-query address :type :ptr)))
     (check-reply-for-errors reply address :ptr)
     (let ((hostname (remove-trailing-dot
@@ -67,7 +67,7 @@
   (multiple-value-bind (addresses truename aliases)
       (search-host-by-address address)
     (cond (addresses (values addresses truename aliases))
-          (t (dns-lookup-host-by-address address ipv6)))))
+          (t (dns-lookup-host-by-address address)))))
 
 (defun process-one-reply (reply query-type)
   (let ((truename (dns-record-name (aref (dns-message-question reply) 0)))
@@ -94,6 +94,7 @@
       (process-one-reply 4-reply :a)
     (multiple-value-bind (6-addresses 6-truename 6-aliases)
         (process-one-reply 6-reply :aaaa)
+      (declare (ignore 6-truename))
       (values (nconc 4-addresses 6-addresses)
               4-truename
               (nconc 4-aliases 6-aliases)))))
