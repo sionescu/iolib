@@ -272,18 +272,12 @@
 ;;;; Service Lookup
 
 (deftest lookup-service.1
-    (let ((ssh (lookup-service "ssh")))
-      (values (service-name ssh)
-              (service-port ssh)
-              (service-protocol ssh)))
-  "ssh" 22 :tcp)
+    (lookup-service "ssh")
+  22 "ssh" :tcp)
 
 (deftest lookup-service.2
-    (let ((ssh (lookup-service 22 :udp)))
-      (values (service-name ssh)
-              (service-port ssh)
-              (service-protocol ssh)))
-  "ssh" 22 :udp)
+    (lookup-service 22 :udp)
+  22 "ssh" :udp)
 
 ;;; looks up a reserved service port
 (deftest lookup-service.3
@@ -295,16 +289,16 @@
 ;;;; Protocol Lookup
 
 (deftest lookup-protocol.1
-    (let ((p (lookup-protocol "tcp")))
-      (values (protocol-name p)
-              (protocol-number p)))
-  "tcp" 6)
+    (multiple-value-bind (number name)
+        (lookup-protocol "tcp")
+      (values number name))
+  6 "tcp")
 
 (deftest lookup-protocol.2
-    (let ((p (lookup-protocol "udp")))
-      (values (protocol-name p)
-              (protocol-number p)))
-  "udp" 17)
+    (multiple-value-bind (number name)
+        (lookup-protocol "udp")
+      (values number name))
+  17 "udp")
 
 (deftest lookup-protocol.3
     (with-expected-conditions (unknown-protocol)
@@ -312,7 +306,7 @@
   t)
 
 (deftest lookup-protocol.4
-    (protocol-name (lookup-protocol 6))
+    (nth-value 1 (lookup-protocol 6))
   "tcp")
 
 ;;;; Network Interfaces
