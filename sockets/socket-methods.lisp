@@ -53,9 +53,7 @@
         (sp (cond
               ((integerp protocol) protocol)
               ((eql protocol :default) 0)
-              ((keywordp protocol)
-               (protocol-number
-                (lookup-protocol (string-downcase (string protocol))))))))
+              (t (lookup-protocol protocol)))))
     (values sf st sp)))
 
 (defmethod socket-fd ((socket socket))
