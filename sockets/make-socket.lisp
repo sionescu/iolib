@@ -185,3 +185,9 @@ remaining address list as the second return value."
 MAKE-SOCKET and BODY is executed as implicit PROGN.  The socket
 is automatically closed upon exit."
   `(with-open-stream (,var (make-socket ,@args)) ,@body))
+
+(defmacro with-accept-connection ((var passive-socket &rest args) &body body)
+  "VAR is bound to a socket created by passing PASSIVE-SOCKET and ARGS to
+ACCEPT-CONNECTION and BODY is executed as implicit PROGN.  The socket
+is automatically closed upon exit."
+  `(with-open-stream (,var (accept-connection ,@args)) ,@body))
