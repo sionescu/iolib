@@ -168,4 +168,7 @@ of :TCP, :UDP or :ANY."
   (let ((serv (etypecase service
                 (unsigned-byte (lookup-service-by-number service protocol))
                 (string        (lookup-service-by-name service protocol)))))
-    (or serv (error 'unknown-service :name service))))
+    (if serv (values (service-port serv)
+                     (service-name serv)
+                     (service-protocol serv))
+        (error 'unknown-service :name service))))
