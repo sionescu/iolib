@@ -180,7 +180,7 @@ remaining address list as the second return value."
       ((and (eq address-family :local) (eq type :datagram))
        (%make-local-datagram-socket args external-format)))))
 
-(defmacro with-socket ((var &rest args) &body body)
+(defmacro with-open-socket ((var &rest args) &body body)
   "VAR is bound to a socket created by passing ARGS to
 MAKE-SOCKET and BODY is executed as implicit PROGN.  The socket
 is automatically closed upon exit."

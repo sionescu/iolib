@@ -335,7 +335,7 @@
   t)
 
 (deftest make-socket.2
-    (with-socket (s :family :ipv4)
+    (with-open-socket (s :family :ipv4)
       (values (socket-connected-p s)
               (socket-open-p s)
               (> (socket-fd s) 1)
@@ -344,7 +344,7 @@
   nil t t :ipv4 :default) ; why isn't it :TCP?
 
 (deftest make-socket.3
-    (with-socket (s :family :ipv4)
+    (with-open-socket (s :family :ipv4)
       (typep s 'socket))
   t)
 
@@ -353,16 +353,16 @@
 ;;; know. 1974 has no special significance, unless you're the same age
 ;;; as me.
 (deftest inet.socket-bind.1
-    (with-socket (s :family :ipv4 :local-host #(127 0 0 1) :local-port 1974)
+    (with-open-socket (s :family :ipv4 :local-host #(127 0 0 1) :local-port 1974)
       (handler-case
-          (with-socket (s :family :ipv4 :local-host #(127 0 0 1)
+          (with-open-socket (s :family :ipv4 :local-host #(127 0 0 1)
                           :local-port 1974)
             nil)
         (socket-address-in-use-error () t)))
   t)
 
 (deftest sockopt.1
-    (with-socket (s :family :ipv4)
+    (with-open-socket (s :family :ipv4)
       (setf (socket-option s :reuse-address) t)
       (socket-option s :reuse-address))
   t)
@@ -378,7 +378,7 @@
       (setf (elt buffer i) c))))
 
 (deftest simple-tcp-client
-    (with-socket (s :remote-host *echo-address* :remote-port *echo-port*
+    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                     :family :ipv4)
       (let ((data (make-string 200)))
         (format s "here is some text")
@@ -389,7 +389,7 @@
   t)
 
 (deftest sockaddr-return-type
-    (with-socket (s :remote-host *echo-address* :remote-port *echo-port*
+    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                     :family :ipv4)
       (and (ipv4-address-p (remote-address s))
            (numberp (remote-port s))))
@@ -402,7 +402,7 @@
 ;;; my machines, on both Darwin and Linux/x86-64.  Works with
 ;;; echo-server.c though --luis
 (deftest simple-udp-client.1
-    (with-socket (s :remote-host *echo-address* :remote-port *echo-port*
+    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                     :type :datagram :family :ipv4)
       (let ((data (make-array '(200) :element-type '(unsigned-byte 8))))
         (socket-send "here is some text" s)
@@ -412,7 +412,7 @@
   t)
 
 (deftest simple-udp-client.2
-    (with-socket (s :type :datagram :family :ipv4)
+    (with-open-socket (s :type :datagram :family :ipv4)
       (let ((data (make-array 100 :element-type '(unsigned-byte 8))))
         (socket-send "here is some more text" s
                      :remote-address *echo-address*
@@ -430,8 +430,8 @@
                   (asdf:system-definition-pathname
                    (asdf:find-system '#:iolib-tests))))))
       ;; (ignore-errors (delete-file file))
-      (with-socket (p :family :local :connect :passive :local-filename file)
-        (with-socket (a :family :local :remote-filename file)
+      (with-open-socket (p :family :local :connect :passive :local-filename file)
+        (with-open-socket (a :family :local :remote-filename file)
           (format a "local socket test")
           (finish-output a))
         (let ((s (accept-connection p)))
@@ -441,7 +441,7 @@
   "local socket test")
 
 (defmacro with-http-stream ((var host port request) &body body)
-  `(with-socket (,var :family :ipv4 :remote-host ,host :remote-port ,port)
+  `(with-open-socket (,var :family :ipv4 :remote-host ,host :remote-port ,port)
      (format ,var ,(concatenate 'string request " HTTP/1.0~%~%"))
      (finish-output ,var)
      ,@body))
@@ -473,18 +473,18 @@
   t)
 
 (deftest socket-open-p.1
-    (with-socket (s)
+    (with-open-socket (s)
       (socket-open-p s))
   t)
 
 (deftest socket-open-p.2
-    (with-socket (s :remote-host *echo-address* :remote-port *echo-port*
+    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                     :family :ipv4)
       (socket-open-p s))
   t)
 
 (deftest socket-open-p.3
-    (with-socket (s)
+    (with-open-socket (s)
       (close s)
       (socket-open-p s))
   nil)
@@ -501,7 +501,7 @@
 ;;; long (>500 byte) packets have the full length shown (doesn't work)
 #-(and)
 (defun udp-server (port)
-  (with-socket (s :type :datagram :local-port port)
+  (with-open-socket (s :type :datagram :local-port port)
     (loop
      (multiple-value-bind (buf len address port)
          (socket-receive s nil 500)

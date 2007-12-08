@@ -93,12 +93,13 @@
 
 ;;; FIXME: doesn't work with SELECT.
 ;;;        where ? it works here, on Linux. SIONESCU 2007.12.02
-(deftest event-base-with-sockets
+(deftest event-base-with-open-sockets
     (with-event-base (base)
-      (with-socket (passive :family :ipv4 :connect :passive
-                            :local-host +ipv4-unspecified+)
-        (with-socket (active :family :ipv4 :remote-port (local-port passive)
-                             :remote-host #(127 0 0 1))
+      (with-open-socket (passive :family :ipv4 :connect :passive
+                                 :local-host +ipv4-unspecified+)
+        (with-open-socket (active :family :ipv4
+                                  :remote-port (local-port passive)
+                                  :remote-host #(127 0 0 1))
           (add-timeout base #'timeout-cb 5)
           (let (peer)
             (waiting-for-event (base (fd-of passive) :read)

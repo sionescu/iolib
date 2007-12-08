@@ -214,7 +214,7 @@
    #:socket-receive
    #:socket-send
    #:socket-type
-   #:with-socket
+   #:with-open-socket
 
    ;; Specials
    #:*default-backlog-size*
