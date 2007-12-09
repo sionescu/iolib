@@ -190,4 +190,4 @@ is automatically closed upon exit."
   "VAR is bound to a socket created by passing PASSIVE-SOCKET and ARGS to
 ACCEPT-CONNECTION and BODY is executed as implicit PROGN.  The socket
 is automatically closed upon exit."
-  `(with-open-stream (,var (accept-connection ,@args)) ,@body))
+  `(with-open-stream (,var (accept-connection ,passive-socket ,@args)) ,@body))
