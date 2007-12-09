@@ -122,13 +122,12 @@
      :finally (return offset)))
 
 (defmacro check-bounds (sequence start end)
-  (alexandria:once-only (start end)
-    (alexandria:with-unique-names (length)
-      `(let ((,length (length ,sequence)))
-         (unless ,end
-           (setq ,end ,length))
-         (unless (<= ,start ,end ,length)
-           (error "Wrong sequence bounds. start: ~S end: ~S" ,start ,end))))))
+  (alexandria:with-unique-names (length)
+    `(let ((,length (length ,sequence)))
+       (unless ,end
+         (setq ,end ,length))
+       (unless (<= ,start ,end ,length)
+         (error "Wrong sequence bounds. start: ~S end: ~S" ,start ,end)))))
 
 (defmethod stream-read-sequence
     ((stream dual-channel-gray-stream) seq start end &key)
@@ -478,17 +477,17 @@
     (let* ((octets nil)
            (ef (external-format-of stream))
            (line-terminator (babel:external-format-eol-style ef)))
-      (loop for off1 = start then (1+ off2)
-            for nl-off = (position #\Newline string :start off1)
-            for off2 = (or nl-off end)
-            when nl-off do (%write-line-terminator stream line-terminator)
-            when (> off2 off1) do
-            ;; FIXME: should probably convert directly to a foreign buffer?
-            (setf octets (babel:string-to-octets
-                          string :start off1 :end off2
-                          :encoding (babel:external-format-encoding ef)))
-            (%write-simple-array-ub8 stream octets 0 (length octets))
-            while (< off2 end))))
+      (loop :for off1 := start :then (1+ off2)
+            :for nl-off := (position #\Newline string :start off1)
+            :for off2 := (or nl-off end)
+         :when nl-off :do (%write-line-terminator stream line-terminator)
+         :when (> off2 off1) :do
+         ;; FIXME: should probably convert directly to a foreign buffer?
+         (setf octets (babel:string-to-octets
+                       string :start off1 :end off2
+                       :encoding (babel:external-format-encoding ef)))
+         (%write-simple-array-ub8 stream octets 0 (length octets))
+         :while (< off2 end))))
   (values string))
 
 ;;;; Binary Input
