@@ -31,6 +31,10 @@
    (lock      :initarg :lock      :accessor lock-of))
   (:default-initargs :timestamp 0))
 
+(defmethod print-object ((monitor file-monitor) stream)
+  (print-unreadable-object (monitor stream :type nil :identity nil)
+    (format stream "File monitor for ~S" (file-of monitor))))
+
 (defun monitor-oldp (monitor)
   (declare (type file-monitor monitor))
   (let ((mtime (file-write-date (file-of monitor))))
