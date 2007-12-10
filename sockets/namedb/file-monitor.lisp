@@ -43,11 +43,10 @@
 
 (defgeneric update-monitor (monitor)
   (:method ((monitor file-monitor))
-    (let ((lock (lock-of monitor)))
-      (bt:with-lock-held (lock)
-        (multiple-value-bind (oldp mtime) (monitor-oldp monitor)
-          (when oldp
-            (funcall (update-fn-of monitor) (file-of monitor))
-            (multiple-value-prog1
-                (values (timestamp-of monitor) mtime)
-              (setf (timestamp-of monitor) mtime))))))))
+    (bt:with-lock-held ((lock-of monitor))
+      (multiple-value-bind (oldp mtime) (monitor-oldp monitor)
+        (when oldp
+          (funcall (update-fn-of monitor) (file-of monitor))
+          (multiple-value-prog1
+              (values (timestamp-of monitor) mtime)
+            (setf (timestamp-of monitor) mtime)))))))
