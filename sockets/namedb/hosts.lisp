@@ -65,6 +65,7 @@
               truename aliases addresses))))
 
 (defvar *hosts-cache* ())
+(defvar *hosts-cache-lock* (bt:make-lock "/etc/hosts cache lock"))
 
 (defun map-host-ipv4-addresses-to-ipv6 (hostobj)
   (declare (type host hostobj))
@@ -89,9 +90,6 @@
         (ignore-errors (parse-one-line tokens)))
       (nreverse hosts))))
 
-(defun update-hosts-list (file)
-  (setf *hosts-cache* (parse-/etc/hosts file)))
-
 (defun search-host-by-name (name ipv6)
   (labels ((compatible-address-p (address)
              (ecase ipv6
@@ -103,7 +101,8 @@
                       (member name (host-aliases host)
                               :test #'string=))
                   (compatible-address-p (car (host-addresses host))))))
-    (let ((hosts (remove-if-not #'compatible-host-p *hosts-cache*))
+    (let ((hosts (bt:with-lock-held (*hosts-cache-lock*)
+                   (remove-if-not #'compatible-host-p *hosts-cache*)))
           addresses aliases)
       (when hosts
         (mapc #'(lambda (host)
@@ -119,10 +118,11 @@
 
 (defun search-host-by-address (address)
   (let* ((address (ensure-address address))
-         (host (find-if #'(lambda (host)
-                            (address= (car (host-addresses host))
-                                      address))
-                        *hosts-cache*)))
+         (host (bt:with-lock-held (*hosts-cache-lock*)
+                 (find-if #'(lambda (host)
+                              (address= (car (host-addresses host))
+                                        address))
+                          *hosts-cache*))))
     (when host
       (values (list address)
               (host-truename host)
@@ -130,7 +130,11 @@
                      (mapcar #'(lambda (alias) (cons alias address))
                              (host-aliases host)))))))
 
+(defun update-hosts-list (file)
+  (setf *hosts-cache* (parse-/etc/hosts file)))
+
 (defvar *hosts-monitor*
   (make-instance 'file-monitor
                  :file *hosts-file*
-                 :update-fn 'update-hosts-list))
+                 :update-fn 'update-hosts-list
+                 :lock *hosts-cache-lock*))

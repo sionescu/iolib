@@ -35,6 +35,8 @@
   "A domain name to be appended to the name to be searched when
 the latter does not contain dots.")
 
+(defvar *resolvconf-lock* (bt:make-lock "/etc/resolv.conf lock"))
+
 ;;; Only parses NAMESERVER, DOMAIN and SEARCH directives, for now.
 (defun parse-/etc/resolv.conf (file)
   (let (nameservers domain search-domain)
@@ -57,10 +59,10 @@ the latter does not contain dots.")
     (setf *dns-nameservers* (or ns +ipv4-loopback+)
           ;; everything after the first dot
           *dns-domain* (cdr (split-sequence #\. domain :count 2))
-          *dns-search-domain* search)
-    (values *dns-nameservers* *dns-domain* *dns-search-domain*)))
+          *dns-search-domain* search)))
 
 (defvar *resolv.conf-monitor*
   (make-instance 'file-monitor
                  :file *resolv.conf-file*
-                 :update-fn 'update-dns-parameters))
+                 :update-fn 'update-dns-parameters
+                 :lock *resolvconf-lock*))

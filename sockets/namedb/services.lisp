@@ -101,6 +101,7 @@
 (defvar *tcp-services-cache-by-number* (make-hash-table :test #'eql))
 (defvar *udp-services-cache-by-name*   (make-hash-table :test #'equal))
 (defvar *udp-services-cache-by-number* (make-hash-table :test #'eql))
+(defvar *services-cache-lock* (bt:make-lock "/etc/services cache lock"))
 
 (defun find-service-name-in-cache (thing protocol)
   (ecase protocol
@@ -135,14 +136,16 @@
             (values service))))))
 
 (defun lookup-service-by-name (thing protocol)
-  (find-service thing protocol
-                #'find-service-name-in-cache
-                #'lookup-service-on-disk-by-name))
+  (bt:with-lock-held (*services-cache-lock*)
+    (find-service thing protocol
+                  #'find-service-name-in-cache
+                  #'lookup-service-on-disk-by-name)))
 
 (defun lookup-service-by-number (thing protocol)
-  (find-service thing protocol
-                #'find-service-number-in-cache
-                #'lookup-service-on-disk-by-number))
+  (bt:with-lock-held (*services-cache-lock*)
+    (find-service thing protocol
+                  #'find-service-number-in-cache
+                  #'lookup-service-on-disk-by-number)))
 
 (defun purge-services-cache (&optional file)
   (declare (ignore file))
@@ -154,7 +157,8 @@
 (defvar *services-monitor*
   (make-instance 'file-monitor
                  :file *services-file*
-                 :update-fn 'purge-services-cache))
+                 :update-fn 'purge-services-cache
+                 :lock *services-cache-lock*))
 
 (defun lookup-service (service &optional (protocol :tcp))
   "Lookup a service by port or name.  PROTOCOL should be one

@@ -80,6 +80,7 @@
 
 (defvar *protocols-cache-by-name*   (make-hash-table :test #'equal))
 (defvar *protocols-cache-by-number* (make-hash-table :test #'eql))
+(defvar *protocols-cache-lock* (bt:make-lock "/etc/protocols cache lock"))
 
 (defun find-protocol (thing cache-fn disk-fn)
   (or (funcall cache-fn thing)
@@ -92,14 +93,16 @@
           (values protocol)))))
 
 (defun lookup-protocol-by-name (proto)
-  (find-protocol proto
-                 #'(lambda (p) (gethash p *protocols-cache-by-name*))
-                 #'lookup-protocol-on-disk-by-name))
+  (bt:with-lock-held (*protocols-cache-lock*)
+    (find-protocol proto
+                   #'(lambda (p) (gethash p *protocols-cache-by-name*))
+                   #'lookup-protocol-on-disk-by-name)))
 
 (defun lookup-protocol-by-number (proto)
-  (find-protocol proto
-                 #'(lambda (p) (gethash p *protocols-cache-by-number*))
-                 #'lookup-protocol-on-disk-by-number))
+  (bt:with-lock-held (*protocols-cache-lock*)
+    (find-protocol proto
+                   #'(lambda (p) (gethash p *protocols-cache-by-number*))
+                   #'lookup-protocol-on-disk-by-number)))
 
 (defun purge-protocols-cache (&optional file)
   (declare (ignore file))
@@ -109,7 +112,8 @@
 (defvar *protocols-monitor*
   (make-instance 'file-monitor
                  :file *protocols-file*
-                 :update-fn 'purge-protocols-cache))
+                 :update-fn 'purge-protocols-cache
+                 :lock *protocols-cache-lock*))
 
 (defun lookup-protocol (protocol)
   "Lookup a protocol by name or number.  Signals an

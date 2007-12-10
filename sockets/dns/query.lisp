@@ -209,11 +209,12 @@
 
 ;;;; DNS-QUERY
 
-(defun dns-query (name &key (type :a) (nameserver *dns-nameservers*)
-                  (repeat *dns-repeat*) (timeout *dns-timeout*)
-                  (decode nil) (search nil))
+(defun dns-query (name &key (type :a) nameserver decode search
+                  (repeat *dns-repeat*) (timeout *dns-timeout*))
   ;; TODO: implement search
   (declare (ignore search))
+  (bt:with-lock-held (*resolvconf-lock*)
+    (unless nameserver (setf nameserver *dns-nameservers*)))
   (when (eq type :ptr)
     (setf name (dns-ptr-name name)))
   (let* ((query (prepare-query name type))

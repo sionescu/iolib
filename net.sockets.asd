@@ -38,6 +38,7 @@
   :licence "LLGPL-2.1"
   :depends-on (:osicat
                :babel
+               :bordeaux-threads
                :io.streams
                :alexandria
                :split-sequence
