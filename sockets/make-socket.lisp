@@ -49,7 +49,6 @@ remaining address list as the second return value."
       (let ((addresses (lookup-host address :ipv6 ipv6)))
         (values (car addresses) (cdr addresses)))))
 
-(declaim (inline %make-internet-stream-socket))
 (defun %make-internet-stream-socket (args connect ef)
   (destructuring-bind (&key family local-host (local-port 0) remote-host (remote-port 0)
                             (backlog *default-backlog-size*) reuse-address keepalive nodelay)
@@ -76,7 +75,6 @@ remaining address list as the second return value."
                          :reuse-address reuse-address)
            (socket-listen socket :backlog backlog)))))))
 
-(declaim (inline %make-local-stream-socket))
 (defun %make-local-stream-socket (args connect ef)
   (destructuring-bind (&key family local-filename remote-filename (backlog *default-backlog-size*))
       args
@@ -95,7 +93,6 @@ remaining address list as the second return value."
          (bind-address socket (make-address local-filename))
          (socket-listen socket :backlog backlog))))))
 
-(declaim (inline %make-internet-datagram-socket))
 (defun %make-internet-datagram-socket (args ef)
   (destructuring-bind (&key family local-host (local-port 0) remote-host
                             (remote-port 0) reuse-address broadcast)
@@ -111,7 +108,6 @@ remaining address list as the second return value."
         (connect socket (convert-or-lookup-inet-address remote-host)
                  :port remote-port)))))
 
-(declaim (inline %make-local-datagram-socket))
 (defun %make-local-datagram-socket (args ef)
   (destructuring-bind (&key family local-filename remote-filename) args
     (%with-close-on-error (socket (create-socket :family family :type :datagram
