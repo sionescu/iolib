@@ -192,7 +192,6 @@
    #:accept-connection
    #:bind-address
    #:connect
-   ;; #:create-socket
    #:disconnect
    #:get-socket-option
    #:local-address

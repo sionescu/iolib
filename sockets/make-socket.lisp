@@ -23,15 +23,6 @@
 
 (in-package :net.sockets)
 
-;;; FIXME: protocol is sort of misinterpreted.
-;;;
-;;; CREATE-SOCKET is a a bit of a confusing name as it is too similar
-;;; to MAKE-SOCKET.  I thought about different names and considered
-;;; the option of moving this "factory" code could be moved into
-;;; MAKE-INSTANCE methods.  However, AFAICT, MAKE-SOCKET can achieve
-;;; the exact same effect as CREATE-SOCKET when some of the parameters
-;;; are ommitted so I have opted to remove CREATE-SOCKET from the
-;;; export list. --luis
 (defun create-socket (&key (family :internet) (type :stream) (connect :active)
                       (protocol :default) (ipv6 *ipv6*)
                       (external-format :default))
