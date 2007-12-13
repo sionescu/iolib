@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
 ;;;
-;;; package.lisp --- Package definition.
+;;; pkgdcl.lisp --- Package definition.
 ;;;
 ;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;

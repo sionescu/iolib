@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
 ;;;
-;;; bsd-sockets.asd --- ASDF system definition.
+;;; net.sockets.asd --- ASDF system definition.
 ;;;
 ;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
