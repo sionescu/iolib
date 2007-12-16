@@ -106,7 +106,7 @@
   (loop :for eol-style :in '(:lf :cr :crlf) :collect
         (cons (format nil "~A_~(~A~)_~(~A~).txt"
                       file-name symbol eol-style)
-              (babel:make-external-format symbol eol-style))))
+              (babel:make-external-format symbol :eol-style eol-style))))
 
 ;;; For a name suffix FILE-NAME and a list of symbols SYMBOLS denoting
 ;;; different encodings of the corresponding file returns a list of
