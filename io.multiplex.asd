@@ -38,7 +38,7 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
-  :depends-on (:osicat :alexandria)
+  :depends-on (:osicat :alexandria :bordeaux-threads)
   :pathname (merge-pathnames
              (make-pathname :directory '(:relative "io-multiplex"))
              *load-truename*)
@@ -48,7 +48,10 @@
    (:file "time")
    (:file "queue")
    (:file "utils")
-   (:file "common")
+   (:file "multiplexer")
+   (:file "fd-entry")
+   (:file "event-loop")
+   (:file "fd-wait")
    (:file "select")
    #+linux (:file "epoll")
    #+bsd (:file "kqueue")
