@@ -133,29 +133,25 @@
   (:documentation
    "Signaled when an error occurs while trying to resolve an address."))
 
-(defmacro define-resolver-error (name code identifier format-string
-                                 &optional documentation)
+(defmacro define-resolver-error (name format-string &optional documentation)
   `(define-condition ,name (resolver-error) ()
      (:report (lambda (condition stream)
                 (format stream ,format-string (resolver-error-data condition))))
      (:documentation ,documentation)))
 
-(define-resolver-error resolver-again-error (resolver-error-code :eai-again)
-  :resolver-again
+(define-resolver-error resolver-again-error
   "Temporary failure occurred while resolving: ~S"
   "Condition signaled when a temporary failure occurred.")
 
-(define-resolver-error resolver-fail-error (resolver-error-code :eai-fail)
-  :resolver-fail
+(define-resolver-error resolver-fail-error
   "Non recoverable error occurred while resolving: ~S"
   "Condition signaled when a non-recoverable error occurred.")
 
-(define-resolver-error resolver-no-name-error (resolver-error-code :eai-noname)
-  :resolver-no-name
+(define-resolver-error resolver-no-name-error
   "Host or service not found: ~S"
   "Condition signaled when a host or service was not found.")
 
-(define-resolver-error resolver-unknown-error 0 :resolver-unknown
+(define-resolver-error resolver-unknown-error
   "Unknown error while resolving: ~S"
   "Condition signaled when an unknown error is signaled while resolving
 an address.")
