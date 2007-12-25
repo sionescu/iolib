@@ -88,6 +88,9 @@ within the extent of BODY.  Closes VAR."
 (defgeneric remove-event (event-base event)
   (:documentation ""))
 
+(defgeneric remove-fd (event-base fd)
+  (:documentation ""))
+
 (defgeneric event-dispatch (event-base &key one-shot timeout &allow-other-keys)
   (:documentation ""))
 
@@ -184,7 +187,6 @@ within the extent of BODY.  Closes VAR."
     (let* ((fd (fd-event-fd event))
            (fd-entry (fd-entry-of event-base fd)))
       (assert fd-entry)
-      (assert (eq event (fd-entry-event fd-entry (fd-event-type event))))
       (setf (fd-entry-event fd-entry (fd-event-type event)) nil)
       (let ((timer (fd-event-timer event)))
         (when timer (%remove-fd-timer event-base timer)))
@@ -216,6 +218,24 @@ within the extent of BODY.  Closes VAR."
 (defun remove-events (event-base event-list)
   (dolist (ev event-list)
     (remove-event event-base ev)))
+
+(defmethod remove-fd ((event-base event-base) fd)
+  (let ((entry (fd-entry-of event-base fd)))
+    (symbol-macrolet ((rev (fd-entry-read-event entry))
+                      (wev (fd-entry-write-event entry))
+                      (eev (fd-entry-error-event entry)))
+      (labels ((maybe-remove-timer (event)
+                 (when (and event (fd-event-timer event))
+                   (%remove-fd-timer event-base (fd-event-timer event))))
+               (maybe-remove-all-timers ()
+                 (maybe-remove-timer rev)
+                 (maybe-remove-timer wev)
+                 (maybe-remove-timer eev)))
+        (cond (entry
+               (maybe-remove-all-timers)
+               (unmonitor-fd (mux-of event-base) fd)
+               (remove-fd-entry event-base fd))
+              (t (warn "Trying to remove an unmonitored FD.")))))))
 
 (defvar *maximum-event-loop-timeout* 1)
 

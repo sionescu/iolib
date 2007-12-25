@@ -48,6 +48,7 @@
    #:event-dispatch
    #:exit-event-loop
    #:remove-event
+   #:remove-fd
    #:with-event-base
 
    ;; Operations on FDs
