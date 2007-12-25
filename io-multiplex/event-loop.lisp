@@ -268,19 +268,19 @@ within the extent of BODY.  Closes VAR."
           ((or exit-p (and exit-when-empty (event-base-empty-p event-base))))
         (setf (expired-events-of event-base) nil)
         (setf (values got-fd-events-p deletion-list)
-              (dispatch-fd-events-once event-base poll-timeout))
+              (dispatch-fd-events-once event-base poll-timeout now))
+        (remove-events event-base deletion-list)
         (setf got-fd-timeouts-p (expire-pending-timers fd-timers now))
         (dispatch-fd-timeouts expired-events)
         (setf got-timers-p (expire-pending-timers timers now))
-        (remove-events event-base deletion-list)
         (when (and (or got-fd-events-p got-fd-timeouts-p got-timers-p)
                    one-shot)
           (setf exit-p t))))))
 
 ;;; Waits for events and dispatches them.  Returns T if some events
 ;;; have been received, NIL otherwise.
-(defun dispatch-fd-events-once (event-base timeout)
-  (with-accessors ((mux mux-of) (fds fds-of) (timers timers-of))
+(defun dispatch-fd-events-once (event-base timeout now)
+  (with-accessors ((mux mux-of) (fds fds-of) (fd-timers fd-timers-of))
       event-base
     (let ((deletion-list ())
           (fd-events (harvest-events mux timeout)))
@@ -291,13 +291,13 @@ within the extent of BODY.  Closes VAR."
             (labels ((append-events (events)
                        (nconcf deletion-list events))
                      (do-error ()
-                       (%dispatch-event fd-entry :error)
-                       (nconcf deletion-list (fd-entry-all-events fd-entry)))
+                       (%dispatch-event fd-entry :error now)
+                       (append-events (fd-entry-all-events fd-entry)))
                      (do-read ()
-                       (let ((events (%dispatch-event fd-entry :read)))
+                       (let ((events (%dispatch-event fd-entry :read now)))
                          (or errorp (append-events events))))
                      (do-write ()
-                       (let ((events (%dispatch-event fd-entry :write)))
+                       (let ((events (%dispatch-event fd-entry :write now)))
                          (or errorp (append-events events)))))
               (cond (fd-entry
                      (when errorp (do-error))
@@ -305,12 +305,14 @@ within the extent of BODY.  Closes VAR."
                      (when (member :write ev-types) (do-write)))
                     (t 
                      (warn "Got spurious event for non-monitored FD: ~A" fd)))))))
+      (priority-queue-reorder fd-timers)
       (values (consp fd-events) deletion-list))))
 
-(defun %dispatch-event (fd-entry event-type)
+(defun %dispatch-event (fd-entry event-type now)
   (let ((deletion-list ())
         (ev (fd-entry-event fd-entry event-type)))
     (funcall (fd-event-handler ev) (fd-entry-fd fd-entry) event-type)
+    (when (fd-event-timer ev) (reset-timer (fd-event-timer ev) now))
     (when (fd-event-one-shot-p ev) (push ev deletion-list))
     (values deletion-list)))
 

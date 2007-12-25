@@ -42,7 +42,10 @@
   (incf (%timer-expire-time timer) (%timer-relative-time timer))
   (priority-queue-insert schedule timer))
 
-
+(defun reset-timer (timer now)
+  (setf (%timer-expire-time timer)
+        (+ now (%timer-relative-time timer))))
+
 ;;;
 ;;; The scheduler
 ;;;
@@ -53,8 +56,7 @@
 (defun time-to-next-timer (schedule)
   (let ((timer (peek-schedule schedule)))
     (and timer (%timer-expire-time timer))))
-
-
+
 ;;;
 ;;; Expiring timers
 ;;;
