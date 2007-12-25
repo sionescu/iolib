@@ -75,13 +75,14 @@
 
 (defmethod monitor-fd ((mux select-multiplexer) fd-entry)
   (recalc-fd-masks mux (fd-entry-fd fd-entry)
-                   (not (queue-empty-p (fd-entry-read-events fd-entry)))
-                   (not (queue-empty-p (fd-entry-write-events fd-entry)))))
+                   (fd-entry-read-event fd-entry)
+                   (fd-entry-write-event fd-entry)))
 
-(defmethod update-fd ((mux select-multiplexer) fd-entry)
+(defmethod update-fd ((mux select-multiplexer) fd-entry event-type edge-change)
+  (declare (ignore event-type edge-change))
   (recalc-fd-masks mux (fd-entry-fd fd-entry)
-                   (not (queue-empty-p (fd-entry-read-events fd-entry)))
-                   (not (queue-empty-p (fd-entry-write-events fd-entry)))))
+                   (fd-entry-read-event fd-entry)
+                   (fd-entry-write-event fd-entry)))
 
 (defmethod unmonitor-fd ((mux select-multiplexer) fd-entry)
   (recalc-fd-masks mux (fd-entry-fd fd-entry) nil nil))
@@ -118,12 +119,12 @@
       (harvest-select-events max-fd read-fds write-fds except-fds))))
 
 (defun harvest-select-events (max-fd read-fds write-fds except-fds)
-  (loop for fd upto max-fd
-        for event = () then ()
-        when (or (nix:fd-isset fd read-fds)
-                 (nix:fd-isset fd except-fds)) do (push :read event)
-        when (nix:fd-isset fd write-fds) do (push :write event)
-        when event collect (list fd event)))
+  (loop :for fd :upto max-fd
+        :for event := () :then ()
+        :when (or (nix:fd-isset fd read-fds)
+                  (nix:fd-isset fd except-fds)) :do (push :read event)
+        :when (nix:fd-isset fd write-fds) :do (push :write event)
+        :when event :collect (list fd event)))
 
 ;;; FIXME: I don't know whether on all *nix systems select()
 ;;; returns EBADF only when a given FD present in some fd-set
@@ -133,8 +134,8 @@
   (not (nix:fd-open-p fd)))
 
 (defun harvest-select-fd-errors (read-fds write-fds max-fd)
-  (loop for fd upto max-fd
-        when (and (or (nix:fd-isset fd read-fds)
-                      (nix:fd-isset fd write-fds))
-                  (fd-error-p fd))
-        collect (cons fd :error)))
+  (loop :for fd :upto max-fd
+        :when (and (or (nix:fd-isset fd read-fds)
+                       (nix:fd-isset fd write-fds))
+                   (fd-error-p fd))
+        :collect (cons fd :error)))

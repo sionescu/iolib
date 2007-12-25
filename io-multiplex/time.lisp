@@ -42,18 +42,11 @@
      (error "Timeout is not a real number or NIL: ~S" timeout))))
 
 (defun normalize-timeout (timeout)
-  (when timeout
-    (assert (not (minusp timeout)))
-    (etypecase timeout
-      ((or integer real) (coerce timeout 'double-float)))))
+  (assert (not (minusp timeout)))
+  (coerce timeout 'double-float))
 
 (defun abs-timeout (timeout)
-  (when timeout
-    (+ (osicat:get-monotonic-time) (normalize-timeout timeout))))
+  (+ (osicat:get-monotonic-time) (normalize-timeout timeout)))
 
-(defun calc-min-timeout (t1 t2)
-  (if t1
-      (if t2
-          (min t1 t2)
-          t1)
-      t2))
+(defun min-timeout (&rest timeouts)
+  (collect-min (choose-if #'identity (scan timeouts))))

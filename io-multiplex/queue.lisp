@@ -1,174 +1,150 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
 ;;;
-;;; queue.lisp --- FIFO-optimized queues.
+;;; queue.lisp --- Data structures for managing scheduled timers.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
-;;; Copyright (C) 2001-2005, Pascal J. Bourguignon  <pjb@informatimago.com>
+;;; Copyright (C) 2003 Zach Beane <xach@xach.com>
 ;;;
-;;; This code is free software; you can redistribute it and/or
-;;; modify it under the terms of the version 2.1 of
-;;; the GNU Lesser General Public License as published by
-;;; the Free Software Foundation, as clarified by the
-;;; preamble found here:
-;;;     http://opensource.franz.com/preamble.html
+;;; Permission is hereby granted, free of charge, to any person obtaining
+;;; a copy of this software and associated documentation files (the
+;;; "Software"), to deal in the Software without restriction, including
+;;; without limitation the rights to use, copy, modify, merge,publish,
+;;; distribute, sublicense, and/or sell copies of the Software, and to
+;;; permit persons to whom the Software is furnished to do so, subject to
+;;; the following conditions:
 ;;;
-;;; This program is distributed in the hope that it will be useful,
-;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;; GNU General Public License for more details.
+;;; The above copyright notice and this permission notice shall be
+;;; included in all copies or substantial portions of the Software.
 ;;;
-;;; You should have received a copy of the GNU Lesser General
-;;; Public License along with this library; if not, write to the
-;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
-;;; Boston, MA 02110-1301, USA
+;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+;;; EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+;;; MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+;;; NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+;;; LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+;;; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+;;; WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 (in-package :io.multiplex)
 
-;;; The structure of a queue is as follows:
+
 ;;;
-;;;                  queue
-;;;                    |
-;;;                    V
-;;;             +------+------+
-;;;             | head | tail |--------------------------+
-;;;             +------+------+                          |
-;;;                |                                     |
-;;;                V                                     V
-;;;         +------+------+    +------+------+    +------+------+
-;;;         | car  | cdr  |--->| car  | cdr  |--->| car  | cdr  |--->nil
-;;;         +------+------+    +------+------+    +------+------+
-;;;            |                  |                  |
-;;;            V                  V                  V
-;;;         +------+           +------+           +------+
-;;;         | elem |           | elem |           | elem |
-;;;         +------+           +------+           +------+
-
-(defstruct (queue (:constructor %make-queue))
-  (head nil :type list)
-  (tail nil :type list))
-
-(defun queue-invariant (queue)
-  (assert (queue-p queue))
-  (assert (or (and (null (queue-head queue))  (null (queue-tail queue)))
-              (and (queue-head queue) (queue-tail queue))))
-  (when (queue-head queue)
-    (assert (list-length (queue-head queue))) ; not a circular list.
-    (assert (search (queue-tail queue) (queue-head queue) :test (function eq)))
-    (assert (null (cdr (queue-tail queue))))))
-
-(defun make-queue () (%make-queue))
-
-;;; Returns the number of elements in the queue.
-(defun queue-length (queue)
-  (assert (queue-p queue))
-  (length (queue-head queue))) ;;queue-length
-
-(defun queue-empty-p (queue)
-  (assert (queue-p queue))
-  (null (queue-head queue)))
-
-;;; Returns the first element of the queue.
-(defun queue-first-element (queue)
-  (assert (queue-p queue))
-  (first (queue-head queue)))
-
-;;; Returns the last element of the queue.
-(defun queue-last-element (queue)
-  (assert (queue-p queue))
-  (first (queue-tail queue)))
-
-(defun queue-enqueue  (queue element)
-  (assert (queue-p queue))
-  ;; (car q) = head      (cdr q) = tail
-  (if (queue-head queue)
-      (progn
-        ;; There's already an element, just add to the tail.
-        (setf (cdr (queue-tail queue)) (cons element nil))
-        (setf (queue-tail queue)       (cdr (queue-tail queue))))
-      (progn
-        ;; The queue is empty, let's set the head.
-        (setf (queue-head queue) (cons element nil))
-        (setf (queue-tail queue) (queue-head queue))))
-  queue)
-
-(defun queue-delete (queue element &key (test (function eql)))
-  (assert (queue-p queue))
-  (setf (queue-head queue) (delete element (queue-head queue) :test test)
-        (queue-tail queue) (last (queue-head queue)))
-  queue)
-
-(defun queue-delete-if (queue test)
-  (assert (queue-p queue))
-  (setf (queue-head queue) (delete-if test (queue-head queue))
-        (queue-tail queue) (last (queue-head queue)))
-  queue)
-
-(defun queue-dequeue (queue)
-  (assert (queue-p queue))
-  (prog1 (pop (queue-head queue))
-    (when (null (queue-head queue))
-      (setf (queue-tail queue) nil))))
-
-;;; Insert the element at the beginning of the queue.
-(defun queue-requeue (queue element)
-  (assert (queue-p queue))
-  (push element (queue-head queue))
-  (when (null (queue-tail queue))
-    (setf (queue-tail queue) (queue-head queue)))
-  queue)
-
-(defun queue-sort (queue predicate &optional (key #'identity))
-  (assert (queue-p queue))
-  (setf (queue-head queue) (sort (queue-head queue) predicate :key key)
-        (queue-tail queue) (last (queue-head queue))))
-
-;;; Scan the queue comparing the elements of the queue with ELEMENT
-;;; until PREDICATE returns NIL, then insert ELEMENT right before the
-;;; last compared queue element.
-(defun queue-sorted-insert (queue element predicate &optional (key #'identity))
-  (assert (queue-p queue))
-  (if (null (queue-head queue))
-      (progn
-        (push element (queue-head queue))
-        (setf (queue-tail queue) (queue-head queue)))
-      (progn
-        (if (funcall predicate
-                     (funcall key element)
-                     (funcall key (queue-first-element queue)))
-            (push element (queue-head queue))
-            (do* ((curr-list (queue-head queue) next-list)
-                  (next-list (cdr curr-list) (cdr curr-list))
-                  (next-elem (car next-list) (car next-list))
-                  end-flag)
-                 (end-flag)
-              (when (or (null next-elem)
-                        (funcall predicate
-                                 (funcall key element)
-                                 (funcall key next-elem)))
-                (setf end-flag t)
-                (if (null next-elem)
-                    ;; end of the queue has been reached
-                    (setf (cdr curr-list) (list element)
-                          (queue-tail queue) (cdr curr-list))
-                    (let ((newcons (list element)))
-                      (setf (cdr curr-list) newcons
-                            (cdr newcons) next-list))))))))
-  queue)
-
-;;; TODO: make it traverse the queue only once
+;;; Heap (for the priority queue)
 ;;;
-;;; Delete from the queue all elements that satisfy TEST and return
-;;; them as list.
-(defun queue-filter (queue test &optional (key #'identity))
-  (assert (queue-p queue))
-  (remove-if-not test (queue-head queue) :key key))
 
-;;; TODO: make it traverse the queue only once
+(defun heap-parent (i)
+  (ash i -1))
+
+(defun heap-left (i)
+  (ash i 1))
+
+(defun heap-right (i)
+  (1+ (ash i 1)))
+
+(defun heap-size (heap)
+  (1- (length heap)))
+
+(defun heapify (heap start &key (key #'identity) (test #'>=))
+  (declare (function key test))
+  (flet ((key (obj) (funcall key obj))
+         (ge (i j) (funcall test i j)))
+    (let ((l (heap-left start))
+          (r (heap-right start))
+          (size (heap-size heap))
+          largest)
+      (setf largest (if (and (<= l size)
+                             (not (ge (key (aref heap start))
+                                      (key (aref heap l)))))
+                        l
+                        start))
+      (when (and (<= r size)
+                 (not (ge (key (aref heap largest))
+                          (key (aref heap r)))))
+        (setf largest r))
+      (when (/= largest start)
+        (rotatef (aref heap largest) (aref heap start))
+        (heapify heap largest :key key :test test)))
+    (values heap)))
+
+(defun heap-insert (heap new-item &key (key #'identity) (test #'>=))
+  (declare (function key test))
+  (flet ((key (obj) (funcall key obj))
+         (ge (i j) (funcall test i j)))
+    (incf (fill-pointer heap))
+    (loop for i = (heap-size heap) then parent-i
+          for parent-i = (heap-parent i)
+          while (and (> i 0)
+                     (not (ge (key (aref heap parent-i))
+                              (key new-item))))
+          do (setf (aref heap i) (aref heap parent-i))
+          finally (setf (aref heap i) new-item))
+    (values heap)))
+
+(defun heap-mimimum (heap)
+  (unless (zerop (length heap))
+    (aref heap 0)))
+
+(defun heap-extract (heap i &key (key #'identity) (test #'>=))
+  (when (< (length heap) i)
+    (error "Heap underflow"))
+  (prog1
+      (aref heap i)
+    (setf (aref heap i) (aref heap (heap-size heap)))
+    (decf (fill-pointer heap))
+    (heapify heap i :key key :test test)))
+
+(defun heap-extract-mimimum (heap &key (key #'identity) (test #'>=))
+  (heap-extract heap 0 :key key :test test))
+
+
 ;;;
-;;; Delete from the queue all elements that satisfy TEST and return
-;;; them as list.
-(defun queue-filter-and-delete (queue test &optional (key #'identity))
-  (assert (queue-p queue))
-  (prog1 (remove-if-not test (queue-head queue) :key key)
-    (setf (queue-head queue) (delete-if test (queue-head queue) :key key)
-          (queue-tail queue) (last (queue-head queue)))))
+;;; Priority queue
+;;;
+
+(defstruct (priority-queue
+             (:conc-name %pqueue-)
+             (:constructor %make-priority-queue)
+             (:print-function %print-priority-queue))
+  contents
+  keyfun)
+
+(defun %print-priority-queue (object stream print-level)
+  (declare (ignore print-level))
+  (print-unreadable-object (object stream :type t :identity t)
+    (format stream "~[empty~:;~:*~D item~:P~]"
+            (length (%pqueue-contents object)))))
+
+(defun make-priority-queue (&key (key #'identity) (element-type t))
+  (let ((contents (make-array 100 :adjustable t
+                              :fill-pointer 0
+                              :element-type element-type)))
+    (%make-priority-queue :keyfun key
+                          :contents contents)))
+
+(defun priority-queue-minimum (priority-queue)
+  "Return the item in PRIORITY-QUEUE with the largest key."
+  (symbol-macrolet ((contents (%pqueue-contents priority-queue)))
+    (unless (zerop (length contents))
+      (heap-mimimum contents))))
+
+(defun priority-queue-extract-minimum (priority-queue)
+  "Remove and return the item in PRIORITY-QUEUE with the largest key."
+  (symbol-macrolet ((contents (%pqueue-contents priority-queue))
+                    (keyfun (%pqueue-keyfun priority-queue)))
+    (unless (zerop (length contents))
+      (heap-extract-mimimum contents :key keyfun :test #'<=))))
+
+(defun priority-queue-insert (priority-queue new-item)
+  "Add NEW-ITEM to PRIOIRITY-QUEUE."
+  (symbol-macrolet ((contents (%pqueue-contents priority-queue))
+                    (keyfun (%pqueue-keyfun priority-queue)))
+    (heap-insert contents new-item :key keyfun :test #'<=)))
+
+(defun priority-queue-empty-p (priority-queue)
+  (zerop (length (%pqueue-contents priority-queue))))
+
+(defun priority-queue-remove (priority-queue item &key (test #'eq))
+  "Remove and return ITEM from PRIORITY-QUEUE."
+  (symbol-macrolet ((contents (%pqueue-contents priority-queue))
+                    (keyfun (%pqueue-keyfun priority-queue)))
+    (let ((i (position item contents :test test)))
+      (when i
+        (heap-extract contents i :key keyfun :test #'<=)))))

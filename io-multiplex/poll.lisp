@@ -29,9 +29,9 @@
    (fd-count :initform 0 :accessor fd-count-of)))
 
 (defun allocate-pollfd-set (&optional (count 5))
-  (let ((fds (foreign-alloc 'et:pollfd :count count)))
-    (et:bzero fds (* et:size-of-pollfd count))
-    fds))
+  (let ((fds (foreign-alloc 'nix::pollfd :count count)))
+    (nix:bzero fds (* nix::size-of-pollfd count))
+    (values fds)))
 
 (defmethod print-object ((mux poll-multiplexer) stream)
   (print-unreadable-object (mux stream :type nil :identity nil)
@@ -45,29 +45,29 @@
 
 (defun calc-pollfd-flags (readp writep)
   (let ((flags 0))
-    (when readp (setf flags (logior et:pollin et::pollrdhup et:pollpri)))
-    (when writep (setf flags (logior flags et:pollout et:pollhup)))
-    flags))
+    (when readp (setf flags (logior nix:pollin nix::pollrdhup nix:pollpri)))
+    (when writep (setf flags (logior flags nix:pollout nix:pollhup)))
+    (values flags)))
 
 (defun set-pollfd-entry (fd-set index fd readp writep)
-  (with-foreign-slots ((et:fd et:events et:revents)
-                       (mem-aref fd-set 'et:pollfd index)
-                       et:pollfd)
-    (setf et:fd fd
-          et:revents 0
-          et:events (calc-pollfd-flags readp writep))))
+  (with-foreign-slots ((nix::fd nix::events nix::revents)
+                       (mem-aref fd-set 'nix::pollfd index)
+                       nix::pollfd)
+    (setf nix::fd fd
+          nix::revents 0
+          nix::events (calc-pollfd-flags readp writep))))
 
 (defun extend-pollfd-set (fd-set size)
   (let* ((new-size (+ size 5))
-         (new-fd-set (foreign-alloc 'et:pollfd :count new-size)))
-    (et:memcpy new-fd-set fd-set (* size et:size-of-pollfd))
+         (new-fd-set (foreign-alloc 'nix::pollfd :count new-size)))
+    (nix:memcpy new-fd-set fd-set (* size nix::size-of-pollfd))
     (foreign-free fd-set)
     (values new-fd-set new-size)))
 
 (defmethod monitor-fd ((mux poll-multiplexer) fd-entry)
   (let ((fd (fd-entry-fd fd-entry))
-        (readp (not (queue-empty-p (fd-entry-read-events fd-entry))))
-        (writep (not (queue-empty-p (fd-entry-write-events fd-entry)))))
+        (readp (fd-entry-read-event fd-entry))
+        (writep (fd-entry-write-event fd-entry)))
     (with-accessors ((fd-set fd-set-of) (size fd-set-size-of)
                      (count fd-count-of)) mux
       (when (= count size)
@@ -76,21 +76,22 @@
       (setf (gethash fd *pollfd-table*) count)
       (incf count))))
 
-(defmethod update-fd ((mux poll-multiplexer) fd-entry)
+(defmethod update-fd ((mux poll-multiplexer) fd-entry event-type edge-change)
+  (declare (ignore event-type edge-change))
   (let* ((fd (fd-entry-fd fd-entry))
          (pos (gethash fd *pollfd-table*))
-         (readp (not (queue-empty-p (fd-entry-read-events fd-entry))))
-         (writep (not (queue-empty-p (fd-entry-write-events fd-entry)))))
+         (readp (fd-entry-read-event fd-entry))
+         (writep (fd-entry-write-event fd-entry)))
     (with-accessors ((fd-set fd-set-of)) mux
       (set-pollfd-entry fd-set pos fd readp writep))))
 
 (defun shrink-pollfd-set (fd-set count size pos)
   (let* ((new-size (if (> 5 (- size count)) (- size 5) size))
-         (new-fd-set (foreign-alloc 'et:pollfd :count new-size)))
+         (new-fd-set (foreign-alloc 'nix::pollfd :count new-size)))
     (when (plusp pos)
-      (et:memcpy new-fd-set fd-set (* pos et:size-of-pollfd)))
+      (nix:memcpy new-fd-set fd-set (* pos nix::size-of-pollfd)))
     (when (< pos count)
-      (et:memcpy new-fd-set fd-set (* (- count pos) et:size-of-pollfd)))
+      (nix:memcpy new-fd-set fd-set (* (- count pos) nix::size-of-pollfd)))
     (foreign-free fd-set)
     (values new-fd-set new-size)))
 
@@ -113,21 +114,21 @@
       (warn "Non fds to monitor and no timeout set !")
       (return-from harvest-events nil))
     ;; FIXME: when does poll() return EBADF ?
-    (et:repeat-upon-condition-decreasing-timeout
-        ((et:eintr) tmp-timeout timeout)
-      (et:poll fd-set count (timeout->milisec tmp-timeout)))
+    (nix:repeat-upon-condition-decreasing-timeout
+        ((nix:eintr) tmp-timeout timeout)
+      (nix:poll fd-set count (timeout->milisec tmp-timeout)))
     (harvest-pollfd-events fd-set count)))
 
 (defun harvest-pollfd-events (fd-set count)
   (macrolet ((pollfd-slot (name index)
-               `(foreign-slot-value (mem-aref fd-set 'et:pollfd ,index)
-                                    'et:pollfd ,name)))
+               `(foreign-slot-value (mem-aref fd-set 'nix::pollfd ,index)
+                                    'nix::pollfd ,name)))
     (loop :for i :below count
           :for event := ()
-          :for fd := (pollfd-slot 'et:fd i)
-          :for revents := (pollfd-slot 'et:revents i)
+          :for fd := (pollfd-slot 'nix::fd i)
+          :for revents := (pollfd-slot 'nix::revents i)
        :do (flags-case revents
-             ((et:pollout et:pollhup)              (push :write event))
-             ((et:pollin et::pollrdhup et:pollpri) (push :read event))
-             ((et:pollerr et:pollnval)             (push :error event)))
+             ((nix:pollout nix:pollhup)               (push :write event))
+             ((nix:pollin nix::pollrdhup nix:pollpri) (push :read event))
+             ((nix:pollerr nix:pollnval)              (push :error event)))
        :when event :collect (list fd event))))

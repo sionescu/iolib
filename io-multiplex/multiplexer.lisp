@@ -52,7 +52,7 @@
   (:documentation "Add the descriptor reppresented by FD-ENTRY to multiplexer MUX.
 Must return NIL on failure, T otherwise."))
 
-(defgeneric update-fd (mux fd-entry)
+(defgeneric update-fd (mux fd-entry event-type edge-change)
   (:documentation "Update the status of the descriptor reppresented by FD-ENTRY in multiplexer MUX.
 Must return NIL on failure, T otherwise."))
 
@@ -85,7 +85,8 @@ Returns a list of fd/result pairs which have one of these forms:
       (warn "FD monitoring failed for FD ~A."
             (fd-entry-fd fd-entry))))
 
-(defmethod update-fd :around ((mux multiplexer) fd-entry)
+(defmethod update-fd :around ((mux multiplexer) fd-entry event-type edge-change)
+  (declare (ignore event-type edge-change))
   (if (ignore-and-print-errors (call-next-method))
       t
       (warn "FD status update failed for FD ~A."

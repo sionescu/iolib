@@ -48,7 +48,7 @@
                   (null-pointer)))))
 
 (defun calc-kqueue-monitor-filter (fd-entry)
-  (if (queue-empty-p (fd-entry-read-events fd-entry))
+  (if (null (fd-entry-read-event fd-entry))
       nix::evfilt-write
       nix::evfilt-read))
 
@@ -61,18 +61,22 @@
     (nix:ebadf ()
       (warn "FD ~A is invalid, cannot monitor it." (fd-entry-fd fd-entry)))))
 
-(defun calc-kqueue-update-filter-and-flags (edge-change)
-  (case edge-change
-    (:read-add  (values nix::evfilt-read nix::ev-add))
-    (:read-del  (values nix::evfilt-read nix::ev-delete))
-    (:write-add (values nix::evfilt-write nix::ev-add))
-    (:write-del (values nix::evfilt-write nix::ev-delete))))
+(defun calc-kqueue-update-filter-and-flags (event-type edge-change)
+  (case event-type
+    (:read
+     (case edge-change
+       (:add (values nix::evfilt-read nix::ev-add))
+       (:del (values nix::evfilt-read nix::ev-delete))))
+    (:write
+     (case edge-change
+       (:add (values nix::evfilt-write nix::ev-add))
+       (:del (values nix::evfilt-write nix::ev-delete))))))
 
-(defmethod update-fd ((mux kqueue-multiplexer) fd-entry)
+(defmethod update-fd ((mux kqueue-multiplexer) fd-entry event-type edge-change)
   (assert fd-entry)
   (handler-case
       (multiple-value-bind (filter change)
-          (calc-kqueue-update-filter-and-flags (fd-entry-edge-change fd-entry))
+          (calc-kqueue-update-filter-and-flags event-type edge-change)
         (do-kqueue-event-request (fd-of mux) fd-entry filter change))
     (nix:ebadf ()
       (warn "FD ~A is invalid, cannot update its status."
@@ -82,7 +86,7 @@
             (fd-entry-fd fd-entry)))))
 
 (defun calc-kqueue-unmonitor-filter (fd-entry)
-  (if (queue-empty-p (fd-entry-read-events fd-entry))
+  (if (null (fd-entry-read-event fd-entry))
       nix::evfilt-read
       nix::evfilt-write))
 

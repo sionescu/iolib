@@ -40,9 +40,9 @@
   (setf (slot-value mux 'fd) (nix:epoll-create size)))
 
 (defun calc-epoll-flags (fd-entry)
-  (logior (if (not (queue-empty-p (fd-entry-read-events fd-entry)))
+  (logior (if (fd-entry-read-event fd-entry)
               nix::epollin 0)
-          (if (not (queue-empty-p (fd-entry-write-events fd-entry)))
+          (if (fd-entry-write-event fd-entry)
               nix::epollout 0)
           nix::epollpri))
 
@@ -65,7 +65,8 @@
         (nix:eexist ()
           (warn "FD ~A is already monitored." fd))))))
 
-(defmethod update-fd ((mux epoll-multiplexer) fd-entry)
+(defmethod update-fd ((mux epoll-multiplexer) fd-entry event-type edge-change)
+  (declare (ignore event-type edge-change))
   (assert fd-entry)
   (let ((flags (calc-epoll-flags fd-entry))
         (fd (fd-entry-fd fd-entry)))
@@ -109,12 +110,12 @@
                    `(foreign-slot-value (mem-aref events 'nix::epoll-event i)
                                         'nix::epoll-event ',slot-name)))
         (return-from harvest-events
-          (loop for i below ready-fds
-                for fd = (foreign-slot-value (epoll-slot nix::data)
-                                             'nix::epoll-data 'nix::fd)
-                for event-mask = (epoll-slot nix::events)
-                for epoll-event = (make-epoll-event fd event-mask)
-                when epoll-event collect epoll-event))))))
+          (loop :for i :below ready-fds
+                :for fd := (foreign-slot-value (epoll-slot nix::data)
+                                               'nix::epoll-data 'nix::fd)
+                :for event-mask := (epoll-slot nix::events)
+                :for epoll-event := (make-epoll-event fd event-mask)
+                :when epoll-event :collect epoll-event))))))
 
 (defun make-epoll-event (fd mask)
   (let ((event ()))

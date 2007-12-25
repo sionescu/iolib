@@ -25,75 +25,55 @@
 
 (in-package :io.multiplex)
 
+(declaim (optimize (debug 3) (safety 3)))
+
 ;;;; EVENT
 
-(defstruct (event (:constructor make-event (fd type handler persistent-p
-                                               abs-timeout timeout))
-                  (:copier nil))
-  ;; a file descriptor or nil in case of a timeout
-  (fd nil :type (or null unsigned-byte))
-  (type nil :type (or null event-type))
-  (handler nil :type (or null function))
-  ;; if an event is not persistent it is removed
-  ;; after it occurs or if it times out
-  (persistent-p nil :type boolean)
-  (abs-timeout nil :type (or null timeout))
-  (timeout nil :type (or null timeout)))
-
-(defun event-recalc-abs-timeout (event now)
-  (setf (event-abs-timeout event)
-        (+ now (event-timeout event))))
-
-;;;; FD-ENTRY
-
-(deftype fd-event ()
+(deftype fd-event-type ()
   '(member :read :write :error))
 
-(deftype event-type ()
-  '(or fd-event (member :timeout)))
+(defstruct (fd-event (:constructor make-event (fd type handler one-shot-p))
+                     (:copier nil))
+  (fd nil :type unsigned-byte)
+  (type nil :type fd-event-type)
+  (handler nil :type function)
+  (timer nil :type (or null timer))
+  ;; if an event is not persistent it is removed
+  ;; after it is triggered or if it times out
+  (one-shot-p nil :type boolean))
+
+;;;; FD-ENTRY
 
 (defstruct (fd-entry (:constructor make-fd-entry (fd))
                      (:copier nil))
   (fd 0 :type unsigned-byte)
-  (edge-change nil :type symbol)
-  (read-events  (make-queue) :type queue)
-  (write-events (make-queue) :type queue)
-  (error-events (make-queue) :type queue))
+  (read-event  nil :type (or null fd-event))
+  (write-event nil :type (or null fd-event))
+  (error-event nil :type (or null fd-event)))
 
-(defun fd-entry-event-list (fd-entry event-type)
+(defun fd-entry-event (fd-entry event-type)
   (check-type fd-entry fd-entry)
-  (check-type event-type fd-event)
+  (check-type event-type fd-event-type)
   (case event-type
-    (:read (fd-entry-read-events fd-entry))
-    (:write (fd-entry-write-events fd-entry))
-    (:error (fd-entry-error-events fd-entry))))
+    (:read  (fd-entry-read-event  fd-entry))
+    (:write (fd-entry-write-event fd-entry))
+    (:error (fd-entry-error-event fd-entry))))
 
-(defun (setf fd-entry-event-list) (fd-entry event-list event-type)
+(defun (setf fd-entry-event) (event fd-entry event-type)
   (check-type fd-entry fd-entry)
-  (check-type event-type fd-event)
+  (check-type event-type fd-event-type)
   (case event-type
-    (:read (setf (fd-entry-read-events fd-entry) event-list))
-    (:write (setf (fd-entry-write-events fd-entry) event-list))
-    (:error (setf (fd-entry-error-events fd-entry) event-list))))
+    (:read  (setf (fd-entry-read-event  fd-entry) event))
+    (:write (setf (fd-entry-write-event fd-entry) event))
+    (:error (setf (fd-entry-error-event fd-entry) event))))
 
 (defun fd-entry-empty-p (fd-entry)
-  (and (queue-empty-p (fd-entry-read-events fd-entry))
-       (queue-empty-p (fd-entry-write-events fd-entry))
-       (queue-empty-p (fd-entry-error-events fd-entry))))
-
-(defun fd-entry-add-event (fd-entry event)
-  (queue-enqueue (fd-entry-event-list fd-entry (event-type event))
-                 event))
-
-(defun fd-entry-del-event (fd-entry event)
-  (queue-delete (fd-entry-event-list fd-entry (event-type event))
-                event))
+  (not (or (fd-entry-read-event  fd-entry)
+           (fd-entry-write-event fd-entry)
+           (fd-entry-error-event fd-entry))))
 
 (defun fd-entry-all-events (fd-entry)
-  (append (queue-head (fd-entry-read-events fd-entry))
-          (queue-head (fd-entry-write-events fd-entry))
-          (queue-head (fd-entry-error-events fd-entry))))
-
-(defun fd-entry-one-shot-events (fd-entry event-type)
-  (remove-if #'event-persistent-p
-             (queue-head (fd-entry-event-list fd-entry event-type))))
+  (remove-if #'null
+             (list (fd-entry-read-event  fd-entry)
+                   (fd-entry-write-event fd-entry)
+                   (fd-entry-error-event fd-entry))))

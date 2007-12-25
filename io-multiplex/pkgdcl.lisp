@@ -25,22 +25,25 @@
 
 (defpackage :io.multiplex
   (:nicknames #:iomux)
-  (:use #:common-lisp :cffi :alexandria)
+  (:use #:common-lisp :cffi :alexandria :series)
   (:export
    ;; Classes
    #:event
    #:event-base
    #:multiplexer
    #:select-multiplexer
+   #:poll-multiplexer
    #+bsd #:kqueue-multiplexer
    #+linux #:epoll-multiplexer
+   #:fd-event
+   #:priority-queue
 
    ;; Event-base Operations
    #:*available-multiplexers*
    #:*default-multiplexer*
    #:*default-event-loop-timeout*
    #:add-fd
-   #:add-timeout
+   #:add-timer
    #:event-base-empty-p
    #:event-dispatch
    #:exit-event-loop
@@ -56,3 +59,5 @@
    #:poll-error-identifier
    #:wait-until-fd-ready
    ))
+
+(series::install)
