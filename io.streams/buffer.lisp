@@ -137,31 +137,3 @@
   (let ((end (iobuf-end iobuf)))
     (prog1 (setf (bref iobuf end) octet)
       (incf (iobuf-end iobuf)))))
-
-;;;; Buffer Pool
-
-(defstruct (iobuf-pool (:constructor make-iobuf-pool ())
-                       (:copier nil))
-  (iobufs nil :type list)
-  (count  0   :type unsigned-byte))
-
-(defvar *available-iobufs* (make-iobuf-pool))
-
-;; #-clisp
-;; (defvar *iobuf-lock* (bordeaux-threads:make-lock "NET.SOCKETS STREAMS BUFFER POOL LOCK"))
-
-;;; FIXME: using a lock-free queue would be better
-(defun next-available-iobuf ()
-;;   #-clisp
-;;   (bordeaux-threads:with-lock-held (*iobuf-lock*)
-;;     (if (iobuf-pool-iobufs *available-iobufs*)
-;;         (progn
-;;           (pop (iobuf-pool-iobufs *available-iobufs*))
-;;           (decf (iobuf-pool-count *available-iobufs*)))
-;;         (%make-iobuf)))
-;;   #+clisp
-  (if (iobuf-pool-iobufs *available-iobufs*)
-      (progn
-        (pop (iobuf-pool-iobufs *available-iobufs*))
-        (decf (iobuf-pool-count *available-iobufs*)))
-      (%make-iobuf)))
