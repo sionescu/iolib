@@ -80,7 +80,7 @@
 
 (defgeneric socket-listen (socket &key backlog &allow-other-keys))
 
-(defgeneric accept-connection (passive-socket))
+(defgeneric accept-connection (passive-socket &key external-format))
 
 (defclass socket-stream-internet-active
     (active-socket stream-socket internet-socket)

@@ -281,13 +281,15 @@
 
 ;;;; ACCEPT
 
-(defmethod accept-connection ((socket active-socket))
+(defmethod accept-connection ((socket active-socket) &key external-format)
+  (declare (ignore external-format))
   (error "You can't accept connections on active sockets."))
 
-(defmethod accept-connection ((socket passive-socket))
+(defmethod accept-connection ((socket passive-socket) &key external-format)
   (flet ((make-client-socket (fd)
            (make-instance (active-class socket)
-                          :external-format (external-format-of socket)
+                          :external-format (or external-format
+                                               (external-format-of socket))
                           :file-descriptor fd)))
     (with-foreign-object (ss 'sockaddr-storage)
       (bzero ss size-of-sockaddr-storage)
