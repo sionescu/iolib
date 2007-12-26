@@ -43,10 +43,7 @@
 (deftest timeout.2
     (with-event-base/for-each-mux (base)
       (let ((cb nil))
-        (add-timeout base (lambda (fd event)
-                            (declare (ignore fd))
-                            (setq cb event))
-                     30)
+        (add-timer base (lambda () (setq cb :timeout)) 30)
         (event-dispatch base :timeout 0)
         (assert (null cb))))
   nil)
@@ -54,10 +51,7 @@
 (deftest timeout.3
     (with-event-base/for-each-mux (base)
       (let ((cb nil))
-        (add-timeout base (lambda (fd event)
-                            (declare (ignore fd))
-                            (setq cb event))
-                     0)
+        (add-timer base (lambda () (setq cb :timeout)) 0)
         (event-dispatch base :one-shot t)
         (assert (eq cb :timeout))))
   nil)
@@ -67,10 +61,7 @@
 (deftest timeout.4
     (with-event-base/for-each-mux (base)
       (let ((cb nil))
-        (add-timeout base (lambda (fd event)
-                            (declare (ignore fd))
-                            (setq cb event))
-                     1.5)
+        (add-timer base (lambda () (setq cb :timeout)) 1.5)
         (event-dispatch base :one-shot t :timeout 2)
         (assert (eq cb :timeout))))
   nil)
@@ -80,7 +71,7 @@
   (error "timeout"))
 
 (defmacro waiting-for-event ((base fd event-type) &body body)
-  (with-unique-names (fd-arg event-arg)
+  (with-gensyms (fd-arg event-arg)
     (once-only (base)
       `(progn
          (add-fd ,base ,fd ,event-type
@@ -100,7 +91,7 @@
         (with-open-socket (active :family :ipv4
                                   :remote-port (local-port passive)
                                   :remote-host #(127 0 0 1))
-          (add-timeout base #'timeout-cb 5)
+          (add-timer base #'timeout-cb 5)
           (let (peer)
             (waiting-for-event (base (fd-of passive) :read)
               (setq peer (accept-connection passive)))
