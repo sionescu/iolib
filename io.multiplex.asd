@@ -55,7 +55,7 @@
    (:file "event-loop")
    (:file "fd-wait")
    (:file "select")
-   (:file "poll")
+;;;    (:file "poll")
    #+linux (:file "epoll")
    #+bsd (:file "kqueue")
    (:file "detect")))
