@@ -113,6 +113,7 @@
    #:+ipv6-site-local-all-routers+
    #:+ipv6-unspecified+
    #:+max-ipv4-value+
+   #:+default-host+
 
    ;; Address Predicates
    #:abstract-address-p

@@ -51,10 +51,23 @@ remaining address list as the second return value."
       (let ((addresses (lookup-host address :ipv6 ipv6)))
         (values (car addresses) (cdr addresses)))))
 
+(define-symbol-macro +default-host+
+    (if *ipv6* +ipv6-unspecified+ +ipv4-unspecified+))
+
+(deftype tcp-port ()
+  '(unsigned-byte 16))
+
+(defmacro check-tcp-port (port)
+  `(check-type ,port tcp-port "a valid TCP port."))
+
 (defun %make-internet-stream-socket (args connect ef)
-  (destructuring-bind (&key family local-host (local-port 0) remote-host (remote-port 0)
-                            (backlog *default-backlog-size*) reuse-address keepalive nodelay)
+  (destructuring-bind (&key family reuse-address keepalive nodelay
+                            (local-host +default-host+) (local-port 0)
+                            (remote-host +default-host+) (remote-port 0)
+                            (backlog *default-backlog-size*))
       args
+    (check-tcp-port local-port)
+    (check-tcp-port remote-port)
     (ecase connect
       (:active
        (%with-close-on-error (socket (create-socket :family family :type :stream
@@ -65,7 +78,7 @@ remaining address list as the second return value."
            (bind-address socket (convert-or-lookup-inet-address local-host)
                          :port local-port
                          :reuse-address reuse-address))
-         (when remote-host
+         (when (plusp remote-port)
            (connect socket (convert-or-lookup-inet-address remote-host)
                     :port remote-port))))
       (:passive
@@ -78,7 +91,8 @@ remaining address list as the second return value."
            (socket-listen socket :backlog backlog)))))))
 
 (defun %make-local-stream-socket (args connect ef)
-  (destructuring-bind (&key family local-filename remote-filename (backlog *default-backlog-size*))
+  (destructuring-bind (&key family (backlog *default-backlog-size*)
+                            local-filename remote-filename)
       args
     (ecase connect
       (:active
@@ -96,9 +110,12 @@ remaining address list as the second return value."
          (socket-listen socket :backlog backlog))))))
 
 (defun %make-internet-datagram-socket (args ef)
-  (destructuring-bind (&key family local-host (local-port 0) remote-host
-                            (remote-port 0) reuse-address broadcast)
+  (destructuring-bind (&key family reuse-address broadcast
+                            (local-host +default-host+) (local-port 0)
+                            (remote-host +default-host+) (remote-port 0))
       args
+    (check-tcp-port local-port)
+    (check-tcp-port remote-port)
     (%with-close-on-error (socket (create-socket :family family :type :datagram
                                                  :connect :active :external-format ef))
       (when broadcast (set-socket-option socket :broadcast :value t))
@@ -106,7 +123,7 @@ remaining address list as the second return value."
         (bind-address socket (convert-or-lookup-inet-address local-host)
                       :port local-port
                       :reuse-address reuse-address))
-      (when remote-host
+      (when (plusp remote-port)
         (connect socket (convert-or-lookup-inet-address remote-host)
                  :port remote-port)))))
 
