@@ -231,18 +231,18 @@
   (with-accessors ((ob output-buffer-of)
                    (fd output-fd-of)) stream
     (let ((octets-needed (- end start)))
-      (if (<= octets-needed (iobuf-end-space-length ob))
-          (progn
-            (iobuf-copy-from-lisp-array array start ob
-                                        (iobuf-end ob) octets-needed)
-            (incf (iobuf-end ob) octets-needed)
-            (%flush-obuf-if-needed stream))
-          (with-pointer-to-vector-data (ptr array)
-            (%flush-obuf ob fd)
-            (let ((ret (%write-n-bytes (inc-pointer ptr start)
-                                       fd octets-needed)))
-              (when (numberp ret)
-                (incf (iobuf-end ob) octets-needed)))))
+      (cond ((<= octets-needed (iobuf-end-space-length ob))
+             (iobuf-copy-from-lisp-array array start ob
+                                         (iobuf-end ob) octets-needed)
+             (incf (iobuf-end ob) octets-needed)
+             (%flush-obuf-if-needed stream))
+            (t 
+             (with-pointer-to-vector-data (ptr array)
+               (%flush-obuf ob fd)
+               (let ((ret (%write-n-bytes (inc-pointer ptr start)
+                                          fd octets-needed)))
+                 (when (numberp ret)
+                   (incf (iobuf-end ob) octets-needed))))))
       (values array))))
 
 (defun %write-vector-ub8 (stream vector start end)

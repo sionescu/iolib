@@ -174,16 +174,16 @@
   (with-foreign-slots ((path) sun sockaddr-un)
     (let ((name (make-string (1- unix-path-max)))
           (abstract nil))
-      (if (zerop (mem-aref path :uint8 0))
-          ;; abstract address
-          (progn
-            (setf abstract t)
-            (loop :for sindex :from 0 :below (1- unix-path-max)
-                  :for pindex :from 1 :below unix-path-max
-                  :do (setf (schar name sindex)
-                            (code-char (mem-aref path :uint8 pindex)))))
-          ;; address is in the filesystem
-          (setf name (foreign-string-to-lisp path)))
+      (cond ((zerop (mem-aref path :uint8 0))
+             ;; abstract address
+             (setf abstract t)
+             (loop :for sindex :from 0 :below (1- unix-path-max)
+                   :for pindex :from 1 :below unix-path-max
+                   :do (setf (schar name sindex)
+                             (code-char (mem-aref path :uint8 pindex)))))
+            (t 
+             ;; address is in the filesystem
+             (setf name (foreign-string-to-lisp path))))
       (make-instance 'local-address
                      :name name
                      :abstract abstract))))
