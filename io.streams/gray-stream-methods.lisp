@@ -402,16 +402,7 @@
   nil)
 
 (defmethod stream-unread-char ((stream dual-channel-gray-stream) character)
-  ;; unreading anything but the latest character is wrong,
-  ;; but checking is not mandated by the standard
-  #+iolib-debug
-  (progn
-    (%stream-unread-char stream)
-    (unless (ignore-errors (eql (stream-read-char stream) character))
-      (error "Trying to unread wrong character ~S" character)))
-  #-iolib-debug
   (declare (ignore character))
-  #-iolib-debug
   (%stream-unread-char stream))
 
 (defmethod stream-peek-char ((stream dual-channel-gray-stream))
