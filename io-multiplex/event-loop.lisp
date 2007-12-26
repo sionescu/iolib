@@ -312,7 +312,8 @@ within the extent of BODY.  Closes VAR."
   (let ((deletion-list ())
         (ev (fd-entry-event fd-entry event-type)))
     (funcall (fd-event-handler ev) (fd-entry-fd fd-entry) event-type)
-    (when (fd-event-timer ev) (reset-timer (fd-event-timer ev) now))
+    (when (fd-event-timer ev)
+      (reschedule-timer-relative-to-now (fd-event-timer ev) now))
     (when (fd-event-one-shot-p ev) (push ev deletion-list))
     (values deletion-list)))
 

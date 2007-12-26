@@ -42,7 +42,7 @@
   (incf (%timer-expire-time timer) (%timer-relative-time timer))
   (priority-queue-insert schedule timer))
 
-(defun reset-timer (timer now)
+(defun reschedule-timer-relative-to-now (timer now)
   (setf (%timer-expire-time timer)
         (+ now (%timer-relative-time timer))))
 
@@ -61,24 +61,35 @@
 ;;; Expiring timers
 ;;;
 
-(defun expire-timer (schedule timer)
+(defun dispatch-timer (timer)
   (symbol-macrolet ((function (%timer-function timer))
                     (relative-time (%timer-relative-time timer))
-                    (one-shot (%timer-one-shot timer)))
-    (if (%timer-new-thread-p timer)
+                    (new-thread-p (%timer-new-thread-p timer)))
+    (if new-thread-p
         (bt:make-thread function :name "Auxiliary timer thread.")
-        (funcall function))
-    (when (and relative-time (not one-shot))
-      (reschedule-timer schedule timer))))
+        (funcall function))))
+
+(defun timer-reschedulable-p (timer)
+  (symbol-macrolet ((relative-time (%timer-relative-time timer))
+                    (one-shot (%timer-one-shot timer)))
+    (and relative-time (not one-shot))))
 
 (defun expire-pending-timers (schedule now)
-  (let ((expired-p nil))
-    (loop
-       (let ((next-timer (peek-schedule schedule)))
-         (unless next-timer
-           (return-from expire-pending-timers))
-         (cond ((timer-expired-p next-timer now)
-                (setf expired-p t)
-                (expire-timer schedule (priority-queue-extract-minimum schedule)))
-               (t 
-                (return-from expire-pending-timers expired-p)))))))
+  (let ((expired-p nil)
+        (timers-to-reschedule ()))
+    (flet ((handle-expired-timer (timer)
+             (when (timer-reschedulable-p timer)
+               (push timer timers-to-reschedule))
+             (dispatch-timer timer))
+           (%return ()
+             (dolist (timer timers-to-reschedule)
+               (reschedule-timer schedule timer))
+             (return-from expire-pending-timers expired-p)))
+      (loop
+         (let ((next-timer (peek-schedule schedule)))
+           (unless next-timer (%return))
+           (cond ((timer-expired-p next-timer now)
+                  (setf expired-p t)
+                  (handle-expired-timer (priority-queue-extract-minimum schedule)))
+                 (t 
+                  (%return))))))))
