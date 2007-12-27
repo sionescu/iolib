@@ -122,7 +122,7 @@
      :finally (return offset)))
 
 (defmacro check-bounds (sequence start end)
-  (alexandria:with-unique-names (length)
+  (with-gensyms (length)
     `(let ((,length (length ,sequence)))
        (unless ,end
          (setq ,end ,length))
@@ -316,7 +316,7 @@
                (iobuf-copy-data-to-start ib)
                (setf unread-index 0)))
         ;; line-end handling
-        (alexandria:when-let ((it (maybe-find-line-ending fd ib ef)))
+        (when-let ((it (maybe-find-line-ending fd ib ef)))
           (return-from stream-read-char it))
         (tagbody :start
            (handler-case

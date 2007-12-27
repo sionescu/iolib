@@ -191,7 +191,7 @@ new PROTOCOL onto the SERVER's connection list."
 
 ;;; Any better syntax suggestions?
 (defmacro with-async-handler (return-vars form error-clauses &body body)
-  (with-unique-names (result-deferred)
+  (with-gensyms (result-deferred)
     `(let ((,result-deferred ,form))
        (setf (result-callback-of ,result-deferred)
              (lambda ,return-vars ,@body))
@@ -209,7 +209,7 @@ new PROTOCOL onto the SERVER's connection list."
 ;;; WITH-ASYNC-HANDLER should check whether it actually got a deferred
 ;;; object.
 (defmacro with-deferred-result (() &body body)
-  (with-unique-names (body-fn)
+  (with-gensyms (body-fn)
     `(flet ((,body-fn () ,@body))
        (if (boundp '*current-event-base*)
            (,body-fn)

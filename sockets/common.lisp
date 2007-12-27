@@ -204,7 +204,7 @@
 ;;;; Misc
 
 (defmacro check-bounds (sequence start end)
-  (with-unique-names (length)
+  (with-gensyms (length)
     `(let ((,length (length ,sequence)))
        (unless ,end
          (setq ,end ,length))

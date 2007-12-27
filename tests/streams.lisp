@@ -70,7 +70,7 @@
                    :external-format external-format)))
 
 (defmacro with-open-file-stream ((var path &rest options) &body body)
-  (with-unique-names (stream)
+  (with-gensyms (stream)
     `(let ((,stream (make-file-stream ,path ,@options)))
        (with-open-stream (,var ,stream)
          ,@body))))

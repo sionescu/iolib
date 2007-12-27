@@ -36,7 +36,7 @@
 (defmacro %with-close-on-error ((var value) &body body)
   "Bind VAR to VALUE, execute BODY as implicit PROGN and return VAR.
 On error call CLOSE with :ABORT T on VAR."
-  (with-unique-names (errorp)
+  (with-gensyms (errorp)
     `(let ((,var ,value) (,errorp t))
        (unwind-protect (prog1 (locally ,@body ,var) (setf ,errorp nil))
          (when (and ,var ,errorp) (close ,var :abort t))))))
