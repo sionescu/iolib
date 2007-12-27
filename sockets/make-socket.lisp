@@ -145,10 +145,9 @@ remaining address list as the second return value."
 ;;; Is the renaming and the acceptance of extra values a problem?
 ;;; (We need to be careful with *IPV6* for starters.)
 (defun make-socket (&rest args &key (family :internet) (type :stream)
-                    (connect :active) (ipv6 *ipv6*) format eol
-                    (external-format :default) scope-id &allow-other-keys)
+                    (connect :active) (ipv6 *ipv6*)
+                    (external-format :default) &allow-other-keys)
   "Creates a socket instance of the appropriate subclass of SOCKET."
-  (declare (ignore format eol scope-id))
   (check-type family (member :internet :local :ipv4 :ipv6))
   (check-type type (member :stream :datagram))
   (check-type connect (member :active :passive))
