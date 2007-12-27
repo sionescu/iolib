@@ -66,8 +66,8 @@ remaining address list as the second return value."
                             (remote-host +default-host+) (remote-port 0)
                             (backlog *default-backlog-size*))
       args
-    (check-tcp-port local-port)
-    (check-tcp-port remote-port)
+    (or (numberp local-port) (setf local-port (lookup-service local-port :tcp)))
+    (or (numberp remote-port) (setf remote-port (lookup-service remote-port :tcp)))
     (ecase connect
       (:active
        (%with-close-on-error (socket (create-socket :family family :type :stream
@@ -114,8 +114,8 @@ remaining address list as the second return value."
                             (local-host +default-host+) (local-port 0)
                             (remote-host +default-host+) (remote-port 0))
       args
-    (check-tcp-port local-port)
-    (check-tcp-port remote-port)
+    (or (numberp local-port) (setf local-port (lookup-service local-port :udp)))
+    (or (numberp remote-port) (setf remote-port (lookup-service remote-port :udp)))
     (%with-close-on-error (socket (create-socket :family family :type :datagram
                                                  :connect :active :external-format ef))
       (when broadcast (set-socket-option socket :broadcast :value t))
