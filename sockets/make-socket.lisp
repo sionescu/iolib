@@ -136,14 +136,6 @@ remaining address list as the second return value."
       (when remote-filename
         (connect socket (ensure-address remote-filename :local))))))
 
-;;; Changed ADDRESS-FAMILY to FAMILY and accept :IPV4 and :IPV6 as
-;;; arguments so we can create an IPv4 socket with
-;;;   (make-socket :family :ipv4)
-;;; instead of
-;;;   (make-socket #|:family :internet|# :ipv6 nil)
-;;; This is not compatible with Allegro's MAKE-SOCKET behaviour.
-;;; Is the renaming and the acceptance of extra values a problem?
-;;; (We need to be careful with *IPV6* for starters.)
 (defun make-socket (&rest args &key (family :internet) (type :stream)
                     (connect :active) (ipv6 *ipv6*)
                     (external-format :default) &allow-other-keys)
@@ -151,11 +143,12 @@ remaining address list as the second return value."
   (check-type family (member :internet :local :ipv4 :ipv6))
   (check-type type (member :stream :datagram))
   (check-type connect (member :active :passive))
-  (remf args :ipv6)
-  (remf args :external-format)
-  (remf args :type)
-  (remf args :connect)
-  (let ((*ipv6* (if (eq family :ipv4) nil ipv6))
+  (dolist (key '(:ipv6 :external-format :type :connect))
+    (remf args key))
+  (let ((*ipv6* (case family
+                  (:ipv4 nil)
+                  (:ipv6 (or ipv6 t))
+                  (t     t)))
         (address-family (if (or (eq family :ipv4) (eq family :ipv6))
                             :internet
                             family)))
