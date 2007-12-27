@@ -135,7 +135,7 @@
   (print-unreadable-object (socket stream :identity t)
     (format stream "active local stream socket")
     (if (socket-connected-p socket)
-        (format stream " connected to ~A"
+        (format stream " connected to ~S"
                 (address-to-string (remote-address socket)))
         (format stream ", ~:[closed~;unconnected~]" (fd-of socket)))))
 
@@ -143,7 +143,7 @@
   (print-unreadable-object (socket stream :identity t)
     (format stream "passive local stream socket")
     (if (socket-bound-p socket)
-        (format stream " ~:[bound to~;waiting @~] ~A"
+        (format stream " ~:[bound to~;waiting @~] ~S"
                   (socket-listening-p socket)
                   (address-to-string (local-address socket)))
         (format stream ", ~:[closed~;unbound~]" (fd-of socket)))))
@@ -152,9 +152,11 @@
   (print-unreadable-object (socket stream :identity t)
     (format stream "local datagram socket")
     (if (socket-connected-p socket)
-        (format stream " connected to ~A"
+        (format stream " connected to ~S"
                 (address-to-string (remote-address socket)))
-        (format stream ", ~:[closed~;unconnected~]" (fd-of socket)))))
+        (if (fd-of socket)
+            (format stream " waiting @ ~S" (address-to-string (local-address socket)))
+            (format stream ", closed" )))))
 
 (defmethod print-object ((socket socket-datagram-internet-active) stream)
   (print-unreadable-object (socket stream :identity t)
@@ -163,7 +165,11 @@
         (multiple-value-bind (addr port) (remote-name socket)
           (format stream " connected to ~A/~A"
                   (address-to-string addr) port))
-        (format stream ", ~:[closed~;unconnected~]" (fd-of socket)))))
+        (if (fd-of socket)
+            (multiple-value-bind (addr port) (local-name socket)
+              (format stream " waiting @ ~A/~A"
+                      (address-to-string addr) port))
+            (format stream ", closed" )))))
 
 ;;;; CLOSE
 
