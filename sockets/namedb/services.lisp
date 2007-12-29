@@ -183,4 +183,4 @@ of :TCP, :UDP or :ANY."
 (defun ensure-numerical-service (service &optional (protocol :tcp))
   (etypecase service
     (tcp-port service)
-    (t        (lookup-service service protocol))))
+    (t        (nth-value 0 (lookup-service service protocol)))))

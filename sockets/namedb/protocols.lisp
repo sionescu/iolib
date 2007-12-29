@@ -118,12 +118,12 @@
 (defun lookup-protocol (protocol)
   "Lookup a protocol by name or number.  Signals an
 UNKNOWN-PROTOCOL error if no protocol is found."
-  (when (keywordp protocol)
-    (setf protocol (string-downcase protocol)))
-  (let ((parsed-number (parse-number-or-nil protocol)))
-    (when parsed-number (setf protocol parsed-number)))
+  (check-type protocol (or unsigned-byte string keyword) "an unsigned-byte, a string or a keyword")
   (update-monitor *protocols-monitor*)
-  (let ((proto (etypecase protocol
+  (let ((protocol (or (and (keywordp protocol) (string-downcase protocol))
+                      (parse-number-or-nil protocol)
+                      protocol))
+        (proto (etypecase protocol
                  (unsigned-byte (lookup-protocol-by-number protocol))
                  (string        (lookup-protocol-by-name protocol)))))
     (if proto (values (protocol-number proto)
