@@ -28,10 +28,9 @@
                       (external-format :default))
   (when (or (null family) (eq family :internet))
     (setf family (if ipv6 :ipv6 :ipv4)))
-  (let ((class (select-socket-type family type connect protocol)))
-    (make-instance class
-                   :family family
-                   :external-format external-format)))
+  (make-instance (select-socket-class family type connect protocol)
+                 :family family
+                 :external-format external-format))
 
 (defmacro %with-close-on-error ((var value) &body body)
   "Bind VAR to VALUE, execute BODY as implicit PROGN and return VAR.

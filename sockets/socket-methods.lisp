@@ -35,7 +35,7 @@
     ((:ipv6  :datagram :active  :default) . socket-datagram-internet-active)))
 
 ;;; FIXME: should match :default to whatever protocol is the default.
-(defun select-socket-type (family type connect protocol)
+(defun select-socket-class (family type connect protocol)
   (or (cdr (assoc (list family type connect protocol) *socket-type-map*
                   :test #'equal))
       (error "No socket class found !!")))
