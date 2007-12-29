@@ -225,7 +225,7 @@
     ;; at the moment only one nameserver is used
     (when (listp nameserver)
       (setf nameserver (car nameserver)))
-    (assert nameserver)
+    (assert nameserver (nameserver) "Must supply a nameserver")
     (tagbody
      :start
        (setf tcp-done nil

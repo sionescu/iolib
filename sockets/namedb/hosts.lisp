@@ -41,9 +41,9 @@
   (with-accessors ((name host-truename) (aliases host-aliases)
                    (addresses host-addresses)) host
     (flet ((namep (h) (and (stringp h) (plusp (length h)))))
-      (assert (namep name))
-      (assert (every #'namep aliases))
-      (assert addresses)
+      (assert (namep name) (name) "Invalid host truename: ~A" name)
+      (assert (every #'namep aliases) (aliases) "Invalid host aliases: ~A" aliases)
+      (assert addresses (addresses) "A host must have at least one address.")
       (setf addresses (ensure-list addresses))
       (map-into addresses #'ensure-address addresses))))
 

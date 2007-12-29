@@ -81,7 +81,8 @@
   (:method ((stream dual-channel-single-fd-mixin))
     (with-accessors ((fd-in  input-fd-of)
                      (fd-out output-fd-of)) stream
-      (assert (eql fd-in fd-out))
+      (assert (eql fd-in fd-out) (fd-in fd-out)
+               "Input and output FDs must be equal: ~A, ~A" fd-in fd-out)
       (values fd-in))))
 
 (defgeneric (setf fd-of) (fd stream)
@@ -89,7 +90,6 @@
   (:method (fd (stream dual-channel-single-fd-mixin))
     (with-accessors ((fd-in  input-fd-of)
                      (fd-out output-fd-of)) stream
-      (assert (eql fd-in fd-out))
       (setf fd-in fd fd-out fd)
       (values fd-in))))
 

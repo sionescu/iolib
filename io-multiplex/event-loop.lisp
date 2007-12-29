@@ -161,7 +161,9 @@ within the extent of BODY.  Closes VAR."
   (let ((current-entry (fd-entry-of event-base fd))
         (event (make-event fd event-type function one-shot)))
     (cond (current-entry
-           (assert (null (fd-entry-event current-entry event-type)))
+           (assert (null (fd-entry-event current-entry event-type))
+                    ((fd-entry-event current-entry event-type))
+                    "FD ~A is already monitored for event ~A" fd event-type)
            (%add-fd event-base event current-entry timeout)
            (update-fd (mux-of event-base) current-entry event-type :add))
           (t
@@ -186,7 +188,7 @@ within the extent of BODY.  Closes VAR."
   (with-accessors ((timers timers-of)) event-base
     (let* ((fd (fd-event-fd event))
            (fd-entry (fd-entry-of event-base fd)))
-      (assert fd-entry)
+      (assert fd-entry (fd-entry) "FD ~A does not have an FD-ENTRY" fd)
       (setf (fd-entry-event fd-entry (fd-event-type event)) nil)
       (when-let ((timer (fd-event-timer event)))
         (%remove-fd-timer event-base timer))

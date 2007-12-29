@@ -42,7 +42,8 @@
      (error "Timeout is not a real number or NIL: ~S" timeout))))
 
 (defun normalize-timeout (timeout)
-  (assert (not (minusp timeout)))
+  (assert (not (minusp timeout)) (timeout)
+           "The timeout must be non-negative: ~A" timeout)
   (coerce timeout 'double-float))
 
 (defun abs-timeout (timeout)

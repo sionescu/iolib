@@ -32,8 +32,10 @@
 ;;; TODO: caching
 
 (defun remove-trailing-dot (string)
-  (assert (> (length string) 1))
-  (assert (char= #\. (char string (1- (length string)))))
+  (assert (>= (length string) 2) (string)
+           "String length must be at least 2: ~S" string)
+  (assert (char= #\. (char string (1- (length string)))) (string)
+           "Must end with a dot: ~S" string)
   (subseq string 0 (1- (length string))))
 
 (defun reply-error-condition (reply query-type)
@@ -52,7 +54,6 @@
     (check-reply-for-errors reply address :ptr)
     (let ((hostname (remove-trailing-dot
                      (dns-rr-data (aref (dns-message-answer reply) 0)))))
-      (assert (eq :ptr (dns-record-type (aref (dns-message-answer reply) 0))))
       (values (list address)
               hostname
               (list (cons hostname address))))))

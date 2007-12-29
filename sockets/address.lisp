@@ -340,7 +340,8 @@ returned unmodified."
                  :name (map-ipv4-vector-to-ipv6 (address-name address))))
 
 (defun map-ipv6-address-to-ipv4 (address)
-  (assert (ipv6-ipv4-mapped-p address))
+  (assert (ipv6-ipv4-mapped-p address) (address)
+           "Not an IPv6-mapped IPv4 address: ~A" address)
   (make-instance 'ipv4-address
                  :name (map-ipv6-vector-to-ipv4 (address-name address))))
 

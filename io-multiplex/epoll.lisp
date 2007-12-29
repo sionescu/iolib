@@ -47,7 +47,7 @@
           nix::epollpri))
 
 (defmethod monitor-fd ((mux epoll-multiplexer) fd-entry)
-  (assert fd-entry)
+  (assert fd-entry (fd-entry) "Must supply an FD-ENTRY!")
   (let ((flags (calc-epoll-flags fd-entry))
         (fd (fd-entry-fd fd-entry)))
     (with-foreign-object (ev 'nix::epoll-event)
@@ -67,7 +67,7 @@
 
 (defmethod update-fd ((mux epoll-multiplexer) fd-entry event-type edge-change)
   (declare (ignore event-type edge-change))
-  (assert fd-entry)
+  (assert fd-entry (fd-entry) "Must supply an FD-ENTRY!")
   (let ((flags (calc-epoll-flags fd-entry))
         (fd (fd-entry-fd fd-entry)))
     (with-foreign-object (ev 'nix::epoll-event)

@@ -53,7 +53,7 @@
       nix::evfilt-read))
 
 (defmethod monitor-fd ((mux kqueue-multiplexer) fd-entry)
-  (assert fd-entry)
+  (assert fd-entry (fd-entry) "Must supply an FD-ENTRY!")
   (handler-case
       (do-kqueue-event-request (fd-of mux) fd-entry
                                (calc-kqueue-monitor-filter fd-entry)
@@ -73,7 +73,7 @@
        (:del (values nix::evfilt-write nix::ev-delete))))))
 
 (defmethod update-fd ((mux kqueue-multiplexer) fd-entry event-type edge-change)
-  (assert fd-entry)
+  (assert fd-entry (fd-entry) "Must supply an FD-ENTRY!")
   (handler-case
       (multiple-value-bind (filter change)
           (calc-kqueue-update-filter-and-flags event-type edge-change)
