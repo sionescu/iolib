@@ -148,8 +148,8 @@
                               (nix:repeat-upon-condition-decreasing-timeout
                                   ((nix:eintr) timeout-var timeout)
                                 (prog1
-                                    (nix:write
-                                     fd (inc-pointer buf bytes-written) nbytes)
+                                    (nix:write fd (inc-pointer buf bytes-written)
+                                               nbytes)
                                   (when (and timeout-var (zerop timeout-var))
                                     (return-from %write-n-bytes
                                       (values nil :timeout)))))

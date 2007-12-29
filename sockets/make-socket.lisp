@@ -38,7 +38,8 @@
 On error call CLOSE with :ABORT T on VAR."
   (with-gensyms (errorp)
     `(let ((,var ,value) (,errorp t))
-       (unwind-protect (prog1 (locally ,@body ,var) (setf ,errorp nil))
+       (unwind-protect
+            (multiple-value-prog1 (locally ,@body ,var) (setf ,errorp nil))
          (when (and ,var ,errorp) (close ,var :abort t))))))
 
 (defun convert-or-lookup-inet-address (address &optional (ipv6 *ipv6*))
