@@ -166,12 +166,10 @@
 (defun lookup-service (service &optional (protocol :tcp))
   "Lookup a service by port or name.  PROTOCOL should be one
 of :TCP, :UDP or :ANY."
-  (check-type service (or tcp-port string keyword) "an '(unsigned-byte 16), a string or a keyword")
+  (check-type service (or tcp-port string symbol) "an '(unsigned-byte 16), a string or a symbol")
   (check-type protocol (member :tcp :udp :any) "one of :TCP, :UDP or :ANY")
   (update-monitor *services-monitor*)
-  (let* ((service (or (and (keywordp service) (string-downcase service))
-                      (parse-number-or-nil service :ub16)
-                      service))
+  (let* ((service (ensure-string-or-unsigned-byte service :ub16))
          (serv (etypecase service
                  (tcp-port (lookup-service-by-number service protocol))
                  (string   (lookup-service-by-name service protocol)))))

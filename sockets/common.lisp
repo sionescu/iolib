@@ -227,6 +227,11 @@
                          (:ub16 'ub16) (:ub32 'ub32)))
          (values parsed))))
 
+(defun ensure-string-or-unsigned-byte (thing &optional (type :any) (radix 10))
+  (or (and (symbolp thing) (string-downcase thing))
+      (parse-number-or-nil thing type radix)
+      thing))
+
 (defun lisp->c-bool (val)
   (if val 1 0))
 

@@ -95,10 +95,8 @@
 (defun lookup-interface (iface)
   "Lookup an interface by name or index.  UNKNOWN-INTERFACE is
 signalled if an interface is not found."
-  (check-type iface (or unsigned-byte string keyword) "non-negative integer, a string or a keyword")
-  (let ((iface (or (and (keywordp iface) (string-downcase iface))
-                   (parse-number-or-nil iface)
-                   iface)))
+  (check-type iface (or unsigned-byte string symbol) "non-negative integer, a string or a symbol")
+  (let ((iface (ensure-string-or-unsigned-byte iface)))
     (etypecase iface
       (unsigned-byte (get-interface-by-index iface))
       (string        (get-interface-by-name iface)))))
