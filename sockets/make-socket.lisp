@@ -26,11 +26,12 @@
 (defun create-socket (&key (family :internet) (type :stream) (connect :active)
                       (protocol :default) (ipv6 *ipv6*)
                       (external-format :default))
-  (when (or (null family) (eq family :internet))
-    (setf family (if ipv6 :ipv6 :ipv4)))
-  (make-instance (select-socket-class family type connect protocol)
-                 :family family
-                 :external-format external-format))
+  (let ((family (if (or (null family) (eq family :internet))
+                    (if ipv6 :ipv6 :ipv4)
+                    family)))
+    (make-instance (select-socket-class family type connect protocol)
+                   :family family
+                   :external-format external-format)))
 
 (defmacro %with-close-on-error ((var value) &body body)
   "Bind VAR to VALUE, execute BODY as implicit PROGN and return VAR.
