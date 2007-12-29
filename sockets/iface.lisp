@@ -70,7 +70,6 @@
             :finally (if-freenameindex ifptr)))))
 
 (defun get-interface-by-index (index)
-  (check-type index unsigned-byte "a non-negative integer")
   (with-foreign-object (buff :uint8 ifnamesize)
     (let (retval)
       (handler-case
@@ -83,7 +82,6 @@
       (make-interface (copy-seq retval) index))))
 
 (defun get-interface-by-name (name)
-  (check-type name string "a string")
   (let (retval)
     (handler-case
         (setf retval (if-nametoindex name))
@@ -94,11 +92,13 @@
                :name name)))
     (make-interface (copy-seq name) retval)))
 
-;;; Why bother parsing "22" as a number? --luis
 (defun lookup-interface (iface)
   "Lookup an interface by name or index.  UNKNOWN-INTERFACE is
 signalled if an interface is not found."
-  (let ((parsed-number (parse-number-or-nil iface)))
-    (if parsed-number
-        (get-interface-by-index parsed-number)
-        (get-interface-by-name iface))))
+  (check-type iface (or unsigned-byte string keyword) "non-negative integer, a string or a keyword")
+  (let ((iface (or (and (keywordp iface) (string-downcase iface))
+                   (parse-number-or-nil iface)
+                   iface)))
+    (etypecase iface
+      (unsigned-byte (get-interface-by-index iface))
+      (string        (get-interface-by-name iface)))))
