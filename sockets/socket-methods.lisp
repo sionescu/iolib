@@ -340,7 +340,7 @@
 
 (defmethod shutdown ((socket active-socket) direction)
   (check-type direction (member :read :write :read-write)
-              "valid direction specifier")
+              "one of :READ, :WRITE or :READ-WRITE")
   (%shutdown (fd-of socket)
              (ecase direction
                (:read shut-rd)
@@ -405,10 +405,10 @@
 (defun %socket-send (buffer socket start end remote-address remote-port flags)
   (when (typep socket 'passive-socket)
     (error "You cannot send data on a passive socket."))
-  (check-type start unsigned-byte "a non-negative unsigned integer")
-  (check-type end (or unsigned-byte null) "a non-negative unsigned integer or NIL")
+  (check-type start unsigned-byte "a non-negative integer")
+  (check-type end (or unsigned-byte null) "a non-negative integer or NIL")
   (check-type remote-address (or address null) "a network address or NIL")
-  (check-type remote-port (unsigned-byte 16) "a valid IP port number")
+  (check-type remote-port tcp-port "a valid TCP port number")
   (when (and (ipv4-address-p remote-address)
              (eq (socket-family socket) :ipv6))
     (setf remote-address (map-ipv4-address-to-ipv6 remote-address)))

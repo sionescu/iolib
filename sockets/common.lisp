@@ -31,7 +31,6 @@
 ;;;; Byte-swap functions
 
 (defun htons (short)
-  (check-type short ub16 "a 16-bit unsigned number")
   #+little-endian
   (logior (ash (logand (the ub16 short) #x00FF) 8)
           (ash (logand (the ub16 short) #xFF00) -8))
@@ -41,7 +40,6 @@
   (htons short))
 
 (defun htonl (long)
-  (check-type long ub32 "a 32-bit unsigned number")
   #+little-endian
   (logior (ash (logand (the ub32 long) #x000000FF) 24)
           (ash (logand (the ub32 long) #x0000FF00) 8)
@@ -95,7 +93,7 @@
 
 (defun integer-to-vector (ipaddr)
   "Convert a 32-bit unsigned integer to a vector."
-  (check-type ipaddr ub32)
+  (check-type ipaddr ub32 "an '(unsigned-byte 32)")
   (let ((vector (make-array 4 :element-type 'ub8)))
     (setf (aref vector 0) (ldb (byte 8 24) ipaddr)
           (aref vector 1) (ldb (byte 8 16) ipaddr)
@@ -216,7 +214,7 @@
                           :encoding (babel:external-format-encoding ef)))
 
 (defun parse-number-or-nil (value &optional (type :any) (radix 10))
-  (check-type value (or string unsigned-byte))
+  (check-type value (or string unsigned-byte) "a string or an unsigned-byte")
   (let ((parsed
          (if (stringp value)
              (ignore-errors (parse-integer value :radix radix

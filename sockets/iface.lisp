@@ -70,7 +70,7 @@
             :finally (if-freenameindex ifptr)))))
 
 (defun get-interface-by-index (index)
-  (check-type index unsigned-byte "an unsigned integer")
+  (check-type index unsigned-byte "a non-negative integer")
   (with-foreign-object (buff :uint8 ifnamesize)
     (let (retval)
       (handler-case

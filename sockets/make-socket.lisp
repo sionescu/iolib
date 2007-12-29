@@ -54,12 +54,6 @@ remaining address list as the second return value."
 (define-symbol-macro +default-host+
     (if *ipv6* +ipv6-unspecified+ +ipv4-unspecified+))
 
-(deftype tcp-port ()
-  '(unsigned-byte 16))
-
-(defmacro check-tcp-port (port)
-  `(check-type ,port tcp-port "a valid TCP port."))
-
 (defun %make-internet-stream-socket (args connect ef)
   (destructuring-bind (&key family reuse-address keepalive nodelay
                             (local-host +default-host+) (local-port 0)
@@ -140,9 +134,9 @@ remaining address list as the second return value."
                     (connect :active) (ipv6 *ipv6*)
                     (external-format :default) &allow-other-keys)
   "Creates a socket instance of the appropriate subclass of SOCKET."
-  (check-type family (member :internet :local :ipv4 :ipv6))
-  (check-type type (member :stream :datagram))
-  (check-type connect (member :active :passive))
+  (check-type family (member :internet :local :ipv4 :ipv6) "one of :INTERNET, :LOCAL, :IPV4 or :IPV6")
+  (check-type type (member :stream :datagram) "either :STREAM or :DATAGRAM")
+  (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
   (dolist (key '(:ipv6 :external-format :type :connect))
     (remf args key))
   (let ((*ipv6* (case family

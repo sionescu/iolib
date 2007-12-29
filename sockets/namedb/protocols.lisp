@@ -118,7 +118,7 @@
 (defun lookup-protocol (protocol)
   "Lookup a protocol by name or number.  Signals an
 UNKNOWN-PROTOCOL error if no protocol is found."
-  (check-type protocol (or unsigned-byte string keyword) "an unsigned-byte, a string or a keyword")
+  (check-type protocol (or unsigned-byte string keyword) "non-negative integer, a string or a keyword")
   (update-monitor *protocols-monitor*)
   (let ((protocol (or (and (keywordp protocol) (string-downcase protocol))
                       (parse-number-or-nil protocol)

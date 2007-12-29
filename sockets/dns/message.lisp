@@ -113,8 +113,8 @@
 (defmethod initialize-instance :after ((record dns-record) &key)
   (with-slots (name type class) record
      (check-type name string "a string")
-     (check-type type (satisfies valid-type-p) "a valid record type")
-     (check-type class (member :in) "a valid record class")))
+     (check-type type (satisfies dns-record-type-p) "a valid record type")
+     (check-type class (member :in) ":IN")))
 
 (defclass dns-question (dns-record) ())
 

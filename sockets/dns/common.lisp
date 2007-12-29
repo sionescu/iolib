@@ -45,7 +45,7 @@
 (defun query-type-id (number)
   (car (rassoc number +query-type-map+)))
 
-(defun valid-type-p (id)
+(defun dns-record-type-p (id)
   (query-type-number id))
 
 (define-constant +query-class-map

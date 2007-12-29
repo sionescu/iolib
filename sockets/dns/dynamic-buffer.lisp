@@ -34,7 +34,7 @@
 (defmethod initialize-instance :after ((buffer dynamic-buffer) &key)
   (with-accessors ((seq sequence-of) (size size-of)
                    (wcursor write-cursor-of)) buffer
-    (check-type seq (or null ub8-vector))
+    (check-type seq (or null ub8-vector) "either NIL or a (VECTOR UNSIGNED-BYTE)")
     (cond
       ((null seq) (setf seq (make-array size :element-type 'ub8
                                         :adjustable t :fill-pointer 0)))
@@ -116,9 +116,9 @@ invalid offset."))
 
 (defgeneric dynamic-buffer-seek-read-cursor (buffer place &optional offset)
   (:method ((buffer dynamic-buffer) place &optional offset)
-    (check-type place (member :start :end :offset))
+    (check-type place (member :start :end :offset) "one of :START, :END or :OFFSET")
     (when (eq place :offset)
-      (check-type offset unsigned-byte "a non-negative value"))
+      (check-type offset unsigned-byte "an unsigned-byte"))
     (with-accessors ((seq sequence-of) (rcursor read-cursor-of)
                      (size size-of)) buffer
       (case place
@@ -135,7 +135,7 @@ invalid offset."))
 
 (defgeneric check-if-enough-bytes (buffer length)
   (:method ((buffer dynamic-buffer) length)
-    (check-type length unsigned-byte)
+    (check-type length unsigned-byte "an unsigned-byte")
     (when (< (unread-bytes buffer) length)
       (error 'input-buffer-eof
              :buffer buffer

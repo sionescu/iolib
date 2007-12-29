@@ -51,7 +51,7 @@ ADDRESS-NAME reader."))
 
 (defun integer-to-dotted (integer)
   "Convert a 32-bit unsigned integer to a dotted string."
-  (check-type integer ub32)
+  (check-type integer ub32 "an '(unsigned-byte 32)")
   (format nil "~A.~A.~A.~A"
           (ldb (byte 8 24) integer)
           (ldb (byte 8 16) integer)
@@ -60,7 +60,7 @@ ADDRESS-NAME reader."))
 
 (defun dotted-to-vector (address)
   "Convert a dotted IPv4 address to a (simple-array (unsigned-byte 8) 4)."
-  (check-type address string)
+  (check-type address string "a string")
   (let ((addr (make-array 4 :element-type 'ub8 :initial-element 0))
         (split (split-sequence #\. address :count 5)))
     (flet ((set-array-value (index str)
@@ -94,7 +94,7 @@ ADDRESS-NAME reader."))
 ;;; <http://java.sun.com/javase/6/docs/api/java/net/Inet6Address.html#format>
 (defun colon-separated-to-vector (string)
   "Convert a colon-separated IPv6 address to a (simple-array ub16 8)."
-  (check-type string string)
+  (check-type string string "a string")
   (when (< (length string) 2)
     (error 'parse-error))
   (flet ((handle-trailing-and-leading-colons (string)
@@ -176,7 +176,7 @@ ADDRESS-NAME reader."))
   "Convert an 8-element vector to a colon-separated IPv6
 address. CASE may be :DOWNCASE or :UPCASE."
   (coercef vector 'ipv6-array)
-  (check-type case (member :upcase :downcase))
+  (check-type case (member :upcase :downcase) "either :UPCASE or :DOWNCASE")
   (let ((s (make-string-output-stream)))
     (flet ((find-zeros ()
              (let ((start (position 0 vector :start 1 :end 7)))
@@ -258,13 +258,15 @@ returned unmodified."
   (ecase family
     (:internet
      (typecase address
-       (address (check-type address inet-address) address)
+       (address (check-type address inet-address "an INET address")
+                address)
        (t (make-address (or (address-to-vector address)
                             (error 'parse-error))))))
     (:local
      (etypecase address
        (string (make-instance 'local-address :name address))
-       (address (check-type address local-address) address)))))
+       (address (check-type address local-address "a local address")
+                address)))))
 
 ;;;; Print Methods
 
