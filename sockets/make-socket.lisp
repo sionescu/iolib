@@ -66,29 +66,29 @@ remaining address list as the second return value."
                             (remote-host +default-host+) (remote-port 0)
                             (backlog *default-backlog-size*))
       args
-    (or (numberp local-port) (setf local-port (lookup-service local-port :tcp)))
-    (or (numberp remote-port) (setf remote-port (lookup-service remote-port :tcp)))
-    (ecase connect
-      (:active
-       (%with-close-on-error (socket (create-socket :family family :type :stream
-                                                    :connect :active :external-format ef))
-         (when keepalive (set-socket-option socket :keep-alive :value t))
-         (when nodelay (set-socket-option socket :tcp-nodelay :value t))
-         (when local-host
-           (bind-address socket (convert-or-lookup-inet-address local-host)
-                         :port local-port
-                         :reuse-address reuse-address))
-         (when (plusp remote-port)
-           (connect socket (convert-or-lookup-inet-address remote-host)
-                    :port remote-port))))
-      (:passive
-       (%with-close-on-error (socket (create-socket :family family :type :stream
-                                                    :connect :passive :external-format ef))
-         (when local-host
-           (bind-address socket (convert-or-lookup-inet-address local-host)
-                         :port local-port
-                         :reuse-address reuse-address)
-           (socket-listen socket :backlog backlog)))))))
+    (let ((local-port  (ensure-numerical-service local-port))
+          (remote-port (ensure-numerical-service remote-port)))
+      (ecase connect
+        (:active
+         (%with-close-on-error (socket (create-socket :family family :type :stream
+                                                      :connect :active :external-format ef))
+           (when keepalive (set-socket-option socket :keep-alive :value t))
+           (when nodelay (set-socket-option socket :tcp-nodelay :value t))
+           (when local-host
+             (bind-address socket (convert-or-lookup-inet-address local-host)
+                           :port local-port
+                           :reuse-address reuse-address))
+           (when (plusp remote-port)
+             (connect socket (convert-or-lookup-inet-address remote-host)
+                      :port remote-port))))
+        (:passive
+         (%with-close-on-error (socket (create-socket :family family :type :stream
+                                                      :connect :passive :external-format ef))
+           (when local-host
+             (bind-address socket (convert-or-lookup-inet-address local-host)
+                           :port local-port
+                           :reuse-address reuse-address)
+             (socket-listen socket :backlog backlog))))))))
 
 (defun %make-local-stream-socket (args connect ef)
   (destructuring-bind (&key family (backlog *default-backlog-size*)
@@ -114,18 +114,18 @@ remaining address list as the second return value."
                             (local-host +default-host+) (local-port 0)
                             (remote-host +default-host+) (remote-port 0))
       args
-    (or (numberp local-port) (setf local-port (lookup-service local-port :udp)))
-    (or (numberp remote-port) (setf remote-port (lookup-service remote-port :udp)))
-    (%with-close-on-error (socket (create-socket :family family :type :datagram
-                                                 :connect :active :external-format ef))
-      (when broadcast (set-socket-option socket :broadcast :value t))
-      (when local-host
-        (bind-address socket (convert-or-lookup-inet-address local-host)
-                      :port local-port
-                      :reuse-address reuse-address))
-      (when (plusp remote-port)
-        (connect socket (convert-or-lookup-inet-address remote-host)
-                 :port remote-port)))))
+    (let ((local-port  (ensure-numerical-service local-port))
+          (remote-port (ensure-numerical-service remote-port)))
+      (%with-close-on-error (socket (create-socket :family family :type :datagram
+                                                   :connect :active :external-format ef))
+        (when broadcast (set-socket-option socket :broadcast :value t))
+        (when local-host
+          (bind-address socket (convert-or-lookup-inet-address local-host)
+                        :port local-port
+                        :reuse-address reuse-address))
+        (when (plusp remote-port)
+          (connect socket (convert-or-lookup-inet-address remote-host)
+                   :port remote-port))))))
 
 (defun %make-local-datagram-socket (args ef)
   (destructuring-bind (&key family local-filename remote-filename) args

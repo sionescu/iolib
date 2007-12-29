@@ -160,6 +160,9 @@
                  :update-fn 'purge-services-cache
                  :lock *services-cache-lock*))
 
+(deftype tcp-port ()
+  '(unsigned-byte 16))
+
 (defun lookup-service (service &optional (protocol :tcp))
   "Lookup a service by port or name.  PROTOCOL should be one
 of :TCP, :UDP or :ANY."
@@ -169,10 +172,15 @@ of :TCP, :UDP or :ANY."
   (let ((parsed-number (parse-number-or-nil service :ub16)))
     (when parsed-number (setf service parsed-number)))
   (update-monitor *services-monitor*)
-  (let ((serv (etypecase service
-                (unsigned-byte (lookup-service-by-number service protocol))
-                (string        (lookup-service-by-name service protocol)))))
+  (let* ((serv (etypecase service
+                 (tcp-port (lookup-service-by-number service protocol))
+                 (string   (lookup-service-by-name service protocol)))))
     (if serv (values (service-port serv)
                      (service-name serv)
                      (service-protocol serv))
         (error 'unknown-service :name service))))
+
+(defun ensure-numerical-service (service &optional (protocol :tcp))
+  (etypecase service
+    (tcp-port service)
+    (t        (lookup-service service protocol))))
