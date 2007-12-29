@@ -74,7 +74,7 @@
              (and (protocol-compatible-p protocol proto)
                   (= pnum service)))))
     (iterate ((tokens (serialize-etc-file file)))
-      (ignore-some-conditions (parse-error)
+      (ignore-parse-errors
         (let ((proto (find-service-in-parsed-lines tokens #'good-proto-p)))
           (when proto (return-from lookup-service-on-disk-by-number
                         proto)))))))
@@ -86,7 +86,7 @@
                 (or (string= service name)
                     (member service aliases :test #'string=)))))
     (iterate ((tokens (serialize-etc-file file)))
-      (ignore-some-conditions (parse-error)
+      (ignore-parse-errors
         (let ((proto (find-service-in-parsed-lines tokens #'good-proto-p)))
           (when proto (return-from lookup-service-on-disk-by-name
                         proto)))))))

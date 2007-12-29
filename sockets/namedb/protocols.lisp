@@ -59,7 +59,7 @@
            (or (string= protocol name)
                (member protocol aliases :test #'string=))))
     (iterate ((tokens (serialize-etc-file file)))
-      (ignore-some-conditions (parse-error)
+      (ignore-parse-errors
         (let ((proto (find-protocol-in-parsed-lines tokens #'good-proto-p)))
           (when proto (return-from lookup-protocol-on-disk-by-name proto)))))))
 
@@ -68,7 +68,7 @@
            (declare (ignore name aliases))
            (= protocol value)))
     (iterate ((tokens (serialize-etc-file file)))
-      (ignore-some-conditions (parse-error)
+      (ignore-parse-errors
         (let ((proto (find-protocol-in-parsed-lines tokens #'good-proto-p)))
           (when proto (return-from lookup-protocol-on-disk-by-number proto)))))))
 

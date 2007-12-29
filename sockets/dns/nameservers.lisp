@@ -44,7 +44,7 @@ the latter does not contain dots.")
              (when (< (length tokens) 2) (error 'parse-error))
              (destructuring-bind (option value &rest more-values) tokens
                (switch (option :test #'string-equal)
-                 ("nameserver" (ignore-some-conditions (parse-error)
+                 ("nameserver" (ignore-parse-errors
                                  (push (ensure-address value)
                                        nameservers)))
                  ("domain" (setf domain value))
