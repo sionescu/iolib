@@ -96,18 +96,18 @@ remaining address list as the second return value."
       args
     (ecase connect
       (:active
-       (assert remote-filename)
        (%with-close-on-error (socket (create-socket :family family :type :stream
                                                     :connect :active :external-format ef))
          (when local-filename
            (bind-address socket (make-address local-filename)))
-         (connect socket (make-address remote-filename))))
+         (when remote-filename
+           (connect socket (make-address remote-filename)))))
       (:passive
-       (assert local-filename)
        (%with-close-on-error (socket (create-socket :family family :type :stream
                                                     :connect :passive :external-format ef))
-         (bind-address socket (make-address local-filename))
-         (socket-listen socket :backlog backlog))))))
+         (when local-filename
+           (bind-address socket (make-address local-filename))
+           (socket-listen socket :backlog backlog)))))))
 
 (defun %make-internet-datagram-socket (args ef)
   (destructuring-bind (&key family reuse-address broadcast
