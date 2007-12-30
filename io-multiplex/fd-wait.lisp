@@ -29,7 +29,7 @@
 
 (define-condition poll-error (error)
   ((fd :initarg :fd :reader poll-error-fd)
-   (identifier :initarg :identifier :initform "<Unknown error>"
+   (identifier :initarg :identifier :initform "Unknown error"
                :reader poll-error-identifier))
   (:report (lambda (condition stream)
              (format stream "Error caught while polling file descriptor ~A: ~A"
@@ -67,7 +67,9 @@ of a file descriptor."))
             ((nix::pollin nix::pollrdhup nix::pollpri)
              (setf readp t))
             ((nix::pollout nix::pollhup) (setf writep t))
-            ((nix::pollerr nix::pollnval) (error 'poll-error :fd fd)))
+            ((nix::pollerr) (error 'poll-error :fd fd))
+            ((nix::pollnval) (error 'poll-error :fd fd
+                                    :identifier "Invalid file descriptor")))
           (values readp writep))))))
 
 (defun wait-until-fd-ready (fd event-type &optional timeout)
