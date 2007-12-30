@@ -240,17 +240,17 @@
                          (map-ipv4-vector-to-ipv6 (address-name address))
                          port)
       (bind-ipv4-address (fd-of socket) (address-name address) port))
-  socket)
+  (values socket))
 
 (defmethod bind-address ((socket internet-socket) (address ipv6-address)
                          &key (port 0))
   (bind-ipv6-address (fd-of socket) (address-name address) port)
-  socket)
+  (values socket))
 
 (defmethod bind-address ((socket local-socket) (address local-address) &key)
   (with-sockaddr-un (sun (address-name address))
       (bind (fd-of socket) sun size-of-sockaddr-un))
-  socket)
+  (values socket))
 
 (defmethod bind-address :after ((socket socket) (address address) &key)
   (setf (slot-value socket 'bound) t))

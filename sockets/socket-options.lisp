@@ -75,6 +75,16 @@
     (setsockopt fd level option optval nix::size-of-timeval)
     (values)))
 
+#+linux
+(defun set-socket-option-ifreq-name (fd level option interface)
+  (with-foreign-object (optval 'ifreq)
+    (nix:bzero optval size-of-ifreq)
+    (with-foreign-slots ((name) optval ifreq)
+      (with-foreign-string (ifname interface)
+        (nix:memcpy name ifname (min (length interface) (1- ifnamsiz)))))
+    (setsockopt fd level option optval size-of-ifreq)
+    (values)))
+
 ;;;; Get Helpers
 
 (defun get-socket-option-bool (fd level option)
@@ -110,7 +120,8 @@
     '((:bool (value))
       (:int (value))
       (:linger (onoff linger))
-      (:timeval (sec usec)))))
+      (:timeval (sec usec))
+      (:ifreq-name (value)))))
 
 (defmacro define-get-sockopt (os eql-name helper-get level optname)
   `(defmethod get-socket-option ((socket socket) (option-name (eql ,eql-name)))
@@ -179,7 +190,7 @@
 
 (define-socket-options :set sol-socket :linux
   (bsd-compatible so-bsdcompat    :bool)
-  (bind-to-device so-bindtodevice :int))
+  (bind-to-device so-bindtodevice :ifreq-name))
 
 (define-socket-option priority :get-and-set
   so-priority sol-socket :int :linux)

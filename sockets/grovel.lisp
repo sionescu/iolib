@@ -391,3 +391,6 @@
 
 (constant (ifnamesize "IF_NAMESIZE"))
 (constant (ifnamsiz "IFNAMSIZ"))
+
+(cstruct ifreq "struct ifreq"
+  (name "ifr_name" :type :char :count :auto))

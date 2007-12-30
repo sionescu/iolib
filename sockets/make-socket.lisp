@@ -56,7 +56,7 @@ remaining address list as the second return value."
     (if *ipv6* +ipv6-unspecified+ +ipv4-unspecified+))
 
 (defun %make-internet-stream-socket (args connect ef)
-  (destructuring-bind (&key family reuse-address keepalive nodelay
+  (destructuring-bind (&key family reuse-address keepalive nodelay interface
                             (local-host +default-host+) (local-port 0)
                             (remote-host +default-host+) (remote-port 0)
                             (backlog *default-backlog-size*))
@@ -83,7 +83,9 @@ remaining address list as the second return value."
              (bind-address socket (convert-or-lookup-inet-address local-host)
                            :port local-port
                            :reuse-address reuse-address)
-             (socket-listen socket :backlog backlog))))))))
+             (when interface
+               (set-socket-option socket :bind-to-device :value interface))
+           (socket-listen socket :backlog backlog))))))))
 
 (defun %make-local-stream-socket (args connect ef)
   (destructuring-bind (&key family (backlog *default-backlog-size*)
@@ -105,7 +107,7 @@ remaining address list as the second return value."
            (socket-listen socket :backlog backlog)))))))
 
 (defun %make-internet-datagram-socket (args ef)
-  (destructuring-bind (&key family reuse-address broadcast
+  (destructuring-bind (&key family reuse-address broadcast interface
                             (local-host +default-host+) (local-port 0)
                             (remote-host +default-host+) (remote-port 0))
       args
@@ -117,7 +119,9 @@ remaining address list as the second return value."
         (when local-host
           (bind-address socket (convert-or-lookup-inet-address local-host)
                         :port local-port
-                        :reuse-address reuse-address))
+                        :reuse-address reuse-address)
+          (when interface
+            (set-socket-option socket :bind-to-device :value interface)))
         (when (plusp remote-port)
           (connect socket (convert-or-lookup-inet-address remote-host)
                    :port remote-port))))))
