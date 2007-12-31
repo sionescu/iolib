@@ -62,12 +62,7 @@
 ;;;
 
 (defun dispatch-timer (timer)
-  (symbol-macrolet ((function (%timer-function timer))
-                    (relative-time (%timer-relative-time timer))
-                    (new-thread-p (%timer-new-thread-p timer)))
-    (if new-thread-p
-        (bt:make-thread function :name "Auxiliary timer thread.")
-        (funcall function))))
+  (funcall (%timer-function timer)))
 
 (defun timer-reschedulable-p (timer)
   (symbol-macrolet ((relative-time (%timer-relative-time timer))
