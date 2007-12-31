@@ -37,10 +37,10 @@
 (defun send-query (socket-type buffer nameserver timeout)
   (let ((input-buffer (make-array +dns-datagram-size+
                                   :element-type 'ub8)))
-    (with-open-socket
-        (socket :connect :active :type socket-type
-                :remote-host nameserver :remote-port +dns-port+
-                :ipv6 (ipv6-address-p nameserver))
+    (with-open-stream
+        (socket (make-socket :connect :active :type socket-type
+                             :remote-host nameserver :remote-port +dns-port+
+                             :ipv6 (ipv6-address-p nameserver)))
       (socket-send buffer socket)
       (iomux:wait-until-fd-ready (fd-of socket) :read timeout)
       (socket-receive input-buffer socket))))
