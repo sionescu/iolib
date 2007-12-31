@@ -120,7 +120,7 @@
     '((:bool (value))
       (:int (value))
       (:linger (onoff linger))
-      (:timeval (sec usec))
+      (:timeval (sec (usec 0)))
       (:ifreq-name (value)))))
 
 (defmacro define-get-sockopt (os eql-name helper-get level optname)
@@ -133,7 +133,8 @@
   `(defmethod set-socket-option
        ((socket socket) (option-name (eql ,eql-name)) &key ,@args)
      ,@(if (or (eq os :any) (featurep os))
-           `((,helper-set (socket-fd socket) ,level ,optname ,@args))
+           `((,helper-set (socket-fd socket) ,level ,optname
+                          ,@(mapcar #'(lambda (c) (if (consp c) (car c) c)) args)))
            `((declare (ignore ,@args))
              (error 'option-not-available option-name)))))
 
