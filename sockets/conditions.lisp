@@ -109,7 +109,7 @@
 ;;; HANDLEs instead of FDs on windows)
 (defmacro with-socket-error-filter (&body body)
   `(handler-case
-       (progn ,@body)
+       (locally ,@body)
      (nix:posix-error (err)
        (let* ((id (error-identifier err))
               (condition (cdr (assoc id *socket-error-map*))))

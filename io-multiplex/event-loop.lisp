@@ -52,7 +52,7 @@
 within the extent of BODY.  Closes VAR."
   `(let ((,var (make-instance 'event-base ,@initargs)))
      (unwind-protect
-          (progn ,@body)
+          (locally ,@body)
        (close ,var))))
 
 (defmethod print-object ((base event-base) stream)

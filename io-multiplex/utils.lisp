@@ -53,7 +53,7 @@
                              ,(second clause))))))
 
 (defmacro ignore-and-print-errors (&body body)
-  `(handler-case (progn ,@body)
+  `(handler-case (locally ,@body)
      (error (error)
        (warn "Caught a ~A: ~A, ignoring it."
              (type-of error) error))))
