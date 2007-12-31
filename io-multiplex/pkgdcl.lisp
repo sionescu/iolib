@@ -59,6 +59,9 @@
    #:poll-error-fd
    #:poll-error-identifier
    #:wait-until-fd-ready
+   #:poll-timeout
+   #:poll-timeout-fd
+   #:poll-timeout-event-type
    ))
 
 (series::install)
