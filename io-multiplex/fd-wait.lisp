@@ -39,45 +39,46 @@
    "Signaled when an error occurs while polling for I/O readiness
 of a file descriptor."))
 
-(defun %wait-until-fd-ready (fd event-type timeout)
-  (flet ((choose-poll-flags (type)
-           (ecase type
-             (:read (logior nix::pollin nix::pollrdhup nix::pollpri))
-             (:write (logior nix::pollout nix::pollhup))
-             (:read-write (logior nix::pollin nix::pollrdhup nix::pollpri
-                                  nix::pollout nix::pollhup))))
-         (poll-error (unix-err)
-           (error 'poll-error :fd fd
-                  :identifier (osicat-sys:system-error-identifier unix-err))))
-    (let ((readp nil) (writep nil))
-      (with-foreign-object (pollfd 'nix::pollfd)
-        (nix:bzero pollfd nix::size-of-pollfd)
-        (with-foreign-slots ((nix::fd nix::events nix::revents)
-                             pollfd nix::pollfd)
-          (setf nix::fd fd
-                nix::events (choose-poll-flags event-type))
-          (handler-case
-              (let ((ret (nix:repeat-upon-condition-decreasing-timeout
-                             ((nix:eintr) tmp-timeout timeout)
-                           (nix:poll pollfd 1 (timeout->milisec timeout)))))
-                (when (zerop ret)
-                  (return-from %wait-until-fd-ready (values nil nil))))
-            (nix:posix-error (err) (poll-error err)))
-          (flags-case nix::revents
-            ((nix::pollin nix::pollrdhup nix::pollpri)
-             (setf readp t))
-            ((nix::pollout nix::pollhup) (setf writep t))
-            ((nix::pollerr) (error 'poll-error :fd fd))
-            ((nix::pollnval) (error 'poll-error :fd fd
-                                    :identifier "Invalid file descriptor")))
-          (values readp writep))))))
+(defun compute-poll-flags (type)
+  (ecase type
+    (:read (logior nix::pollin nix::pollrdhup nix::pollpri))
+    (:write (logior nix::pollout nix::pollhup))
+    (:read-write (logior nix::pollin nix::pollrdhup nix::pollpri
+                         nix::pollout nix::pollhup))))         
+
+(defun process-poll-revents (revents fd)
+  (let ((readp nil) (writep nil))
+    (flags-case revents
+      ((nix::pollin nix::pollrdhup nix::pollpri)
+       (setf readp t))
+      ((nix::pollout nix::pollhup) (setf writep t))
+      ((nix::pollerr) (error 'poll-error :fd fd))
+      ((nix::pollnval) (error 'poll-error :fd fd
+                              :identifier "Invalid file descriptor")))
+    (values readp writep)))
 
 (defun wait-until-fd-ready (fd event-type &optional timeout)
   "Poll file descriptor `FD' for I/O readiness. `EVENT-TYPE' must be
 :READ, :WRITE or :READ-WRITE which means \"either :READ or :WRITE\".
 `TIMEOUT' must be either a non-negative integer measured in seconds,
 or `NIL' meaning no timeout at all."
-  (%wait-until-fd-ready fd event-type timeout))
+  (flet ((poll-error (unix-err)
+           (error 'poll-error :fd fd
+                  :identifier (osicat-sys:system-error-identifier unix-err))))
+    (with-foreign-object (pollfd 'nix::pollfd)
+      (nix:bzero pollfd nix::size-of-pollfd)
+      (with-foreign-slots ((nix::fd nix::events nix::revents)
+                           pollfd nix::pollfd)
+        (setf nix::fd fd
+              nix::events (compute-poll-flags event-type))
+        (handler-case
+            (let ((ret (nix:repeat-upon-condition-decreasing-timeout
+                           ((nix:eintr) tmp-timeout timeout)
+                         (nix:poll pollfd 1 (timeout->milisec timeout)))))
+              (when (zerop ret)
+                (return-from wait-until-fd-ready (values nil nil))))
+          (nix:posix-error (err) (poll-error err)))
+        (process-poll-revents nix::revents fd)))))
 
 (defun fd-ready-p (fd &optional (event-type :read))
   "Tests file-descriptor `FD' for I/O readiness. `EVENT-TYPE'
