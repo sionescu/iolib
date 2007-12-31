@@ -51,7 +51,8 @@
 
 ;;;; Socket Errors
 
-(defvar *socket-error-map* nil)
+(defvar *socket-error-map*
+  (list (list :ewouldblock 'nix:ewouldblock)))
 
 (define-condition socket-error (nix:posix-error) ())
 
@@ -66,12 +67,12 @@
 
 (defmacro define-socket-error (name identifier &optional documentation)
   `(progn
-     (push (cons ,identifier ',name) *socket-error-map*)
+     (pushnew (cons ,identifier ',name) *socket-error-map* :test #'equal)
      (define-condition ,name (socket-error) ()
        (:default-initargs :code ,(foreign-enum-value 'socket-error-values
                                                      identifier)
          :identifier ,identifier)
-       (:documentation ,(or documentation "")))))
+       (:documentation ,(or documentation "Socket error.")))))
 
 (define-condition unknown-socket-error (socket-error)
   ()
@@ -79,8 +80,7 @@
 
 (defun lookup-socket-error (keyword)
   (or (cdr (assoc keyword *socket-error-map*))
-      (make-instance 'unknown-socket-error :identifier keyword
-                     :code (foreign-enum-value 'socket-error-values keyword))))
+      'unknown-socket-error))
 
 (define-socket-error socket-invalid-argument              :einval)
 (define-socket-error socket-address-in-use-error          :eaddrinuse)
@@ -92,8 +92,9 @@
 (define-socket-error socket-connection-aborted-error      :econnaborted)
 (define-socket-error socket-connection-reset-error        :econnreset)
 (define-socket-error socket-connection-refused-error      :econnrefused)
-(define-socket-error socket-endpoint-shutdown-error       :eshutdown)
 (define-socket-error socket-connection-timeout-error      :etimedout)
+(define-socket-error socket-connection-in-progress-error  :einprogress)
+(define-socket-error socket-endpoint-shutdown-error       :eshutdown)
 (define-socket-error socket-no-buffer-space-error         :enobufs)
 (define-socket-error socket-host-down-error               :ehostdown)
 (define-socket-error socket-host-unreachable-error        :ehostunreach)
@@ -111,22 +112,24 @@
   `(handler-case
        (locally ,@body)
      (nix:posix-error (err)
-       (let* ((id (error-identifier err))
-              (condition (cdr (assoc id *socket-error-map*))))
-         (if condition
-             (error condition)
-             (error err))))))
+       (%socket-error (error-identifier err) (error-code err)))))
+
+(defun %socket-error (id code)
+  (error (lookup-socket-error id)
+         :identifier id :code code))
 
 ;;; Used in the ERRNO-WRAPPER foreign type.
 (defun signal-socket-error (return-value)
   (declare (ignore return-value))
-  (let ((errno (nix:get-errno)))
-    (let ((kw (foreign-enum-keyword 'socket-error-values errno :errorp nil)))
-      (if kw
-          (error (lookup-socket-error kw))
-          ;; this branch is probably mostly unused now. Should
-          ;; probably sinal an UNKOWN-SOCKET-ERROR here instead.
-          (nix:posix-error errno)))))
+  (let* ((errno (nix:get-errno))
+         (kw (foreign-enum-keyword 'nix::errno-values
+                                   errno :errorp nil)))
+    (%socket-error kw errno)))
+
+(defun signal-socket-error* (errno)
+  (let ((kw (foreign-enum-keyword 'nix::errno-values
+                                  errno :errorp nil)))
+    (%socket-error kw errno)))
 
 (define-condition resolver-error ()
   ((data :initarg :data :reader resolver-error-data))
