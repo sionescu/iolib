@@ -31,18 +31,19 @@
    (size         :initarg :size :accessor size-of))
   (:default-initargs :size +dns-datagram-size+))
 
-(defmethod initialize-instance :after ((buffer dynamic-buffer) &key)
+(defmethod initialize-instance :after ((buffer dynamic-buffer) &key (start 0))
   (with-accessors ((seq sequence-of) (size size-of)
                    (wcursor write-cursor-of)) buffer
     (check-type seq (or null ub8-vector) "either NIL or a (VECTOR UNSIGNED-BYTE)")
     (cond
       ((null seq) (setf seq (make-array size :element-type 'ub8
                                         :adjustable t :fill-pointer 0)))
-      (t (setf size (length seq)
-               wcursor (length seq)
-               seq (make-array size :element-type 'ub8
-                               :adjustable t :fill-pointer size
-                               :initial-contents seq))))))
+      (t (setf size (- (length seq) start)
+               wcursor (- (length seq) start))
+         (let ((newseq (make-array size :element-type 'ub8
+                                   :adjustable t :fill-pointer size)))
+           (replace newseq seq :start2 start)
+           (setf seq newseq))))))
 
 (defun ub16-to-vector (value)
   (vector (ldb (byte 8 8) value)

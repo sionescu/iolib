@@ -39,15 +39,16 @@
   (subseq string 0 (1- (length string))))
 
 (defun reply-error-condition (reply query-type)
-  (cond ((dns-flag-p reply :name-error) 'resolver-no-name-error)
+  (cond ((null reply) 'resolver-again-error)
+        ((dns-flag-p reply :name-error) 'resolver-no-name-error)
         ((dns-flag-p reply :server-failure) 'resolver-fail-error)
         ((loop :for rr :across (dns-message-answer reply)
                :never (eq query-type (dns-record-type rr)))
          'resolver-no-name-error)))
 
 (defun check-reply-for-errors (reply host query-type)
-  (let ((condition (reply-error-condition reply query-type)))
-    (and condition (error condition :data host))))
+  (when-let ((condition (reply-error-condition reply query-type)))
+    (error condition :data host)))
 
 (defun dns-lookup-host-by-address (address)
   (let ((reply (dns-query address :type :ptr)))

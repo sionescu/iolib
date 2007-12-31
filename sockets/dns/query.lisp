@@ -26,24 +26,11 @@
 (defvar *dns-recursion-desired* t
   "Whether the \"RECURSION-DESIRED\" field should be set ot not.")
 
-(defvar *dns-repeat* 5
+(defvar *dns-repeat* 3
   "The number of times a failed query will be retried.")
 
-(defvar *dns-timeout* 5
+(defvar *dns-timeout* 10
   "Timeout for DNS queries in seconds.")
-
-(defconstant +dns-port+ 53)
-
-(defun send-query (socket-type buffer nameserver timeout)
-  (let ((input-buffer (make-array +dns-datagram-size+
-                                  :element-type 'ub8)))
-    (with-open-stream
-        (socket (make-socket :connect :active :type socket-type
-                             :remote-host nameserver :remote-port +dns-port+
-                             :ipv6 (ipv6-address-p nameserver)))
-      (socket-send buffer socket)
-      (iomux:wait-until-fd-ready (fd-of socket) :read timeout)
-      (socket-receive input-buffer socket))))
 
 (define-constant +max-16-bits+ (1- (expt 2 16)))
 
@@ -208,27 +195,79 @@
 
 ;;;; DNS-QUERY
 
-(defun dns-query (name &key (type :a) nameserver decode search
-                  (repeat *dns-repeat*) (timeout *dns-timeout*))
+(defconstant +dns-port+ 53)
+
+(defun do-udp-dns-query (buffer length nameserver timeout)
+  (let ((input-buffer (make-array +dns-datagram-size+
+                                  :element-type 'ub8)))
+    (with-open-stream
+        (socket (make-socket :connect :active :type :datagram
+                             :remote-host nameserver :remote-port +dns-port+
+                             :ipv6 (ipv6-address-p nameserver)))
+      (socket-send buffer socket :end length)
+      (iomux:wait-until-fd-ready (fd-of socket) :read timeout t)
+      (socket-receive input-buffer socket))))
+
+(defun wait-until-socket-connected (socket timeout)
+  (if (nth-value 1 (iomux:wait-until-fd-ready (fd-of socket) :write timeout))
+      (let ((errcode (get-socket-option socket :error)))
+        (when (minusp errcode) (signal-socket-error)))
+      (error 'socket-connection-timeout-error)))
+
+(defun send-tcp-dns-query (socket buffer length)
+  (let ((minibuf (make-array (+ length 2) :element-type 'ub8)))
+    ;; two-octet length prefix
+    (replace minibuf (ub16-to-vector length))
+    (replace minibuf buffer :start1 2 :end2 length)
+    (socket-send minibuf socket :end (+ length 2))))
+
+(defun get-tcp-query-length (socket timeout)
+  (let ((minibuf (make-array 2 :element-type 'ub8)))
+    (iomux:wait-until-fd-ready (fd-of socket) :read timeout t)
+    (socket-receive minibuf socket)
+    (+ (ash (aref minibuf 0) 8)
+       (aref minibuf 1))))
+
+(defun receive-tcp-dns-message (socket time-fn)
+  (with-accessors ((fd fd-of)) socket
+    (let* ((message-length (get-tcp-query-length socket (funcall time-fn)))
+           (input-buffer (make-array message-length :element-type 'ub8)))
+      (loop :with off := 0 :do
+         (iomux:wait-until-fd-ready fd :read (funcall time-fn) t)
+         (let ((inbytes (nth-value 1 (socket-receive input-buffer socket :start off))))
+           (incf off inbytes)
+           (when (= off message-length)
+             (return (values input-buffer off))))))))
+
+(defun do-tcp-dns-query (buffer length nameserver timeout)
+  (let* ((t0 (osicat-sys:get-monotonic-time))
+         (tend (+ t0 timeout)))
+    (flet ((remtime ()
+             (let ((rem (- tend (osicat-sys:get-monotonic-time))))
+               (if (not (minusp rem)) rem
+                   (error 'socket-connection-timeout-error)))))
+      (with-open-stream
+          (socket (make-socket :connect :active :type :stream
+                               :ipv6 (ipv6-address-p nameserver)))
+        (setf (fd-non-blocking socket) t)
+        (handler-case
+            (connect socket nameserver :port +dns-port+)
+          (socket-connection-in-progress-error ()
+            (wait-until-socket-connected socket (remtime))))
+        (send-tcp-dns-query socket buffer length)
+        (receive-tcp-dns-message socket #'remtime)))))
+
+(defun do-one-dns-query (name type search decode ns repeat timeout)
   ;; TODO: implement search
   (declare (ignore search))
-  (bt:with-lock-held (*resolvconf-lock*)
-    (unless nameserver (setf nameserver *dns-nameservers*)))
-  (when (eq type :ptr)
-    (setf name (dns-ptr-name name)))
   (let* ((query (prepare-query name type))
          (buffer (sequence-of query))
-         (bufflen (length buffer))
+         (bufflen (write-cursor-of query))
          (tries-left repeat)
          in-buff bytes-received response tcp-done)
-    ;; at the moment only one nameserver is used
-    (when (listp nameserver)
-      (setf nameserver (car nameserver)))
-    (assert nameserver (nameserver) "Must supply a nameserver")
     (tagbody
      :start
-       (setf tcp-done nil
-             response nil)
+       (setf tcp-done nil response nil)
        ;; if the query size fits into a datagram(512 bytes max) do a
        ;; UDP query, otherwise use TCP
        (when (> bufflen +dns-datagram-size+)
@@ -237,18 +276,19 @@
        ;; do a UDP query; in case of a socket error, try again
        (handler-case
            (setf (values in-buff bytes-received)
-                 (send-query :datagram buffer nameserver timeout))
-         (socket-error ()
-           (go :try-again-if-possible)))
+                 (do-udp-dns-query buffer bufflen ns timeout))
+         (socket-error () (go :error))
+         (iomux:poll-timeout () (go :try-again-if-possible)))
        ;; no socket error, go parse the response
        (go :parse-response)
      :do-tcp-query
        ;; do a TCP query; in case of a socket error, try again
        (handler-case
            (setf (values in-buff bytes-received)
-                 (send-query :stream buffer nameserver timeout))
-         (socket-error ()
-           (go :try-again-if-possible)))
+                 (do-tcp-dns-query buffer bufflen ns timeout))
+         (socket-connection-timeout-error () (go :try-again-if-possible))
+         (socket-error () (go :error))
+         (iomux:poll-timeout () (go :try-again-if-possible)))
        (setf tcp-done t)
      :parse-response
        ;; try to parse the response; in case of a parse error, try again
@@ -258,10 +298,8 @@
                   (make-instance 'dynamic-buffer
                                  :sequence in-buff
                                  :size bytes-received)))
-         (dynamic-buffer-input-error ()
-           (go :try-again-if-possible))
-         (dns-message-error ()
-           (go :try-again-if-possible)))
+         (dynamic-buffer-input-error () (go :error))
+         (dns-message-error () (go :error)))
        ;; if a truncated response was received by UDP, try TCP
        (when (and (not tcp-done)
                   (truncated-field response))
@@ -274,8 +312,25 @@
          (go :start))
      :return-response
        (when response
-         (return-from dns-query (if decode
-                                    (decode-response response)
-                                    response)))
-     :raise-error
-       (error "Could not query nameserver !!"))))
+         (return-from do-one-dns-query
+           (if decode
+               (decode-response response)
+               response)))
+     :error
+       (return-from do-one-dns-query))))
+
+(defun preprocess-dns-name (name type)
+  (if (eq type :ptr)
+      (dns-ptr-name name)
+      name))
+
+(defun dns-query (name &key (type :a) decode search
+                  (nameservers *dns-nameservers*)
+                  (repeat *dns-repeat*) (timeout *dns-timeout*))
+  (setf nameservers (ensure-list nameservers))
+  (assert nameservers (nameservers) "Must supply a nameserver")
+  (let ((pname (preprocess-dns-name name type)))
+    (dolist (ns (mapcar #'ensure-address nameservers))
+      (when-let ((response (do-one-dns-query name type search decode
+                                             ns repeat timeout)))
+        (return-from dns-query response)))))

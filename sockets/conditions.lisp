@@ -126,11 +126,6 @@
                                    errno :errorp nil)))
     (%socket-error kw errno)))
 
-(defun signal-socket-error* (errno)
-  (let ((kw (foreign-enum-keyword 'nix::errno-values
-                                  errno :errorp nil)))
-    (%socket-error kw errno)))
-
 (define-condition resolver-error ()
   ((data :initarg :data :reader resolver-error-data))
   (:documentation

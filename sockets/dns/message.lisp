@@ -126,9 +126,8 @@
 (defmethod initialize-instance :after ((record dns-question) &key)
   (with-slots (name) record
      (let ((name-length (length name)))
-       (when (char-not-equal (aref name (1- name-length))
-                             #\.)
-         (setf name (concatenate 'string name (string #\.)))))))
+       (when (char/= #\. (aref name (1- name-length)))
+         (setf name (concatenate 'string name "."))))))
 
 ;;;; Constructors
 
