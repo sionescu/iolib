@@ -45,7 +45,7 @@
 
 (defun calc-pollfd-flags (readp writep)
   (let ((flags 0))
-    (when readp (setf flags (logior nix:pollin nix::pollrdhup nix:pollpri)))
+    (when readp (setf flags (logior nix:pollin nix:pollrdhup nix:pollpri)))
     (when writep (setf flags (logior flags nix:pollout nix:pollhup)))
     (values flags)))
 
@@ -128,7 +128,7 @@
           :for fd := (pollfd-slot 'nix::fd i)
           :for revents := (pollfd-slot 'nix::revents i)
        :do (flags-case revents
-             ((nix:pollout nix:pollhup)               (push :write event))
-             ((nix:pollin nix::pollrdhup nix:pollpri) (push :read event))
-             ((nix:pollerr nix:pollnval)              (push :error event)))
+             ((nix:pollout nix:pollhup)              (push :write event))
+             ((nix:pollin nix:pollrdhup nix:pollpri) (push :read event))
+             ((nix:pollerr nix:pollnval)             (push :error event)))
        :when event :collect (list fd event))))

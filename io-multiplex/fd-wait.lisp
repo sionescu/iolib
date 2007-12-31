@@ -41,19 +41,19 @@ of a file descriptor."))
 
 (defun compute-poll-flags (type)
   (ecase type
-    (:read (logior nix::pollin nix::pollrdhup nix::pollpri))
-    (:write (logior nix::pollout nix::pollhup))
-    (:read-write (logior nix::pollin nix::pollrdhup nix::pollpri
-                         nix::pollout nix::pollhup))))         
+    (:read (logior nix:pollin nix:pollrdhup nix:pollpri))
+    (:write (logior nix:pollout nix:pollhup))
+    (:read-write (logior nix:pollin nix:pollrdhup nix:pollpri
+                         nix:pollout nix:pollhup))))         
 
 (defun process-poll-revents (revents fd)
   (let ((readp nil) (writep nil))
     (flags-case revents
-      ((nix::pollin nix::pollrdhup nix::pollpri)
+      ((nix:pollin nix:pollrdhup nix:pollpri)
        (setf readp t))
-      ((nix::pollout nix::pollhup) (setf writep t))
-      ((nix::pollerr) (error 'poll-error :fd fd))
-      ((nix::pollnval) (error 'poll-error :fd fd
+      ((nix:pollout nix:pollhup) (setf writep t))
+      ((nix:pollerr) (error 'poll-error :fd fd))
+      ((nix:pollnval) (error 'poll-error :fd fd
                               :identifier "Invalid file descriptor")))
     (values readp writep)))
 

@@ -49,15 +49,15 @@
 
 (defun calc-kqueue-monitor-filter (fd-entry)
   (if (null (fd-entry-read-event fd-entry))
-      nix::evfilt-write
-      nix::evfilt-read))
+      nix:evfilt-write
+      nix:evfilt-read))
 
 (defmethod monitor-fd ((mux kqueue-multiplexer) fd-entry)
   (assert fd-entry (fd-entry) "Must supply an FD-ENTRY!")
   (handler-case
       (do-kqueue-event-request (fd-of mux) fd-entry
                                (calc-kqueue-monitor-filter fd-entry)
-                               nix::ev-add)
+                               nix:ev-add)
     (nix:ebadf ()
       (warn "FD ~A is invalid, cannot monitor it." (fd-entry-fd fd-entry)))))
 
@@ -65,12 +65,12 @@
   (case event-type
     (:read
      (case edge-change
-       (:add (values nix::evfilt-read nix::ev-add))
-       (:del (values nix::evfilt-read nix::ev-delete))))
+       (:add (values nix:evfilt-read nix:ev-add))
+       (:del (values nix:evfilt-read nix:ev-delete))))
     (:write
      (case edge-change
-       (:add (values nix::evfilt-write nix::ev-add))
-       (:del (values nix::evfilt-write nix::ev-delete))))))
+       (:add (values nix:evfilt-write nix:ev-add))
+       (:del (values nix:evfilt-write nix:ev-delete))))))
 
 (defmethod update-fd ((mux kqueue-multiplexer) fd-entry event-type edge-change)
   (assert fd-entry (fd-entry) "Must supply an FD-ENTRY!")
@@ -87,14 +87,14 @@
 
 (defun calc-kqueue-unmonitor-filter (fd-entry)
   (if (null (fd-entry-read-event fd-entry))
-      nix::evfilt-read
-      nix::evfilt-write))
+      nix:evfilt-read
+      nix:evfilt-write))
 
 (defmethod unmonitor-fd ((mux kqueue-multiplexer) fd-entry)
   (handler-case
       (do-kqueue-event-request (fd-of mux) fd-entry
                                (calc-kqueue-unmonitor-filter fd-entry)
-                               nix::ev-delete)
+                               nix:ev-delete)
     (nix:ebadf ()
       (warn "FD ~A is invalid, cannot unmonitor it." (fd-entry-fd fd-entry)))
     (nix:enoent ()
@@ -130,11 +130,11 @@
   (declare (ignore data))
   (let ((event ()))
     (case filter
-      (#.nix::evfilt-write (push :write event))
-      (#.nix::evfilt-read  (push :read event)))
+      (#.nix:evfilt-write (push :write event))
+      (#.nix:evfilt-read  (push :read event)))
     (flags-case flags
       ;; TODO: check what exactly EV_EOF means
-      ;; (nix::ev-eof   (pushnew :read event))
-      (nix::ev-error (push :error event)))
+      ;; (nix:ev-eof   (pushnew :read event))
+      (nix:ev-error (push :error event)))
     (when event
       (list fd event))))

@@ -31,8 +31,8 @@
 
 (defun get-fd-limit ()
   "Return the maximum number of FDs available for the current process."
-  (let ((fd-limit (nix:getrlimit nix::rlimit-nofile)))
-    (unless (eql fd-limit nix::rlim-infinity)
+  (let ((fd-limit (nix:getrlimit nix:rlimit-nofile)))
+    (unless (eql fd-limit nix:rlim-infinity)
       (1- fd-limit))))
 
 (defclass multiplexer ()

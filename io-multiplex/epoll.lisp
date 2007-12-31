@@ -41,10 +41,10 @@
 
 (defun calc-epoll-flags (fd-entry)
   (logior (if (fd-entry-read-event fd-entry)
-              nix::epollin 0)
+              nix:epollin 0)
           (if (fd-entry-write-event fd-entry)
-              nix::epollout 0)
-          nix::epollpri))
+              nix:epollout 0)
+          nix:epollpri))
 
 (defmethod monitor-fd ((mux epoll-multiplexer) fd-entry)
   (assert fd-entry (fd-entry) "Must supply an FD-ENTRY!")
@@ -79,7 +79,7 @@
              'nix::epoll-data 'nix::fd)
             fd)
       (handler-case
-          (nix:epoll-ctl (fd-of mux) nix::epoll-ctl-mod fd ev)
+          (nix:epoll-ctl (fd-of mux) nix:epoll-ctl-mod fd ev)
         (nix:ebadf ()
           (warn "FD ~A is invalid, cannot update its status." fd))
         (nix:enoent ()
@@ -89,7 +89,7 @@
 (defmethod unmonitor-fd ((mux epoll-multiplexer) fd-entry)
   (handler-case
       (nix:epoll-ctl (fd-of mux)
-                     nix::epoll-ctl-del
+                     nix:epoll-ctl-del
                      (fd-entry-fd fd-entry)
                      (null-pointer))
     (nix:ebadf ()
@@ -120,11 +120,11 @@
 (defun make-epoll-event (fd mask)
   (let ((event ()))
     (flags-case mask
-      ((nix::epollout nix::epollhup)
+      ((nix:epollout nix:epollhup)
        (push :write event))
-      ((nix::epollin nix::epollpri nix::epollhup)
+      ((nix:epollin nix:epollpri nix:epollhup)
        (push :read event))
-      (nix::epollerr
+      (nix:epollerr
        (push :error event)))
     (when event
       (list fd event))))
