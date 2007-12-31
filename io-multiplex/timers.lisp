@@ -32,8 +32,7 @@
 (defstruct (timer
              (:conc-name %timer-)
              (:constructor %make-timer (name function expire-time
-                                        relative-time one-shot new-thread-p))
-             (:print-function %print-timer))
+                                        relative-time one-shot new-thread-p)))
   name
   ;; to call when the timer expires
   function
@@ -47,8 +46,7 @@
   ;; when not NIL, call FUNCTION in a new thread
   new-thread-p)
 
-(defun %print-timer (object stream print-level)
-  (declare (ignore print-level))
+(defmethod print-object ((object timer) stream)
   (print-unreadable-object (object stream)
     (format stream "TIMER ~S, Timeout: [ ~A , ~A ], ~:[persistent~;one-shot~], to run in ~:[same~;new~] thread"
             (or (%timer-name object)

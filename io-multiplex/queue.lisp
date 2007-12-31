@@ -101,13 +101,11 @@
 
 (defstruct (priority-queue
              (:conc-name %pqueue-)
-             (:constructor %make-priority-queue)
-             (:print-function %print-priority-queue))
+             (:constructor %make-priority-queue))
   contents
   keyfun)
 
-(defun %print-priority-queue (object stream print-level)
-  (declare (ignore print-level))
+(defmethod print-object ((object priority-queue) stream)
   (print-unreadable-object (object stream :type t :identity t)
     (format stream "~[empty~:;~:*~D item~:P~]"
             (length (%pqueue-contents object)))))
