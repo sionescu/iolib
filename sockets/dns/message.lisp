@@ -279,11 +279,11 @@
     (let (string offset pointer-seen)
       (labels ((%deref-dns-string (pointer rec)
                  (when (not pointer-seen)
-                   (if rec
-                       (progn
-                         (setf pointer-seen t)
-                         (setf offset (+ (read-cursor-of buffer) 2)))
-                       (setf offset (+ (read-cursor-of buffer) 1))))
+                   (cond (rec
+                          (setf pointer-seen t)
+                          (setf offset (+ (read-cursor-of buffer) 2)))
+                         (t 
+                          (setf offset (+ (read-cursor-of buffer) 1)))))
                  (dynamic-buffer-seek-read-cursor buffer :offset pointer)
                  (setf string (read-dns-string buffer)))
                (%read-tags ()
