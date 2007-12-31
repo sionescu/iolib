@@ -61,8 +61,8 @@
       ((eql name :any) net.sockets:+ipv4-unspecified+)
       (t (nth-value 0 (net.sockets:convert-or-lookup-inet-address name))))))
 
-(defun open-stream (peer-host peer-port 
-                    &key (local-host :any) (local-port 0)
+(defun open-stream (peer-host peer-port &key
+                    (local-host :any) (local-port 0)
                     (external-format :default)
                     (element-type 'character)
                     (protocol :tcp))
@@ -102,8 +102,7 @@
 (defun close-server (server)
   (close server))
 
-(defun accept-connection (socket
-                          &key
+(defun accept-connection (socket &key
                           (external-format :default)
                           (element-type 'character))
   (declare (ignore element-type))       ; bivalent streams
@@ -116,10 +115,5 @@
 ;;;;
 
 (defmacro with-server ((name arguments) &body forms)
-  `(let (,name)
-     (unwind-protect 
-          (progn
-            (setf ,name (open-server ,@arguments))
-            (locally
-                ,@forms))
-       (when ,name (close-server ,name)))))
+  `(with-open-stream (,name (open-server ,@arguments))
+     (locally ,@forms)))
