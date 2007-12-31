@@ -32,19 +32,18 @@
 (defvar *dns-timeout* 5
   "Timeout for DNS queries in seconds.")
 
+(defconstant +dns-port+ 53)
+
 (defun send-query (socket-type buffer nameserver timeout)
-  (declare (ignorable timeout))
-  (let ((socket (make-socket :type socket-type
-                             :ipv6 (ipv6-address-p nameserver)))
-        (input-buffer (make-array +dns-datagram-size+
+  (let ((input-buffer (make-array +dns-datagram-size+
                                   :element-type 'ub8)))
-    (unwind-protect
-         (progn
-           (connect socket nameserver :port 53)
-           (socket-send buffer socket)
-           (set-socket-option socket :receive-timeout :sec timeout :usec 0)
-           (socket-receive input-buffer socket))
-      (close socket))))
+    (with-open-socket
+        (socket :connect :active :type socket-type
+                :remote-host nameserver :remote-port +dns-port+
+                :ipv6 (ipv6-address-p nameserver))
+      (socket-send buffer socket)
+      (iomux:wait-until-fd-ready (fd-of socket) :read timeout)
+      (socket-receive input-buffer socket))))
 
 (define-constant +max-16-bits+ (1- (expt 2 16)))
 
