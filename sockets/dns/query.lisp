@@ -331,6 +331,6 @@
   (assert nameservers (nameservers) "Must supply a nameserver")
   (let ((pname (preprocess-dns-name name type)))
     (dolist (ns (mapcar #'ensure-address nameservers))
-      (when-let ((response (do-one-dns-query name type search decode
+      (when-let ((response (do-one-dns-query pname type search decode
                                              ns repeat timeout)))
         (return-from dns-query response)))))
