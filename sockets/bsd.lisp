@@ -86,12 +86,6 @@
   (socket  fd)
   (backlog :int))
 
-(define-socket-call "recv" ssize
-  (socket fd)
-  (buffer :pointer)
-  (length size)
-  (flags  :int))
-
 (define-socket-call "recvfrom" ssize
   (socket  fd)
   (buffer  :pointer)
@@ -100,24 +94,6 @@
   (address :pointer)
   (addrlen :pointer))
 
-#-(and) ; unused
-(define-socket-call "recvmsg" ssize
-  (socket  fd)
-  (message :pointer)
-  (flags   :int))
-
-(define-socket-call "send" ssize
-  (socket fd)
-  (buffer :pointer)
-  (length size)
-  (flags  :int))
-
-#-(and) ; unused
-(define-socket-call "sendmsg" ssize
-  (socket  fd)
-  (message :pointer)
-  (flags   :int))
-
 (define-socket-call "sendto" ssize
   (socket   fd)
   (buffer   :pointer)
@@ -125,6 +101,18 @@
   (flags    :int)
   (destaddr :pointer)
   (destlen  socklen))
+
+#-(and) ; unused
+(define-socket-call "recvmsg" ssize
+  (socket  fd)
+  (message :pointer)
+  (flags   :int))
+
+#-(and) ; unused
+(define-socket-call "sendmsg" ssize
+  (socket  fd)
+  (message :pointer)
+  (flags   :int))
 
 (define-socket-call "setsockopt" :int
   "Configure a socket."
