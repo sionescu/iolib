@@ -353,10 +353,11 @@
 ;;; know. 1974 has no special significance, unless you're the same age
 ;;; as me.
 (deftest inet.socket-bind.1
-    (with-open-socket (s :family :ipv4 :local-host #(127 0 0 1) :local-port 1974)
+    (with-open-socket (s :family :ipv4 :connect :passive
+                         :local-host #(127 0 0 1) :local-port 1974)
       (handler-case
-          (with-open-socket (s :family :ipv4 :local-host #(127 0 0 1)
-                          :local-port 1974)
+          (with-open-socket (s :family :ipv4 :connect :passive
+                               :local-host #(127 0 0 1) :local-port 1974)
             nil)
         (socket-address-in-use-error () t)))
   t)
