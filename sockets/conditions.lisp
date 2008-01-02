@@ -64,7 +64,8 @@
 (defmacro define-socket-error (name identifier &optional documentation)
   `(progn
      (setf (gethash ,identifier *socket-error-map*) ',name)
-     (define-condition ,name (socket-error) ()
+     (define-condition ,name (,(nix::get-posix-error-condition identifier)
+                              socket-error) ()
        (:default-initargs :code ,(foreign-enum-value 'socket-error-values
                                                      identifier)
          :identifier ,identifier)
