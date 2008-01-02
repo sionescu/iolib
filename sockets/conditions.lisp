@@ -55,7 +55,7 @@
     (let ((code (osicat-sys:system-error-code socket-error)))
       (format stream "~S ~S ~S"
               (or code "[Unknown code]")
-              (osicat-sys:system-error-identifier socket-error)
+              (error-identifier socket-error)
               (if code (nix:strerror code)
                   "[Can't get error string.]")))))
 
@@ -68,7 +68,7 @@
        (:default-initargs :code ,(foreign-enum-value 'socket-error-values
                                                      identifier)
          :identifier ,identifier)
-       (:documentation ,(or documentation "Socket error.")))))
+       (:documentation ,(or documentation (nix:strerror identifier))))))
 
 (defun lookup-socket-error (keyword)
   (gethash keyword *socket-error-map*))
