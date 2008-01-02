@@ -145,25 +145,9 @@
 
    ;; Hostname, Service, and Protocol Lookups
    #:convert-or-lookup-inet-address
-   #:host
-   #:host-addresses
-   #:host-aliases
-   #:host-truename
    #:lookup-host
    #:lookup-protocol
    #:lookup-service
-   #:make-host
-   #:make-protocol
-   #:make-service
-   #:protocol
-   #:protocol-aliases
-   #:protocol-name
-   #:protocol-number
-   #:host-random-address
-   #:service
-   #:service-name
-   #:service-port
-   #:service-protocol
 
    ;; Network Interface Lookup
    #:list-network-interfaces
