@@ -49,7 +49,7 @@
   ((:enolink "ENOLINK"))
   ((:epfnosupport "EPFNOSUPPORT"))
   ((:eafnosupport "EAFNOSUPPORT"))
-  ((:eaddrinuse "EADDRINUSE" "WSAEADDRINUSE"))
+  ((:eaddrinuse "EADDRINUSE"))
   ((:eaddrnotavail "EADDRNOTAVAIL"))
   ((:enetdown "ENETDOWN"))
   ((:enetunreach "ENETUNREACH"))

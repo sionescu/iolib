@@ -105,7 +105,7 @@
 (defun signal-socket-error (return-value)
   (declare (ignore return-value))
   (let* ((errno (nix:get-errno))
-         (kw (foreign-enum-keyword 'nix::errno-values
+         (kw (foreign-enum-keyword 'socket-error-values
                                    errno :errorp nil)))
     (or (%socket-error kw errno)
         (error (nix::make-posix-error errno)))))
