@@ -246,23 +246,22 @@
 (defmacro multiple-value-case (values &body body)
   (setf values (ensure-list values))
   (assert values () "Must provide at least one value to test")
-  (let ((len (length values)))
-    (labels ((%do-var (var val)
-               (cond
-                 ((and (symbolp var) (string= var "_"))
-                  t)
-                 ((consp var)
-                  `(memq ,val ',var))
-                 (t
-                  `(eq ,val ',var))))
-             (%do-clause (c)
-               (destructuring-bind ((&rest vals) &rest code) c
-                 `((and ,@(mapcar #'%do-var vals values)) ,@code)))
-             (%do-last-clause (c)
-               (when c
-                 (destructuring-bind (test &rest code) c
-                   (if (member test '(otherwise t))
-                       `((t ,@code))
-                       `(,(%do-clause c)))))))
-      `(cond ,@(append (mapcar #'%do-clause (butlast body))
-                       (%do-last-clause (car (last body))))))))
+  (labels ((%do-var (var val)
+             (cond
+               ((and (symbolp var) (string= var "_"))
+                t)
+               ((consp var)
+                `(memq ,val ',var))
+               (t
+                `(eq ,val ',var))))
+           (%do-clause (c)
+             (destructuring-bind ((&rest vals) &rest code) c
+               `((and ,@(mapcar #'%do-var vals values)) ,@code)))
+           (%do-last-clause (c)
+             (when c
+               (destructuring-bind (test &rest code) c
+                 (if (member test '(otherwise t))
+                     `((t ,@code))
+                     `(,(%do-clause c)))))))
+    `(cond ,@(append (mapcar #'%do-clause (butlast body))
+                     (%do-last-clause (car (last body)))))))

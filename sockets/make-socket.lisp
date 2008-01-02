@@ -84,8 +84,7 @@ remaining address list as the second return value."
           (socket-listen socket :backlog backlog))))))
 
 (defun %make-local-stream-active-socket (args family ef)
-  (destructuring-bind (&key local-filename remote-filename
-                            (backlog *default-backlog-size*))
+  (destructuring-bind (&key local-filename remote-filename)
       args
     (%with-close-on-error (socket (create-socket family :stream :active ef))
       (when local-filename
