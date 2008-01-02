@@ -51,8 +51,8 @@
 ;;; the return values from BODY.
 (defmacro with-expected-conditions ((&rest conditions) &body body)
   `(handler-case (progn ,@body)
-    ,@(loop for c in conditions collect `(,c () t))
-    (:no-error (&rest result) (list* :result result))))
+     ,@(loop for c in conditions collect `(,c () t))
+     (:no-error (&rest result) (list* :result result))))
 
 ;;;; Addresses
 
@@ -322,8 +322,8 @@
              (and (string= (interface-name if1) (interface-name if2))
                   (eql (interface-index if1) (interface-index if2)))))
       (loop for nif in (list-network-interfaces)
-            always (nif-equal nif (lookup-interface (interface-name nif)))
-            always (nif-equal nif (lookup-interface (interface-index nif)))))
+         always (nif-equal nif (lookup-interface (interface-name nif)))
+         always (nif-equal nif (lookup-interface (interface-index nif)))))
   t)
 
 ;;;; Sockets
@@ -380,7 +380,7 @@
 
 (deftest simple-tcp-client
     (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
-                    :family :ipv4)
+                         :family :ipv4)
       (let ((data (make-string 200)))
         (format s "here is some text")
         (finish-output s)
@@ -391,7 +391,7 @@
 
 (deftest sockaddr-return-type
     (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
-                    :family :ipv4)
+                         :family :ipv4)
       (and (ipv4-address-p (remote-address s))
            (numberp (remote-port s))))
   t)
@@ -404,7 +404,7 @@
 ;;; echo-server.c though --luis
 (deftest simple-udp-client.1
     (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
-                    :type :datagram :family :ipv4)
+                         :type :datagram :family :ipv4)
       (let ((data (make-array '(200) :element-type '(unsigned-byte 8))))
         (socket-send "here is some text" s)
         (socket-receive data s)
@@ -412,15 +412,15 @@
         (> (length data) 0)))
   t)
 
-(deftest simple-udp-client.2
-    (with-open-socket (s :type :datagram :family :ipv4)
-      (let ((data (make-array 100 :element-type '(unsigned-byte 8))))
-        (socket-send "here is some more text" s
-                     :remote-address *echo-address*
-                     :remote-port *echo-port*)
-        (socket-receive data s)
-        (> (length data) 0)))
-  t)
+;; (deftest simple-udp-client.2
+;;     (with-open-socket (s :type :datagram :family :ipv4)
+;;       (let ((data (make-array 100 :element-type '(unsigned-byte 8))))
+;;         (socket-send "here is some more text" s
+;;                      :remote-address *echo-address*
+;;                      :remote-port *echo-port*)
+;;         (socket-receive data s)
+;;         (> (length data) 0)))
+;;   t)
 
 (deftest simple-local-sockets
     (let ((file (namestring
@@ -480,7 +480,7 @@
 
 (deftest socket-open-p.2
     (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
-                    :family :ipv4)
+                         :family :ipv4)
       (socket-open-p s))
   t)
 
@@ -504,7 +504,7 @@
 (defun udp-server (port)
   (with-open-socket (s :type :datagram :local-port port)
     (loop
-     (multiple-value-bind (buf len address port)
-         (socket-receive s nil 500)
-       (format t "Received ~A bytes from ~A:~A - ~A ~%"
-               len address port (subseq buf 0 (min 10 len)))))))
+       (multiple-value-bind (buf len address port)
+           (socket-receive s nil 500)
+         (format t "Received ~A bytes from ~A:~A - ~A ~%"
+                 len address port (subseq buf 0 (min 10 len)))))))
