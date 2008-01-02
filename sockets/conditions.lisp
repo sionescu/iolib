@@ -40,10 +40,10 @@
   (declare (type stream stream))
   (let ((msg (error-message condition)))
     (when msg
-      (when (eql eof-place :before)
+      (when (eq eof-place :before)
         (fresh-line stream))
       (format stream "~A" msg)
-      (when (eql eof-place :after)
+      (when (eq eof-place :after)
         (fresh-line stream)))))
 
 ;;;; Socket Errors
@@ -108,4 +108,4 @@
          (kw (foreign-enum-keyword 'nix::errno-values
                                    errno :errorp nil)))
     (or (%socket-error kw errno)
-        (nix::syscall-signal-posix-error -1))))
+        (error (nix::make-posix-error errno)))))
