@@ -28,9 +28,12 @@
        (assert (= 1 (length clauses)))
        (assert (eq (caar clauses) :use))
        (flet ((get-symbols (packages)
-                (loop :for sym :being :the :external-symbols :of packages
-                      :collect sym :into symbols
-                      :finally (return (remove-duplicates symbols :test #'eq)))))
+                (let (symbols)
+                  (with-package-iterator (iterator packages :external)
+                    (loop (multiple-value-bind (morep symbol) (iterator)
+                            (unless morep (return))
+                            (push symbol symbols))))
+                  (remove-duplicates symbols :test #'eq))))
          `(defpackage ,name
             (:use #:common-lisp ,@(cdar clauses))
             (:export ,@(get-symbols (cdar clauses)))))))
