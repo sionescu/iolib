@@ -103,7 +103,7 @@
     (error err :identifier id :code code)))
 
 ;;; Used in the ERRNO-WRAPPER foreign type.
-(defun signal-socket-error (return-value)
+(defun signal-socket-error (&optional return-value)
   (declare (ignore return-value))
   (let* ((errno (nix:get-errno))
          (kw (foreign-enum-keyword 'socket-error-values
