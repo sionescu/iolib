@@ -1,8 +1,8 @@
-;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
 ;;;
-;;; iolib.asd --- ASDF system definition.
+;;; pkgdcl.lisp --- Package definition.
 ;;;
-;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -21,19 +21,19 @@
 ;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;;; Boston, MA 02110-1301, USA
 
-(defsystem :iolib
-  :description "I/O library."
-  :author "Stelian Ionescu <sionescu@common-lisp.net>"
-  :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
-  :version "0.5.4"
-  :licence "LLGPL-2.1"
-  :depends-on (:io.multiplex :io.streams :net.sockets)
-  :pathname (merge-pathnames (make-pathname :directory '(:relative "iolib"))
-                             *load-truename*)
-  :components ((:file "pkgdcl")))
+(in-package :common-lisp-user)
 
-(defmethod perform ((o test-op) (c (eql (find-system :iolib))))
-  (operate 'test-op :iolib-tests))
+(macrolet
+    ((defconduit (name &body clauses)
+       (assert (= 1 (length clauses)))
+       (assert (eq (caar clauses) :use))
+       (flet ((get-symbols (packages)
+                (loop :for sym :being :the :external-symbols :of packages
+                      :collect sym :into symbols
+                      :finally (return (remove-duplicates symbols :test #'eq)))))
+         `(defpackage ,name
+            (:use #:common-lisp ,@(cdar clauses))
+            (:export ,@(get-symbols (cdar clauses)))))))
 
-(defmethod operation-done-p ((o test-op) (c (eql (find-system :iolib))))
-  nil)
+  (defconduit :iolib
+    (:use :io.multiplex :io.streams :net.sockets)))
