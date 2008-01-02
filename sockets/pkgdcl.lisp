@@ -224,4 +224,6 @@
    #:*dns-search-domain*
    ))
 
+(in-package :net.sockets)
+
 (series::install)
