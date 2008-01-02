@@ -311,8 +311,8 @@
       (dns-ptr-name name)
       name))
 
-(defun dns-query (name &key (type :a) decode search
-                  (nameservers *dns-nameservers*)
+(defun dns-query (name &key (type :a) (search *dns-search-domain*)
+                  (nameservers *dns-nameservers*) decode
                   (repeat *dns-repeat*) (timeout *dns-timeout*))
   (setf nameservers (ensure-list nameservers))
   (assert nameservers (nameservers) "Must supply a nameserver")
