@@ -66,10 +66,8 @@
         ((and (eq ipv6 nil)
               (ipv6-ipv4-mapped-p address))
          (setf address (map-ipv6-address-to-ipv4 address))))
-  (multiple-value-bind (addresses truename aliases)
-      (search-host-by-address address)
-    (cond (addresses (values addresses truename aliases))
-          (t (dns-lookup-host-by-address address)))))
+  (nth-value-or 0 (search-host-by-address address)
+                (dns-lookup-host-by-address address)))
 
 (defun process-one-reply (reply query-type)
   (let ((truename (dns-record-name (aref (dns-message-question reply) 0)))
@@ -124,10 +122,8 @@
     ((t)     (dns-lookup-host-in-a-and-aaaa host))))
 
 (defun lookup-host-by-name (host ipv6)
-  (multiple-value-bind (addresses truename aliases)
-      (search-host-by-name host ipv6)
-    (cond (addresses (values addresses truename aliases))
-          (t (dns-lookup-host-by-name host ipv6)))))
+  (nth-value-or 0 (search-host-by-name host ipv6)
+                (dns-lookup-host-by-name host ipv6)))
 
 ;; TODO: * implement address selection as per RFC 3484
 ;;       * add caching

@@ -163,7 +163,8 @@
                    (return-from %write-n-bytes (values nil :fail)))))
              (buffer-emptyp () (= bytes-written nbytes))
              (errorp () (handler-case (iomux:wait-until-fd-ready fd :write)
-                          (iomux:poll-error ()))))
+                          (iomux:poll-error () t)
+                          (:no-error (r w) (declare (ignore r w)) nil))))
       (loop :until (buffer-emptyp) :do (write-or-return)
          :finally (return (values t bytes-written))))))
 
@@ -194,7 +195,8 @@
                (when (iobuf-empty-p buf)
                  (iobuf-reset buf) t))
              (errorp () (handler-case (iomux:wait-until-fd-ready fd :write)
-                          (iomux:poll-error ()))))
+                          (iomux:poll-error () t)
+                          (:no-error (r w) (declare (ignore r w)) nil))))
       (loop :until (buffer-emptyp) :do (write-or-return)
          :finally (return (values t bytes-written))))))
 

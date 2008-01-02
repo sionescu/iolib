@@ -71,26 +71,26 @@
 
 (defun get-interface-by-index (index)
   (with-foreign-object (buff :uint8 ifnamesize)
-    (let (retval)
-      (handler-case
-          (setf retval (if-indextoname index buff))
-        (nix:enxio (err)
-          (error 'unknown-interface
-                 :code (osicat-sys:system-error-code err)
-                 :identifier (osicat-sys:system-error-identifier err)
-                 :index index)))
-      (make-interface (copy-seq retval) index))))
-
-(defun get-interface-by-name (name)
-  (let (retval)
     (handler-case
-        (setf retval (if-nametoindex name))
-      (nix:enodev (err)
+        (if-indextoname index buff)
+      (nix:enxio (err)
         (error 'unknown-interface
                :code (osicat-sys:system-error-code err)
                :identifier (osicat-sys:system-error-identifier err)
-               :name name)))
-    (make-interface (copy-seq name) retval)))
+               :index index))
+      (:no-error (retval)
+        (make-interface (copy-seq retval) index)))))
+
+(defun get-interface-by-name (name)
+  (handler-case
+      (if-nametoindex name)
+    (nix:enodev (err)
+      (error 'unknown-interface
+             :code (osicat-sys:system-error-code err)
+             :identifier (osicat-sys:system-error-identifier err)
+             :name name))
+    (:no-error (index)
+      (make-interface (copy-seq name) index))))
 
 (defun lookup-interface (iface)
   "Lookup an interface by name or index.  UNKNOWN-INTERFACE is

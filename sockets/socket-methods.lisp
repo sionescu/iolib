@@ -68,10 +68,9 @@
   (with-accessors ((fd fd-of) (fam socket-family) (proto socket-protocol))
       socket
     (setf fd (or file-descriptor
-                 (multiple-value-bind (sf st sp)
-                     (translate-make-socket-keywords-to-constants
-                      family type protocol)
-                   (socket sf st sp))))
+                 (multiple-value-call #'socket
+                   (translate-make-socket-keywords-to-constants
+                    family type protocol))))
     (setf fam family
           proto protocol)))
 
@@ -181,10 +180,10 @@
         (with-foreign-object (ss 'sockaddr-storage)
           (bzero ss size-of-sockaddr-storage)
           (with-socklen (size size-of-sockaddr-storage)
-            (getsockname (fd-of socket) ss size)
-            t))
+            (getsockname (fd-of socket) ss size)))
       (nix:ebadf () nil)
-      (nix:econnreset () nil))))
+      (nix:econnreset () nil)
+      (:no-error (_) (declare (ignore _)) t))))
 
 ;;;; GETSOCKNAME
 
@@ -331,9 +330,9 @@
         (with-foreign-object (ss 'sockaddr-storage)
           (bzero ss size-of-sockaddr-storage)
           (with-socklen (size size-of-sockaddr-storage)
-            (getpeername (fd-of socket) ss size)
-            t))
-      (socket-not-connected-error () nil))))
+            (getpeername (fd-of socket) ss size)))
+      (socket-not-connected-error () nil)
+      (:no-error (_) (declare (ignore _)) t))))
 
 ;;;; SHUTDOWN
 

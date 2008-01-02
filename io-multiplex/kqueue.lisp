@@ -75,9 +75,8 @@
 (defmethod update-fd ((mux kqueue-multiplexer) fd-entry event-type edge-change)
   (assert fd-entry (fd-entry) "Must supply an FD-ENTRY!")
   (handler-case
-      (multiple-value-bind (filter change)
-          (calc-kqueue-update-filter-and-flags event-type edge-change)
-        (do-kqueue-event-request (fd-of mux) fd-entry filter change))
+      (multiple-value-call #'do-kqueue-event-request (fd-of mux) fd-entry
+                           (calc-kqueue-update-filter-and-flags event-type edge-change))
     (nix:ebadf ()
       (warn "FD ~A is invalid, cannot update its status."
             (fd-entry-fd fd-entry)))
