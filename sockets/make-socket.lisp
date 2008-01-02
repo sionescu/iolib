@@ -23,15 +23,10 @@
 
 (in-package :net.sockets)
 
-(defun create-socket (&key (family :internet) (type :stream) (connect :active)
-                      (protocol :default) (ipv6 *ipv6*)
-                      (external-format :default))
-  (let ((family (if (or (null family) (eq family :internet))
-                    (if ipv6 :ipv6 :ipv4)
-                    family)))
-    (make-instance (select-socket-class family type connect protocol)
-                   :family family
-                   :external-format external-format)))
+(defun create-socket (family type connect external-format)
+  (make-instance (select-socket-class family type connect :default)
+                 :family family
+                 :external-format external-format))
 
 (defmacro %with-close-on-error ((var value) &body body)
   "Bind VAR to VALUE, execute BODY as implicit PROGN and return VAR.
@@ -55,66 +50,67 @@ remaining address list as the second return value."
 (define-symbol-macro +default-host+
     (if *ipv6* +ipv6-unspecified+ +ipv4-unspecified+))
 
-(defun %make-internet-stream-socket (args connect ef)
-  (destructuring-bind (&key family reuse-address keepalive nodelay interface
-                            (local-host +default-host+) (local-port 0)
-                            (remote-host +default-host+) (remote-port 0)
-                            (backlog *default-backlog-size*))
-      args
-    (let ((local-port  (ensure-numerical-service local-port))
-          (remote-port (ensure-numerical-service remote-port)))
-      (ecase connect
-        (:active
-         (%with-close-on-error (socket (create-socket :family family :type :stream
-                                                      :connect :active :external-format ef))
-           (when keepalive (set-socket-option socket :keep-alive :value t))
-           (when nodelay (set-socket-option socket :tcp-nodelay :value t))
-           (when local-host
-             (bind-address socket (convert-or-lookup-inet-address local-host)
-                           :port local-port
-                           :reuse-address reuse-address))
-           (when (plusp remote-port)
-             (connect socket (convert-or-lookup-inet-address remote-host)
-                      :port remote-port))))
-        (:passive
-         (%with-close-on-error (socket (create-socket :family family :type :stream
-                                                      :connect :passive :external-format ef))
-           (when local-host
-             (bind-address socket (convert-or-lookup-inet-address local-host)
-                           :port local-port
-                           :reuse-address reuse-address)
-             (when interface
-               (set-socket-option socket :bind-to-device :value interface))
-           (socket-listen socket :backlog backlog))))))))
-
-(defun %make-local-stream-socket (args connect ef)
-  (destructuring-bind (&key family (backlog *default-backlog-size*)
-                            local-filename remote-filename)
-      args
-    (ecase connect
-      (:active
-       (%with-close-on-error (socket (create-socket :family family :type :stream
-                                                    :connect :active :external-format ef))
-         (when local-filename
-           (bind-address socket (make-address local-filename)))
-         (when remote-filename
-           (connect socket (make-address remote-filename)))))
-      (:passive
-       (%with-close-on-error (socket (create-socket :family family :type :stream
-                                                    :connect :passive :external-format ef))
-         (when local-filename
-           (bind-address socket (make-address local-filename))
-           (socket-listen socket :backlog backlog)))))))
-
-(defun %make-internet-datagram-socket (args ef)
-  (destructuring-bind (&key family reuse-address broadcast interface
+(defun %make-internet-stream-active-socket (args family ef)
+  (destructuring-bind (&key keepalive nodelay (reuse-address t)
                             (local-host +default-host+) (local-port 0)
                             (remote-host +default-host+) (remote-port 0))
       args
     (let ((local-port  (ensure-numerical-service local-port))
           (remote-port (ensure-numerical-service remote-port)))
-      (%with-close-on-error (socket (create-socket :family family :type :datagram
-                                                   :connect :active :external-format ef))
+      (%with-close-on-error (socket (create-socket family :stream :active ef))
+        (when keepalive (set-socket-option socket :keep-alive :value t))
+        (when nodelay (set-socket-option socket :tcp-nodelay :value t))
+        (when local-host
+          (bind-address socket (convert-or-lookup-inet-address local-host)
+                        :port local-port
+                        :reuse-address reuse-address))
+        (when (plusp remote-port)
+          (connect socket (convert-or-lookup-inet-address remote-host)
+                   :port remote-port))))))
+
+(defun %make-internet-stream-passive-socket (args family ef)
+  (destructuring-bind (&key interface (reuse-address t)
+                            (local-host +default-host+) (local-port 0)
+                            (backlog *default-backlog-size*))
+      args
+    (let ((local-port  (ensure-numerical-service local-port)))
+      (%with-close-on-error (socket (create-socket family :stream :passive ef))
+        (when local-host
+          (when interface
+            (set-socket-option socket :bind-to-device :value interface))
+          (bind-address socket (convert-or-lookup-inet-address local-host)
+                        :port local-port
+                        :reuse-address reuse-address)
+          (socket-listen socket :backlog backlog))))))
+
+(defun %make-local-stream-active-socket (args family ef)
+  (destructuring-bind (&key local-filename remote-filename
+                            (backlog *default-backlog-size*))
+      args
+    (%with-close-on-error (socket (create-socket family :stream :active ef))
+      (when local-filename
+        (bind-address socket (ensure-address local-filename :local)))
+      (when remote-filename
+        (connect socket (ensure-address remote-filename :local))))))
+
+(defun %make-local-stream-passive-socket (args family ef)
+  (destructuring-bind (&key local-filename (reuse-address t)
+                            (backlog *default-backlog-size*))
+      args
+    (%with-close-on-error (socket (create-socket family :stream :passive ef))
+      (when local-filename
+        (bind-address socket (ensure-address local-filename :local)
+                      :reuse-address reuse-address)
+        (socket-listen socket :backlog backlog)))))
+
+(defun %make-internet-datagram-socket (args family ef)
+  (destructuring-bind (&key broadcast interface (reuse-address t)
+                            (local-host +default-host+) (local-port 0)
+                            (remote-host +default-host+) (remote-port 0))
+      args
+    (let ((local-port  (ensure-numerical-service local-port))
+          (remote-port (ensure-numerical-service remote-port)))
+      (%with-close-on-error (socket (create-socket family :datagram :active ef))
         (when broadcast (set-socket-option socket :broadcast :value t))
         (when local-host
           (bind-address socket (convert-or-lookup-inet-address local-host)
@@ -126,10 +122,9 @@ remaining address list as the second return value."
           (connect socket (convert-or-lookup-inet-address remote-host)
                    :port remote-port))))))
 
-(defun %make-local-datagram-socket (args ef)
-  (destructuring-bind (&key family local-filename remote-filename) args
-    (%with-close-on-error (socket (create-socket :family family :type :datagram
-                                                 :connect :active :external-format ef))
+(defun %make-local-datagram-socket (args family ef)
+  (destructuring-bind (&key local-filename remote-filename) args
+    (%with-close-on-error (socket (create-socket family :datagram :active ef))
       (when local-filename
         (bind-address socket (ensure-address local-filename :local)))
       (when remote-filename
@@ -142,24 +137,25 @@ remaining address list as the second return value."
   (check-type family (member :internet :local :ipv4 :ipv6) "one of :INTERNET, :LOCAL, :IPV4 or :IPV6")
   (check-type type (member :stream :datagram) "either :STREAM or :DATAGRAM")
   (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
-  (dolist (key '(:ipv6 :external-format :type :connect))
+  (dolist (key '(:family :type :connect :external-format :ipv6))
     (remf args key))
-  (let ((*ipv6* (case family
-                  (:ipv4 nil)
-                  (:ipv6 (or ipv6 t))
-                  (t     t)))
-        (address-family (if (or (eq family :ipv4) (eq family :ipv6))
-                            :internet
-                            family)))
-    (cond
-      ((and (eq address-family :internet) (eq type :stream))
-       (%make-internet-stream-socket args connect external-format))
-      ((and (eq address-family :local) (eq type :stream))
-       (%make-local-stream-socket args connect external-format))
-      ((and (eq address-family :internet) (eq type :datagram))
-       (%make-internet-datagram-socket args external-format))
-      ((and (eq address-family :local) (eq type :datagram))
-       (%make-local-datagram-socket args external-format)))))
+  (case family
+    (:internet (setf family (if ipv6 :ipv6 :ipv4)))
+    (:ipv4     (setf ipv6 nil)))
+  (let ((*ipv6* ipv6))
+    (multiple-value-case (family type connect)
+      (((:ipv4 :ipv6) :stream :active)
+       (%make-internet-stream-active-socket args family external-format))
+      (((:ipv4 :ipv6) :stream :passive)
+       (%make-internet-stream-passive-socket args family external-format))
+      ((:local :stream :active)
+       (%make-local-stream-active-socket args :local external-format))
+      ((:local :stream :passive)
+       (%make-local-stream-passive-socket args :local external-format))
+      (((:ipv4 :ipv6) :datagram)
+       (%make-internet-datagram-socket args family external-format))
+      ((:local :datagram)
+       (%make-local-datagram-socket args :local external-format)))))
 
 (defmacro with-open-socket ((var &rest args) &body body)
   "VAR is bound to a socket created by passing ARGS to
