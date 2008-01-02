@@ -52,7 +52,7 @@
               (:datagram sock-dgram)))
         (sp (cond
               ((integerp protocol) protocol)
-              ((eql protocol :default) 0)
+              ((eq protocol :default) 0)
               (t (lookup-protocol protocol)))))
     (values sf st sp)))
 
@@ -233,7 +233,7 @@
 
 (defmethod bind-address ((socket internet-socket) (address ipv4-address)
                          &key (port 0))
-  (if (eql (socket-family socket) :ipv6)
+  (if (eq (socket-family socket) :ipv6)
       (bind-ipv6-address (fd-of socket)
                          (map-ipv4-vector-to-ipv6 (address-name address))
                          port)
@@ -303,7 +303,7 @@
 
 (defmethod connect ((socket internet-socket) (address ipv4-address)
                     &key (port 0))
-  (if (eql (socket-family socket) :ipv6)
+  (if (eq (socket-family socket) :ipv6)
       (ipv6-connect (fd-of socket)
                     (map-ipv4-vector-to-ipv6 (address-name address))
                     port)

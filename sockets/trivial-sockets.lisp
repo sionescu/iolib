@@ -58,7 +58,7 @@
 (defun resolve-hostname (name)
   (let ((net.sockets:*ipv6* nil))
     (cond
-      ((eql name :any) net.sockets:+ipv4-unspecified+)
+      ((eq name :any) net.sockets:+ipv4-unspecified+)
       (t (nth-value 0 (net.sockets:convert-or-lookup-inet-address name))))))
 
 (defun open-stream (peer-host peer-port &key
@@ -67,7 +67,7 @@
                     (element-type 'character)
                     (protocol :tcp))
   (declare (ignore element-type))
-  (unless (eql protocol :tcp)
+  (unless (eq protocol :tcp)
     (error 'unsupported :feature `(:protocol ,protocol)))
   (let ((net.sockets:*ipv6* nil))
     (handler-bind ((error (lambda (c) (error 'socket-error :nested-error c))))
@@ -85,11 +85,11 @@
                     (backlog 1)
                     (protocol :tcp))
   "Returns a SERVER object and the port that was bound, as multiple values."
-  (unless (eql protocol :tcp)
+  (unless (eq protocol :tcp)
     (error 'unsupported :feature `(:protocol ,protocol)))
   (let ((net.sockets:*ipv6* nil))
     (handler-bind ((error (lambda (c) (error 'socket-error :nested-error c))))
-      (let* ((host (if (eql host :any) net.sockets:+ipv4-unspecified+ host))
+      (let* ((host (if (eq host :any) net.sockets:+ipv4-unspecified+ host))
              (socket (net.sockets:make-socket :family :internet
                                               :type :stream
                                               :connect :passive
