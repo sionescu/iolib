@@ -263,61 +263,48 @@
   (let* ((query (prepare-query name type))
          (buffer (sequence-of query))
          (bufflen (write-cursor-of query))
-         (tries-left repeat)
-         in-buff bytes-received response tcp-done)
-    (tagbody
-     :start
-       (setf tcp-done nil response nil)
-       ;; if the query size fits into a datagram(512 bytes max) do a
-       ;; UDP query, otherwise use TCP
-       (when (> bufflen +dns-datagram-size+)
-         (go :do-tcp-query))
-     :do-udp-query
-       ;; do a UDP query; in case of a socket error, try again
-       (handler-case
-           (setf (values in-buff bytes-received)
-                 (do-udp-dns-query buffer bufflen ns timeout))
-         (socket-error () (go :error))
-         (iomux:poll-timeout () (go :try-again-if-possible)))
-       ;; no socket error, go parse the response
-       (go :parse-response)
-     :do-tcp-query
-       ;; do a TCP query; in case of a socket error, try again
-       (handler-case
-           (setf (values in-buff bytes-received)
-                 (do-tcp-dns-query buffer bufflen ns timeout))
-         (socket-connection-timeout-error () (go :try-again-if-possible))
-         (socket-error () (go :error))
-         (iomux:poll-timeout () (go :try-again-if-possible)))
-       (setf tcp-done t)
-     :parse-response
-       ;; try to parse the response; in case of a parse error, try again
-       (handler-case
-           (setf response
-                 (read-dns-message
-                  (make-instance 'dynamic-buffer
-                                 :sequence in-buff
-                                 :size bytes-received)))
-         (dynamic-buffer-input-error () (go :error))
-         (dns-message-error () (go :error)))
-       ;; if a truncated response was received by UDP, try TCP
-       (when (and (not tcp-done)
-                  (truncated-field response))
-         (go :do-tcp-query))
-     :try-again-if-possible
-       (decf tries-left)
-       ;; if no response received and there are tries left, try again
-       (when (and (not response)
-                  (plusp tries-left))
-         (go :start))
-     :return-response
-       (when response
-         (return-from do-one-dns-query
-           (if decode
-               (decode-response response)
-               response)))
-     :error
-       (return-from do-one-dns-query))))
+         (tries-left repeat))
+    (labels
+        ((start ()
+           ;; if the query size fits into a datagram(512 bytes max) do a
+           ;; UDP query, otherwise use TCP
+           (if (<= +dns-datagram-size+ bufflen)
+               (do-udp-query)
+               (do-tcp-query)))
+         (do-udp-query ()
+           ;; do a UDP query; in case of a socket error, try again
+           (handler-case
+               (do-udp-dns-query buffer bufflen ns timeout)
+             (socket-error () (%error))
+             (iomux:poll-timeout () (try-again))
+             (:no-error (buf bytes) (parse-response buf bytes))))
+         (do-tcp-query ()
+           ;; do a TCP query; in case of a socket error, try again
+           (handler-case
+               (do-tcp-dns-query buffer bufflen ns timeout)
+             (socket-connection-timeout-error () (try-again))
+             (socket-error () (%error))
+             (iomux:poll-timeout () (try-again))
+             (:no-error (buf bytes) (parse-response buf bytes t))))
+         (parse-response (buf bytes &optional on-tcp)
+           ;; try to parse the response; in case of a parse error, try again
+           (handler-case
+               (read-dns-message (make-instance 'dynamic-buffer :sequence buf :size bytes))
+             (dynamic-buffer-input-error () (try-again))
+             (dns-message-error () (try-again))
+             (:no-error (response)
+               ;; if a truncated response was received by UDP, try TCP
+               ;; if it was received by TCP, err
+               (if (truncated-field response)
+                   (if on-tcp (%error) (do-tcp-query))
+                   (return-response response)))))
+         (try-again ()
+           ;; if no response received and there are tries left, try again
+           (if (plusp (decf tries-left)) (start) (%error)))
+         (return-response (response)
+           (if decode (decode-response response) response))
+         (%error () nil))
+      (start))))
 
 (defun preprocess-dns-name (name type)
   (if (eq type :ptr)
