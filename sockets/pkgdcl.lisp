@@ -63,7 +63,6 @@
    #:unknown-interface
    #:unknown-protocol
    #:unknown-service
-   #:unknown-socket-error
 
    ;; Condition Accessors
    #:address-type

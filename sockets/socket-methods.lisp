@@ -2,7 +2,7 @@
 ;;;
 ;;; socket-methods.lisp --- Various socket methods.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -62,8 +62,8 @@
 (defmethod (setf socket-fd) (fd (socket socket))
   (setf (fd-of socket) fd))
 
-(defmethod initialize-instance :after ((socket socket)
-                                       &key file-descriptor family type
+(defmethod initialize-instance :after ((socket socket) &key
+                                       file-descriptor family type
                                        (protocol :default))
   (with-accessors ((fd fd-of) (fam socket-family) (proto socket-protocol))
       socket
@@ -161,8 +161,7 @@
   (declare (ignore abort))
   (call-next-method)
   (when (fd-of socket)
-    (with-socket-error-filter
-      (nix:close (fd-of socket))))
+    (nix:close (fd-of socket)))
   (setf (fd-of socket) nil
         (slot-value socket 'bound) nil)
   (values socket))
@@ -185,7 +184,7 @@
             (getsockname (fd-of socket) ss size)
             t))
       (nix:ebadf () nil)
-      #+freebsd (nix:econnreset () nil))))
+      (nix:econnreset () nil))))
 
 ;;;; GETSOCKNAME
 

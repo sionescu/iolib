@@ -36,13 +36,8 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
-  :depends-on (:osicat
-               :babel
-               :bordeaux-threads
-               :io.streams
-               :alexandria
-               :split-sequence
-               :series)
+  :depends-on (:osicat :babel :bordeaux-threads :series
+               :io.streams :alexandria :split-sequence)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "sockets"))
                              *load-truename*)
   :serial t
@@ -74,5 +69,6 @@
       (:file "dynamic-buffer")
       (:file "message")
       (:file "query")
+      (:file "conditions")
       (:file "lookup")))
    (:file "make-socket")))
