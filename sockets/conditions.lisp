@@ -35,17 +35,6 @@
   (:method ((err system-error))
     (osicat-sys:system-error-message err)))
 
-(defun print-message-if-not-null (condition stream &optional
-                                  (eof-place :before))
-  (declare (type stream stream))
-  (let ((msg (error-message condition)))
-    (when msg
-      (when (eq eof-place :before)
-        (fresh-line stream))
-      (format stream "~A" msg)
-      (when (eq eof-place :after)
-        (fresh-line stream)))))
-
 ;;;; Socket Errors
 
 (define-condition socket-error (nix:posix-error) ())

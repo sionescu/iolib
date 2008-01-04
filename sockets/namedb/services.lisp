@@ -92,9 +92,9 @@
                         proto)))))))
 
 (define-condition unknown-service ()
-  ((name :initarg :name :initform nil :reader service-name))
+  ((name :initarg :name :initform nil :reader unknown-service-name))
   (:report (lambda (condition stream)
-             (format stream "Unknown service: ~S" (service-name condition))))
+             (format stream "Unknown service: ~S" (unknown-service-name condition))))
   (:documentation "Condition raised when a network service is not found."))
 
 (defvar *tcp-services-cache-by-name*   (make-hash-table :test #'equal))

@@ -47,10 +47,6 @@
       (setf addresses (ensure-list addresses))
       (map-into addresses #'ensure-address addresses))))
 
-(defun host-random-address (host)
-  "Returns a random address from HOST's address list."
-  (random-elt (host-addresses host)))
-
 (defun make-host (truename addresses &optional aliases)
   "Instantiates a HOST object."
   (make-instance 'host
@@ -66,18 +62,6 @@
 
 (defvar *hosts-cache* ())
 (defvar *hosts-cache-lock* (bt:make-lock "/etc/hosts cache lock"))
-
-(defun map-host-ipv4-addresses-to-ipv6 (hostobj)
-  (declare (type host hostobj))
-  (with-accessors ((addresses host-addresses)) hostobj
-    (setf addresses
-          (mapcar (lambda (address)
-                    (if (ipv4-address-p address)
-                        (make-address (map-ipv4-vector-to-ipv6
-                                       (address-name address)))
-                        address))
-                  addresses)))
-  (values hostobj))
 
 (defun parse-/etc/hosts (file)
   (let (hosts)

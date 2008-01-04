@@ -23,11 +23,6 @@
 
 (in-package :net.sockets)
 
-;;; TODO: manage socket options errors
-(defun sockopt-error (retval level option action &optional val1 val2)
-  (declare (ignore retval level option action val1 val2))
-  (error "Sockopt error !"))
-
 ;;;; SETF
 
 ;;; This interface looks nice but doesn't work so well for the linger

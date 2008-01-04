@@ -70,6 +70,9 @@
    #:error-code
    #:error-identifier
    #:error-message
+   #:resolver-error-data
+   #:unknown-protocol-name
+   #:unknown-service-name
 
    ;; Low-level Address Conversion
    #:address-to-vector

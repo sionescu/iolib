@@ -26,15 +26,15 @@
 (defclass dns-message ()
   ((id    :initform 0 :initarg :id    :accessor dns-message-id)
    (flags :initform 0 :initarg :flags :accessor dns-message-flags)
-   (decoded-flags :reader decoded-flags)
-   (qdcount :initarg :qdcount :reader dns-message-question-count)
-   (ancount :initarg :ancount :reader dns-message-answer-count)
-   (nscount :initarg :nscount :reader dns-message-authority-count)
-   (arcount :initarg :arcount :reader dns-message-additional-count)
-   (question   :reader dns-message-question)
-   (answer     :reader dns-message-answer)
-   (authority  :reader dns-message-authority)
-   (additional :reader dns-message-additional))
+   (decoded-flags :initform nil :accessor dns-message-decoded-flags)
+   (qdcount :initarg :qdcount :accessor dns-message-question-count)
+   (ancount :initarg :ancount :accessor dns-message-answer-count)
+   (nscount :initarg :nscount :accessor dns-message-authority-count)
+   (arcount :initarg :arcount :accessor dns-message-additional-count)
+   (question   :accessor dns-message-question)
+   (answer     :accessor dns-message-answer)
+   (authority  :accessor dns-message-authority)
+   (additional :accessor dns-message-additional))
   (:default-initargs :qdcount 1 :ancount 0 :nscount 0 :arcount 0))
 
 (defmacro define-flags-bitfield (name offset length &optional (type :integer))
@@ -85,12 +85,16 @@
 
 (defgeneric dns-flag-p (message flag)
   (:method ((msg dns-message) flag)
-    (member flag (decoded-flags msg) :test #'eq)))
+    (member flag (dns-message-decoded-flags msg) :test #'eq)))
 
 (defmethod initialize-instance :after ((msg dns-message) &key
                                        (qdcount 0) (ancount 0)
                                        (nscount 0) (arcount 0))
-  (with-slots (id flags decoded-flags question answer authority additional) msg
+  (with-accessors ((id dns-message-id) (flags dns-message-flags)
+                   (decoded-flags dns-message-decoded-flags)
+                   (question dns-message-question) (answer dns-message-answer)
+                   (authority dns-message-authority) (additional dns-message-additional))
+      msg
     (setf decoded-flags (decode-flags msg)
           question      (make-array qdcount :adjustable t :fill-pointer 0)
           answer        (make-array ancount :adjustable t :fill-pointer 0)
@@ -99,7 +103,11 @@
 
 (defmethod print-object ((msg dns-message) stream)
   (print-unreadable-object (msg stream :type nil :identity nil)
-    (with-slots (id decoded-flags question qdcount ancount nscount arcount) msg
+    (with-accessors ((id dns-message-id) (decoded-flags dns-message-decoded-flags)
+                     (question dns-message-question)
+                     (qdcount dns-message-question-count) (ancount dns-message-answer-count)
+                     (nscount dns-message-authority-count) (arcount dns-message-additional-count))
+        msg
       (format stream "DNS ~A Id: ~A, Question: ~A Flags: ~S, Sections: QD(~A) AN(~A) NS(~A) AD(~A)"
               (if (response-field msg) :response :query)
               id question decoded-flags
@@ -111,23 +119,29 @@
    (class :initarg :class :accessor dns-record-class)))
 
 (defmethod initialize-instance :after ((record dns-record) &key)
-  (with-slots (name type class) record
-     (check-type name string "a string")
-     (check-type type (satisfies dns-record-type-p) "a valid record type")
-     (check-type class (member :in) ":IN")))
+  (with-accessors ((name dns-record-name)
+                   (type dns-record-type)
+                   (class dns-record-class))
+      record
+    (check-type name string "a string")
+    (check-type type (satisfies dns-record-type-p) "a valid record type")
+    (check-type class (member :in) ":IN")))
 
 (defclass dns-question (dns-record) ())
 
 (defmethod print-object ((question dns-question) stream)
   (print-unreadable-object (question stream :type nil :identity nil)
-    (with-slots (name type class) question
+    (with-accessors ((name dns-record-name)
+                     (type dns-record-type)
+                     (class dns-record-class))
+        question
       (format stream "~S ~A ~A" name type class))))
 
 (defmethod initialize-instance :after ((record dns-question) &key)
-  (with-slots (name) record
-     (let ((name-length (length name)))
-       (when (char/= #\. (aref name (1- name-length)))
-         (setf name (concatenate 'string name "."))))))
+  (with-accessors ((name dns-record-name)) record
+    (let ((name-length (length name)))
+      (when (char/= #\. (aref name (1- name-length)))
+        (setf name (concatenate 'string name "."))))))
 
 ;;;; Constructors
 
@@ -173,7 +187,10 @@
 (defgeneric write-record (buffer record)
   (:method ((buffer dynamic-buffer)
             (record dns-question))
-    (with-slots (name type class) record
+    (with-accessors ((name dns-record-name)
+                     (type dns-record-type)
+                     (class dns-record-class))
+        record
       (write-domain-name buffer name)
       (write-ub16 buffer (query-type-number type))
       (write-ub16 buffer (query-class-number class)))))
@@ -181,7 +198,9 @@
 (defgeneric write-message-header (buffer message)
   (:method ((buffer dynamic-buffer)
             (message dns-message))
-    (with-slots (id flags question answer authority additional)
+    (with-accessors ((id dns-message-id) (flags dns-message-flags)
+                     (question dns-message-question) (answer dns-message-answer)
+                     (authority dns-message-authority) (additional dns-message-additional))
         message
       (write-ub16 buffer id)
       (write-ub16 buffer flags)
@@ -192,7 +211,7 @@
 
 (defgeneric write-dns-message (message)
   (:method ((message dns-message))
-    (with-slots (question) message
+    (with-accessors ((question dns-message-question)) message
       (with-dynamic-buffer (buffer)
         (write-message-header buffer message)
         (write-record buffer (aref question 0))))))
@@ -205,12 +224,15 @@
 
 (defmethod print-object ((rr dns-rr) stream)
   (print-unreadable-object (rr stream :type nil :identity nil)
-    (with-slots (name type class ttl data) rr
+    (with-accessors ((name dns-record-name) (type dns-record-type)
+                     (class dns-record-class) (ttl dns-rr-ttl)
+                     (data dns-rr-data))
+        rr
       (format stream "~S ~A ~A: ~A" name type class
               (decode-rr rr)))))
 
 (defmethod initialize-instance :after ((rr dns-rr) &key)
-  (with-slots (ttl) rr
+  (with-accessors ((ttl dns-rr-ttl)) rr
     (check-type ttl (unsigned-byte 32) "a valid TTL")))
 
 (defgeneric add-question (message question)
@@ -421,7 +443,11 @@
   (:method ((buffer dynamic-buffer))
     (defparameter *msg* buffer)
     (let ((msg (read-message-header buffer)))
-      (with-slots (qdcount ancount nscount arcount) msg
+      (with-accessors ((qdcount dns-message-question-count)
+                       (ancount dns-message-answer-count)
+                       (nscount dns-message-authority-count)
+                       (arcount dns-message-additional-count))
+          msg
         (loop :for i :below (dns-message-question-count msg)
               :for q := (read-question buffer)
               :do (add-question msg q))

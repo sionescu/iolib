@@ -105,8 +105,12 @@
            :initarg :buffer :reader buffer-of)))
 
 (define-condition input-buffer-eof (dynamic-buffer-input-error)
-  ((bytes-requested :initarg :requested :reader bytes-requested)
-   (bytes-remaining :initarg :remaining :reader bytes-remaining))
+  ((octets-requested :initarg :requested :reader octets-requested)
+   (octets-remaining :initarg :remaining :reader octets-remaining))
+  (:report (lambda (condition stream)
+             (format stream "You requested ~a octets but only ~A are left in the buffer"
+                     (octets-requested condition)
+                     (octets-remaining condition))))
   (:documentation
    "Signals that an INPUT-BUFFER contains less unread bytes than requested."))
 
