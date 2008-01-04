@@ -176,20 +176,18 @@
 
 (defmethod socket-open-p ((socket socket))
   (when (fd-of socket)
-    (handler-case
-        (with-foreign-object (ss 'sockaddr-storage)
-          (bzero ss size-of-sockaddr-storage)
-          (with-socklen (size size-of-sockaddr-storage)
-            (getsockname (fd-of socket) ss size)))
-      (nix:ebadf () nil)
-      (nix:econnreset () nil)
-      (:no-error (_) (declare (ignore _)) t))))
+    (with-sockaddr-storage (ss)
+      (with-socklen (size size-of-sockaddr-storage)
+        (handler-case
+            (getsockname (fd-of socket) ss size)
+          (nix:ebadf () nil)
+          (nix:econnreset () nil)
+          (:no-error (_) (declare (ignore _)) t))))))
 
 ;;;; GETSOCKNAME
 
 (defmethod local-name ((socket socket))
-  (with-foreign-object (ss 'sockaddr-storage)
-    (bzero ss size-of-sockaddr-storage)
+  (with-sockaddr-storage (ss)
     (with-socklen (size size-of-sockaddr-storage)
       (getsockname (fd-of socket) ss size)
       (sockaddr-storage->sockaddr ss))))
@@ -203,8 +201,7 @@
 ;;;; GETPEERNAME
 
 (defmethod remote-name ((socket socket))
-  (with-foreign-object (ss 'sockaddr-storage)
-    (bzero ss size-of-sockaddr-storage)
+  (with-sockaddr-storage (ss)
     (with-socklen (size size-of-sockaddr-storage)
       (getpeername (fd-of socket) ss size)
       (sockaddr-storage->sockaddr ss))))
@@ -279,8 +276,7 @@
                           :external-format (or external-format
                                                (external-format-of socket))
                           :file-descriptor fd)))
-    (with-foreign-object (ss 'sockaddr-storage)
-      (bzero ss size-of-sockaddr-storage)
+    (with-sockaddr-storage (ss)
       (with-socklen (size size-of-sockaddr-storage)
         (handler-case
             (make-client-socket (accept (fd-of socket) ss size))
@@ -326,13 +322,12 @@
 
 (defmethod socket-connected-p ((socket socket))
   (when (fd-of socket)
-    (handler-case
-        (with-foreign-object (ss 'sockaddr-storage)
-          (bzero ss size-of-sockaddr-storage)
-          (with-socklen (size size-of-sockaddr-storage)
-            (getpeername (fd-of socket) ss size)))
-      (socket-not-connected-error () nil)
-      (:no-error (_) (declare (ignore _)) t))))
+    (with-sockaddr-storage (ss)
+      (with-socklen (size size-of-sockaddr-storage)
+        (handler-case
+            (getpeername (fd-of socket) ss size)
+          (socket-not-connected-error () nil)
+          (:no-error (_) (declare (ignore _)) t))))))
 
 ;;;; SHUTDOWN
 
@@ -412,8 +407,7 @@
     (setf remote-address (map-ipv4-address-to-ipv6 remote-address)))
   (multiple-value-bind (buff start-offset bufflen)
       (%normalize-send-buffer buffer start end (external-format-of socket))
-    (with-foreign-object (ss 'sockaddr-storage)
-      (bzero ss size-of-sockaddr-storage)
+    (with-sockaddr-storage (ss)
       (when remote-address
         (sockaddr->sockaddr-storage ss remote-address remote-port))
       (with-pointer-to-vector-data (buff-sap buff)
@@ -470,14 +464,14 @@
 
 (declaim (inline %socket-receive-stream-socket))
 (defun %socket-receive-stream-socket (buffer socket start end flags)
-  (with-foreign-object (ss 'sockaddr-storage)
+  (with-sockaddr-storage (ss)
     (let ((bytes-received (%socket-receive-bytes buffer ss (fd-of socket) flags
                                                  start end)))
       (values buffer bytes-received))))
 
 (declaim (inline %socket-receive-datagram-socket))
 (defun %socket-receive-datagram-socket (buffer socket start end flags)
-  (with-foreign-object (ss 'sockaddr-storage)
+  (with-sockaddr-storage (ss)
     (let ((bytes-received (%socket-receive-bytes buffer ss (fd-of socket) flags
                                                  start end)))
       (multiple-value-bind (remote-address remote-port)

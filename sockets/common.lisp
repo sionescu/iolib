@@ -154,6 +154,11 @@
      (make-sockaddr-un ,var ,address)
      ,@body))
 
+(defmacro with-sockaddr-storage ((var) &body body)
+  `(with-foreign-object (,var 'sockaddr-storage)
+     (bzero ,var size-of-sockaddr-storage)
+     ,@body))
+
 ;;;; Conversion functions for SOCKADDR_* structs
 
 (defun sockaddr-in->sockaddr (sin)
