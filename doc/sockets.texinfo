@@ -111,9 +111,7 @@ Describe sockets here.
 
 @subsection Classes and Functions
 @include include/class-sockets-host.texinfo
-@include include/fun-sockets-host-random-address.texinfo
 @include include/fun-sockets-lookup-host.texinfo
-@include include/fun-sockets-make-host.texinfo
 @include include/fun-sockets-convert-or-lookup-inet-address.texinfo
 
 @node Socket Services

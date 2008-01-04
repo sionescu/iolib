@@ -259,16 +259,6 @@
       (lookup-host #(127 0 0 1) :ipv6 :ipv6))
   t)
 
-(deftest make-host.1
-    (listp (host-addresses (make-host "foo" (make-address #(127 0 0 1)))))
-  t)
-
-(deftest host-random-address.1
-    (address-equal-p (host-random-address
-                      (make-host "foo" (make-address #(127 0 0 1))))
-                     #(127 0 0 1))
-  t)
-
 ;;;; Service Lookup
 
 (deftest lookup-service.1
