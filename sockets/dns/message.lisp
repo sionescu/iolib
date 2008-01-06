@@ -85,7 +85,7 @@
 
 (defgeneric dns-flag-p (message flag)
   (:method ((msg dns-message) flag)
-    (member flag (dns-message-decoded-flags msg) :test #'eq)))
+    (memq flag (dns-message-decoded-flags msg))))
 
 (defmethod initialize-instance :after ((msg dns-message) &key
                                        (qdcount 0) (ancount 0)
