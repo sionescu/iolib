@@ -56,7 +56,7 @@
   (cond ((and (eq ipv6 :ipv6)
               (ipv4-address-p address))
          (setf address (map-ipv4-address-to-ipv6 address)))
-        ((and (eq ipv6 nil)
+        ((and (member ipv6 '(nil t))
               (ipv6-ipv4-mapped-p address))
          (setf address (map-ipv6-address-to-ipv4 address))))
   (nth-value-or 0
