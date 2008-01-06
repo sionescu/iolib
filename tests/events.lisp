@@ -24,7 +24,9 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-(in-package #:iolib-tests)
+(in-package :iolib-tests)
+
+(in-suite* :io.multiplex :in :iolib)
 
 (defmacro with-event-base/for-each-mux ((base &rest initargs) &body body)
   `(let ((failed-list))
@@ -35,36 +37,36 @@
          (error (err)
            (push (cons mux err) failed-list))))))
 
-(deftest timeout.1
-    (with-event-base/for-each-mux (base)
-      (event-dispatch base :timeout 0))
-  nil)
+(test timeout.1
+  (is-false
+   (with-event-base/for-each-mux (base)
+     (event-dispatch base :timeout 0))))
 
-(deftest timeout.2
-    (with-event-base/for-each-mux (base)
-      (let ((cb nil))
-        (add-timer base (lambda () (setq cb :timeout)) 30)
-        (event-dispatch base :timeout 0)
-        (assert (null cb))))
-  nil)
+(test timeout.2
+  (is-false
+   (with-event-base/for-each-mux (base)
+     (let ((cb nil))
+       (add-timer base (lambda () (setq cb :timeout)) 30)
+       (event-dispatch base :timeout 0)
+       (assert (null cb))))))
 
-(deftest timeout.3
-    (with-event-base/for-each-mux (base)
-      (let ((cb nil))
-        (add-timer base (lambda () (setq cb :timeout)) 0)
-        (event-dispatch base :one-shot t)
-        (assert (eq cb :timeout))))
-  nil)
+(test timeout.3
+  (is-false
+   (with-event-base/for-each-mux (base)
+     (let ((cb nil))
+       (add-timer base (lambda () (setq cb :timeout)) 0)
+       (event-dispatch base :one-shot t)
+       (assert (eq cb :timeout))))))
 
 ;;; regression test: timeouts' absolute times used used to be
 ;;; incremented with the relative time ad infinitum.
-(deftest timeout.4
-    (with-event-base/for-each-mux (base)
-      (let ((cb nil))
-        (add-timer base (lambda () (setq cb :timeout)) 1.5)
-        (event-dispatch base :one-shot t :timeout 2)
-        (assert (eq cb :timeout))))
-  nil)
+(test timeout.4
+  (is-false
+   (with-event-base/for-each-mux (base)
+     (let ((cb nil))
+       (add-timer base (lambda () (setq cb :timeout)) 1.5)
+       (event-dispatch base :one-shot t :timeout 2)
+       (assert (eq cb :timeout))))))
 
 (defun timeout-cb (fd event)
   (declare (ignore fd event))
@@ -84,19 +86,19 @@
 
 ;;; FIXME: doesn't work with SELECT.
 ;;;        where ? it works here, on Linux. SIONESCU 2007.12.02
-(deftest event-base-with-open-sockets
-    (with-event-base (base)
-      (with-open-socket (passive :family :ipv4 :connect :passive
-                                 :local-host +ipv4-unspecified+)
-        (with-open-socket (active :family :ipv4
-                                  :remote-port (local-port passive)
-                                  :remote-host #(127 0 0 1))
-          (add-timer base #'timeout-cb 5)
-          (let (peer)
-            (waiting-for-event (base (fd-of passive) :read)
-              (setq peer (accept-connection passive)))
-            (assert (socket-open-p peer)))
-          ;; TODO: send and receive some stuff
-          ))
-      nil)
-  nil)
+(test event-base-with-open-sockets
+  (is-false
+   (with-event-base (base)
+     (with-open-socket (passive :family :ipv4 :connect :passive
+                                :local-host +ipv4-unspecified+)
+       (with-open-socket (active :family :ipv4
+                                 :remote-port (local-port passive)
+                                 :remote-host #(127 0 0 1))
+         (add-timer base #'timeout-cb 5)
+         (let (peer)
+           (waiting-for-event (base (fd-of passive) :read)
+                              (setq peer (accept-connection passive)))
+           (assert (socket-open-p peer)))
+         ;; TODO: send and receive some stuff
+         ))
+     nil)))

@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
 ;;;
-;;; bsd-sockets-tests.asd --- ASDF system definition.
+;;; iolib-tests.asd --- ASDF system definition.
 ;;;
 ;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
@@ -24,22 +24,25 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-(defsystem iolib-tests
+(asdf:defsystem :iolib-tests
   :description "IOLib test suite."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
   :licence "MIT"
-  :depends-on (io.streams net.sockets rt)
+  :depends-on (:io.multiplex :io.streams :net.sockets :fiveam)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "tests"))
                              *load-truename*)
   :components
   ((:file "pkgdcl")
-   (:file "streams" :depends-on ("pkgdcl"))
-   (:file "sockets" :depends-on ("pkgdcl"))
-   (:file "events" :depends-on ("pkgdcl"))))
+   (:file "mainsuite" :depends-on ("pkgdcl"))
+   (:file "events" :depends-on ("pkgdcl" "mainsuite"))
+   (:file "streams" :depends-on ("pkgdcl" "mainsuite"))
+   (:file "sockets" :depends-on ("pkgdcl" "mainsuite"))))
 
-(defmethod perform ((o test-op) (c (eql (find-system :iolib-tests))))
-  (operate 'load-op :iolib-tests)
-  (funcall (intern (symbol-name '#:do-tests) '#:rt)))
+(defmethod asdf:perform ((o asdf:test-op)
+                         (c (eql (asdf:find-system :iolib-tests))))
+  (asdf:operate 'asdf:load-op :iolib-tests)
+  (funcall (intern (symbol-name '#:run!) '#:5am) :iolib))
 
-(defmethod operation-done-p ((o test-op) (c (eql (find-system :iolib-tests))))
+(defmethod asdf:operation-done-p ((o asdf:test-op)
+                                  (c (eql (asdf:find-system :iolib-tests))))
   nil)

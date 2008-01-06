@@ -29,7 +29,9 @@
 ;;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-(in-package #:iolib-tests)
+(in-package :iolib-tests)
+
+(in-suite* :io.streams :in :iolib)
 
 (defclass my-file-stream (dual-channel-single-fd-gray-stream)
   ((path :initarg :path :reader file-stream-path)))
@@ -186,10 +188,10 @@
             (format *error-output* "~&;;   Test failed!!!~%")
             (return-from compare-files nil)))))))
 
-(deftest big-stream-comparision-test
-    (let ((args-list (loop :for (file-name symbols) :in *test-files*
-                           :nconc (create-test-combinations file-name symbols))))
-      (loop :for args :in args-list
-            :unless (apply #'compare-files args)
-            :collect args))
-  nil)
+(test big-stream-comparision-test
+  (is-false
+   (let ((args-list (loop :for (file-name symbols) :in *test-files*
+                          :nconc (create-test-combinations file-name symbols))))
+     (loop :for args :in args-list
+           :unless (apply #'compare-files args)
+           :collect args))))

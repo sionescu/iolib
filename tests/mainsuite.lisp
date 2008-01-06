@@ -1,8 +1,8 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; pkgdcl.lisp --- Package definition.
+;;; mainsuite.lisp --- Main test suite definition.
 ;;;
-;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
+;;; Copyright (C) 2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person
 ;;; obtaining a copy of this software and associated documentation
@@ -24,8 +24,7 @@
 ;;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ;;; DEALINGS IN THE SOFTWARE.
 
-(in-package #:cl-user)
+(in-package :iolib-tests)
 
-(defpackage #:iolib-tests
-  (:use #:common-lisp :5am :net.sockets :io.streams
-        :trivial-gray-streams :alexandria :io.multiplex))
+(def-suite :iolib
+  :description "Main test suite for IOLib.")
