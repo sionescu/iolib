@@ -138,6 +138,34 @@
         (call-next-method)
         (values return-code))))
 
+(defun remove-trailing-dot (string)
+  (assert (>= (length string) 2) (string)
+           "String length must be at least 2: ~S" string)
+  (assert (char= #\. (char string (1- (length string)))) (string)
+           "Must end with a dot: ~S" string)
+  (subseq string 0 (1- (length string))))
+
+(defun find-cname (msg)
+  (let ((answer (dns-message-answer msg))
+        (answer-count (dns-message-answer-count msg))
+        (cnames (make-hash-table :test 'equal :size 3))
+        (consumed 0))
+    (loop :for i :below answer-count
+          :for ans := (aref answer i) :do
+          (if (eq :cname (dns-record-type ans))
+              (setf (gethash (dns-record-name ans) cnames)
+                    (dns-rr-data ans))
+              (loop-finish))
+          :finally (setf consumed i))
+    (do ((cname (dns-record-name (aref (dns-message-question msg) 0)))
+         (exit nil))
+        (exit (values (remove-trailing-dot cname) consumed))
+      (let ((name (gethash cname cnames)))
+        (cond (name
+               (remhash cname cnames)
+               (setf cname name))
+              (t (setf exit t)))))))
+
 (defun decode-a-or-aaaa-response (msg)
   (declare (type dns-message msg))
   (let ((answer (dns-message-answer msg))
@@ -148,11 +176,7 @@
         (other-addresses nil))
     ;; when the address is valid(we have at least one answer)
     (when (plusp answer-count)
-      ;; we have a CNAME
-      (when (eql (dns-record-type (aref answer 0))
-                 :cname)
-        (setf cname (decode-rr (aref answer 0)))
-        (incf first-address-place))
+      (setf (values cname first-address-place) (find-cname msg))
       ;; this means the message actually contains addresses
       (when (> (dns-message-answer-count msg) first-address-place)
         (setf first-address (decode-rr (aref answer first-address-place))))

@@ -31,13 +31,6 @@
 
 ;;; TODO: caching
 
-(defun remove-trailing-dot (string)
-  (assert (>= (length string) 2) (string)
-           "String length must be at least 2: ~S" string)
-  (assert (char= #\. (char string (1- (length string)))) (string)
-           "Must end with a dot: ~S" string)
-  (subseq string 0 (1- (length string))))
-
 (defun reply-error-condition (reply query-type)
   (cond ((null reply) 'resolver-again-error)
         ((dns-flag-p reply :name-error) 'resolver-no-name-error)
