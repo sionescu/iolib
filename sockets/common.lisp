@@ -275,8 +275,8 @@
 
 (defun make-ht-from-list (list stream test)
   (flet ((err () (error 'reader-error :stream stream))
-         (separatorp (s) (eq s '|,|))
-         (middlep (s) (eq s '=>)))
+         (separatorp (s) (string= s ","))
+         (middlep (s) (string= s "=>")))
     (let* ((series (scan 'list list))
            (separators (choose (mask (scan-range :from 3 :by 4)) series)))        
       (unless (collect-and (map-fn 'boolean #'separatorp separators)) (err))
