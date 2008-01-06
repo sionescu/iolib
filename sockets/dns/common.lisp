@@ -74,4 +74,4 @@
 (defun rcode-id (number)
   (car (rassoc number +rcode-map+)))
 
-(defconstant +dns-datagram-size+ 512)
+(defconstant +dns-max-datagram-size+ 4096)

@@ -29,19 +29,17 @@
    (read-cursor  :initform 0    :accessor read-cursor-of)
    (write-cursor :initform 0    :accessor write-cursor-of)
    (size         :initarg :size :accessor size-of))
-  (:default-initargs :size +dns-datagram-size+))
+  (:default-initargs :size 128))
 
 (defmethod initialize-instance :after ((buffer dynamic-buffer) &key (start 0))
   (with-accessors ((seq sequence-of) (size size-of)
                    (wcursor write-cursor-of)) buffer
     (check-type seq (or null ub8-vector) "either NIL or a (VECTOR UNSIGNED-BYTE)")
     (cond
-      ((null seq) (setf seq (make-array size :element-type 'ub8
-                                        :adjustable t :fill-pointer 0)))
+      ((null seq) (setf seq (make-array size :element-type 'ub8)))
       (t (setf size (- (length seq) start)
                wcursor (- (length seq) start))
-         (let ((newseq (make-array size :element-type 'ub8
-                                   :adjustable t :fill-pointer size)))
+         (let ((newseq (make-array size :element-type 'ub8)))
            (replace newseq seq :start2 start)
            (setf seq newseq))))))
 
@@ -55,18 +53,17 @@
           (ldb (byte 8 8) value)
           (ldb (byte 8 0) value)))
 
-(defvar *buffer-growth-margin* 50)
-
 (defun maybe-grow-buffer (buffer vector)
   (declare (type dynamic-buffer buffer)
            (type array vector))
   (with-accessors ((seq sequence-of) (wcursor write-cursor-of)
-                   (size size-of)) buffer
-    (let* ((vlen (length vector))
-           (newsize (+ size vlen *buffer-growth-margin*)))
+                   (size size-of))
+      buffer
+    (let ((vlen (length vector)))
       (when (< size (+ wcursor vlen))
-        (setf seq (adjust-array seq newsize))
-        (setf size newsize))))
+        (let ((newsize (* 3/2 (+ size vlen))))
+          (setf seq (adjust-array seq newsize))
+          (setf size newsize)))))
   (values buffer))
 
 (defgeneric write-vector (buffer vector)
@@ -74,7 +71,6 @@
     (maybe-grow-buffer buffer vector)
     (with-accessors ((seq sequence-of) (wcursor write-cursor-of)) buffer
       (let ((vlen (length vector)))
-        (incf (fill-pointer seq) vlen)
         (replace seq vector :start1 wcursor)
         (incf wcursor vlen)))
     (values buffer)))
