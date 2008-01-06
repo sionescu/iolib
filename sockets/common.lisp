@@ -280,10 +280,10 @@
     (let* ((ht (make-hash-table :test test))
            (series (scan 'list list))
            (separators (choose (mask (scan-range :from 3 :by 4)) series)))        
-      (unless (collect-and (#mseparatorp separators)) (err))
+      (unless (collect-and (map-fn 'list #'separatorp separators)) (err))
       (multiple-value-bind (keys middles values)
           (chunk 3 4 series)
-        (unless (collect-and (#mmiddlep middles)) (err))
+        (unless (collect-and (map-fn 'list #'middlep middles)) (err))
         (collect-hash keys values :test test)))))
 
 (defun read-literal-ht (stream &optional c n)
