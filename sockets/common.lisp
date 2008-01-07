@@ -295,15 +295,12 @@
     (set-syntax-from-char #\, #\$)
     (flet ((err () (error 'reader-error :stream stream)))
       (case c
-        (#\{
-         (setf list (read-delimited-list #\} stream)))
-        (#\:
-         (let ((l (read-delimited-list #\{ stream)))
-           (unless (= 1 (length l)) (err))
-           (setf test (car l))
-           (setf list (read-delimited-list #\} stream))))
-        (t
-         (err))))
-    (values (make-ht-from-list list stream test))))
+        (#\{ t)
+        (#\: (let ((l (read-delimited-list #\{ stream)))
+               (unless (= 1 (length l)) (err))
+               (setf test (car l))))
+        (t   (err))))
+    (make-ht-from-list (read-delimited-list #\} stream)
+                       stream test)))
 
 (set-dispatch-macro-character #\# #\h 'read-literal-ht)
