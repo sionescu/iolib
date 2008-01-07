@@ -47,6 +47,17 @@ ADDRESS-NAME reader."))
              :reader abstract-address-p :type boolean))
   (:documentation "UNIX socket address."))
 
+(defmethod make-load-form ((address inet-address) &optional env)
+  (declare (ignore env))
+  `(make-instance ,(class-of address)
+                  :name ,(address-name address)))
+
+(defmethod make-load-form ((address local-address) &optional env)
+  (declare (ignore env))
+  `(make-instance ,(class-of address)
+                  :name ,(address-name address)
+                  :abstrace ,(abstract-address-p address)))
+
 ;;;; Conversion functions
 
 (defun integer-to-dotted (integer)
