@@ -37,7 +37,8 @@
   (is-true
    (let ((ht (read-from-string "#h{}")))
      (and (zerop (hash-table-count ht))
-          (eq (hash-table-test ht) 'eql)))))
+          (eq (hash-table-test ht) #-clisp 'eql
+                                   #+clisp 'ext:fasthash-eql)))))
 
 (test literal-hash-tables.creation.empty-hash-table-test-eq
   (finishes
@@ -48,7 +49,8 @@
   (is-true
    (let ((ht (read-from-string "#h:eq{}")))
      (and (zerop (hash-table-count ht))
-          (eq (hash-table-test ht) 'eq)))))
+          (eq (hash-table-test ht) #-clisp 'eq
+                                   #+clisp 'ext:fasthash-eq)))))
 
 (test literal-hash-tables.creation.one-element-hash-table-default-test
   (finishes
@@ -59,7 +61,8 @@
   (is-true
    (let ((ht (read-from-string "#h{1 => 3}")))
      (and (= 1 (hash-table-count ht))
-          (eq (hash-table-test ht) 'eql)
+          (eq (hash-table-test ht) #-clisp 'eql
+                                   #+clisp 'ext:fasthash-eql)
           (= 3 (gethash 1 ht))))))
 
 (test literal-hash-tables.creation.one-element-hash-table-test-eq
@@ -71,7 +74,8 @@
   (is-true
    (let ((ht (read-from-string "#h:eq{:a => :test}")))
      (and (= 1 (hash-table-count ht))
-          (eq (hash-table-test ht) 'eq)
+          (eq (hash-table-test ht) #-clisp 'eq
+                                   #+clisp 'ext:fasthash-eq)
           (eq :test (gethash :a ht))))))
 
 (test literal-hash-tables.error.only-key
