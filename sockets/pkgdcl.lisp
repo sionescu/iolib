@@ -214,3 +214,4 @@
 (in-package :net.sockets)
 
 (series::install)
+(setf series:*suppress-series-warnings* t)
