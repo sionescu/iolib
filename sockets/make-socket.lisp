@@ -155,6 +155,32 @@ remaining address list as the second return value."
         ((:local :datagram)
          (%make-local-datagram-socket args :local external-format))))))
 
+(define-compiler-macro make-socket (&whole form &rest args &key (family :internet) (type :stream)
+                                    (connect :active) (ipv6 '*ipv6*)
+                                    (external-format :default) &allow-other-keys)
+  (cond
+    ((and (constantp family) (constantp type) (constantp connect))
+     (check-type family (member :internet :local :ipv4 :ipv6) "one of :INTERNET, :LOCAL, :IPV4 or :IPV6")
+     (check-type type (member :stream :datagram) "either :STREAM or :DATAGRAM")
+     (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
+     (let ((lower-function
+            (multiple-value-case (family type connect)
+              (((:ipv4 :ipv6 :internet) :stream :active) '%make-internet-stream-active-socket)
+              (((:ipv4 :ipv6 :internet) :stream :passive) '%make-internet-stream-passive-socket)
+              ((:local :stream :active) '%make-local-stream-active-socket)
+              ((:local :stream :passive) '%make-local-stream-passive-socket)
+              (((:ipv4 :ipv6 :internet) :datagram) '%make-internet-datagram-socket)
+              ((:local :datagram) '%make-local-datagram-socket)))
+           (newargs (remove-properties args '(:family :type :connect :external-format :ipv6))))
+       (case family
+         (:internet (setf family `(if ,ipv6 :ipv6 :ipv4)))
+         (:ipv4     (setf ipv6 nil)))
+       (let ((expansion `(,lower-function (list ,@newargs) ,family ,external-format)))
+         (if (eq ipv6 '*ipv6*)
+             expansion
+             `(let ((*ipv6* ,ipv6)) ,expansion)))))
+    (t form)))
+
 (defmacro with-open-socket ((var &rest args) &body body)
   "VAR is bound to a socket created by passing ARGS to
 MAKE-SOCKET and BODY is executed as implicit PROGN.  The socket
