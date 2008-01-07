@@ -295,7 +295,6 @@
   (declare (ignore c n))
   (let ((*readtable* (copy-readtable))
         (c (read-char stream))
-        (list '())
         (test 'eql))
     (set-syntax-from-char #\} #\))
     (set-syntax-from-char #\{ #\))
