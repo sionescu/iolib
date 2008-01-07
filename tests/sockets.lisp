@@ -48,14 +48,6 @@
 (defparameter *echo-address* (ensure-address #(127 0 0 1)))
 (defparameter *echo-port* 7)
 
-;;; Returns T if one of the expected conditions occured, otherwise returns
-;;; a list of the form (:RESULT return-value-1 return-value-2) with
-;;; the return values from BODY.
-(defmacro with-expected-conditions ((&rest conditions) &body body)
-  `(handler-case (progn ,@body)
-     ,@(loop for c in conditions collect `(,c () t))
-     (:no-error (&rest result) (list* :result result))))
-
 ;;;; Addresses
 
 ;;; a real address
