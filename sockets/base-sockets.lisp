@@ -51,8 +51,11 @@
 
 (defgeneric disconnect (socket))
 
+(define-symbol-macro +default-inet-family+
+    (if *ipv6* :ipv6 :ipv4))
+
 (defclass internet-socket (socket) ()
-  (:default-initargs :family (if *ipv6* :ipv6 :ipv4)))
+  (:default-initargs :family +default-inet-family+))
 
 (defclass local-socket (socket) ()
   (:default-initargs :family :local))

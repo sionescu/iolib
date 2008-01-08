@@ -276,7 +276,7 @@ remaining address list as the second return value."
               ((:local :datagram) '%make-local-datagram-socket)))
            (newargs (remove-properties args '(:family :type :connect :external-format :ipv6))))
        (case family
-         (:internet (setf family `(if *ipv6* :ipv6 :ipv4)))
+         (:internet (setf family '+default-inet-family+))
          (:ipv4     (setf ipv6 nil)))
        `(let ((*ipv6* ,ipv6))
           (,lower-function (list ,@newargs) ,family ,external-format))))
