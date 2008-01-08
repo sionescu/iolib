@@ -129,7 +129,7 @@
 (defun lookup-host (host &key (ipv6 *ipv6*))
   "Looks up a host by name or address.  IPV6 determines the IPv6
 behaviour, defaults to *IPV6*."
-  (check-type ipv6 (member nil :ipv6 t) "one of NIL, :IPV6 or T")
+  (check-type ipv6 *ipv6*-type "one of T, NIL or :IPV6")
   (let ((address (if (stringp host)
                      (ignore-parse-errors (ensure-address host))
                      (ensure-address host))))

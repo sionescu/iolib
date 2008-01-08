@@ -30,6 +30,9 @@
 - t     : If both IPv4 and IPv6 addresses are found they are returned in the best order possible (see RFC 3484).
 Default value is T.")
 
+(deftype *ipv6*-type ()
+  '(member t nil :ipv6))
+
 (defconstant +max-backlog-size+ somaxconn
   "Maximum length of the pending connections queue (hard limit).")
 
