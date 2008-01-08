@@ -28,7 +28,7 @@
                  :family family
                  :external-format external-format))
 
-(defmacro %with-close-on-error ((var value) &body body)
+(defmacro with-close-on-error ((var value) &body body)
   "Bind VAR to VALUE, execute BODY as implicit PROGN and return VAR.
 On error call CLOSE with :ABORT T on VAR."
   (with-gensyms (errorp)
@@ -36,6 +36,13 @@ On error call CLOSE with :ABORT T on VAR."
        (unwind-protect
             (multiple-value-prog1 (locally ,@body ,var) (setf ,errorp nil))
          (when (and ,var ,errorp) (close ,var :abort t))))))
+
+(defmacro with-guard-again-non-list-args-and-destructuring-bind-errors
+    (form args &body body)
+  `(if (listp ,args)
+       (handler-case (progn ,@body)
+         (error (err) `(error ,err)))
+       ,form))
 
 (defun convert-or-lookup-inet-address (address &optional (ipv6 *ipv6*))
   "If ADDRESS is an inet-address designator, it is converted, if
@@ -56,7 +63,7 @@ remaining address list as the second return value."
                                              local-host local-port remote-host remote-port)
   (let ((local-port  (ensure-numerical-service local-port))
         (remote-port (ensure-numerical-service remote-port)))
-    (%with-close-on-error (socket (create-socket family :stream :active ef))
+    (with-close-on-error (socket (create-socket family :stream :active ef))
       (when keepalive (set-socket-option socket :keep-alive :value t))
       (when nodelay (set-socket-option socket :tcp-nodelay :value t))
       (when local-host
@@ -76,23 +83,21 @@ remaining address list as the second return value."
                                           local-host local-port remote-host remote-port)))
 
 (define-compiler-macro %make-internet-stream-active-socket (&whole form args family ef)
-  (if (symbolp args)
-      form
-      (handler-case
-          (destructuring-bind (&key keepalive nodelay (reuse-address t)
-                                    (local-host +default-host+) (local-port 0)
-                                    (remote-host +default-host+) (remote-port 0))
-              (cdr args)
-            `(%%make-internet-stream-active-socket ,family ,ef ,keepalive ,nodelay ,reuse-address
-                                                   ,local-host ,local-port ,remote-host ,remote-port))
-        (error (err) `(error ,err)))))
+  (with-guard-again-non-list-args-and-destructuring-bind-errors
+      form args
+    (destructuring-bind (&key keepalive nodelay (reuse-address t)
+                              (local-host +default-host+) (local-port 0)
+                              (remote-host +default-host+) (remote-port 0))
+        (cdr args)
+      `(%%make-internet-stream-active-socket ,family ,ef ,keepalive ,nodelay ,reuse-address
+                                             ,local-host ,local-port ,remote-host ,remote-port))))
 
 ;;; Internet Stream Passive Socket creation
 
 (defun %%make-internet-stream-passive-socket (family ef interface reuse-address
                                               local-host local-port backlog)
   (let ((local-port  (ensure-numerical-service local-port)))
-    (%with-close-on-error (socket (create-socket family :stream :passive ef))
+    (with-close-on-error (socket (create-socket family :stream :passive ef))
       (when local-host
         (when interface
           (set-socket-option socket :bind-to-device :value interface))
@@ -110,21 +115,19 @@ remaining address list as the second return value."
                                            local-host local-port backlog)))
 
 (define-compiler-macro %make-internet-stream-passive-socket (&whole form args family ef)
-  (if (symbolp args)
-      form
-      (handler-case
-          (destructuring-bind (&key interface (reuse-address t)
-                                    (local-host +default-host+) (local-port 0)
-                                    (backlog *default-backlog-size*))
-              (cdr args)
-            `(%%make-internet-stream-passive-socket ,family ,ef ,interface ,reuse-address
-                                                    ,local-host ,local-port ,backlog))
-        (error (err) `(error ,err)))))
+  (with-guard-again-non-list-args-and-destructuring-bind-errors
+      form args
+    (destructuring-bind (&key interface (reuse-address t)
+                              (local-host +default-host+) (local-port 0)
+                              (backlog *default-backlog-size*))
+        (cdr args)
+      `(%%make-internet-stream-passive-socket ,family ,ef ,interface ,reuse-address
+                                              ,local-host ,local-port ,backlog))))
 
 ;;; Local Stream Active Socket creation
 
 (defun %%make-local-stream-active-socket (family ef local-filename remote-filename)
-  (%with-close-on-error (socket (create-socket family :stream :active ef))
+  (with-close-on-error (socket (create-socket family :stream :active ef))
     (when local-filename
       (bind-address socket (ensure-address local-filename :local)))
     (when remote-filename
@@ -136,18 +139,16 @@ remaining address list as the second return value."
     (%%make-local-stream-active-socket family ef local-filename remote-filename)))
 
 (define-compiler-macro %make-local-stream-active-socket (&whole form args family ef)
-  (if (symbolp args)
-      form
-      (handler-case
-          (destructuring-bind (&key local-filename remote-filename)
-              (cdr args)
-            `(%%make-local-stream-active-socket ,family ,ef ,local-filename ,remote-filename))
-        (error (err) `(error ,err)))))
+  (with-guard-again-non-list-args-and-destructuring-bind-errors
+      form args
+    (destructuring-bind (&key local-filename remote-filename)
+        (cdr args)
+      `(%%make-local-stream-active-socket ,family ,ef ,local-filename ,remote-filename))))
 
 ;;; Local Stream Passive Socket creation
 
 (defun %%make-local-stream-passive-socket (family ef local-filename reuse-address backlog)
-  (%with-close-on-error (socket (create-socket family :stream :passive ef))
+  (with-close-on-error (socket (create-socket family :stream :passive ef))
     (when local-filename
       (bind-address socket (ensure-address local-filename :local)
                     :reuse-address reuse-address)
@@ -160,14 +161,12 @@ remaining address list as the second return value."
     (%%make-local-stream-passive-socket family ef local-filename reuse-address backlog)))
 
 (define-compiler-macro %make-local-stream-passive-socket (&whole form args family ef)
-  (if (symbolp args)
-      form
-      (handler-case
-          (destructuring-bind (&key local-filename (reuse-address t)
-                                    (backlog *default-backlog-size*))
-              (cdr args)
-            `(%%make-local-stream-passive-socket ,family ,ef ,local-filename ,reuse-address ,backlog))
-        (error (err) `(error ,err)))))
+  (with-guard-again-non-list-args-and-destructuring-bind-errors
+      form args
+    (destructuring-bind (&key local-filename (reuse-address t)
+                              (backlog *default-backlog-size*))
+        (cdr args)
+      `(%%make-local-stream-passive-socket ,family ,ef ,local-filename ,reuse-address ,backlog))))
 
 ;;; Internet Datagram Socket creation
 
@@ -175,7 +174,7 @@ remaining address list as the second return value."
                                         local-host local-port remote-host remote-port)
   (let ((local-port  (ensure-numerical-service local-port))
         (remote-port (ensure-numerical-service remote-port)))
-    (%with-close-on-error (socket (create-socket family :datagram :active ef))
+    (with-close-on-error (socket (create-socket family :datagram :active ef))
       (when broadcast (set-socket-option socket :broadcast :value t))
       (when local-host
         (bind-address socket (convert-or-lookup-inet-address local-host)
@@ -196,21 +195,19 @@ remaining address list as the second return value."
                                      local-host local-port remote-host remote-port)))
 
 (define-compiler-macro %make-internet-datagram-socket (&whole form args family ef)
-  (if (symbolp args)
-      form
-      (handler-case
-          (destructuring-bind (&key broadcast interface (reuse-address t)
-                                    (local-host +default-host+) (local-port 0)
-                                    (remote-host +default-host+) (remote-port 0))
-              (cdr args)
-            `(%%make-internet-datagram-socket ,family ,ef ,broadcast ,interface ,reuse-address
-                                              ,local-host ,local-port ,remote-host ,remote-port))
-        (error (err) `(error ,err)))))
+  (with-guard-again-non-list-args-and-destructuring-bind-errors
+      form args
+    (destructuring-bind (&key broadcast interface (reuse-address t)
+                              (local-host +default-host+) (local-port 0)
+                              (remote-host +default-host+) (remote-port 0))
+        (cdr args)
+      `(%%make-internet-datagram-socket ,family ,ef ,broadcast ,interface ,reuse-address
+                                        ,local-host ,local-port ,remote-host ,remote-port))))
 
 ;;; Local Datagram Socket creation
 
 (defun %%make-local-datagram-socket (family ef local-filename remote-filename)
-  (%with-close-on-error (socket (create-socket family :datagram :active ef))
+  (with-close-on-error (socket (create-socket family :datagram :active ef))
     (when local-filename
       (bind-address socket (ensure-address local-filename :local)))
     (when remote-filename
@@ -222,13 +219,11 @@ remaining address list as the second return value."
     (%%make-local-datagram-socket family ef local-filename remote-filename)))
 
 (define-compiler-macro %make-local-datagram-socket (&whole form args family ef)
-  (if (symbolp args)
-      form
-      (handler-case
-          (destructuring-bind (&key local-filename remote-filename)
-              (cdr args)
-            `(%%make-local-datagram-socket ,family ,ef ,local-filename ,remote-filename))
-        (error (err) `(error ,err)))))
+  (with-guard-again-non-list-args-and-destructuring-bind-errors
+      form args
+    (destructuring-bind (&key local-filename remote-filename)
+        (cdr args)
+      `(%%make-local-datagram-socket ,family ,ef ,local-filename ,remote-filename))))
 
 ;;; MAKE-SOCKET
 
