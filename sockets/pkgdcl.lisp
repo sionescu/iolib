@@ -185,6 +185,7 @@
    #:local-name
    #:local-port
    #:make-socket
+   #:make-socket-stream
    #:remote-address
    #:remote-name
    #:remote-port

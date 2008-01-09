@@ -288,3 +288,28 @@ is automatically closed upon exit."
 ACCEPT-CONNECTION and BODY is executed as implicit PROGN.  The socket
 is automatically closed upon exit."
   `(with-open-stream (,var (accept-connection ,passive-socket ,@args)) ,@body))
+
+(defun get-socket-family-from-fd (fd)
+  (with-sockaddr-storage (ss)
+    (with-socklen (size size-of-sockaddr-storage)
+      (getsockname fd ss size)
+      (foreign-slot-value ss 'sockaddr-storage 'family))))
+
+(defun make-socket-stream (fd &key (external-format :default) (errorp t))
+  "Creates an active stream socket instance of the appropriate subclass of SOCKET using `FD'.
+The address family of the sockets is automatically discovered using OS functions. If `FD' is
+an invalid socket descriptor and `ERRORP' is not NIL a condition subtype of POSIX-ERROR
+is signaled, otherwise two values are returned: NIL and the specific condition object."
+  (flet ((%make-socket-stream ()
+           (let ((family (get-socket-family-from-fd fd)))
+             (switch (family :test #'=)
+               (af-inet  (make-instance 'socket-stream-internet-active :file-descriptor fd
+                                        :family :ipv4 :external-format external-format))
+               (af-inet6 (make-instance 'socket-stream-internet-active :file-descriptor fd
+                                        :family :ipv6 :external-format external-format))
+               (af-local (make-instance 'socket-stream-local-active :file-descriptor fd
+                                        :family :local :external-format external-format))))))
+    (if errorp
+        (%make-socket-stream)
+        (ignore-some-conditions (posix-error)
+          (%make-socket-stream)))))
