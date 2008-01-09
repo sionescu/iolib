@@ -130,19 +130,6 @@
 (cstruct sockaddr-storage "struct sockaddr_storage"
   (family "ss_family" :type sa-family))
 
-(cstruct hostent "struct hostent"
-  (name      "h_name"      :type :string)
-  (aliases   "h_aliases"   :type :pointer)
-  (type      "h_addrtype"  :type :int)
-  (length    "h_length"    :type :int)
-  (addresses "h_addr_list" :type :pointer))
-
-(cstruct servent "struct servent"
-  (name    "s_name"    :type :string)
-  (aliases "s_aliases" :type :pointer)
-  (port    "s_port"    :type :int)
-  (proto   "s_proto"   :type :string))
-
 (constant (somaxconn "SOMAXCONN")
   :documentation "Maximum listen() queue length")
 
