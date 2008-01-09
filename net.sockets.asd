@@ -53,6 +53,8 @@
    (:file "address-predicates")
    (:file "base-sockets")
    (:file "socket-options")
+   (:file "socket-methods")
+   (:file "make-socket")
    (:module :namedb
      :components
      ((:file "etc-files")
@@ -60,7 +62,6 @@
       (:file "protocols" :depends-on ("etc-files" "file-monitor"))
       (:file "services" :depends-on ("etc-files" "file-monitor"))
       (:file "hosts" :depends-on ("etc-files" "file-monitor"))))
-   (:file "socket-methods")
    (:module :dns
      :serial t
      :components
@@ -70,5 +71,4 @@
       (:file "message")
       (:file "query")
       (:file "conditions")
-      (:file "lookup")))
-   (:file "make-socket")))
+      (:file "lookup")))))
