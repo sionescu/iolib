@@ -23,9 +23,9 @@
 
 (in-package :net.sockets)
 
-(defun create-socket (family type connect external-format)
+(defun create-socket (family type connect external-format &optional fd)
   (make-instance (select-socket-class family type connect :default)
-                 :family family
+                 :family family :file-descriptor fd
                  :external-format external-format))
 
 (defmacro with-close-on-error ((var value) &body body)
@@ -288,8 +288,10 @@ is automatically closed upon exit."
 ACCEPT-CONNECTION and BODY is executed as implicit PROGN.  The socket
 is automatically closed upon exit."
   `(with-open-stream (,var (accept-connection ,passive-socket ,@args)) ,@body))
+
+;;; MAKE-SOCKET-STREAM
 
-(defun get-socket-family-from-fd (fd)
+(defun get-address-family (fd)
   (with-sockaddr-storage (ss)
     (with-socklen (size size-of-sockaddr-storage)
       (getsockname fd ss size)
@@ -301,14 +303,11 @@ The address family of the sockets is automatically discovered using OS functions
 an invalid socket descriptor and `ERRORP' is not NIL a condition subtype of POSIX-ERROR
 is signaled, otherwise two values are returned: NIL and the specific condition object."
   (flet ((%make-socket-stream ()
-           (let ((family (get-socket-family-from-fd fd)))
-             (switch (family :test #'=)
-               (af-inet  (make-instance 'socket-stream-internet-active :file-descriptor fd
-                                        :family :ipv4 :external-format external-format))
-               (af-inet6 (make-instance 'socket-stream-internet-active :file-descriptor fd
-                                        :family :ipv6 :external-format external-format))
-               (af-local (make-instance 'socket-stream-local-active :file-descriptor fd
-                                        :family :local :external-format external-format))))))
+           (let ((family (switch ((get-address-family fd) :test #'=)
+                           (af-inet :ipv4)
+                           (af-inet6 :ipv6)
+                           (af-local :local))))
+             (create-socket family :stream :active external-format fd))))
     (if errorp
         (%make-socket-stream)
         (ignore-some-conditions (posix-error)
