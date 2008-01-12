@@ -144,7 +144,7 @@
 
 ;;; LINGER
 
-(define-socket-option-type :linger (onoff (linger 0)))
+(define-socket-option-type :linger (onoff (linger *default-linger-seconds*)))
 
 (define-socket-option-helper (:get :linger) (fd level option)
   (with-foreign-object (optval 'linger)

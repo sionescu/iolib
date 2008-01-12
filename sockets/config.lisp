@@ -38,3 +38,6 @@ Default value is T.")
 
 (defvar *default-backlog-size* 5
   "Default length of the pending connections queue (soft limit).")
+
+(defvar *default-linger-seconds* 15
+  "Default linger timeout when enabling SO_LINGER option on a socket.")

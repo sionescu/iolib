@@ -204,6 +204,7 @@
 
    ;; Specials
    #:*default-backlog-size*
+   #:*default-linger-seconds*
    #:*ipv6*
    #:*dns-nameservers*
    #:*dns-domain*
