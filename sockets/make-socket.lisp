@@ -64,8 +64,8 @@ remaining address list as the second return value."
   (let ((local-port  (ensure-numerical-service local-port))
         (remote-port (ensure-numerical-service remote-port)))
     (with-close-on-error (socket (create-socket family :stream :active ef))
-      (when keepalive (set-socket-option socket :keep-alive :value t))
-      (when nodelay (set-socket-option socket :tcp-nodelay :value t))
+      (when keepalive (setf (socket-option socket :keep-alive) t))
+      (when nodelay (setf (socket-option socket :tcp-nodelay) t))
       (when local-host
         (bind-address socket (convert-or-lookup-inet-address local-host)
                       :port local-port
@@ -100,7 +100,7 @@ remaining address list as the second return value."
     (with-close-on-error (socket (create-socket family :stream :passive ef))
       (when local-host
         (when interface
-          (set-socket-option socket :bind-to-device :value interface))
+          (setf (socket-option socket :bind-to-device) interface))
         (bind-address socket (convert-or-lookup-inet-address local-host)
                       :port local-port
                       :reuse-address reuse-address)
@@ -175,13 +175,13 @@ remaining address list as the second return value."
   (let ((local-port  (ensure-numerical-service local-port))
         (remote-port (ensure-numerical-service remote-port)))
     (with-close-on-error (socket (create-socket family :datagram :active ef))
-      (when broadcast (set-socket-option socket :broadcast :value t))
+      (when broadcast (setf (socket-option socket :broadcast) t))
       (when local-host
         (bind-address socket (convert-or-lookup-inet-address local-host)
                       :port local-port
                       :reuse-address reuse-address)
         (when interface
-          (set-socket-option socket :bind-to-device :value interface)))
+          (setf (socket-option socket :bind-to-device) interface)))
       (when (plusp remote-port)
         (connect socket (convert-or-lookup-inet-address remote-host)
                  :port remote-port)))))

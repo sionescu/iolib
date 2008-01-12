@@ -2,7 +2,7 @@
 ;;;
 ;;; pkgdcl.lisp --- Package definition.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -180,7 +180,6 @@
    #:bind-address
    #:connect
    #:disconnect
-   #:get-socket-option
    #:local-address
    #:local-name
    #:local-port
@@ -189,7 +188,6 @@
    #:remote-address
    #:remote-name
    #:remote-port
-   #:set-socket-option
    #:shutdown
    #:socket-connected-p
    #:socket-family

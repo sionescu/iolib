@@ -218,7 +218,7 @@
                                  &key (reuse-address t))
   (declare (ignore address))
   (when reuse-address
-    (set-socket-option socket :reuse-address :value t)))
+    (setf (socket-option socket :reuse-address) t)))
 
 (defun bind-ipv4-address (fd address port)
   (with-sockaddr-in (sin address port)
@@ -287,7 +287,7 @@
 #+freebsd
 (defmethod connect :before ((socket active-socket) sockaddr &key)
   (declare (ignore sockaddr))
-  (set-socket-option socket :no-sigpipe :value t))
+  (setf (socket-option socket :no-sigpipe) t))
 
 (defun ipv4-connect (fd address port)
   (with-sockaddr-in (sin address port)

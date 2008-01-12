@@ -2,7 +2,7 @@
 ;;;
 ;;; socket-options.lisp --- Setter and getters for various socket options.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -23,38 +23,137 @@
 
 (in-package :net.sockets)
 
-;;;; SETF
+;;;; Macrology
 
-;;; This interface looks nice but doesn't work so well for the linger
-;;; and timeout options.  Figure out a good solution.  Possible ones
-;;; include:
-;;;
-;;;    * don't worry, tell the user to use GET/SET-SOCKET-OPTION
-;;;    * socket-linger-option and socket-timeval-option accessors
-;;;    * use separate accessors for each and every option, like
-;;;      SB-BSD-SOCKETS.
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *socket-option-types* (make-hash-table :test #'eq))
+  (defvar *set-socket-options* (make-hash-table :test #'eq))
+  (defun socktype-args (type)
+    (first (gethash type *socket-option-types*)))
+  (defun socktype-getter (type)
+    (second (gethash type *socket-option-types*)))
+  (defun socktype-setter (type)
+    (third (gethash type *socket-option-types*))))
 
-(defun socket-option (socket option-name)
-  (get-socket-option socket option-name))
+(defmacro define-socket-option-type (name args)
+  (flet ((make-helper-name (action value-type)
+           (format-symbol t "~A~A~A"
+                          action '#:-socket-option- value-type)))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (setf (gethash ,name *socket-option-types*)
+             (list ',args
+                   ',(make-helper-name :get name)
+                   ',(make-helper-name :set name))))))
 
-(defun (setf socket-option) (value socket option-name)
-  (set-socket-option socket option-name :value value))
+(defmacro define-socket-option-helper (helper args &body body)
+  (destructuring-bind (action type) helper
+    (assert (gethash type *socket-option-types*))
+    (assert (= (length args)
+               (+ 3 (ecase action
+                      (:get 0)
+                      (:set (length (socktype-args type)))))))
+    (multiple-value-bind (forms decls) (parse-body body)
+      `(defun ,(ecase action
+                      (:get (socktype-getter type))
+                      (:set (socktype-setter type)))
+           ,args ,decls ,@forms))))
 
-;;;; Set Helpers
+(defmacro define-get-sockopt (os name type level optname)
+  `(defmethod socket-option ((socket socket) (option-name (eql ,name)))
+     (declare (ignorable socket option-name))
+     ,(if (or (eq os :any) (featurep os))
+          (let ((getter (socktype-getter type)))
+            `(,getter (socket-fd socket) ,level ,optname))
+          `(error 'socket-option-not-supported-error
+                  :message ,(format nil "Unsupported socket option: ~S" name)))))
 
-(defun set-socket-option-bool (fd level option value)
+(defmacro define-set-sockopt (os name type level optname)
+  (when (or (eq os :any) (featurep os))
+    `(setf (gethash ,name *set-socket-options*)
+           (list ,type ,level ,optname))))
+
+(define-setf-expander socket-option (socket option-name)
+  (flet ((%make-arglist (type-args expanded-args)
+           (mapcar #'(lambda (targ earg)
+                       (if (consp targ)
+                           `(or ,earg ,(cadr targ))
+                           earg))
+                   type-args expanded-args)))
+    (if-let ((data (gethash option-name *set-socket-options*)))
+            (destructuring-bind (type level optname) data
+              (let ((glist (make-gensym-list (length (socktype-args type)))))
+                (values
+                 nil
+                 nil
+                 glist
+                 `(,(socktype-setter type)
+                    (socket-fd ,socket) ,level ,optname
+                    ,@(%make-arglist (socktype-args type) glist))
+                 socket)))
+            `(error 'socket-option-not-supported-error
+                    :message ,(format nil "Unsupported socket option: ~S"
+                                      option-name)))))
+
+(defmacro define-socket-option (name action optname level argtype os)
+  (let ((eql-name (make-keyword name)))
+    `(progn
+       ,(when (member action (list :get :get-and-set))
+          `(define-get-sockopt ,os ,eql-name ,argtype ,level ,optname))
+       ,(when (member action (list :set :get-and-set))
+          `(define-set-sockopt ,os ,eql-name ,argtype ,level ,optname)))))
+
+(defmacro define-socket-options (action level os &body options)
+  `(progn
+     ,@(loop :for (name optname argtype) :in options :collect
+             `(define-socket-option ,name ,action
+                ,optname ,level ,argtype ,os))))
+
+;;;; Types
+
+;;; BOOL
+
+(define-socket-option-type :bool (value))
+
+(define-socket-option-helper (:get :bool) (fd level option)
+  (with-foreign-object (optval :int)
+    (with-socklen (optlen size-of-int)
+      (getsockopt fd level option optval optlen)
+      (mem-ref optval :boolean))))
+
+(define-socket-option-helper (:set :bool) (fd level option value)
   (with-foreign-object (optval :int)
     (setf (mem-ref optval :int) (lisp->c-bool value))
     (setsockopt fd level option optval size-of-int)
     (values)))
 
-(defun set-socket-option-int (fd level option value)
+;;; INT
+
+(define-socket-option-type :int (value))
+
+(define-socket-option-helper (:get :int) (fd level option)
+  (with-foreign-object (optval :int)
+    (with-socklen (optlen size-of-int)
+      (getsockopt fd level option optval optlen)
+      (mem-ref optval :int))))
+
+(define-socket-option-helper (:set :int) (fd level option value)
   (with-foreign-object (optval :int)
     (setf (mem-ref optval :int) value)
     (setsockopt fd level option optval size-of-int)
     (values)))
 
-(defun set-socket-option-linger (fd level option new-onoff new-linger)
+;;; LINGER
+
+(define-socket-option-type :linger (onoff (linger 0)))
+
+(define-socket-option-helper (:get :linger) (fd level option)
+  (with-foreign-object (optval 'linger)
+    (with-socklen (optlen size-of-linger)
+      (getsockopt fd level option optval optlen)
+      (with-foreign-slots ((linger onoff) optval linger)
+        (values (not (zerop onoff)) linger)))))
+
+(define-socket-option-helper (:set :linger) (fd level option new-onoff new-linger)
   (with-foreign-object (optval 'linger)
     (with-foreign-slots ((linger onoff) optval linger)
       (setf onoff (lisp->c-bool new-onoff)
@@ -62,7 +161,18 @@
     (setsockopt fd level option optval size-of-linger)
     (values)))
 
-(defun set-socket-option-timeval (fd level option sec usec)
+;;; TIMEVAL
+
+(define-socket-option-type :timeval (sec (usec 0)))
+
+(define-socket-option-helper (:get :timeval) (fd level option)
+  (with-foreign-object (optval 'nix::timeval)
+    (with-socklen (optlen nix::size-of-timeval)
+      (getsockopt fd level option optval optlen)
+      (with-foreign-slots ((nix::sec nix::usec) optval nix::timeval)
+        (values nix::sec nix::usec)))))
+
+(define-socket-option-helper (:set :timeval) (fd level option sec usec)
   (with-foreign-object (optval 'nix::timeval)
     (with-foreign-slots ((nix::sec nix::usec) optval nix::timeval)
       (setf nix::sec sec
@@ -70,8 +180,12 @@
     (setsockopt fd level option optval nix::size-of-timeval)
     (values)))
 
+;;; IFREQ-NAME
+
+(define-socket-option-type :ifreq-name (value))
+
 #+linux
-(defun set-socket-option-ifreq-name (fd level option interface)
+(define-socket-option-helper (:set :ifreq-name) (fd level option interface)
   (with-foreign-object (optval 'ifreq)
     (nix:bzero optval size-of-ifreq)
     (with-foreign-slots ((name) optval ifreq)
@@ -79,88 +193,10 @@
         (nix:memcpy name ifname (min (length interface) (1- ifnamsiz)))))
     (setsockopt fd level option optval size-of-ifreq)
     (values)))
-
-;;;; Get Helpers
-
-(defun get-socket-option-bool (fd level option)
-  (with-foreign-object (optval :int)
-    (with-socklen (optlen size-of-int)
-      (getsockopt fd level option optval optlen)
-      (mem-ref optval :boolean))))
-
-(defun get-socket-option-int (fd level option)
-  (with-foreign-object (optval :int)
-    (with-socklen (optlen size-of-int)
-      (getsockopt fd level option optval optlen)
-      (mem-ref optval :int))))
-
-(defun get-socket-option-linger (fd level option)
-  (with-foreign-object (optval 'linger)
-    (with-socklen (optlen size-of-linger)
-      (getsockopt fd level option optval optlen)
-      (with-foreign-slots ((linger onoff) optval linger)
-        (values (not (zerop onoff)) linger)))))
-
-(defun get-socket-option-timeval (fd level option)
-  (with-foreign-object (optval 'nix::timeval)
-    (with-socklen (optlen nix::size-of-timeval)
-      (getsockopt fd level option optval optlen)
-      (with-foreign-slots ((nix::sec nix::usec) optval nix::timeval)
-        (values nix::sec nix::usec)))))
-
+
 ;;;; Option Definitions
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar +helper-args-map+
-    '((:bool (value))
-      (:int (value))
-      (:linger (onoff linger))
-      (:timeval (sec (usec 0)))
-      (:ifreq-name (value)))))
-
-(defmacro define-get-sockopt (os eql-name helper-get level optname)
-  `(defmethod get-socket-option ((socket socket) (option-name (eql ,eql-name)))
-     ,(if (or (eq os :any) (featurep os))
-          `(,helper-get (socket-fd socket) ,level ,optname)
-          `(error 'option-not-available option-name))))
-
-(defmacro define-set-sockopt (os eql-name args helper-set level optname)
-  `(defmethod set-socket-option
-       ((socket socket) (option-name (eql ,eql-name)) &key ,@args)
-     ,@(if (or (eq os :any) (featurep os))
-           `((,helper-set (socket-fd socket) ,level ,optname
-                          ,@(mapcar #'(lambda (c) (if (consp c) (car c) c)) args)))
-           `((declare (ignore ,@args))
-             (error 'option-not-available option-name)))))
-
-(defmacro define-socket-option (name action optname level argtype os)
-  (declare (type symbol action)
-           (type symbol argtype)
-           (type (or symbol list) os))
-  (flet ((make-helper-name (action value-type)
-           (format-symbol t "~A~A~A"
-                          action '#:-socket-option- value-type)))
-    (let ((eql-name (make-keyword name))
-          (args (second (assoc argtype +helper-args-map+)))
-          (helper-get (make-helper-name :get argtype))
-          (helper-set (make-helper-name :set argtype)))
-      `(progn
-         ,@(remove-if
-            #'null
-            (list
-             (when (member action (list :get :get-and-set))
-               `(define-get-sockopt ,os ,eql-name ,helper-get ,level ,optname))
-             (when (member action (list :set :get-and-set))
-               `(define-set-sockopt ,os ,eql-name ,args ,helper-set ,level
-                                    ,optname))))))))
-
-(defmacro define-socket-options (action level os &body options)
-  `(progn
-     ,@(loop :for (name optname argtype) :in options :collect
-             `(define-socket-option ,name ,action
-                ,optname ,level ,argtype ,os))))
-
-;;;; Generic options
+;;; Generic options
 
 (define-socket-options :get sol-socket :any
   (accept-connections so-acceptconn :bool)
@@ -182,7 +218,7 @@
   (send-timeout      so-sndtimeo  :timeval)
   (reuse-address     so-reuseaddr :bool))
 
-;;;; Linux-specific Options
+;;; Linux-specific Options
 
 (define-socket-options :set sol-socket :linux
   (bsd-compatible so-bsdcompat    :bool)
@@ -191,14 +227,14 @@
 (define-socket-option priority :get-and-set
   so-priority sol-socket :int :linux)
 
-;;;; FreeBSD-specific options
+;;; FreeBSD-specific options
 
 (define-socket-options :get-and-set sol-socket :freebsd
   (reuse-port   so-reuseport   :bool)
   (use-loopback so-useloopback :bool)
   (no-sigpipe   so-nosigpipe   :bool))
 
-;;;; TODO
+;;; TODO
 
 ;; TODO: implement "struct ucred" helpers
 
@@ -220,7 +256,7 @@
 ;; (define-socket-option listen-incomplete-queue-length :get-and-set et:so-listenincqlen  et:sol-socket :int :freebsd)
 
 
-;;;; TCP Options
+;;; TCP Options
 
 (define-socket-option tcp-nodelay :get-and-set
   tcp-nodelay ipproto-tcp :bool :any)
@@ -228,7 +264,7 @@
 (define-socket-option tcp-maxseg :get-and-set
   tcp-maxseg ipproto-tcp :int (:or :linux :freebsd))
 
-;;;; Linux-specific TCP Options
+;;; Linux-specific TCP Options
 
 (define-socket-options :get-and-set ipproto-tcp :linux
   (tcp-cork         tcp-cork         :bool)
@@ -244,7 +280,7 @@
 ;; TODO: implement "struct tcp_info" helper
 ;; (define-socket-option tcp-info         :get         et::tcp-info         et:ipproto-tcp :tcp-info :linux)
 
-;;;; FreeBSD-specific TCP Options
+;;; FreeBSD-specific TCP Options
 
 (define-socket-options :get-and-set ipproto-tcp :freebsd
   (tcp-noopt  tcp-noopt  :bool)

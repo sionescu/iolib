@@ -235,7 +235,7 @@
 
 (defun wait-until-socket-connected (socket timeout)
   (if (nth-value 1 (iomux:wait-until-fd-ready (fd-of socket) :write timeout))
-      (let ((errcode (get-socket-option socket :error)))
+      (let ((errcode (socket-option socket :error)))
         (when (minusp errcode) (signal-socket-error)))
       (error 'socket-connection-timeout-error)))
 
