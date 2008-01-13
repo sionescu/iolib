@@ -30,7 +30,7 @@
                 #:system-error-message #:errno-wrapper
                 #:pid #:gid #:uid #:size #:ssize #:bzero)
   (:import-from #:osicat-sys #:size-of-int)
-  (:shadow #:listen #:let #:let* #:multiple-value-bind #:funcall #:defun)
+  (:shadow #:let #:let* #:multiple-value-bind #:funcall #:defun)
   (:export
    ;; Conditions
    #:posix-error

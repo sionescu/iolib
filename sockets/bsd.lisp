@@ -45,13 +45,13 @@
 
 ;;;; sys/socket.h
 
-(define-socket-call "accept" :int
+(define-socket-call ("accept" %accept) :int
   "Accept an incoming connection, returning the file descriptor."
   (socket  fd)
   (address :pointer) ; sockaddr-foo
   (addrlen :pointer))
 
-(define-socket-call "bind" :int
+(define-socket-call ("bind" %bind) :int
   "Bind a socket to a particular local address."
   (fd      fd)
   (address :pointer)
@@ -63,17 +63,17 @@
   (address :pointer) ; sockaddr-foo
   (addrlen socklen))
 
-(define-socket-call "getpeername" :int
+(define-socket-call ("getpeername" %getpeername) :int
   (socket  fd)
   (address :pointer)
   (addrlen :pointer))
 
-(define-socket-call "getsockname" :int
+(define-socket-call ("getsockname" %getsockname) :int
   (socket  fd)
   (address :pointer)
   (addrlen :pointer))
 
-(define-socket-call "getsockopt" :int
+(define-socket-call ("getsockopt" %getsockopt) :int
   "Retrieve socket configuration."
   (fd      fd)
   (level   :int)
@@ -81,12 +81,12 @@
   (optval  :pointer)
   (optlen  :pointer))
 
-(define-socket-call "listen" :int
+(define-socket-call ("listen" %listen) :int
   "Mark a bound socket as listening for incoming connections."
   (socket  fd)
   (backlog :int))
 
-(define-socket-call "recvfrom" ssize
+(define-socket-call ("recvfrom" %recvfrom) ssize
   (socket  fd)
   (buffer  :pointer)
   (length  size)
@@ -94,7 +94,7 @@
   (address :pointer)
   (addrlen :pointer))
 
-(define-socket-call "sendto" ssize
+(define-socket-call ("sendto" %sendto) ssize
   (socket   fd)
   (buffer   :pointer)
   (length   size)
@@ -103,18 +103,18 @@
   (destlen  socklen))
 
 #-(and) ; unused
-(define-socket-call "recvmsg" ssize
+(define-socket-call ("recvmsg" %recvmsg) ssize
   (socket  fd)
   (message :pointer)
   (flags   :int))
 
 #-(and) ; unused
-(define-socket-call "sendmsg" ssize
+(define-socket-call ("sendmsg" %sendmsg) ssize
   (socket  fd)
   (message :pointer)
   (flags   :int))
 
-(define-socket-call "setsockopt" :int
+(define-socket-call ("setsockopt" %setsockopt) :int
   "Configure a socket."
   (fd      fd)
   (level   :int)
@@ -127,27 +127,27 @@
   (how    :int))
 
 ;;; SOCKET is emulated in winsock.lisp.
-(define-socket-call "socket" :int
+(define-socket-call ("socket" %socket) :int
   "Create a BSD socket."
   (domain   :int)  ; af-*
   (type     :int)  ; sock-*
   (protocol :int))
 
 #-(and) ; unused
-(define-socket-call "sockatmark" :int
+(define-socket-call ("sockatmark" %sockatmark) :int
   (socket fd))
 
 #-(and) ; unused
-(define-socket-call ("socketpair" %socketpair) :int
+(define-socket-call ("socketpair" %%socketpair) :int
   (domain   :int)  ; af-*
   (type     :int)  ; sock-*
   (protocol :int)
   (filedes  :pointer))
 
 #-(and) ; unused
-(defun socketpair (domain type protocol)
+(defun %socketpair (domain type protocol)
   (with-foreign-object (filedes :int 2)
-    (%socketpair domain type protocol filedes)
+    (%%socketpair domain type protocol filedes)
     (values (mem-aref filedes :int 0)
             (mem-aref filedes :int 1))))
 
@@ -158,16 +158,16 @@
 
 ;;;; net/if.h
 
-(defcfun "if_nametoindex"
+(defcfun ("if_nametoindex" %if-nametoindex)
     (errno-wrapper :unsigned-int :error-predicate zerop)
   (ifname :string))
 
-(define-socket-call "if_indextoname" :string
+(define-socket-call ("if_indextoname" %if-indextoname) :string
   (ifindex :unsigned-int)
   (ifname  :pointer))
 
-(define-socket-call "if_nameindex" :pointer
+(define-socket-call ("if_nameindex" %if-nameindex) :pointer
   "Return all network interface names and indexes")
 
-(define-socket-call "if_freenameindex" :void
+(define-socket-call ("if_freenameindex" %if-freenameindex) :void
   (ptr :pointer))

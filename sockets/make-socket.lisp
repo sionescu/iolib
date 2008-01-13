@@ -294,7 +294,7 @@ is automatically closed upon exit."
 (defun get-address-family (fd)
   (with-sockaddr-storage (ss)
     (with-socklen (size size-of-sockaddr-storage)
-      (getsockname fd ss size)
+      (%getsockname fd ss size)
       (foreign-slot-value ss 'sockaddr-storage 'family))))
 
 (defun make-socket-stream (fd &key (external-format :default) (errorp t))

@@ -68,7 +68,7 @@
   (with-accessors ((fd fd-of) (fam socket-family) (proto socket-protocol))
       socket
     (setf fd (or file-descriptor
-                 (multiple-value-call #'socket
+                 (multiple-value-call #'%socket
                    (translate-make-socket-keywords-to-constants
                     family type protocol))))
     (setf fam family
@@ -179,7 +179,7 @@
     (with-sockaddr-storage (ss)
       (with-socklen (size size-of-sockaddr-storage)
         (handler-case
-            (getsockname (fd-of socket) ss size)
+            (%getsockname (fd-of socket) ss size)
           (nix:ebadf () nil)
           (nix:econnreset () nil)
           (:no-error (_) (declare (ignore _)) t))))))
@@ -189,7 +189,7 @@
 (defmethod local-name ((socket socket))
   (with-sockaddr-storage (ss)
     (with-socklen (size size-of-sockaddr-storage)
-      (getsockname (fd-of socket) ss size)
+      (%getsockname (fd-of socket) ss size)
       (sockaddr-storage->sockaddr ss))))
 
 (defmethod local-address ((socket socket))
@@ -203,7 +203,7 @@
 (defmethod remote-name ((socket socket))
   (with-sockaddr-storage (ss)
     (with-socklen (size size-of-sockaddr-storage)
-      (getpeername (fd-of socket) ss size)
+      (%getpeername (fd-of socket) ss size)
       (sockaddr-storage->sockaddr ss))))
 
 (defmethod remote-address ((socket socket))
@@ -222,11 +222,11 @@
 
 (defun bind-ipv4-address (fd address port)
   (with-sockaddr-in (sin address port)
-    (bind fd sin size-of-sockaddr-in)))
+    (%bind fd sin size-of-sockaddr-in)))
 
 (defun bind-ipv6-address (fd address port)
   (with-sockaddr-in6 (sin6 address port)
-    (bind fd sin6 size-of-sockaddr-in6)))
+    (%bind fd sin6 size-of-sockaddr-in6)))
 
 (defmethod bind-address ((socket internet-socket) (address ipv4-address)
                          &key (port 0))
@@ -244,7 +244,7 @@
 
 (defmethod bind-address ((socket local-socket) (address local-address) &key)
   (with-sockaddr-un (sun (address-name address))
-      (bind (fd-of socket) sun size-of-sockaddr-un))
+      (%bind (fd-of socket) sun size-of-sockaddr-un))
   (values socket))
 
 (defmethod bind-address :after ((socket socket) (address address) &key)
@@ -256,7 +256,7 @@
   (unless backlog (setf backlog (min *default-backlog-size*
                                      +max-backlog-size+)))
   (check-type backlog unsigned-byte "a non-negative integer")
-  (listen (fd-of socket) backlog)
+  (%listen (fd-of socket) backlog)
   (setf (slot-value socket 'listening) t)
   (values socket))
 
@@ -279,7 +279,7 @@
     (with-sockaddr-storage (ss)
       (with-socklen (size size-of-sockaddr-storage)
         (handler-case
-            (make-client-socket (accept (fd-of socket) ss size))
+            (make-client-socket (%accept (fd-of socket) ss size))
           (nix:ewouldblock ()))))))
 
 ;;;; CONNECT
@@ -325,7 +325,7 @@
     (with-sockaddr-storage (ss)
       (with-socklen (size size-of-sockaddr-storage)
         (handler-case
-            (getpeername (fd-of socket) ss size)
+            (%getpeername (fd-of socket) ss size)
           (socket-not-connected-error () nil)
           (:no-error (_) (declare (ignore _)) t))))))
 
@@ -412,9 +412,9 @@
         (sockaddr->sockaddr-storage ss remote-address remote-port))
       (with-pointer-to-vector-data (buff-sap buff)
         (incf-pointer buff-sap start-offset)
-        (sendto (fd-of socket) buff-sap bufflen flags
-                (if remote-address ss (null-pointer))
-                (if remote-address size-of-sockaddr-storage 0))))))
+        (%sendto (fd-of socket) buff-sap bufflen flags
+                 (if remote-address ss (null-pointer))
+                 (if remote-address size-of-sockaddr-storage 0))))))
 
 (defmethod socket-send ((buffer array) (socket active-socket) &rest args
                         &key (start 0) end remote-address (remote-port 0) &allow-other-keys)
@@ -460,7 +460,7 @@
       (bzero ss size-of-sockaddr-storage)
       (with-pointer-to-vector-data (buff-sap buff)
         (incf-pointer buff-sap start-offset)
-        (recvfrom fd buff-sap bufflen flags ss size)))))
+        (%recvfrom fd buff-sap bufflen flags ss size)))))
 
 (declaim (inline %socket-receive-stream-socket))
 (defun %socket-receive-stream-socket (buffer socket start end flags)

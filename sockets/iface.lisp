@@ -56,23 +56,23 @@
 (defun list-network-interfaces ()
   "Returns a list of network interfaces currently available."
   (with-foreign-object (ifptr :pointer)
-    (setf ifptr (if-nameindex))
+    (setf ifptr (%if-nameindex))
     (unless (null-pointer-p ifptr)
       (loop :for i :from 0
             :for name := (foreign-slot-value
                           (mem-aref ifptr 'if-nameindex i)
-                                 'if-nameindex 'name)
+                          'if-nameindex 'name)
             :for index := (foreign-slot-value
                            (mem-aref ifptr 'if-nameindex i)
-                                  'if-nameindex 'index)
+                           'if-nameindex 'index)
             :while (plusp index)
             :collect (make-interface name index)
-            :finally (if-freenameindex ifptr)))))
+            :finally (%if-freenameindex ifptr)))))
 
 (defun get-interface-by-index (index)
   (with-foreign-object (buff :uint8 ifnamesize)
     (handler-case
-        (if-indextoname index buff)
+        (%if-indextoname index buff)
       (nix:enxio (err)
         (error 'unknown-interface
                :code (osicat-sys:system-error-code err)
@@ -83,7 +83,7 @@
 
 (defun get-interface-by-name (name)
   (handler-case
-      (if-nametoindex name)
+      (%if-nametoindex name)
     (nix:enodev (err)
       (error 'unknown-interface
              :code (osicat-sys:system-error-code err)
