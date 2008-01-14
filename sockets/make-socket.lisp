@@ -236,7 +236,7 @@ remaining address list as the second return value."
   (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
   (let ((args (remove-properties args '(:family :type :connect :external-format :ipv6))))
     (case family
-      (:internet (setf family (if ipv6 :ipv6 :ipv4)))
+      (:internet (setf family +default-inet-family+))
       (:ipv4     (setf ipv6 nil)))
     (let ((*ipv6* ipv6))
       (multiple-value-case (family type connect)
