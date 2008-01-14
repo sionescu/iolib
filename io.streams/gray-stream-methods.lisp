@@ -129,14 +129,22 @@
        (unless (<= ,start ,end ,length)
          (error "Wrong sequence bounds. start: ~S end: ~S" ,start ,end)))))
 
-(defmethod stream-read-sequence
-    ((stream dual-channel-gray-stream) seq start end &key)
+(declaim (inline %read-sequence))
+(defun %read-sequence (stream seq start end)
   (check-bounds seq start end)
   (when (< start end)
     (etypecase seq
       (ub8-sarray (%read-into-simple-array-ub8 stream seq start end))
       (string (%read-into-string stream seq start end))
       (ub8-vector (%read-into-vector stream seq start end)))))
+
+(declaim (inline read-sequence*))
+(defun read-sequence* (stream sequence &key (start 0) end)
+  (%read-sequence stream sequence start end))
+
+(defmethod stream-read-sequence
+    ((stream dual-channel-gray-stream) sequence start end &key)
+  (%read-sequence stream sequence start end))
 
 ;;;; Output Methods
 
@@ -258,8 +266,8 @@
      :do (stream-write-byte stream octet)
      :finally (return vector)))
 
-(defmethod stream-write-sequence ((stream dual-channel-gray-stream)
-                                  seq start end &key)
+(declaim (inline %write-sequence))
+(defun %write-sequence (stream seq start end)
   (check-bounds seq start end)
   (when (< start end)
     (etypecase seq
@@ -267,6 +275,14 @@
       (string (stream-write-string stream seq start end))
       (ub8-vector (%write-vector-ub8 stream seq start end))
       (vector (%write-vector stream seq start end)))))
+
+(declaim (inline write-sequence*))
+(defun write-sequence* (stream sequence &key (start 0) end)
+  (%write-sequence stream sequence start end))
+
+(defmethod stream-write-sequence ((stream dual-channel-gray-stream)
+                                  sequence start end &key)
+  (%write-sequence stream sequence start end))
 
 ;;;; Character Input
 

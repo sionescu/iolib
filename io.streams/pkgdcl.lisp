@@ -51,4 +51,7 @@
    #:input-fd-of
    #:output-fd-non-blocking
    #:output-fd-of
+
+   #:read-sequence*
+   #:write-sequence*
    ))
