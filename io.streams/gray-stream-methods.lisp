@@ -2,7 +2,7 @@
 ;;;
 ;;; gray-stream-methods.lisp --- Implementation using gray streams.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -27,19 +27,17 @@
 
 ;;; TODO: use the buffer pool
 ;;; TODO: handle instance reinitialization
-(defmethod shared-initialize :after ((s dual-channel-gray-stream) slot-names
+(defmethod shared-initialize :after ((stream dual-channel-gray-stream) slot-names
                                      &key (input-buffer-size +bytes-per-iobuf+)
                                      (output-buffer-size +bytes-per-iobuf+)
                                      (external-format :default))
   (declare (ignore slot-names))
   (check-type input-buffer-size buffer-index)
   (check-type output-buffer-size buffer-index)
-  ;; Commented this form out.  What's it for?  It doesn't allow us to
-  ;; initialize streams with FDs as initargs, since those streams will
-  ;; be open right away.
-  #- (and) (when (open-stream-p s) (close s))
-  (with-accessors ((ib input-buffer-of) (ob output-buffer-of)
-                   (ef external-format-of)) s
+  (with-accessors ((ib input-buffer-of)
+                   (ob output-buffer-of)
+                   (ef external-format-of))
+      stream
     (setf ib (allocate-iobuf input-buffer-size)
           ob (allocate-iobuf output-buffer-size)
           ef external-format)))
@@ -52,7 +50,8 @@
 ;; TODO: use the buffer pool
 (defmethod close :around ((stream dual-channel-gray-stream) &key abort)
   (with-accessors ((ib input-buffer-of)
-                   (ob output-buffer-of)) stream
+                   (ob output-buffer-of))
+      stream
     (unless (or abort (null ib)) (finish-output stream))
     (when ib (free-iobuf ib))
     (when ob (free-iobuf ob))
@@ -70,8 +69,13 @@
 
 ;;;; Input Methods
 
+(defun %to-octets (buff start end ef)
+  (babel:string-to-octets buff :start start :end end
+                          :encoding (babel:external-format-encoding ef)))
+
 (defmethod stream-clear-input ((stream dual-channel-gray-stream))
-  (with-accessors ((ib input-buffer-of)) stream
+  (with-accessors ((ib input-buffer-of))
+      stream
     (iobuf-reset ib)
     nil))
 
@@ -89,7 +93,9 @@
 
 (defun %read-into-simple-array-ub8 (stream array start end)
   (declare (type dual-channel-gray-stream stream))
-  (with-accessors ((ib input-buffer-of) (fd input-fd-of)) stream
+  (with-accessors ((ib input-buffer-of)
+                   (fd input-fd-of))
+      stream
     (let ((octets-needed (- end start)))
       (loop :with array-offset := start
             :for octets-in-buffer := (iobuf-length ib)
@@ -102,14 +108,14 @@
            (incf (iobuf-start ib) nbytes)
          :if (zerop octets-needed) :do (loop-finish)
          :else :do (iobuf-reset ib)
-         :when (eql :eof (%fill-ibuf ib fd)) :do (loop-finish)
+         :when (eq :eof (%fill-ibuf ib fd)) :do (loop-finish)
          :finally (return array-offset)))))
 
 (defun %read-into-string (stream string start end)
   (declare (type dual-channel-gray-stream stream))
   (loop :for offset :from start :below end
         :for char := (stream-read-char stream)
-     :if (eql char :eof) :do (loop-finish)
+     :if (eq char :eof) :do (loop-finish)
      :else :do (setf (char string offset) char)
      :finally (return offset)))
 
@@ -117,7 +123,7 @@
   (declare (type dual-channel-gray-stream stream))
   (loop :for offset :from start :below end
         :for octet := (stream-read-byte stream)
-     :if (eql octet :eof) :do (loop-finish)
+     :if (eq octet :eof) :do (loop-finish)
      :else :do (setf (aref vector offset) octet)
      :finally (return offset)))
 
@@ -211,24 +217,28 @@
 ;;; TODO: add timeout support
 (defun %flush-obuf-if-needed (stream)
   (declare (type dual-channel-gray-stream stream))
-  (with-accessors ((fd output-fd-of) (ob output-buffer-of)
-                   (must-flush-output-p must-flush-output-p)) stream
+  (with-accessors ((fd output-fd-of)
+                   (ob output-buffer-of)
+                   (must-flush-output-p must-flush-output-p))
+      stream
     (when (or must-flush-output-p (iobuf-full-p ob))
       (%flush-obuf ob fd)
       (setf must-flush-output-p nil))))
 
 (defmethod stream-clear-output ((stream dual-channel-gray-stream))
-  (with-accessors ((ob output-buffer-of)
-                   (must-flush-output-p must-flush-output-p)
-                   (fd output-fd-of)) stream
+  (with-accessors ((fd output-fd-of)
+                   (ob output-buffer-of)
+                   (must-flush-output-p must-flush-output-p))
+      stream
     (iobuf-reset ob)
     (setf must-flush-output-p nil)
     nil))
 
 (defmethod stream-finish-output ((stream dual-channel-gray-stream))
-  (with-accessors ((ob output-buffer-of)
-                   (must-flush-output-p must-flush-output-p)
-                   (fd output-fd-of)) stream
+  (with-accessors ((fd output-fd-of)
+                   (ob output-buffer-of)
+                   (must-flush-output-p must-flush-output-p))
+      stream
     (%flush-obuf ob fd)
     (setf must-flush-output-p nil)
     nil))
@@ -238,8 +248,9 @@
 
 (defun %write-simple-array-ub8 (stream array start end)
   (declare (type dual-channel-gray-stream stream))
-  (with-accessors ((ob output-buffer-of)
-                   (fd output-fd-of)) stream
+  (with-accessors ((fd output-fd-of)
+                   (ob output-buffer-of))
+      stream
     (let ((octets-needed (- end start)))
       (cond ((<= octets-needed (iobuf-end-space-length ob))
              (iobuf-copy-from-lisp-array array start ob
@@ -299,7 +310,7 @@
                (return #\Newline)))
         (:crlf (when (= char-code (char-code #\Return))
                  (when (and (= (iobuf-length ib) 1)
-                            (eql (%fill-ibuf ib fd) :eof))
+                            (eq :eof (%fill-ibuf ib fd)))
                    (incf (iobuf-start ib))
                    (return #\Return))
                  (when (= (bref ib (1+ start-off))
@@ -314,15 +325,17 @@
 ;;;        from soft end-of-files (EOF and *some* bytes still in the buffer
 ;;;        but not enough to make a full character)
 (defmethod stream-read-char ((stream dual-channel-gray-stream))
-  (with-accessors ((fd input-fd-of) (ib input-buffer-of)
+  (with-accessors ((fd input-fd-of)
+                   (ib input-buffer-of)
                    (unread-index ibuf-unread-index-of)
-                   (ef external-format-of)) stream
+                   (ef external-format-of))
+      stream
     (setf unread-index (iobuf-start ib))
     (let ((str nil)
           (ret nil))
       (flet ((fill-buf-or-eof ()
                (setf ret (%fill-ibuf ib fd))
-               (when (eql ret :eof)
+               (when (eq ret :eof)
                  (return-from stream-read-char :eof))))
         (cond ((zerop (iobuf-length ib))
                (iobuf-reset ib)
@@ -373,8 +386,10 @@
                    (return #\Newline))))))))
 
 (defmethod stream-read-char-no-hang ((stream dual-channel-gray-stream))
-  (with-accessors ((fd input-fd-of) (ib input-buffer-of)
-                   (ef external-format-of)) stream
+  (with-accessors ((fd input-fd-of)
+                   (ib input-buffer-of)
+                   (ef external-format-of))
+      stream
     (let ((str nil)
           (ret nil)
           (eof nil))
@@ -385,13 +400,13 @@
         (when (< 0 (iobuf-end-space-length ib) 4)
           (iobuf-copy-data-to-start ib))
         (when (and (iomux:fd-ready-p fd :read)
-                   (eql :eof (%fill-ibuf ib fd)))
+                   (eq :eof (%fill-ibuf ib fd)))
           (setf eof t))
         (when (zerop (iobuf-length ib))
           (return (if eof :eof nil)))
         ;; line-end handling
         (let ((line-end (maybe-find-line-ending-no-hang fd ib ef)))
-          (cond ((eql line-end :starvation)
+          (cond ((eq line-end :starvation)
                  (return (if eof #\Return nil)))
                 ((characterp line-end)
                  (return line-end))))
@@ -412,7 +427,8 @@
 (defun %stream-unread-char (stream)
   (declare (type dual-channel-gray-stream stream))
   (with-accessors ((ib input-buffer-of)
-                   (unread-index ibuf-unread-index-of)) stream
+                   (unread-index ibuf-unread-index-of))
+      stream
     (symbol-macrolet ((start (iobuf-start ib)))
       (cond
         ((> start unread-index) (setf start unread-index))
@@ -425,7 +441,7 @@
 
 (defmethod stream-peek-char ((stream dual-channel-gray-stream))
   (let ((char (stream-read-char stream)))
-    (cond ((eql char :eof) :eof)
+    (cond ((eq char :eof) :eof)
           (t (%stream-unread-char stream)
              (values char)))))
 
@@ -435,7 +451,7 @@
 (defmethod stream-listen ((stream dual-channel-gray-stream))
   (let ((char (stream-read-char-no-hang stream)))
     (cond ((characterp char) (stream-unread-char stream char) t)
-          ((eql char :eof) nil)
+          ((eq char :eof) nil)
           (t t))))
 
 ;;;; Character Output
@@ -492,9 +508,7 @@
          :when nl-off :do (%write-line-terminator stream line-terminator)
          :when (> off2 off1) :do
          ;; FIXME: should probably convert directly to a foreign buffer?
-         (setf octets (babel:string-to-octets
-                       string :start off1 :end off2
-                       :encoding (babel:external-format-encoding ef)))
+         (setf octets (%to-octets string off1 off2 ef))
          (%write-simple-array-ub8 stream octets 0 (length octets))
          :while (< off2 end))))
   (values string))
@@ -503,10 +517,11 @@
 
 (defmethod stream-read-byte ((stream dual-channel-gray-stream))
   (with-accessors ((fd input-fd-of)
-                   (ib input-buffer-of)) stream
+                   (ib input-buffer-of))
+      stream
     (flet ((fill-buf-or-eof ()
              (iobuf-reset ib)
-             (when (eql :eof (%fill-ibuf ib fd))
+             (when (eq :eof (%fill-ibuf ib fd))
                (return-from stream-read-byte :eof))))
       (when (zerop (iobuf-length ib))
         (fill-buf-or-eof))
@@ -516,6 +531,7 @@
 
 (defmethod stream-write-byte ((stream dual-channel-gray-stream) integer)
   (check-type integer ub8 "an unsigned 8-bit value")
-  (with-accessors ((ob output-buffer-of)) stream
+  (with-accessors ((ob output-buffer-of))
+      stream
     (%flush-obuf-if-needed stream)
     (iobuf-push-octet ob integer)))
