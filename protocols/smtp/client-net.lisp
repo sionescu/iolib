@@ -33,7 +33,8 @@
   (finish-output socket))
 
 (defun format-socket (socket cmdstr &rest args)
-  (write-to-smtp socket (apply #'format nil cmdstr args)))
+  (write-to-smtp socket (apply #'format nil cmdstr args))
+  (finish-output socket))
 
 (defun read-from-smtp (sock)
   (let* ((line (read-line sock))
