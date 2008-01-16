@@ -76,7 +76,7 @@ remaining address list as the second return value."
 
 (defun %make-internet-stream-active-socket (args family ef)
   (destructuring-bind (&key keepalive nodelay (reuse-address t)
-                            (local-host +default-host+) (local-port 0)
+                            local-host local-port
                             (remote-host +default-host+) (remote-port 0))
       args
     (%%make-internet-stream-active-socket family ef keepalive nodelay reuse-address
@@ -86,7 +86,7 @@ remaining address list as the second return value."
   (with-guard-again-non-list-args-and-destructuring-bind-errors
       form args
     (destructuring-bind (&key keepalive nodelay (reuse-address t)
-                              (local-host +default-host+) (local-port 0)
+                              local-host local-port
                               (remote-host +default-host+) (remote-port 0))
         (cdr args)
       `(%%make-internet-stream-active-socket ,family ,ef ,keepalive ,nodelay ,reuse-address
@@ -188,7 +188,7 @@ remaining address list as the second return value."
 
 (defun %make-internet-datagram-socket (args family ef)
   (destructuring-bind (&key broadcast interface (reuse-address t)
-                            (local-host +default-host+) (local-port 0)
+                            local-host local-port
                             (remote-host +default-host+) (remote-port 0))
       args
     (%%make-internet-datagram-socket family ef broadcast interface reuse-address
@@ -198,7 +198,7 @@ remaining address list as the second return value."
   (with-guard-again-non-list-args-and-destructuring-bind-errors
       form args
     (destructuring-bind (&key broadcast interface (reuse-address t)
-                              (local-host +default-host+) (local-port 0)
+                              local-host local-port
                               (remote-host +default-host+) (remote-port 0))
         (cdr args)
       `(%%make-internet-datagram-socket ,family ,ef ,broadcast ,interface ,reuse-address
