@@ -89,10 +89,10 @@
   (read-smtp-return-code sock 220 "Wrong response from smtp server")
   (cond
     (authentication
-     (invoke-smtp-command :ehlo sock (et:get-host-name))
+     (invoke-smtp-command :ehlo sock (nix:gethostname))
      (invoke-authentication (first authentication) (rest authentication)))
     (t
-     (invoke-smtp-command :helo sock (et:get-host-name)))))
+     (invoke-smtp-command :helo sock (nix:gethostname)))))
 
 (defun send-message-envelope (sock from to cc bcc)
   (invoke-smtp-command :mail-from sock from)
