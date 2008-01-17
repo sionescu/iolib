@@ -270,11 +270,6 @@
                      `(,(%do-clause c)))))))
     `(cond ,@(append (mapcar #'%do-clause (butlast body))
                      (%do-last-clause (car (last body)))))))
-
-(defun remove-properties (plist keys)
-  (let ((l (copy-list plist)))
-    (dolist (key keys l)
-      (remf l key))))
 
 ;;; Reader macros
 

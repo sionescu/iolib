@@ -234,7 +234,7 @@ remaining address list as the second return value."
   (check-type family (member :internet :local :ipv4 :ipv6) "one of :INTERNET, :LOCAL, :IPV4 or :IPV6")
   (check-type type (member :stream :datagram) "either :STREAM or :DATAGRAM")
   (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
-  (let ((args (remove-properties args '(:family :type :connect :external-format :ipv6))))
+  (let ((args (remove-from-plist args :family :type :connect :external-format :ipv6)))
     (case family
       (:internet (setf family +default-inet-family+))
       (:ipv4     (setf ipv6 nil)))
