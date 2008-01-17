@@ -269,7 +269,7 @@
                      `((t ,@code))
                      `(,(%do-clause c)))))))
     `(cond ,@(append (mapcar #'%do-clause (butlast body))
-                     (%do-last-clause (car (last body)))))))
+                     (%do-last-clause (lastcar body))))))
 
 ;;; Reader macros
 

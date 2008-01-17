@@ -155,7 +155,7 @@ ADDRESS-NAME reader."))
              (empty-tokens (count-if #'emptyp tokens))
              (token-count (+ (length tokens) extra-tokens)))
         (unless trailing-colon-p
-          (let ((ipv4 (ipv4-string-to-ub16-list (car (last tokens)))))
+          (let ((ipv4 (ipv4-string-to-ub16-list (lastcar tokens))))
             (when ipv4
               (incf token-count)
               (setq tokens (nconc (butlast tokens) ipv4)))))
