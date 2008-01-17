@@ -269,7 +269,7 @@ remaining address list as the second return value."
               ((:local :stream :passive) '%make-local-stream-passive-socket)
               (((:ipv4 :ipv6 :internet) :datagram) '%make-internet-datagram-socket)
               ((:local :datagram) '%make-local-datagram-socket)))
-           (newargs (remove-properties args '(:family :type :connect :external-format :ipv6))))
+           (newargs (remove-from-plist args '(:family :type :connect :external-format :ipv6))))
        (case family
          (:internet (setf family '+default-inet-family+))
          (:ipv4     (setf ipv6 nil)))
