@@ -59,7 +59,15 @@
 (defclass local-socket (socket) ()
   (:default-initargs :family :local))
 
-(defclass active-socket (socket dual-channel-gray-stream) ())
+(defun socket-read-fn (fd buffer nbytes)
+  (%recvfrom fd buffer nbytes 0 (null-pointer) (null-pointer)))
+
+(defun socket-write-fn (fd buffer nbytes)
+  (%sendto fd buffer nbytes 0 (null-pointer) 0))
+
+(defclass active-socket (socket dual-channel-gray-stream) ()
+  (:default-initargs :read-fn 'socket-read-fn
+                     :write-fn 'socket-write-fn))
 
 (defgeneric connect (socket address &key &allow-other-keys))
 

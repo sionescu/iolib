@@ -55,11 +55,19 @@
 
 (deftype stream-position () '(unsigned-byte 64))
 
+(defun default-read-fn (fd buf nbytes)
+  (nix:read fd buf nbytes))
+
+(defun default-write-fn (fd buf nbytes)
+  (nix:write fd buf nbytes))
+
 (defclass dual-channel-fd-mixin ()
   ((input-fd  :initform nil :initarg :input-fd :accessor input-fd-of
               :documentation "placeholder")
+   (read-fn :initform 'default-read-fn :initarg :read-fn :accessor read-fn-of)
    (output-fd :initform nil :initarg :output-fd :accessor output-fd-of
-              :documentation "placeholder"))
+              :documentation "placeholder")
+   (write-fn :initform 'default-write-fn :initarg :write-fn :accessor write-fn-of))
   (:documentation "placeholder"))
 
 (defgeneric input-fd-non-blocking (socket)

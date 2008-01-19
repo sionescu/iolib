@@ -79,14 +79,14 @@
     (iobuf-reset ib)
     nil))
 
-(defun %fill-ibuf (buf fd &optional timeout)
+(defun %fill-ibuf (read-fn fd buf &optional timeout)
   (when timeout
     (let ((readablep (iomux:wait-until-fd-ready fd :read timeout)))
       (unless readablep
         (return-from %fill-ibuf :timeout))))
   (let ((num (nix:repeat-upon-eintr
-               (nix:read fd (iobuf-end-pointer buf)
-                         (iobuf-end-space-length buf)))))
+               (funcall read-fn fd (iobuf-end-pointer buf)
+                        (iobuf-end-space-length buf)))))
     (if (zerop num)
         :eof
         (incf (iobuf-end buf) num))))
@@ -94,7 +94,8 @@
 (defun %read-into-simple-array-ub8 (stream array start end)
   (declare (type dual-channel-gray-stream stream))
   (with-accessors ((ib input-buffer-of)
-                   (fd input-fd-of))
+                   (fd input-fd-of)
+                   (read-fn read-fn-of))
       stream
     (let ((octets-needed (- end start)))
       (loop :with array-offset := start
@@ -108,7 +109,7 @@
            (incf (iobuf-start ib) nbytes)
          :if (zerop octets-needed) :do (loop-finish)
          :else :do (iobuf-reset ib)
-         :when (eq :eof (%fill-ibuf ib fd)) :do (loop-finish)
+         :when (eq :eof (%fill-ibuf read-fn fd ib)) :do (loop-finish)
          :finally (return array-offset)))))
 
 (defun %read-into-string (stream string start end)
@@ -154,7 +155,7 @@
 
 ;;;; Output Methods
 
-(defun %write-n-bytes (buf fd nbytes &optional timeout)
+(defun %write-n-bytes (write-fn fd buf nbytes &optional timeout)
   (declare (type stream-buffer buf))
   (let ((bytes-written 0))
     (labels ((write-once ()
@@ -162,8 +163,8 @@
                               (nix:repeat-upon-condition-decreasing-timeout
                                   ((nix:eintr) timeout-var timeout)
                                 (prog1
-                                    (nix:write fd (inc-pointer buf bytes-written)
-                                               nbytes)
+                                    (funcall write-fn fd (inc-pointer buf bytes-written)
+                                             nbytes)
                                   (when (and timeout-var (zerop timeout-var))
                                     (return-from %write-n-bytes
                                       (values nil :timeout)))))
@@ -182,7 +183,7 @@
       (loop :until (buffer-emptyp) :do (write-or-return)
          :finally (return (values t bytes-written))))))
 
-(defun %flush-obuf (buf fd &optional timeout)
+(defun %flush-obuf (write-fn fd buf &optional timeout)
   (declare (type iobuf buf))
   (let ((bytes-written 0))
     (labels ((write-once ()
@@ -190,8 +191,8 @@
                               (nix:repeat-upon-condition-decreasing-timeout
                                   ((nix:eintr) timeout-var timeout)
                                 (prog1
-                                    (nix:write fd (iobuf-start-pointer buf)
-                                               (iobuf-length buf))
+                                    (funcall write-fn fd (iobuf-start-pointer buf)
+                                             (iobuf-length buf))
                                   (when (and timeout-var (zerop timeout-var))
                                     (return-from %flush-obuf
                                       (values nil :timeout)))))
@@ -218,11 +219,12 @@
 (defun %flush-obuf-if-needed (stream)
   (declare (type dual-channel-gray-stream stream))
   (with-accessors ((fd output-fd-of)
+                   (write-fn write-fn-of)
                    (ob output-buffer-of)
                    (dirtyp dirtyp))
       stream
     (when (or dirtyp (iobuf-full-p ob))
-      (%flush-obuf ob fd)
+      (%flush-obuf write-fn fd ob)
       (setf dirtyp nil))))
 
 (defmethod stream-clear-output ((stream dual-channel-gray-stream))
@@ -235,10 +237,11 @@
 
 (defmethod stream-finish-output ((stream dual-channel-gray-stream))
   (with-accessors ((fd output-fd-of)
+                   (write-fn write-fn-of)
                    (ob output-buffer-of)
                    (dirtyp dirtyp))
       stream
-    (%flush-obuf ob fd)
+    (%flush-obuf write-fn fd ob)
     (setf dirtyp nil)
     nil))
 
@@ -248,6 +251,7 @@
 (defun %write-simple-array-ub8 (stream array start end)
   (declare (type dual-channel-gray-stream stream))
   (with-accessors ((fd output-fd-of)
+                   (write-fn write-fn-of)
                    (ob output-buffer-of))
       stream
     (let ((octets-needed (- end start)))
@@ -258,9 +262,9 @@
              (%flush-obuf-if-needed stream))
             (t 
              (with-pointer-to-vector-data (ptr array)
-               (%flush-obuf ob fd)
-               (let ((ret (%write-n-bytes (inc-pointer ptr start)
-                                          fd octets-needed)))
+               (%flush-obuf write-fn fd ob)
+               (let ((ret (%write-n-bytes write-fn fd (inc-pointer ptr start)
+                                          octets-needed)))
                  (when (numberp ret)
                    (incf (iobuf-end ob) octets-needed))))))
       (values array))))
@@ -296,7 +300,7 @@
 
 ;;;; Character Input
 
-(defun maybe-find-line-ending (fd ib ef)
+(defun maybe-find-line-ending (read-fn fd ib ef)
   (let* ((start-off (iobuf-start ib))
          (char-code (bref ib start-off)))
     (block nil
@@ -309,7 +313,7 @@
                (return #\Newline)))
         (:crlf (when (= char-code (char-code #\Return))
                  (when (and (= (iobuf-length ib) 1)
-                            (eq :eof (%fill-ibuf ib fd)))
+                            (eq :eof (%fill-ibuf read-fn fd ib)))
                    (incf (iobuf-start ib))
                    (return #\Return))
                  (when (= (bref ib (1+ start-off))
@@ -326,6 +330,7 @@
 (defmethod stream-read-char ((stream dual-channel-gray-stream))
   (with-accessors ((fd input-fd-of)
                    (ib input-buffer-of)
+                   (read-fn read-fn-of)
                    (unread-index ibuf-unread-index-of)
                    (ef external-format-of))
       stream
@@ -333,7 +338,7 @@
     (let ((str nil)
           (ret nil))
       (flet ((fill-buf-or-eof ()
-               (setf ret (%fill-ibuf ib fd))
+               (setf ret (%fill-ibuf read-fn fd ib))
                (when (eq ret :eof)
                  (return-from stream-read-char :eof))))
         (cond ((zerop (iobuf-length ib))
@@ -346,7 +351,7 @@
                (iobuf-copy-data-to-start ib)
                (setf unread-index 0)))
         ;; line-end handling
-        (when-let ((it (maybe-find-line-ending fd ib ef)))
+        (when-let ((it (maybe-find-line-ending read-fn fd ib ef)))
           (return-from stream-read-char it))
         (tagbody :start
            (handler-case
@@ -386,6 +391,7 @@
 
 (defmethod stream-read-char-no-hang ((stream dual-channel-gray-stream))
   (with-accessors ((fd input-fd-of)
+                   (read-fn read-fn-of)
                    (ib input-buffer-of)
                    (ef external-format-of))
       stream
@@ -399,7 +405,7 @@
         (when (< 0 (iobuf-end-space-length ib) 4)
           (iobuf-copy-data-to-start ib))
         (when (and (iomux:fd-ready-p fd :read)
-                   (eq :eof (%fill-ibuf ib fd)))
+                   (eq :eof (%fill-ibuf read-fn fd ib)))
           (setf eof t))
         (when (zerop (iobuf-length ib))
           (return (if eof :eof nil)))
@@ -516,11 +522,12 @@
 
 (defmethod stream-read-byte ((stream dual-channel-gray-stream))
   (with-accessors ((fd input-fd-of)
+                   (read-fn read-fn-of)
                    (ib input-buffer-of))
       stream
     (flet ((fill-buf-or-eof ()
              (iobuf-reset ib)
-             (when (eq :eof (%fill-ibuf ib fd))
+             (when (eq :eof (%fill-ibuf read-fn fd ib))
                (return-from stream-read-byte :eof))))
       (when (zerop (iobuf-length ib))
         (fill-buf-or-eof))
