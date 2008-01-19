@@ -398,10 +398,8 @@
 (defun %socket-send (socket buffer start end remote-address remote-port flags)
   (when (typep socket 'passive-socket)
     (error "You cannot send data on a passive socket."))
-  (check-type start unsigned-byte "a non-negative integer")
-  (check-type end (or unsigned-byte null) "a non-negative integer or NIL")
-  (check-type remote-address (or address null) "a network address or NIL")
-  (check-type remote-port tcp-port "a valid TCP port number")
+  (when remote-address (setf remote-address (convert-or-lookup-inet-address remote-address)))
+  (when remote-port (setf remote-port (ensure-numerical-service remote-port)))
   (when (and (ipv4-address-p remote-address)
              (eq (socket-family socket) :ipv6))
     (setf remote-address (map-ipv4-address-to-ipv6 remote-address)))
@@ -417,15 +415,21 @@
                  (if remote-address size-of-sockaddr-storage 0))))))
 
 (defmethod send-to ((socket active-socket) buffer &rest args
-                    &key (start 0) end remote-address (remote-port 0))
-  (%socket-send socket buffer start end remote-address remote-port
-                (compute-flags *sendmsg-flags* args)))
+                    &key (start 0) end remote-address (remote-port 0) (ipv6 *ipv6*))
+  (let ((*ipv6* ipv6))
+    (%socket-send socket buffer start end remote-address remote-port
+                  (compute-flags *sendmsg-flags* args))))
 
 (define-compiler-macro send-to (&whole form socket buffer &rest args
-                                &key (start 0) end remote-address (remote-port 0))
+                                &key (start 0) end remote-address (remote-port 0)
+                                (ipv6 '*ipv6* ipv6p))
   (let ((flags (compute-flags *sendmsg-flags* args)))
-    (cond (flags `(%socket-send ,socket ,buffer ,start ,end
-                                ,remote-address ,remote-port ,flags))
+    (cond (flags (if ipv6p
+                     `(let ((*ipv6* ,ipv6))
+                        (%socket-send ,socket ,buffer ,start ,end
+                                      ,remote-address ,remote-port ,flags))
+                     `(%socket-send ,socket ,buffer ,start ,end
+                                    ,remote-address ,remote-port ,flags)))
           (t form))))
 
 ;;;; RECVFROM

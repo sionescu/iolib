@@ -140,3 +140,13 @@ behaviour, defaults to *IPV6*."
           (t
            (check-type host string "a string")
            (lookup-host-by-name host ipv6)))))
+
+(defun convert-or-lookup-inet-address (address &optional (ipv6 *ipv6*))
+  "If ADDRESS is an inet-address designator, it is converted, if
+necessary, to an INET-ADDRESS object and returned.  Otherwise it
+is assumed to be a host name which is then looked up in order to
+return its primary address as the first return value and the
+remaining address list as the second return value."
+  (or (ignore-parse-errors (ensure-address address :internet))
+      (let ((addresses (lookup-host address :ipv6 ipv6)))
+        (values (car addresses) (cdr addresses)))))
