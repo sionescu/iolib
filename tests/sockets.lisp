@@ -384,8 +384,9 @@
 (test simple-local-sockets
   (is (string= (let ((file (namestring
                             (make-pathname :name "local-socket" :type nil
-                                           :defaults (asdf:system-definition-pathname
-                                                      (asdf:find-system '#:iolib-tests))))))
+                                           :defaults (truename
+                                                      (asdf:system-definition-pathname
+                                                       (asdf:find-system '#:iolib-tests)))))))
                  ;; (ignore-errors (delete-file file))
                  (with-open-socket (p :family :local :connect :passive :local-filename file)
                    (with-open-socket (a :family :local :remote-filename file)
