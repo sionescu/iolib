@@ -222,16 +222,15 @@
 (defconstant +dns-port+ 53)
 
 (defun do-udp-dns-query (buffer length nameserver timeout)
-  (let ((input-buffer (make-array +dns-max-datagram-size+ :element-type 'ub8)))
-    (with-open-stream
-        (socket (make-socket :connect :active :type :datagram
-                             :remote-host nameserver :remote-port +dns-port+
-                             :ipv6 (ipv6-address-p nameserver)))
-      (socket-send buffer socket :end length)
-      (iomux:wait-until-fd-ready (fd-of socket) :read timeout t)
-      (multiple-value-bind (buf len)
-          (socket-receive input-buffer socket)
-        (values buf len)))))
+  (with-open-stream
+      (socket (make-socket :connect :active :type :datagram
+                           :remote-host nameserver :remote-port +dns-port+
+                           :ipv6 (ipv6-address-p nameserver)))
+    (send-to socket buffer :end length)
+    (iomux:wait-until-fd-ready (fd-of socket) :read timeout t)
+    (multiple-value-bind (buf len)
+        (receive-from socket :size +dns-max-datagram-size+)
+      (values buf len))))
 
 (defun wait-until-socket-connected (socket timeout)
   (if (nth-value 1 (iomux:wait-until-fd-ready (fd-of socket) :write timeout))
@@ -244,12 +243,12 @@
     ;; two-octet length prefix
     (replace minibuf (ub16-to-vector length))
     (replace minibuf buffer :start1 2 :end2 length)
-    (socket-send minibuf socket :end (+ length 2))))
+    (send-to socket minibuf :end (+ length 2))))
 
 (defun get-tcp-query-length (socket timeout)
-  (let ((minibuf (make-array 2 :element-type 'ub8)))
-    (iomux:wait-until-fd-ready (fd-of socket) :read timeout t)
-    (socket-receive minibuf socket)
+  (iomux:wait-until-fd-ready (fd-of socket) :read timeout t)
+  (multiple-value-bind (minibuf)
+      (receive-from socket :size 2)
     (+ (ash (aref minibuf 0) 8)
        (aref minibuf 1))))
 
@@ -259,7 +258,7 @@
            (input-buffer (make-array message-length :element-type 'ub8)))
       (loop :with off := 0 :do
          (iomux:wait-until-fd-ready fd :read (funcall time-fn) t)
-         (let ((inbytes (nth-value 1 (socket-receive input-buffer socket :start off))))
+         (let ((inbytes (nth-value 1 (receive-from socket :buffer input-buffer :start off))))
            (incf off inbytes)
            (when (= off message-length)
              (return (values input-buffer off))))))))

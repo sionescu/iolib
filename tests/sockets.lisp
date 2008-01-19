@@ -365,21 +365,20 @@
   (is-true
    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                         :type :datagram :family :ipv4)
-     (let ((data (make-array '(200) :element-type '(unsigned-byte 8))))
-       (socket-send "here is some text" s)
-       (socket-receive data s)
-       ;; (format t "~&Got ~S back from UDP echo server~%" data)
-       (> (length data) 0)))))
+     (send-to s "here is some text")
+     (multiple-value-bind (data nbytes)
+         (receive-from s :size 200)
+       (plusp nbytes)))))
 
 (test simple-udp-client.2
   (is-true
    (with-open-socket (s :type :datagram :family :ipv4)
-     (let ((data (make-array 100 :element-type '(unsigned-byte 8))))
-       (socket-send "here is some more text" s
-                    :remote-address *echo-address*
-                    :remote-port *echo-port*)
-       (socket-receive data s)
-       (> (length data) 0)))))
+     (send-to s "here is some more text"
+              :remote-address *echo-address*
+              :remote-port *echo-port*)
+     (multiple-value-bind (data nbytes)
+         (receive-from s :size 200)
+       (plusp nbytes)))))
 
 (test simple-local-sockets
   (is (string= (let ((file (namestring
@@ -455,6 +454,6 @@
   (with-open-socket (s :type :datagram :local-port port)
     (loop
        (multiple-value-bind (buf len address port)
-           (socket-receive s nil 500)
+           (receive-from s :size 500)
          (format t "Received ~A bytes from ~A:~A - ~A ~%"
                  len address port (subseq buf 0 (min 10 len)))))))

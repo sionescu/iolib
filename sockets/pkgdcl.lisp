@@ -185,9 +185,11 @@
    #:local-port
    #:make-socket
    #:make-socket-stream
+   #:receive-from
    #:remote-address
    #:remote-name
    #:remote-port
+   #:send-to
    #:shutdown
    #:socket-connected-p
    #:socket-family
@@ -196,8 +198,6 @@
    #:socket-open-p
    #:socket-option
    #:socket-protocol
-   #:socket-receive
-   #:socket-send
    #:socket-type
    #:with-open-socket
    #:with-accept-connection

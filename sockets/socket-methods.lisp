@@ -345,7 +345,7 @@
   (declare (ignore direction))
   (error "You cannot shut down passive sockets."))
 
-;;;; SEND
+;;;; SENDTO
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun compute-flags (flags args)
@@ -395,7 +395,7 @@
     (vector (values (coerce buff 'ub8-sarray)
                     start (- end start)))))
 
-(defun %socket-send (buffer socket start end remote-address remote-port flags)
+(defun %socket-send (socket buffer start end remote-address remote-port flags)
   (when (typep socket 'passive-socket)
     (error "You cannot send data on a passive socket."))
   (check-type start unsigned-byte "a non-negative integer")
@@ -416,20 +416,19 @@
                  (if remote-address ss (null-pointer))
                  (if remote-address size-of-sockaddr-storage 0))))))
 
-(defmethod socket-send ((buffer array) (socket active-socket) &rest args
-                        &key (start 0) end remote-address (remote-port 0) &allow-other-keys)
-  (%socket-send buffer socket start end remote-address remote-port
+(defmethod send-to ((socket active-socket) buffer &rest args
+                    &key (start 0) end remote-address (remote-port 0))
+  (%socket-send socket buffer start end remote-address remote-port
                 (compute-flags *sendmsg-flags* args)))
 
-(define-compiler-macro socket-send (&whole form buffer socket &rest args
-                                    &key (start 0) end remote-address (remote-port 0)
-                                    &allow-other-keys)
+(define-compiler-macro send-to (&whole form socket buffer &rest args
+                                &key (start 0) end remote-address (remote-port 0))
   (let ((flags (compute-flags *sendmsg-flags* args)))
-    (cond (flags `(%socket-send ,buffer ,socket ,start ,end
+    (cond (flags `(%socket-send ,socket ,buffer ,start ,end
                                 ,remote-address ,remote-port ,flags))
           (t form))))
 
-;;;; RECV
+;;;; RECVFROM
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *recvfrom-flags* nil)
@@ -453,7 +452,7 @@
   (etypecase buff
     (ub8-sarray (values buff start (- end start)))))
 
-(defun %socket-receive-bytes (buffer ss fd flags start end)
+(defun %socket-receive-bytes (fd buffer start end flags ss)
   (multiple-value-bind (buff start-offset bufflen)
       (%normalize-receive-buffer buffer start end)
     (with-socklen (size size-of-sockaddr-storage)
@@ -463,39 +462,43 @@
         (%recvfrom fd buff-sap bufflen flags ss size)))))
 
 (declaim (inline %socket-receive-stream-socket))
-(defun %socket-receive-stream-socket (buffer socket start end flags)
+(defun %socket-receive-stream-socket (socket buffer start end flags)
   (with-sockaddr-storage (ss)
-    (let ((bytes-received (%socket-receive-bytes buffer ss (fd-of socket) flags
-                                                 start end)))
+    (let ((bytes-received (%socket-receive-bytes (fd-of socket) buffer
+                                                 start end flags ss)))
       (values buffer bytes-received))))
 
 (declaim (inline %socket-receive-datagram-socket))
-(defun %socket-receive-datagram-socket (buffer socket start end flags)
+(defun %socket-receive-datagram-socket (socket buffer start end flags)
   (with-sockaddr-storage (ss)
-    (let ((bytes-received (%socket-receive-bytes buffer ss (fd-of socket) flags
-                                                 start end)))
+    (let ((bytes-received (%socket-receive-bytes (fd-of socket) buffer
+                                                 start end flags ss)))
       (multiple-value-bind (remote-address remote-port)
           (sockaddr-storage->sockaddr ss)
         (values buffer bytes-received remote-address remote-port)))))
 
-(defun %socket-receive (buffer socket start end flags)
+(defun %socket-receive (socket buffer start end size flags)
   (when (typep socket 'passive-socket)
     (error "You cannot receive data from a passive socket."))
+  (unless buffer
+    (check-type size unsigned-byte "a non-negative integer")
+    (setf buffer (make-array size :element-type 'ub8)
+          start 0 end size))
   (etypecase socket
     (stream-socket (%socket-receive-stream-socket
-                    buffer socket start end flags))
+                    socket buffer start end flags))
     (datagram-socket (%socket-receive-datagram-socket
-                      buffer socket start end flags))))
+                      socket buffer start end flags))))
 
-(defmethod socket-receive ((buffer array) (socket active-socket)
-                           &rest args &key (start 0) end &allow-other-keys)
-  (%socket-receive buffer socket start end
+(defmethod receive-from ((socket active-socket)
+                         &rest args &key buffer size (start 0) end)
+  (%socket-receive socket buffer start end size
                    (compute-flags *recvfrom-flags* args)))
 
-(define-compiler-macro socket-receive (&whole form buffer socket &rest args
-                                       &key (start 0) end &allow-other-keys)
+(define-compiler-macro receive-from (&whole form socket &rest args
+                                     &key buffer size (start 0) end)
   (let ((flags (compute-flags *recvfrom-flags* args)))
-    (cond (flags `(%socket-receive ,buffer ,socket ,start ,end ,flags))
+    (cond (flags `(%socket-receive ,socket ,buffer ,start ,end ,size ,flags))
           (t form))))
 
 ;;;; Datagram Sockets
