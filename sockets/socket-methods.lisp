@@ -451,7 +451,7 @@
 (defun %normalize-receive-buffer (buff start end)
   (check-bounds buff start end)
   (etypecase buff
-    ((simple-array ub8 (*)) (values buff start (- end start)))))
+    (ub8-sarray (values buff start (- end start)))))
 
 (defun %socket-receive-bytes (buffer ss fd flags start end)
   (multiple-value-bind (buff start-offset bufflen)
