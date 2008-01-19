@@ -2,7 +2,7 @@
 ;;;
 ;;; classes.lisp --- fd-streams classes.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -116,8 +116,7 @@
    (output-buffer :initform nil :type (or iobuf null)
                   :accessor output-buffer-of)
    ;; Flag used by stream-force-output.
-   (must-flush-output :initform nil :type boolean
-                      :accessor must-flush-output-p)
+   (dirty :initform nil :type boolean :accessor dirtyp)
    ;; Last read char buffer index.
    (ibuf-unread-index :initform 0 :type buffer-index
                       :accessor ibuf-unread-index-of))

@@ -219,32 +219,31 @@
   (declare (type dual-channel-gray-stream stream))
   (with-accessors ((fd output-fd-of)
                    (ob output-buffer-of)
-                   (must-flush-output-p must-flush-output-p))
+                   (dirtyp dirtyp))
       stream
-    (when (or must-flush-output-p (iobuf-full-p ob))
+    (when (or dirtyp (iobuf-full-p ob))
       (%flush-obuf ob fd)
-      (setf must-flush-output-p nil))))
+      (setf dirtyp nil))))
 
 (defmethod stream-clear-output ((stream dual-channel-gray-stream))
-  (with-accessors ((fd output-fd-of)
-                   (ob output-buffer-of)
-                   (must-flush-output-p must-flush-output-p))
+  (with-accessors ((ob output-buffer-of)
+                   (dirtyp dirtyp))
       stream
     (iobuf-reset ob)
-    (setf must-flush-output-p nil)
+    (setf dirtyp nil)
     nil))
 
 (defmethod stream-finish-output ((stream dual-channel-gray-stream))
   (with-accessors ((fd output-fd-of)
                    (ob output-buffer-of)
-                   (must-flush-output-p must-flush-output-p))
+                   (dirtyp dirtyp))
       stream
     (%flush-obuf ob fd)
-    (setf must-flush-output-p nil)
+    (setf dirtyp nil)
     nil))
 
 (defmethod stream-force-output ((stream dual-channel-gray-stream))
-  (setf (must-flush-output-p stream) t))
+  (setf (dirtyp stream) t))
 
 (defun %write-simple-array-ub8 (stream array start end)
   (declare (type dual-channel-gray-stream stream))
