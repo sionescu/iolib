@@ -2,7 +2,7 @@
 ;;;
 ;;; io-multiplex.asd --- ASDF system definition.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -25,13 +25,8 @@
 
 ;;; Need trivial-features to correctly handle the reader conditionals
 ;;; in the system definition form.
-(eval-when (:load-toplevel :execute)
+(eval-when (:load-toplevel)
   (asdf:oos 'asdf:load-op :trivial-features))
-
-(defpackage #:io.multiplex-system
-  (:use #:common-lisp))
-
-(in-package #:io.multiplex-system)
 
 (asdf:defsystem :io.multiplex
   :description "I/O multiplexing library for SBCL."
@@ -39,23 +34,21 @@
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
   :depends-on (:osicat :alexandria :bordeaux-threads :series)
-  :pathname (merge-pathnames
-             (make-pathname :directory '(:relative "io-multiplex"))
-             *load-truename*)
-  :serial t
+  :pathname (merge-pathnames #p"io.multiplex/" *load-truename*)
   :components
   ((:file "pkgdcl")
-   (:file "time")
-   (:file "timers")
-   (:file "queue")
-   (:file "scheduler")
-   (:file "utils")
-   (:file "multiplexer")
-   (:file "fd-entry")
-   (:file "event-loop")
-   (:file "fd-wait")
-   (:file "select")
-;;;    (:file "poll")
-   #+linux (:file "epoll")
-   #+bsd (:file "kqueue")
-   (:file "detect")))
+   (:file "time" :depends-on ("pkgdcl"))
+   (:file "utils" :depends-on ("pkgdcl" "time"))
+   (:file "timers" :depends-on ("pkgdcl" "time"))
+   (:file "queue" :depends-on ("pkgdcl"))
+   (:file "scheduler" :depends-on ("pkgdcl" "timers" "queue"))
+   (:file "multiplexer" :depends-on ("pkgdcl" "utils"))
+   (:file "fd-entry" :depends-on ("pkgdcl"))
+   (:file "event-loop"
+          :depends-on ("pkgdcl" "time" "timers" "queue" "scheduler" "multiplexer"))
+   (:file "fd-wait" :depends-on ("pkgdcl" "utils"))
+   (:file "select" :depends-on ("pkgdcl" "utils" "multiplexer"))
+   #+linux (:file "epoll" :depends-on ("pkgdcl" "utils" "multiplexer"))
+   #+bsd (:file "kqueue" :depends-on ("pkgdcl" "utils" "multiplexer"))
+   (:file "detect" :depends-on ("pkgdcl" "multiplexer" "select"
+                                #+linux "epoll" #+bsd "kqueue"))))

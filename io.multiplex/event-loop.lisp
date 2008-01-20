@@ -23,8 +23,6 @@
 
 (in-package :io.multiplex)
 
-(declaim (optimize (debug 3) (safety 3)))
-
 
 ;;;; EVENT-BASE
 

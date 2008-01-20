@@ -2,7 +2,7 @@
 ;;;
 ;;; fd-streams.asd --- ASDF system definition.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -21,17 +21,17 @@
 ;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;;; Boston, MA 02110-1301, USA
 
+(in-package :common-lisp-user)
+
 (asdf:defsystem :io.streams
   :description "Gray streams."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
   :depends-on (:cffi :osicat :io.multiplex :trivial-gray-streams :alexandria)
-  :pathname (merge-pathnames (make-pathname :directory '(:relative "io.streams"))
-                             *load-truename*)
-  :serial t
+  :pathname (merge-pathnames #p"io.streams/" *load-truename*)
   :components
   ((:file "pkgdcl")
-   (:file "classes")
-   (:file "buffer")
-   (:file "fd-mixin")
-   (:file "gray-stream-methods")))
+   (:file "classes" :depends-on ("pkgdcl"))
+   (:file "buffer" :depends-on ("pkgdcl" "classes"))
+   (:file "fd-mixin" :depends-on ("pkgdcl" "classes"))
+   (:file "gray-stream-methods" :depends-on ("pkgdcl" "classes" "buffer" "fd-mixin"))))
