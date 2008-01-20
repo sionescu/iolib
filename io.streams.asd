@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
 ;;;
-;;; fd-streams.asd --- ASDF system definition.
+;;; io.streams.asd --- ASDF system definition.
 ;;;
 ;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
