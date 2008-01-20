@@ -264,7 +264,7 @@ On error call CLOSE with :ABORT T on VAR."
          (:internet (setf family '+default-inet-family+))
          (:ipv4     (setf ipv6 nil)))
        (let ((expansion `(,lower-function (list ,@newargs) ,family ,external-format)))
-         (if ipv6p
+         (if (or ipv6p (eq :ipv4 family))
              `(let ((*ipv6* ,ipv6)) ,expansion)
              expansion))))
     (t form)))
