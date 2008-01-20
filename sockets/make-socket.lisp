@@ -244,7 +244,7 @@ On error call CLOSE with :ABORT T on VAR."
          (%make-local-datagram-socket args :local external-format))))))
 
 (define-compiler-macro make-socket (&whole form &rest args &key (family :internet) (type :stream)
-                                    (connect :active) (ipv6 '*ipv6*)
+                                    (connect :active) (ipv6 '*ipv6* ipv6p)
                                     (external-format :default) &allow-other-keys)
   (cond
     ((and (constantp family) (constantp type) (constantp connect))
@@ -263,8 +263,10 @@ On error call CLOSE with :ABORT T on VAR."
        (case family
          (:internet (setf family '+default-inet-family+))
          (:ipv4     (setf ipv6 nil)))
-       `(let ((*ipv6* ,ipv6))
-          (,lower-function (list ,@newargs) ,family ,external-format))))
+       (let ((expansion `(,lower-function (list ,@newargs) ,family ,external-format)))
+         (if ipv6p
+             `(let ((*ipv6* ,ipv6)) ,expansion)
+             expansion))))
     (t form)))
 
 (defmacro with-open-socket ((var &rest args) &body body)
