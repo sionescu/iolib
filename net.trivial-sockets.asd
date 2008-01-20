@@ -2,7 +2,7 @@
 ;;;
 ;;; net.trivial-sockets.asd --- ASDF system definition.
 ;;;
-;;; Copyright (C) 2007 Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2007-2008 Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person obtaining
 ;;; a copy of this software and associated documentation files (the
@@ -25,18 +25,12 @@
 
 (in-package :common-lisp-user)
 
-(defpackage #:net.trivial-sockets-system
-  (:use #:common-lisp))
-
-(in-package #:net.trivial-sockets-system)
-
 (asdf:defsystem :net.trivial-sockets
   :description "Trivial-Sockets compatibility layer."
   :author "Dan Barlow <dan@telent.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
   :depends-on (:net.sockets)
-  :pathname (merge-pathnames (make-pathname :directory '(:relative "sockets"))
-                             *load-truename*)
+  :pathname (merge-pathnames #p"net.sockets/" *load-truename*)
   :components
   ((:file "trivial-sockets")))
