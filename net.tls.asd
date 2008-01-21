@@ -30,12 +30,12 @@
   :description "TLS 1.0/SSL 3.0 library."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
-  :depends-on (:cffi :osicat :gpg-error)
+  :depends-on (:cffi :osicat :gpg-error :alexandria)
   :pathname (merge-pathnames #p"net.tls/" *load-truename*)
   :components
   ((:file "pkgdcl")
    (cffi-grovel:grovel-file "grovel" :depends-on ("pkgdcl"))
-   (cffi-grovel:wrapper-file "wrappers" :depends-on ("pkgdcl"))
    (:file "library" :depends-on ("pkgdcl"))
+   (cffi-grovel:wrapper-file "wrappers" :depends-on ("pkgdcl" "library"))
    (:file "gnutls" :depends-on ("pkgdcl" "grovel" "library"))
    (:file "conditions" :depends-on ("pkgdcl" "grovel" "gnutls"))))

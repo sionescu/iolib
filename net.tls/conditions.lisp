@@ -24,13 +24,31 @@
 (in-package :net.tls)
 
 (define-condition gnutls-error (error)
-  ((identifier :initarg :id :reader gnutls-error-code))
+  ((code :initarg :code :reader gnutls-error-code))
   (:report (lambda (condition stream)
              (format stream "GNUTLS error: ~A"
-                     (gnutls-error-identifier condition)))))
+                     (%gnutls_strerror (gnutls-error-code condition))))))
+
+(eval-when (:compile-toplevel)
+  (defvar *gnutls-errors* (make-hash-table :test #'eql)))
 
 ;;; Used in the ERRNO-WRAPPER foreign type.
-(defun signal-gnutls-error (&optional errno)
-  (let ((kw (foreign-enum-keyword 'gnutls-error-codes
-                                  errno :errorp nil)))
-    (error 'gnutls-error :id (or kw :unknown-error))))
+(defun signal-gnutls-error (errno)
+  (switch (errno :test #'=)
+    (#.(foreign-enum-value 'gnutls-error-codes :again)
+     (error 'nix:eagain))
+    (#.(foreign-enum-value 'gnutls-error-codes :interrupted)
+     (error 'nix:eintr))
+    (t (error (gethash errno *gnutls-errors*)))))
+
+(macrolet ((define-gnutls-error (keyword)
+             (let ((code (foreign-enum-value 'gnutls-error-codes keyword))
+                   (csym (format-symbol t "~A-~A-~A" '#:gnutls keyword '#:error)))
+               `(progn
+                  (setf (gethash ,code *gnutls-errors*) ',csym)
+                  (define-condition ,csym (gnutls-error) ()
+                    (:default-initargs :code ,code)))))
+           (define-gnutls-errors (keywords)
+             `(progn ,@(loop :for kw :in keywords :collect
+                          `(define-gnutls-error ,kw)))))
+  (define-gnutls-errors #.(foreign-enum-keyword-list 'gnutls-error-codes)))
