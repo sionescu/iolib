@@ -123,3 +123,18 @@
   ((:gnutls-e-random-failed "GNUTLS_E_RANDOM_FAILED"))
   ((:gnutls-e-base64-unexpected-header-error "GNUTLS_E_BASE64_UNEXPECTED_HEADER_ERROR"))
   ((:gnutls-e-unimplemented-feature "GNUTLS_E_UNIMPLEMENTED_FEATURE")))
+
+(cenum gnutls-connection-end
+  ((:server "GNUTLS_SERVER"))
+  ((:client "GNUTLS_CLIENT")))
+
+(cenum gnutls-close-request
+  ((:shut-rdwr "GNUTLS_SHUT_RDWR"))
+  ((:shut-wr   "GNUTLS_SHUT_WR")))
+
+(cenum gnutls-credentials-type
+  ((:certificate "GNUTLS_CRD_CERTIFICATE"))
+  ((:anon "GNUTLS_CRD_ANON"))
+  ((:srp "GNUTLS_CRD_SRP"))
+  ((:psk "GNUTLS_CRD_PSK"))
+  ((:ia "GNUTLS_CRD_IA")))

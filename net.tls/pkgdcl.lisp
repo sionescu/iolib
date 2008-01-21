@@ -26,5 +26,5 @@
 (defpackage :net.tls
   (:nicknames #:tls)
   (:use #:common-lisp :cffi :gpg-error)
-  (:import-from #:osicat-posix #:errno-wrapper)
+  (:import-from #:osicat-posix #:errno-wrapper #:size #:ssize)
   (:export))
