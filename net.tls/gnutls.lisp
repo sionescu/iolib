@@ -23,20 +23,22 @@
 
 (in-package :net.tls)
 
+(defmacro defcfun* (name return-type &body args)
+  (multiple-value-bind (lisp-name c-name options)
+      (cffi::parse-name-and-options name)
+    `(defcfun (,c-name ,lisp-name ,@options) ,return-type
+       ,@args)))
+
 (defmacro define-gnutls-function (name return-type &body args)
-  (multiple-value-bind (lisp-name c-name options)
-      (cffi::parse-name-and-options name)
-    `(defcfun (,c-name ,lisp-name ,@options)
-         (errno-wrapper ,return-type
-                        :error-generator signal-gnutls-error)
-       ,@args)))
+  `(defcfun* ,name
+       (errno-wrapper ,return-type :error-generator signal-gnutls-error)
+     ,@args))
 
-(defmacro define-gnutls-function* (name return-type &body args)
-  (multiple-value-bind (lisp-name c-name options)
-      (cffi::parse-name-and-options name)
-    `(defcfun (,c-name ,lisp-name ,@options)
-         (errno-wrapper ,return-type)
-       ,@args)))
-
-(define-gnutls-function* (%gnutls-check-version "gnutls_check_version") :string
+(defcfun* (%gnutls-check-version "gnutls_check_version")
+    (errno-wrapper :string
+                   :error-predicate (lambda (r) (not (stringp r)))
+                   :error-generator (lambda (r)
+                                      (declare (ignore r))
+                                      (error "Need GNUTLS version >= ~A"
+                                             required-version)))
   (required-version :string))

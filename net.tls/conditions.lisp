@@ -23,10 +23,14 @@
 
 (in-package :net.tls)
 
+(define-condition gnutls-error (error)
+  ((identifier :initarg :id :reader gnutls-error-code))
+  (:report (lambda (condition stream)
+             (format stream "GNUTLS error: ~A"
+                     (gnutls-error-identifier condition)))))
+
 ;;; Used in the ERRNO-WRAPPER foreign type.
-(defun signal-gnutls-error (&optional return-value)
-  ;; (let ((kw (foreign-enum-keyword 'socket-error-values
-;;                                   errno :errorp nil)))
-;;     (or (%socket-error kw errno)
-;;         (error (nix::make-posix-error errno))))
-  )
+(defun signal-gnutls-error (&optional errno)
+  (let ((kw (foreign-enum-keyword 'gnutls-error-codes
+                                  errno :errorp nil)))
+    (error 'gnutls-error :id (or kw :unknown-error))))
