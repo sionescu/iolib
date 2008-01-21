@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
 ;;;
-;;; gnutls.lisp --- Bindings to GNUTLS 2.2.0(and compatible).
+;;; wrappers.lisp --- Wrappers for initialization of GNUTLS and GCRYPT.
 ;;;
 ;;; Copyright (C) 2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
@@ -23,20 +23,13 @@
 
 (in-package :net.tls)
 
-(defmacro define-gnutls-function (name return-type &body args)
-  (multiple-value-bind (lisp-name c-name options)
-      (cffi::parse-name-and-options name)
-    `(defcfun (,c-name ,lisp-name ,@options)
-         (errno-wrapper ,return-type
-                        :error-generator signal-gnutls-error)
-       ,@args)))
+(include "gcrypt.h" "errno.h" "pthread.h")
 
-(defmacro define-gnutls-function* (name return-type &body args)
-  (multiple-value-bind (lisp-name c-name options)
-      (cffi::parse-name-and-options name)
-    `(defcfun (,c-name ,lisp-name ,@options)
-         (errno-wrapper ,return-type)
-       ,@args)))
+(c "GCRY_THREAD_OPTION_PTHREAD_IMPL;")
 
-(define-gnutls-function* (%gnutls-check-version "gnutls_check_version") :string
-  (required-version :string))
+(defwrapper* "gcrypt_set_thread_cbs"
+    ("gcry_error_t" (errno-wrapper :unsigned-int
+                                   :error-predicate plusp
+                                   :error-generator signal-gpg-error))
+  ()
+  "return gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);")

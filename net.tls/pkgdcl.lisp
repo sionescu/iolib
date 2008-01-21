@@ -25,6 +25,6 @@
 
 (defpackage :net.tls
   (:nicknames #:tls)
-  (:use #:common-lisp :cffi :alexandria)
+  (:use #:common-lisp :cffi :gpg-error)
   (:import-from #:osicat-posix #:errno-wrapper)
   (:export))

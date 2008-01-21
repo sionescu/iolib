@@ -23,6 +23,10 @@
 
 (in-package :net.tls)
 
+(define-foreign-library :gcrypt
+  (:darwin "libgcrypt.dylib")
+  (:unix "libgcrypt.so"))
+
 (define-foreign-library :gnutls
   (:darwin "libgnutls.dylib")
   (:unix "libgnutls.so"))
@@ -31,5 +35,6 @@
   (:darwin "libgnutls-extra.dylib")
   (:unix "libgnutls-extra.so"))
 
+(use-foreign-library :gcrypt)
 (use-foreign-library :gnutls)
 (use-foreign-library :gnutls-extra)
