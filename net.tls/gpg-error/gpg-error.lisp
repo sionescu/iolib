@@ -82,17 +82,17 @@
    Within a subsystem, use gpg-error instead."
   (logior
    (ash (logand source +gpg-err-source-mask+)
-	+gpg-err-source-shift+)
+        +gpg-err-source-shift+)
    (logand code +gpg-err-code-mask+)))
 
 (defun c-gpg-err-code (err)
-  "retrieve the error code from an error value." 
+  "Retrieve the error code from an error value." 
   (logand err +gpg-err-code-mask+))
 
 (defun c-gpg-err-source (err)
   "retrieve the error source from an error value." 
   (logand (ash err (- +gpg-err-source-shift+))
-	  +gpg-err-source-mask+))
+          +gpg-err-source-mask+))
 
 ;;; String functions.
 
@@ -111,7 +111,7 @@
   (code gpg-err-code-t))
 
 (defcfun ("gpg_err_code_from_syserror"
-           c-gpg-err-code-from-syserror) gpg-err-code-t)
+          c-gpg-err-code-from-syserror) gpg-err-code-t)
 
 ;;; Self-documenting convenience functions.
 
@@ -145,7 +145,7 @@
   "Get the integer representation of the error value ERR."
   (let ((error (gpg-err-canonicalize err)))
     (c-gpg-err-make (gpg-err-source-as-value (gpg-err-source error))
-		    (gpg-err-code-as-value (gpg-err-code error)))))
+                    (gpg-err-code-as-value (gpg-err-code error)))))
 
 ;;; Constructor and accessor functions.
 
@@ -156,28 +156,28 @@
   ;; the error source value as is when provided as integer, instead of
   ;; parsing it as an error value.
   (list (if (integerp source)
-	    (gpg-err-source-as-key source)
-	    (gpg-err-source source))
-	(gpg-err-code code)))
+            (gpg-err-source-as-key source)
+            (gpg-err-source source))
+        (gpg-err-code code)))
 
 (defvar *gpg-err-source-default* :gpg-err-source-unknown
-  "define this to specify a default source for gpg-error.")
+  "Define this to specify a default source for gpg-error.")
 
 (defun gpg-error (code)
   "Construct an error value from an error code, using the default source."
   (gpg-err-make *gpg-err-source-default* code))
 
 (defun gpg-err-code (err)
-    "Retrieve an error code from the error value ERR."
-    (cond ((listp err) (second err))
-	  ((keywordp err) err) ; FIXME
-	  (t (gpg-err-code-as-key (c-gpg-err-code err)))))
+  "Retrieve an error code from the error value ERR."
+  (cond ((listp err) (second err))
+        ((keywordp err) err)            ; FIXME
+        (t (gpg-err-code-as-key (c-gpg-err-code err)))))
 
 (defun gpg-err-source (err)
-    "Retrieve an error source from the error value ERR."
-    (cond ((listp err) (first err))
-	  ((keywordp err) err) ; FIXME
-	  (t (gpg-err-source-as-key (c-gpg-err-source err)))))
+  "Retrieve an error source from the error value ERR."
+  (cond ((listp err) (first err))
+        ((keywordp err) err)            ; FIXME
+        (t (gpg-err-source-as-key (c-gpg-err-source err)))))
 
 ;;; String functions.
 

@@ -413,5 +413,4 @@
   (:gpg-err-eusers (logior +gpg-err-system-error+ 137))
   (:gpg-err-ewouldblock (logior +gpg-err-system-error+ 138))
   (:gpg-err-exdev (logior +gpg-err-system-error+ 139))
-  (:gpg-err-exfull (logior +gpg-err-system-error+ 140))
-)
+  (:gpg-err-exfull (logior +gpg-err-system-error+ 140)))

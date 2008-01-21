@@ -42,7 +42,6 @@
 
 (defpackage #:gpg-error
   (:use #:common-lisp #:cffi)
-
   (:export #:gpg-err-code-as-key
            #:gpg-err-code-as-value
            #:gpg-err-source-as-key
