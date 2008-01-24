@@ -29,7 +29,7 @@
              (format stream "GNUTLS error: ~A"
                      (%gnutls_strerror (gnutls-error-code condition))))))
 
-(eval-when (:compile-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *gnutls-errors* (make-hash-table :test #'eql)))
 
 ;;; Used in the ERRNO-WRAPPER foreign type.

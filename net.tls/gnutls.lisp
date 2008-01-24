@@ -117,23 +117,23 @@
 
 ;;; Record-level functions
 
-(define-gnutls-function (%gnutls_record_send "gnutls_record_send") ssize
+(define-gnutls-function (%gnutls-record-send "gnutls_record_send") ssize
   (session gnutls-session)
   (data    :pointer) ; void *
   (nbytes  size))
 
-(define-gnutls-function (%gnutls_record_recv "gnutls_record_recv") ssize
+(define-gnutls-function (%gnutls-record-recv "gnutls_record_recv") ssize
   (session gnutls-session)
   (data    :pointer) ; void *
   (nbytes  size))
 
-(defcfun* (%gnutls_record_get_direction "gnutls_record_get_direction") :int
+(defcfun* (%gnutls-record-get-direction "gnutls_record_get_direction") :int
   (session gnutls-session))
 
-(defcfun* (%gnutls_record_get_max_size "gnutls_record_get_max_size") size
+(defcfun* (%gnutls-record-get-max-size "gnutls_record_get_max_size") size
   (session gnutls-session))
 
-(defcfun* (%gnutls_record_set_max_size "gnutls_record_set_max_size") ssize
+(defcfun* (%gnutls-record-set-max-size "gnutls_record_set_max_size") ssize
   (session gnutls-session)
   (size    size))
 
@@ -165,6 +165,12 @@
 (defctype gnutls-certificate-client-credentials :pointer)
 (defctype gnutls-certificate-server-credentials :pointer)
 
+(defcfun* (%gnutls-anon-allocate-client-credentials "gnutls_anon_allocate_client_credentials") :int
+  (cred :pointer)) ; gnutls-anon-client-credentials *
+
+(defcfun* (%gnutls-anon-allocate-server-credentials "gnutls_anon_allocate_server_credentials") :int
+  (cred :pointer)) ; gnutls-anon-server-credentials *
+
 (define-gnutls-function (%gnutls-credentials-set "gnutls_credentials_set") :int
   (session gnutls-session)
   (type    gnutls-credentials-type)
@@ -173,8 +179,8 @@
 (defcfun* (%gnutls-credentials-clear "gnutls_credentials_clear") :void
   (session gnutls-session))
 
-(defcfun* (%gnutls_anon_free_client_credentials "gnutls_anon_free_client_credentials") :void
+(defcfun* (%gnutls-anon-free-client-credentials "gnutls_anon_free_client_credentials") :void
   (cred gnutls-anon-client-credentials))
 
-(defcfun* (%gnutls_anon_free_server_credentials "gnutls_anon_free_server_credentials") :void
+(defcfun* (%gnutls-anon-free-server-credentials "gnutls_anon_free_server_credentials") :void
   (cred gnutls-anon-server-credentials))

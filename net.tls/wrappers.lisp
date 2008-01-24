@@ -27,7 +27,7 @@
 
 (c "GCRY_THREAD_OPTION_PTHREAD_IMPL;")
 
-(defwrapper* "gcrypt_set_thread_cbs"
+(defwrapper* (%gcrypt-set-thread-cbs "gcrypt_set_thread_cbs")
     ("gcry_error_t" (errno-wrapper :unsigned-int
                                    :error-predicate plusp
                                    :error-generator signal-gpg-error))

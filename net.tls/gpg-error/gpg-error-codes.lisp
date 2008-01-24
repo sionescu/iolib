@@ -24,7 +24,8 @@
 ;;; The error code type gpg-err-code-t.
 
 ;;; This is used for system error codes.
-(defconstant +gpg-err-system-error+ (ash 1 15))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defconstant +gpg-err-system-error+ (ash 1 15)))
 
 ;;; This is one more than the largest allowed entry.
 (defconstant +gpg-err-code-dim+ 65536)
