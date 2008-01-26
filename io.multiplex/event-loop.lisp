@@ -160,8 +160,8 @@ within the extent of BODY.  Closes VAR."
         (event (make-event fd event-type function one-shot)))
     (cond (current-entry
            (assert (null (fd-entry-event current-entry event-type))
-                    ((fd-entry-event current-entry event-type))
-                    "FD ~A is already monitored for event ~A" fd event-type)
+                   ((fd-entry-event current-entry event-type))
+                   "FD ~A is already monitored for event ~A" fd event-type)
            (%add-fd event-base event current-entry timeout)
            (update-fd (mux-of event-base) current-entry event-type :add))
           (t

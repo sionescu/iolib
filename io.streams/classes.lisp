@@ -90,7 +90,7 @@
     (with-accessors ((fd-in  input-fd-of)
                      (fd-out output-fd-of)) stream
       (assert (eql fd-in fd-out) (fd-in fd-out)
-               "Input and output FDs must be equal: ~A, ~A" fd-in fd-out)
+              "Input and output FDs must be equal: ~A, ~A" fd-in fd-out)
       (values fd-in))))
 
 (defgeneric (setf fd-of) (fd stream)

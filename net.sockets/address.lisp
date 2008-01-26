@@ -231,11 +231,10 @@ Allowed inputs are: unsigned 32-bit integers, strings, vectors
 and INET-ADDRESS objects.  If the address is valid, two values
 are returned: the vector and the address type (:IPV4 or IPV6),
 otherwise NIL is returned."
-  (let (vector
-        addr-type)
+  (let (vector addr-type)
     (typecase address
       (number (and (ignore-parse-errors
-                    (setf vector (integer-to-vector address)))
+                     (setf vector (integer-to-vector address)))
                    (setf addr-type :ipv4)))
       (string (cond
                 ((ignore-parse-errors (setf vector (dotted-to-vector address)))
@@ -352,7 +351,7 @@ returned unmodified."
 
 (defun map-ipv6-address-to-ipv4 (address)
   (assert (ipv6-ipv4-mapped-p address) (address)
-           "Not an IPv6-mapped IPv4 address: ~A" address)
+          "Not an IPv6-mapped IPv4 address: ~A" address)
   (make-instance 'ipv4-address
                  :name (map-ipv6-vector-to-ipv4 (address-name address))))
 

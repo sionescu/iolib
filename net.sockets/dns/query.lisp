@@ -140,9 +140,9 @@
 
 (defun remove-trailing-dot (string)
   (assert (>= (length string) 2) (string)
-           "String length must be at least 2: ~S" string)
+          "String length must be at least 2: ~S" string)
   (assert (char= #\. (char string (1- (length string)))) (string)
-           "Must end with a dot: ~S" string)
+          "Must end with a dot: ~S" string)
   (subseq string 0 (1- (length string))))
 
 (defun find-cname (msg)

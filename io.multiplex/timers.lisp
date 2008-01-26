@@ -61,7 +61,7 @@
 
 (defun timer-expired-p (timer now &optional (delta 0.0d0))
   (assert (%timer-expire-time timer) ((%timer-expire-time timer))
-           "Timer ~A must have an expiry time set." timer)
+          "Timer ~A must have an expiry time set." timer)
   (let ((compare-time (+ now delta)))
     (> compare-time (%timer-expire-time timer))))
 
