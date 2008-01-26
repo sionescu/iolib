@@ -73,7 +73,7 @@
 
 (defgeneric socket-connected-p (socket))
 
-(defgeneric shutdown (socket direction))
+(defgeneric shutdown (socket &key &allow-other-keys))
 
 (defgeneric receive-from (socket &rest args &key &allow-other-keys))
 

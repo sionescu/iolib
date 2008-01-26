@@ -332,18 +332,17 @@
 
 ;;;; SHUTDOWN
 
-(defmethod shutdown ((socket active-socket) direction)
-  (check-type direction (member :read :write :read-write)
-              "one of :READ, :WRITE or :READ-WRITE")
+(defmethod shutdown ((socket active-socket) &key read write)
+  (assert (or read write) (read write)
+          "You must select at least one direction to shut down.")
   (%shutdown (fd-of socket)
-             (ecase direction
-               (:read shut-rd)
-               (:write shut-wr)
-               (:read-write shut-rdwr)))
+             (multiple-value-case (read write)
+               ((_   nil) shut-rd)
+               ((nil _)   shut-wr)
+               (t         shut-rdwr)))
   (values socket))
 
-(defmethod shutdown ((socket passive-socket) direction)
-  (declare (ignore direction))
+(defmethod shutdown ((socket passive-socket) &key)
   (error "You cannot shut down passive sockets."))
 
 ;;;; SENDTO
