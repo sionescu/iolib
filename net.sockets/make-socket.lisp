@@ -23,10 +23,16 @@
 
 (in-package :net.sockets)
 
-(defun create-socket (family type connect external-format &optional fd)
-  (make-instance (select-socket-class family type connect :default)
-                 :family family :file-descriptor fd
-                 :external-format external-format))
+(defun create-socket (family type connect external-format &key fd ibs obs)
+  (if (or ibs obs)
+      (make-instance (select-socket-class family type connect :default)
+                     :family family :file-descriptor fd
+                     :external-format external-format
+                     :input-buffer-size ibs
+                     :output-buffer-size obs)
+      (make-instance (select-socket-class family type connect :default)
+                     :family family :file-descriptor fd
+                     :external-format external-format)))
 
 (defmacro with-close-on-error ((var value) &body body)
   "Bind VAR to VALUE, execute BODY as implicit PROGN and return VAR.
@@ -50,10 +56,13 @@ On error call CLOSE with :ABORT T on VAR."
 ;;; Internet Stream Active Socket creation
 
 (defun %%make-internet-stream-active-socket (family ef keepalive nodelay reuse-address
-                                             local-host local-port remote-host remote-port)
+                                             local-host local-port remote-host remote-port
+                                             input-buffer-size output-buffer-size)
   (let ((local-port  (ensure-numerical-service local-port))
         (remote-port (ensure-numerical-service remote-port)))
-    (with-close-on-error (socket (create-socket family :stream :active ef))
+    (with-close-on-error (socket (create-socket family :stream :active ef
+                                                :ibs input-buffer-size
+                                                :obs output-buffer-size))
       (when keepalive (setf (socket-option socket :keep-alive) t))
       (when nodelay (setf (socket-option socket :tcp-nodelay) t))
       (when local-host
@@ -67,20 +76,24 @@ On error call CLOSE with :ABORT T on VAR."
 (defun %make-internet-stream-active-socket (args family ef)
   (destructuring-bind (&key keepalive nodelay (reuse-address t)
                             local-host (local-port 0)
-                            (remote-host +default-host+) (remote-port 0))
+                            (remote-host +default-host+) (remote-port 0)
+                            input-buffer-size output-buffer-size)
       args
     (%%make-internet-stream-active-socket family ef keepalive nodelay reuse-address
-                                          local-host local-port remote-host remote-port)))
+                                          local-host local-port remote-host remote-port
+                                          input-buffer-size output-buffer-size)))
 
 (define-compiler-macro %make-internet-stream-active-socket (&whole form args family ef)
   (with-guard-again-non-list-args-and-destructuring-bind-errors
       form args
     (destructuring-bind (&key keepalive nodelay (reuse-address t)
                               local-host (local-port 0)
-                              (remote-host +default-host+) (remote-port 0))
+                              (remote-host +default-host+) (remote-port 0)
+                              input-buffer-size output-buffer-size)
         (cdr args)
       `(%%make-internet-stream-active-socket ,family ,ef ,keepalive ,nodelay ,reuse-address
-                                             ,local-host ,local-port ,remote-host ,remote-port))))
+                                             ,local-host ,local-port ,remote-host ,remote-port
+                                             ,input-buffer-size ,output-buffer-size))))
 
 ;;; Internet Stream Passive Socket creation
 
@@ -116,24 +129,31 @@ On error call CLOSE with :ABORT T on VAR."
 
 ;;; Local Stream Active Socket creation
 
-(defun %%make-local-stream-active-socket (family ef local-filename remote-filename)
-  (with-close-on-error (socket (create-socket family :stream :active ef))
+(defun %%make-local-stream-active-socket (family ef local-filename remote-filename
+                                          input-buffer-size output-buffer-size)
+  (with-close-on-error (socket (create-socket family :stream :active ef
+                                              :ibs input-buffer-size
+                                              :obs output-buffer-size))
     (when local-filename
       (bind-address socket (ensure-address local-filename :local)))
     (when remote-filename
       (connect socket (ensure-address remote-filename :local)))))
 
 (defun %make-local-stream-active-socket (args family ef)
-  (destructuring-bind (&key local-filename remote-filename)
+  (destructuring-bind (&key local-filename remote-filename
+                            input-buffer-size output-buffer-size)
       args
-    (%%make-local-stream-active-socket family ef local-filename remote-filename)))
+    (%%make-local-stream-active-socket family ef local-filename remote-filename
+                                       input-buffer-size output-buffer-size)))
 
 (define-compiler-macro %make-local-stream-active-socket (&whole form args family ef)
   (with-guard-again-non-list-args-and-destructuring-bind-errors
       form args
-    (destructuring-bind (&key local-filename remote-filename)
+    (destructuring-bind (&key local-filename remote-filename
+                              input-buffer-size output-buffer-size)
         (cdr args)
-      `(%%make-local-stream-active-socket ,family ,ef ,local-filename ,remote-filename))))
+      `(%%make-local-stream-active-socket ,family ,ef ,local-filename ,remote-filename
+                                          ,input-buffer-size ,output-buffer-size))))
 
 ;;; Local Stream Passive Socket creation
 
@@ -299,7 +319,7 @@ is signaled, otherwise two values are returned: NIL and the specific condition o
                            (af-inet :ipv4)
                            (af-inet6 :ipv6)
                            (af-local :local))))
-             (create-socket family :stream :active external-format fd))))
+             (create-socket family :stream :active external-format :fd fd))))
     (if errorp
         (%make-socket-stream)
         (ignore-some-conditions (posix-error)

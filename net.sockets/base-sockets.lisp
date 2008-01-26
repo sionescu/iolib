@@ -90,7 +90,9 @@
 
 (defgeneric socket-listen (socket &key backlog &allow-other-keys))
 
-(defgeneric accept-connection (passive-socket &key external-format))
+(defgeneric accept-connection (passive-socket &key external-format
+                               input-buffer-size output-buffer-size
+                               &allow-other-keys))
 
 (defclass socket-stream-internet-active
     (active-socket stream-socket internet-socket)

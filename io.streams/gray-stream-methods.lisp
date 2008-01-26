@@ -32,6 +32,8 @@
                                      (output-buffer-size +bytes-per-iobuf+)
                                      (external-format :default))
   (declare (ignore slot-names))
+  (unless input-buffer-size (setf input-buffer-size +bytes-per-iobuf+))
+  (unless output-buffer-size (setf output-buffer-size +bytes-per-iobuf+))
   (check-type input-buffer-size buffer-index)
   (check-type output-buffer-size buffer-index)
   (with-accessors ((ib input-buffer-of)

@@ -1,11 +1,7 @@
 -*- outline -*-
 
 * High priority
-- make it possible to specify stream's external format and buffer size
-  in OPEN-SOCKET-CLIENT and ACCEPT
 - add read/write timeouts to sockets
-- rehaul the error hierarchy and make sure that all UNIX-ERRORs are
-  mapped to some subclass of SOCKET-ERROR
 
 * Medium priority
 - make it possible to re-open sockets
@@ -16,4 +12,6 @@
 - grovel CMSG_* macros
 - make it possible to send descriptors/credentials over unix sockets
 - unlink socket file when closing a passive local socket
+
+* Very low priority
 - implement SCTP sockets
