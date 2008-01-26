@@ -64,8 +64,9 @@
                        "file-monitor"))
 
    (:file "socket-methods"
-          :depends-on ("pkgdcl" "grovel" "conditions" "bsd" "common" "config" "address"
-                       "address-predicates" "base-sockets" "protocols" "services"))
+          :depends-on ("pkgdcl" "grovel" "conditions" "bsd" "common" "config"
+                       "address" "address-predicates" "base-sockets" "socket-options"
+                       "protocols" "services"))
    (:file "make-socket"
           :depends-on ("pkgdcl" "common" "config" "address" "address-predicates"
                        "socket-options" "services" "socket-methods"))
