@@ -260,8 +260,7 @@
   (setf (slot-value socket 'listening) t)
   (values socket))
 
-(defmethod socket-listen ((socket active-socket) &key backlog)
-  (declare (ignore backlog))
+(defmethod socket-listen ((socket active-socket) &key)
   (error "You can't listen on active sockets."))
 
 ;;;; ACCEPT
