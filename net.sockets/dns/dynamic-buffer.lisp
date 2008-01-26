@@ -118,7 +118,7 @@ invalid offset."))
 (defgeneric dynamic-buffer-seek-read-cursor (buffer place &optional offset)
   (:method ((buffer dynamic-buffer) place &optional offset)
     (check-type place (member :start :end :offset) "one of :START, :END or :OFFSET")
-    (when (eq place :offset)
+    (when (eq :offset place)
       (check-type offset unsigned-byte "an unsigned-byte"))
     (with-accessors ((seq sequence-of) (rcursor read-cursor-of)
                      (size size-of)) buffer

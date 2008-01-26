@@ -73,7 +73,7 @@
 (defgeneric decode-flags (message)
   (:method ((msg dns-message))
     (let (flags)
-      (push (if (eql (opcode-field msg) +opcode-standard+)
+      (push (if (= (opcode-field msg) +opcode-standard+)
                 :op/s :op/u)
             flags)
       (when (authoritative-field msg) (push :auth flags))
@@ -276,7 +276,7 @@
       ;; it's not a pointer
       ((zerop ms2bits) (cons position (< depth 5)))
       ;; it's a pointer
-      ((eql ms2bits #xC0)
+      ((= ms2bits #xC0)
        ;; there must be at least two bytes to read
        (when (>= position (1+ (length sequence)))
          (error 'dns-message-error))

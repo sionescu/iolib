@@ -134,7 +134,7 @@
 (defmethod %decode-response :around ((msg dns-message) question-type)
   (declare (ignore question-type))
   (let ((return-code (rcode-field msg)))
-    (if (eql return-code :no-error) ; no error
+    (if (eq :no-error return-code) ; no error
         (call-next-method)
         (values return-code))))
 
@@ -293,7 +293,7 @@
         ((start (protocol)
            ;; if the query size fits into a datagram(512 bytes max) do a
            ;; UDP query, otherwise use TCP
-           (if (eq protocol :udp)
+           (if (eq :udp protocol)
                (do-udp-query)
                (do-tcp-query)))
          (do-udp-query ()
@@ -331,7 +331,7 @@
       (start :udp))))
 
 (defun preprocess-dns-name (name type)
-  (if (eq type :ptr)
+  (if (eq :ptr type)
       (dns-ptr-name name)
       name))
 

@@ -52,7 +52,7 @@
               (:datagram sock-dgram)))
         (sp (cond
               ((integerp protocol) protocol)
-              ((eq protocol :default) 0)
+              ((eq :default protocol) 0)
               (t (lookup-protocol protocol)))))
     (values sf st sp)))
 
@@ -230,7 +230,7 @@
 
 (defmethod bind-address ((socket internet-socket) (address ipv4-address)
                          &key (port 0))
-  (if (eq (socket-family socket) :ipv6)
+  (if (eq :ipv6 (socket-family socket))
       (bind-ipv6-address (fd-of socket)
                          (map-ipv4-vector-to-ipv6 (address-name address))
                          port)
@@ -300,7 +300,7 @@
 
 (defmethod connect ((socket internet-socket) (address ipv4-address)
                     &key (port 0))
-  (if (eq (socket-family socket) :ipv6)
+  (if (eq :ipv6 (socket-family socket))
       (ipv6-connect (fd-of socket)
                     (map-ipv4-vector-to-ipv6 (address-name address))
                     port)
@@ -401,7 +401,7 @@
   (when remote-address (setf remote-address (convert-or-lookup-inet-address remote-address)))
   (when remote-port (setf remote-port (ensure-numerical-service remote-port)))
   (when (and (ipv4-address-p remote-address)
-             (eq (socket-family socket) :ipv6))
+             (eq :ipv6 (socket-family socket)))
     (setf remote-address (map-ipv4-address-to-ipv6 remote-address)))
   (multiple-value-bind (buff start-offset bufflen)
       (%normalize-send-buffer buffer start end (external-format-of socket))
