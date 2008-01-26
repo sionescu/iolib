@@ -255,7 +255,7 @@
   (assert values () "Must provide at least one value to test")
   (labels ((%do-var (var val)
              (cond
-               ((and (symbolp var) (string= var "_"))
+               ((and (symbolp var) (member var '("_" "*") :test #'string=))
                 t)
                ((consp var)
                 `(memq ,val ',var))
