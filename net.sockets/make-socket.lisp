@@ -135,9 +135,9 @@ On error call CLOSE with :ABORT T on VAR."
                                               :ibs input-buffer-size
                                               :obs output-buffer-size))
     (when local-filename
-      (bind-address socket (ensure-address local-filename :local)))
+      (bind-address socket (ensure-address local-filename :family :local)))
     (when remote-filename
-      (connect socket (ensure-address remote-filename :local)))))
+      (connect socket (ensure-address remote-filename :family :local)))))
 
 (defun %make-local-stream-active-socket (args family ef)
   (destructuring-bind (&key local-filename remote-filename
@@ -160,7 +160,7 @@ On error call CLOSE with :ABORT T on VAR."
 (defun %%make-local-stream-passive-socket (family ef local-filename reuse-address backlog)
   (with-close-on-error (socket (create-socket family :stream :passive ef))
     (when local-filename
-      (bind-address socket (ensure-address local-filename :local)
+      (bind-address socket (ensure-address local-filename :family :local)
                     :reuse-address reuse-address)
       (socket-listen socket :backlog backlog))))
 
@@ -219,9 +219,9 @@ On error call CLOSE with :ABORT T on VAR."
 (defun %%make-local-datagram-socket (family ef local-filename remote-filename)
   (with-close-on-error (socket (create-socket family :datagram :active ef))
     (when local-filename
-      (bind-address socket (ensure-address local-filename :local)))
+      (bind-address socket (ensure-address local-filename :family :local)))
     (when remote-filename
-      (connect socket (ensure-address remote-filename :local)))))
+      (connect socket (ensure-address remote-filename :family :local)))))
 
 (defun %make-local-datagram-socket (args family ef)
   (destructuring-bind (&key local-filename remote-filename)

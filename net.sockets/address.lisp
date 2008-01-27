@@ -333,8 +333,8 @@ returned unmodified."
 
 (defun address-equal-p (addr1 addr2 &optional (family :internet))
   "Returns T if both arguments are designators for the same socket address."
-  (address= (ensure-address addr1 family)
-            (ensure-address addr2 family)))
+  (address= (ensure-address addr1 :family family)
+            (ensure-address addr2 :family family)))
 
 ;;;; Copy Methods
 
