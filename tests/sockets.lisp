@@ -83,6 +83,11 @@
   (signals parse-error
     (ensure-address "127.0.256.1")))
 
+(test ensure-address.3
+  (is-false
+   (or (ensure-address "ff0x::114" :errorp nil)
+       (ensure-address "127.0.256.1" :errorp nil))))
+
 (test integer-to-dotted-and-back
   (is-true
    (every #'(lambda (s) (string= s (integer-to-dotted (dotted-to-integer s))))

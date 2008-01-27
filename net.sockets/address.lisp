@@ -255,12 +255,13 @@ otherwise NIL is returned."
     (when vector
       (values vector addr-type))))
 
-(defun ensure-address (address &optional (family :internet))
+(defun ensure-address (address &key (family :internet) (errorp t))
   "If FAMILY is :LOCAL, a LOCAL-ADDRESS is instantiated with
 ADDRESS as its NAME slot. If FAMILY is :INTERNET, an appropriate
 subtype of INET-ADDRESS is instantiated after guessing the
-address type through ADDRESS-TO-VECTOR. If the address is not
-valid, a CL:PARSE-ERROR is signalled.
+address type through ADDRESS-TO-VECTOR. If the address is invalid
+and ERRORP is not NIL, then a CL:PARSE-ERROR is signalled,
+otherwise NIL is returned.
 
 When ADDRESS is already an instance of the ADDRESS class, a check
 is made to see if it matches the FAMILY argument and it is
@@ -268,14 +269,22 @@ returned unmodified."
   (ecase family
     (:internet
      (typecase address
-       (address (check-type address inet-address "an INET address")
+       (address (if errorp
+                    (check-type address inet-address "an INET address")
+                    (unless (typep address 'inet-address)
+                      (return-from ensure-address)))
                 address)
-       (t (make-address (or (address-to-vector address)
-                            (error 'parse-error))))))
+       (t (let ((vector (address-to-vector address)))
+            (cond
+              (vector (make-address vector))
+              (errorp (error 'parse-error)))))))
     (:local
      (etypecase address
        (string (make-instance 'local-address :name address))
-       (address (check-type address local-address "a local address")
+       (address (if errorp
+                    (check-type address local-address "a local address")
+                    (unless (typep address 'local-address)
+                      (return-from ensure-address)))
                 address)))))
 
 ;;;; Print Methods

@@ -131,7 +131,7 @@
 behaviour, defaults to *IPV6*."
   (check-type ipv6 *ipv6*-type "one of T, NIL or :IPV6")
   (let ((address (if (stringp host)
-                     (ignore-parse-errors (ensure-address host))
+                     (ensure-address host :errorp nil)
                      (ensure-address host))))
     (update-monitor *resolv.conf-monitor*)
     (update-monitor *hosts-monitor*)
@@ -147,6 +147,6 @@ necessary, to an INET-ADDRESS object and returned.  Otherwise it
 is assumed to be a host name which is then looked up in order to
 return its primary address as the first return value and the
 remaining address list as the second return value."
-  (or (ignore-parse-errors (ensure-address address :internet))
+  (or (ensure-address address :family :internet :errorp nil)
       (let ((addresses (lookup-host address :ipv6 ipv6)))
         (values (car addresses) (cdr addresses)))))
