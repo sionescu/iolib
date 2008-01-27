@@ -66,11 +66,11 @@ On error call CLOSE with :ABORT T on VAR."
       (when keepalive (setf (socket-option socket :keep-alive) t))
       (when nodelay (setf (socket-option socket :tcp-nodelay) t))
       (when local-host
-        (bind-address socket (convert-or-lookup-inet-address local-host)
+        (bind-address socket (ensure-hostname local-host)
                       :port local-port
                       :reuse-address reuse-address))
       (when (plusp remote-port)
-        (connect socket (convert-or-lookup-inet-address remote-host)
+        (connect socket (ensure-hostname remote-host)
                  :port remote-port)))))
 
 (defun %make-internet-stream-active-socket (args family ef)
@@ -104,7 +104,7 @@ On error call CLOSE with :ABORT T on VAR."
       (when local-host
         (when interface
           (setf (socket-option socket :bind-to-device) interface))
-        (bind-address socket (convert-or-lookup-inet-address local-host)
+        (bind-address socket (ensure-hostname local-host)
                       :port local-port
                       :reuse-address reuse-address)
         (socket-listen socket :backlog backlog)))))
@@ -187,13 +187,13 @@ On error call CLOSE with :ABORT T on VAR."
     (with-close-on-error (socket (create-socket family :datagram :active ef))
       (when broadcast (setf (socket-option socket :broadcast) t))
       (when local-host
-        (bind-address socket (convert-or-lookup-inet-address local-host)
+        (bind-address socket (ensure-hostname local-host)
                       :port local-port
                       :reuse-address reuse-address)
         (when interface
           (setf (socket-option socket :bind-to-device) interface)))
       (when (plusp remote-port)
-        (connect socket (convert-or-lookup-inet-address remote-host)
+        (connect socket (ensure-hostname remote-host)
                  :port remote-port)))))
 
 (defun %make-internet-datagram-socket (args family ef)

@@ -2,7 +2,7 @@
 ;;;
 ;;; lookup.lisp --- High-level name lookup.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;; Copyright (C) 2006-2007, Luis Oliveira  <loliveira@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
@@ -141,12 +141,17 @@ behaviour, defaults to *IPV6*."
            (check-type host string "a string")
            (lookup-host-by-name host ipv6)))))
 
-(defun convert-or-lookup-inet-address (address &optional (ipv6 *ipv6*))
+(defun ensure-hostname (address &key (ipv6 *ipv6*) (errorp t))
   "If ADDRESS is an inet-address designator, it is converted, if
 necessary, to an INET-ADDRESS object and returned.  Otherwise it
 is assumed to be a host name which is then looked up in order to
 return its primary address as the first return value and the
 remaining address list as the second return value."
-  (or (ensure-address address :family :internet :errorp nil)
-      (let ((addresses (lookup-host address :ipv6 ipv6)))
-        (values (car addresses) (cdr addresses)))))
+  (flet ((%do-ensure-hostname ()
+           (or (ensure-address address :family :internet :errorp nil)
+               (let ((addresses (lookup-host address :ipv6 ipv6)))
+                 (values (car addresses) (cdr addresses))))))
+    (if errorp
+        (%do-ensure-hostname)
+        (ignore-some-conditions (socket-error resolver-error)
+          (%do-ensure-hostname)))))

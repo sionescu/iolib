@@ -398,7 +398,7 @@
 (defun %send-to (socket buffer start end remote-address remote-port flags)
   (when (typep socket 'passive-socket)
     (error "You cannot send data on a passive socket."))
-  (when remote-address (setf remote-address (convert-or-lookup-inet-address remote-address)))
+  (when remote-address (setf remote-address (ensure-hostname remote-address)))
   (when remote-port (setf remote-port (ensure-numerical-service remote-port)))
   (when (and (ipv4-address-p remote-address)
              (eq :ipv6 (socket-family socket)))

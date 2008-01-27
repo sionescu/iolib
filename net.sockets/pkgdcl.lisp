@@ -147,7 +147,7 @@
    #:local-address-p
 
    ;; Hostname, Service, and Protocol Lookups
-   #:convert-or-lookup-inet-address
+   #:ensure-hostname
    #:lookup-host
    #:lookup-protocol
    #:lookup-service
