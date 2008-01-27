@@ -59,7 +59,7 @@
   (let ((net.sockets:*ipv6* nil))
     (cond
       ((eq name :any) net.sockets:+ipv4-unspecified+)
-      (t (nth-value 0 (net.sockets:convert-or-lookup-inet-address name))))))
+      (t (nth-value 0 (net.sockets:ensure-hostname name))))))
 
 (defun open-stream (peer-host peer-port &key
                     (local-host :any) (local-port 0)
@@ -97,7 +97,7 @@
                                               :local-port port
                                               :reuse-address reuse-address
                                               :backlog backlog)))
-        (values socket (sockets:local-port socket))))))
+        (values socket (net.sockets:local-port socket))))))
 
 (defun close-server (server)
   (close server))
