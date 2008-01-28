@@ -24,15 +24,11 @@
 (in-package :net.sockets)
 
 (defun create-socket (family type connect external-format &key fd ibs obs)
-  (if (or ibs obs)
-      (make-instance (select-socket-class family type connect :default)
-                     :family family :file-descriptor fd
-                     :external-format external-format
-                     :input-buffer-size ibs
-                     :output-buffer-size obs)
-      (make-instance (select-socket-class family type connect :default)
-                     :family family :file-descriptor fd
-                     :external-format external-format)))
+  (make-instance (select-socket-class family type connect :default)
+                 :family family :file-descriptor fd
+                 :external-format external-format
+                 :input-buffer-size ibs
+                 :output-buffer-size obs))
 
 (defmacro with-close-on-error ((var value) &body body)
   "Bind VAR to VALUE, execute BODY as implicit PROGN and return VAR.
