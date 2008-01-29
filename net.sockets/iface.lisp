@@ -40,7 +40,7 @@
 
 (defun make-interface (name index)
   "Constructor for INTERFACE objects."
-  (make-instance 'interface :name  name :index index))
+  (make-instance 'interface :name name :index index))
 
 (define-condition unknown-interface (system-error)
   ((name  :initarg :name  :initform nil :reader interface-name)
