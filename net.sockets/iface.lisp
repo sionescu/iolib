@@ -2,7 +2,7 @@
 ;;;
 ;;; iface.lisp --- Network interface class and operators.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -32,71 +32,66 @@
           :documentation "The interface's index number."))
   (:documentation "Class describing a network interface."))
 
-(defmethod print-object ((iface interface) stream)
-  (print-unreadable-object (iface stream :type nil :identity nil)
-    (with-slots (name id) iface
-      (format stream "Network Interface: ~S Index: ~A"
-              (interface-name iface) (interface-index iface)))))
+(defmethod print-object ((interface interface) stream)
+  (print-unreadable-object (interface stream :type nil :identity nil)
+    (with-slots (name index) interface
+      (format stream "Network Interface: ~S Index: ~A" name index))))
 
 (defun make-interface (name index)
   "Constructor for INTERFACE objects."
   (make-instance 'interface :name name :index index))
 
 (define-condition unknown-interface (system-error)
-  ((name  :initarg :name  :initform nil :reader interface-name)
-   (index :initarg :index :initform nil :reader interface-index))
+  ((datum :initarg :datum :initform nil :reader unknown-interface-datum))
   (:report (lambda (condition stream)
-             (if (interface-name condition)
-                 (format stream "Unknown interface: ~A"
-                         (interface-name condition))
-                 (format stream "Unknown interface index: ~A"
-                         (interface-index condition)))))
+             (format stream "Unknown interface: ~A"
+                     (unknown-interface-datum condition))))
   (:documentation "Condition raised when a network interface is not found."))
+
+(defun signal-unknown-interface-error (system-error datum)
+  (error 'unknown-interface
+         :code (osicat-sys:system-error-code system-error)
+         :identifier (osicat-sys:system-error-identifier system-error)
+         :datum datum))
 
 (defun list-network-interfaces ()
   "Returns a list of network interfaces currently available."
-  (with-foreign-object (ifptr :pointer)
-    (setf ifptr (%if-nameindex))
-    (unless (null-pointer-p ifptr)
-      (loop :for i :from 0
-            :for name := (foreign-slot-value
-                          (mem-aref ifptr 'if-nameindex i)
-                          'if-nameindex 'name)
-            :for index := (foreign-slot-value
-                           (mem-aref ifptr 'if-nameindex i)
-                           'if-nameindex 'index)
-            :while (plusp index)
-            :collect (make-interface name index)
-            :finally (%if-freenameindex ifptr)))))
+  (let (ifptr (null-pointer))
+    (macrolet ((%if-slot-value (slot index)
+                 `(foreign-slot-value
+                   (mem-aref ifptr 'if-nameindex ,index)
+                   'if-nameindex ,slot)))
+      (unwind-protect
+           (progn
+             (setf ifptr (%if-nameindex))
+             (loop :for i :from 0
+                   :for name := (%if-slot-value 'name i)
+                   :for index := (%if-slot-value 'index i)
+               :while (plusp index) :collect (make-interface name index)))
+        (unless (null-pointer-p ifptr) (%if-freenameindex ifptr))))))
 
 (defun get-interface-by-index (index)
   (with-foreign-object (buff :uint8 ifnamesize)
     (handler-case
         (%if-indextoname index buff)
-      (nix:enxio (err)
-        (error 'unknown-interface
-               :code (osicat-sys:system-error-code err)
-               :identifier (osicat-sys:system-error-identifier err)
-               :index index))
-      (:no-error (retval)
-        (make-interface (copy-seq retval) index)))))
+      (nix:enxio (error)
+        (signal-unknown-interface-error error index))
+      (:no-error (name)
+        (make-interface name index)))))
 
 (defun get-interface-by-name (name)
   (handler-case
       (%if-nametoindex name)
-    (nix:enodev (err)
-      (error 'unknown-interface
-             :code (osicat-sys:system-error-code err)
-             :identifier (osicat-sys:system-error-identifier err)
-             :name name))
+    (nix:enodev (error)
+      (signal-unknown-interface-error error name))
     (:no-error (index)
       (make-interface (copy-seq name) index))))
 
-(defun lookup-interface (iface)
+(defun lookup-interface (interface)
   "Lookup an interface by name or index.  UNKNOWN-INTERFACE is
 signalled if an interface is not found."
-  (check-type iface (or unsigned-byte string symbol) "non-negative integer, a string or a symbol")
-  (let ((iface (ensure-string-or-unsigned-byte iface)))
-    (etypecase iface
-      (unsigned-byte (get-interface-by-index iface))
-      (string        (get-interface-by-name iface)))))
+  (check-type interface (or unsigned-byte string symbol) "non-negative integer, a string or a symbol")
+  (let ((interface (ensure-string-or-unsigned-byte interface)))
+    (etypecase interface
+      (unsigned-byte (get-interface-by-index interface))
+      (string        (get-interface-by-name interface)))))
