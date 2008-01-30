@@ -155,6 +155,8 @@
    ;; Network Interface Lookup
    #:list-network-interfaces
    #:interface
+   #:interface-index
+   #:interface-name
    #:lookup-interface
    #:make-interface
    #:unknown-interface-datum
