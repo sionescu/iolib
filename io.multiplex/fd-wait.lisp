@@ -2,7 +2,7 @@
 ;;;
 ;;; fd-wait.lisp --- Wait for events on single FDs.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -25,7 +25,7 @@
 
 ;;; FIXME: Until a way to autodetect platform features is implemented
 #+(or darwin freebsd)
-(define-constant nix::pollrdhup 0)
+(define-constant pollrdhup 0)
 
 (define-condition poll-error (error)
   ((fd :initarg :fd :reader poll-error-fd)
@@ -52,48 +52,46 @@ of a file descriptor."))
 
 (defun compute-poll-flags (type)
   (ecase type
-    (:read (logior nix:pollin nix:pollrdhup nix:pollpri))
-    (:write (logior nix:pollout nix:pollhup))
-    (:read-write (logior nix:pollin nix:pollrdhup nix:pollpri
-                         nix:pollout nix:pollhup))))         
+    (:read (logior pollin pollrdhup pollpri))
+    (:write (logior pollout pollhup))
+    (:read-write (logior pollin pollrdhup pollpri pollout pollhup))))
 
 (defun process-poll-revents (revents fd)
   (let ((readp nil) (writep nil))
     (flags-case revents
-      ((nix:pollin nix:pollrdhup nix:pollpri)
+      ((pollin pollrdhup pollpri)
        (setf readp t))
-      ((nix:pollout nix:pollhup) (setf writep t))
-      ((nix:pollerr) (error 'poll-error :fd fd))
-      ((nix:pollnval) (error 'poll-error :fd fd
-                              :identifier "Invalid file descriptor")))
+      ((pollout pollhup) (setf writep t))
+      ((pollerr) (error 'poll-error :fd fd))
+      ((pollnval) (error 'poll-error :fd fd
+                         :identifier "Invalid file descriptor")))
     (values readp writep)))
 
-(defun wait-until-fd-ready (fd event-type &optional timeout errorp)
-  "Poll file descriptor `FD' for I/O readiness. `EVENT-TYPE' must be
+(defun wait-until-fd-ready (file-descriptor event-type &optional timeout errorp)
+  "Poll file descriptor `FILE-DESCRIPTOR' for I/O readiness. `EVENT-TYPE' must be
 :READ, :WRITE or :READ-WRITE which means \"either :READ or :WRITE\".
 `TIMEOUT' must be either a non-negative integer measured in seconds,
 or `NIL' meaning no timeout at all. If `ERRORP' is not NIL and a timeout
-occurs, then a condition of type POLL-TIMEOUT is signaled.
-Returns two boolean values indicating readbility and writability of FD."
+occurs, then a condition of type `POLL-TIMEOUT' is signaled.
+Returns two boolean values indicating readbility and writability of `FILE-DESCRIPTOR'."
   (flet ((poll-error (unix-err)
-           (error 'poll-error :fd fd
+           (error 'poll-error :fd file-descriptor
                   :identifier (osicat-sys:system-error-identifier unix-err))))
-    (with-foreign-object (pollfd 'nix::pollfd)
-      (nix:bzero pollfd nix::size-of-pollfd)
-      (with-foreign-slots ((nix::fd nix::events nix::revents)
-                           pollfd nix::pollfd)
-        (setf nix::fd fd
-              nix::events (compute-poll-flags event-type))
+    (with-foreign-object (pollfd 'pollfd)
+      (bzero pollfd size-of-pollfd)
+      (with-foreign-slots ((fd events revents) pollfd pollfd)
+        (setf fd file-descriptor
+              events (compute-poll-flags event-type))
         (handler-case
             (let ((ret (nix:repeat-upon-condition-decreasing-timeout
                            ((nix:eintr) tmp-timeout timeout)
-                         (nix:poll pollfd 1 (timeout->milisec timeout)))))
+                         (poll pollfd 1 (timeout->milisec timeout)))))
               (when (zerop ret)
                 (if errorp
-                    (error 'poll-timeout :fd fd :event-type event-type)
+                    (error 'poll-timeout :fd file-descriptor :event-type event-type)
                     (return-from wait-until-fd-ready (values nil nil)))))
           (nix:posix-error (err) (poll-error err)))
-        (process-poll-revents nix::revents fd)))))
+        (process-poll-revents revents file-descriptor)))))
 
 (defun fd-ready-p (fd &optional (event-type :read))
   "Tests file-descriptor `FD' for I/O readiness. `EVENT-TYPE'

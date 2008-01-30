@@ -2,7 +2,7 @@
 ;;;
 ;;; select.lisp --- select()-based multiplexer implementation.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -34,10 +34,10 @@
                  :reader write-fd-set-of)
    (except-fd-set :initform (allocate-fd-set)
                   :reader except-fd-set-of))
-  (:default-initargs :fd-limit (1- nix:fd-setsize)))
+  (:default-initargs :fd-limit (1- fd-setsize)))
 
 (defun allocate-fd-set ()
-  (nix:fd-zero (foreign-alloc 'nix:fd-set)))
+  (fd-zero (foreign-alloc 'fd-set)))
 
 (defmethod print-object ((mux select-multiplexer) stream)
   (print-unreadable-object (mux stream :type nil :identity nil)
@@ -52,7 +52,7 @@
 
 (defun find-max-fd (fd-set end)
   (loop :for i :downfrom end :to 0
-     :do (when (nix:fd-isset i fd-set)
+     :do (when (fd-isset i fd-set)
            (return-from find-max-fd i)))
   ;; this means no fd <= end is set
   -1)
@@ -61,14 +61,14 @@
   (with-accessors ((rs read-fd-set-of) (ws write-fd-set-of)
                    (es except-fd-set-of) (max-fd max-fd-of)) mux
     (cond (read
-           (nix:fd-set fd rs)
-           (nix:fd-set fd es))
+           (fd-set fd rs)
+           (fd-set fd es))
           (t
-           (nix:fd-clr fd rs)
-           (nix:fd-clr fd es)))
+           (fd-clr fd rs)
+           (fd-clr fd es)))
     (if write
-        (nix:fd-set fd ws)
-        (nix:fd-clr fd ws))
+        (fd-set fd ws)
+        (fd-clr fd ws))
     (setf max-fd (max (find-max-fd rs fd)
                       (find-max-fd ws fd)))
     t))
@@ -96,23 +96,23 @@
                (null timeout))
       (warn "Non fds to monitor and no timeout set !")
       (return-from harvest-events nil))
-    (with-foreign-objects ((read-fds 'nix:fd-set)
-                           (write-fds 'nix:fd-set)
-                           (except-fds 'nix:fd-set))
-      (nix:copy-fd-set rs read-fds)
-      (nix:copy-fd-set ws write-fds)
-      (nix:copy-fd-set es except-fds)
+    (with-foreign-objects ((read-fds 'fd-set)
+                           (write-fds 'fd-set)
+                           (except-fds 'fd-set))
+      (copy-fd-set rs read-fds)
+      (copy-fd-set ws write-fds)
+      (copy-fd-set es except-fds)
       (handler-case
-          (with-foreign-object (tv 'nix::timeval)
+          (with-foreign-object (tv 'timeval)
             (nix:repeat-upon-condition-decreasing-timeout
                 ((nix:eintr) tmp-timeout timeout)
               (when tmp-timeout
                 (timeout->timeval tmp-timeout tv))
-              (nix:select (1+ max-fd)
-                         read-fds
-                         write-fds
-                         except-fds
-                         (if tmp-timeout tv (null-pointer)))))
+              (select (1+ max-fd)
+                      read-fds
+                      write-fds
+                      except-fds
+                      (if tmp-timeout tv (null-pointer)))))
         (nix:ebadf ()
           (return-from harvest-events
             (harvest-select-fd-errors rs ws max-fd))))
@@ -121,9 +121,9 @@
 (defun harvest-select-events (max-fd read-fds write-fds except-fds)
   (loop :for fd :upto max-fd
         :for event := () :then ()
-        :when (or (nix:fd-isset fd read-fds)
-                  (nix:fd-isset fd except-fds)) :do (push :read event)
-        :when (nix:fd-isset fd write-fds) :do (push :write event)
+        :when (or (fd-isset fd read-fds)
+                  (fd-isset fd except-fds)) :do (push :read event)
+        :when (fd-isset fd write-fds) :do (push :write event)
         :when event :collect (list fd event)))
 
 ;;; FIXME: I don't know whether on all *nix systems select()
@@ -135,7 +135,7 @@
 
 (defun harvest-select-fd-errors (read-fds write-fds max-fd)
   (loop :for fd :upto max-fd
-        :when (and (or (nix:fd-isset fd read-fds)
-                       (nix:fd-isset fd write-fds))
+        :when (and (or (fd-isset fd read-fds)
+                       (fd-isset fd write-fds))
                    (fd-error-p fd))
         :collect (cons fd :error)))

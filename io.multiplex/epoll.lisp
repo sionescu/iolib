@@ -2,7 +2,7 @@
 ;;;
 ;;; epoll.lisp --- epoll()-based multiplexer implementation.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -37,29 +37,27 @@
 
 (defmethod initialize-instance :after ((mux epoll-multiplexer)
                                        &key (size +epoll-default-size-hint+))
-  (setf (slot-value mux 'fd) (nix:epoll-create size)))
+  (setf (slot-value mux 'fd) (epoll-create size)))
 
 (defun calc-epoll-flags (fd-entry)
   (logior (if (fd-entry-read-event fd-entry)
-              nix:epollin 0)
+              epollin 0)
           (if (fd-entry-write-event fd-entry)
-              nix:epollout 0)
-          nix:epollpri))
+              epollout 0)
+          epollpri))
 
 (defmethod monitor-fd ((mux epoll-multiplexer) fd-entry)
   (assert fd-entry (fd-entry) "Must supply an FD-ENTRY!")
   (let ((flags (calc-epoll-flags fd-entry))
         (fd (fd-entry-fd fd-entry)))
-    (with-foreign-object (ev 'nix::epoll-event)
-      (nix:bzero ev nix::size-of-epoll-event)
-      (setf (foreign-slot-value ev 'nix::epoll-event 'nix::events)
-            flags)
+    (with-foreign-object (ev 'epoll-event)
+      (bzero ev size-of-epoll-event)
+      (setf (foreign-slot-value ev 'epoll-event 'events) flags)
       (setf (foreign-slot-value
-             (foreign-slot-value ev 'nix::epoll-event 'nix::data)
-             'nix::epoll-data 'nix::fd)
+             (foreign-slot-value ev 'epoll-event 'data) 'epoll-data 'fd)
             fd)
       (handler-case
-          (nix:epoll-ctl (fd-of mux) nix:epoll-ctl-add fd ev)
+          (epoll-ctl (fd-of mux) epoll-ctl-add fd ev)
         (nix:ebadf ()
           (warn "FD ~A is invalid, cannot monitor it." fd))
         (nix:eexist ()
@@ -70,16 +68,14 @@
   (assert fd-entry (fd-entry) "Must supply an FD-ENTRY!")
   (let ((flags (calc-epoll-flags fd-entry))
         (fd (fd-entry-fd fd-entry)))
-    (with-foreign-object (ev 'nix::epoll-event)
-      (nix:bzero ev nix::size-of-epoll-event)
-      (setf (foreign-slot-value ev 'nix::epoll-event 'nix::events)
-            flags)
+    (with-foreign-object (ev 'epoll-event)
+      (bzero ev size-of-epoll-event)
+      (setf (foreign-slot-value ev 'epoll-event 'events) flags)
       (setf (foreign-slot-value
-             (foreign-slot-value ev 'nix::epoll-event 'nix::data)
-             'nix::epoll-data 'nix::fd)
+             (foreign-slot-value ev 'epoll-event 'data) 'epoll-data 'fd)
             fd)
       (handler-case
-          (nix:epoll-ctl (fd-of mux) nix:epoll-ctl-mod fd ev)
+          (epoll-ctl (fd-of mux) epoll-ctl-mod fd ev)
         (nix:ebadf ()
           (warn "FD ~A is invalid, cannot update its status." fd))
         (nix:enoent ()
@@ -88,10 +84,10 @@
 
 (defmethod unmonitor-fd ((mux epoll-multiplexer) fd-entry)
   (handler-case
-      (nix:epoll-ctl (fd-of mux)
-                     nix:epoll-ctl-del
-                     (fd-entry-fd fd-entry)
-                     (null-pointer))
+      (epoll-ctl (fd-of mux)
+                 epoll-ctl-del
+                 (fd-entry-fd fd-entry)
+                 (null-pointer))
     (nix:ebadf ()
       (warn "FD ~A is invalid, cannot unmonitor it." (fd-entry-fd fd-entry)))
     (nix:enoent ()
@@ -99,32 +95,31 @@
             (fd-entry-fd fd-entry)))))
 
 (defmethod harvest-events ((mux epoll-multiplexer) timeout)
-  (with-foreign-object (events 'nix::epoll-event *epoll-max-events*)
-    (nix:bzero events (* *epoll-max-events* nix::size-of-epoll-event))
+  (with-foreign-object (events 'epoll-event *epoll-max-events*)
+    (bzero events (* *epoll-max-events* size-of-epoll-event))
     (let (ready-fds)
       (nix:repeat-upon-condition-decreasing-timeout
           ((nix:eintr) tmp-timeout timeout)
-        (setf ready-fds (nix:epoll-wait (fd-of mux) events *epoll-max-events*
-                                        (timeout->milisec tmp-timeout))))
+        (setf ready-fds (epoll-wait (fd-of mux) events *epoll-max-events*
+                                    (timeout->milisec tmp-timeout))))
       (macrolet ((epoll-slot (slot-name)
-                   `(foreign-slot-value (mem-aref events 'nix::epoll-event i)
-                                        'nix::epoll-event ',slot-name)))
+                   `(foreign-slot-value (mem-aref events 'epoll-event i)
+                                        'epoll-event ',slot-name)))
         (return-from harvest-events
           (loop :for i :below ready-fds
-                :for fd := (foreign-slot-value (epoll-slot nix::data)
-                                               'nix::epoll-data 'nix::fd)
-                :for event-mask := (epoll-slot nix::events)
+                :for fd := (foreign-slot-value (epoll-slot data) 'epoll-data 'fd)
+                :for event-mask := (epoll-slot events)
                 :for epoll-event := (make-epoll-event fd event-mask)
                 :when epoll-event :collect epoll-event))))))
 
 (defun make-epoll-event (fd mask)
   (let ((event ()))
     (flags-case mask
-      ((nix:epollout nix:epollhup)
+      ((epollout epollhup)
        (push :write event))
-      ((nix:epollin nix:epollpri nix:epollhup)
+      ((epollin epollpri epollhup)
        (push :read event))
-      (nix:epollerr
+      (epollerr
        (push :error event)))
     (when event
       (list fd event))))

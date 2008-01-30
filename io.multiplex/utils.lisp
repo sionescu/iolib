@@ -2,7 +2,7 @@
 ;;;
 ;;; utils.lisp --- Miscellaneous utilities.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -24,16 +24,16 @@
 (in-package :io.multiplex)
 
 (defun timeout->timeval (timeout tv)
-  (with-foreign-slots ((nix::sec nix::usec) tv nix::timeval)
-    (multiple-value-bind (sec usec) (decode-timeout timeout)
-     (setf nix::sec  sec
-           nix::usec usec))))
+  (with-foreign-slots ((sec usec) tv timeval)
+    (multiple-value-bind (%sec %usec) (decode-timeout timeout)
+     (setf sec  %sec
+           usec %usec))))
 
 (defun timeout->timespec (timeout ts)
-  (with-foreign-slots ((nix::sec nix::nsec) ts nix::timespec)
-    (multiple-value-bind (sec usec) (decode-timeout timeout)
-      (setf nix::sec sec
-            nix::nsec (* 1000 usec)))))
+  (with-foreign-slots ((sec nsec) ts timespec)
+    (multiple-value-bind (%sec %usec) (decode-timeout timeout)
+      (setf sec  %sec
+            nsec (* 1000 %usec)))))
 
 (defun timeout->milisec (timeout)
   (if timeout

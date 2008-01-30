@@ -2,7 +2,7 @@
 ;;;
 ;;; package.lisp --- Package definition.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -26,6 +26,9 @@
 (defpackage :io.multiplex
   (:nicknames #:iomux)
   (:use #:common-lisp :cffi :alexandria :series)
+  (:import-from #:osicat-posix #:defsyscall #:bzero
+                #:file-descriptor-designator
+                #:timeval #:sec #:usec)
   (:export
    ;; Classes
    #:event
@@ -63,5 +66,3 @@
    #:poll-timeout-fd
    #:poll-timeout-event-type
    ))
-
-(series::install)
