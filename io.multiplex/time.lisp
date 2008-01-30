@@ -30,19 +30,24 @@
 
 ;;; Break a real timeout into seconds and microseconds.
 (defun decode-timeout (timeout)
+  (assert (or (not timeout)
+              (and (typep timeout 'real)
+                   (not (minusp timeout))))
+          (timeout)
+          "The timeout must be a non-negative real or NIL: ~S" timeout)
   (typecase timeout
+    (null nil)
     (integer (values timeout 0))
-    (null    nil)
     (real
      (multiple-value-bind (q r) (truncate (coerce timeout 'timeout))
        (declare (type unsigned-byte q)
                 (type timeout r))
-       (values q (the (values unsigned-byte t) (truncate (* r 1d6))))))
-    (t
-     (error "Timeout is not a real number or NIL: ~S" timeout))))
+       (values q (the (values unsigned-byte t) (truncate (* r 1d6))))))))
 
 (defun normalize-timeout (timeout)
-  (assert (not (minusp timeout)) (timeout)
+  (assert (and (typep timeout 'real)
+               (not (minusp timeout)))
+          (timeout)
           "The timeout must be non-negative: ~A" timeout)
   (coerce timeout 'timeout))
 
