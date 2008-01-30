@@ -29,7 +29,7 @@
   (asdf:oos 'asdf:load-op :trivial-features))
 
 (asdf:defsystem :io.multiplex
-  :description "I/O multiplexing library for SBCL."
+  :description "I/O multiplexing library."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
@@ -42,13 +42,13 @@
    (:file "timers" :depends-on ("pkgdcl" "time"))
    (:file "queue" :depends-on ("pkgdcl"))
    (:file "scheduler" :depends-on ("pkgdcl" "timers" "queue"))
-   (:file "multiplexer" :depends-on ("pkgdcl" "utils"))
-   (:file "fd-entry" :depends-on ("pkgdcl"))
-   (:file "event-loop"
-          :depends-on ("pkgdcl" "time" "timers" "queue" "scheduler" "multiplexer"))
+   (:file "fd-entry" :depends-on ("pkgdcl" "timers"))
+   (:file "multiplexer" :depends-on ("pkgdcl" "utils" "fd-entry"))
+   (:file "event-loop" :depends-on ("pkgdcl" "time" "timers" "queue"
+                                    "scheduler" "fd-entry" "multiplexer"))
    (:file "fd-wait" :depends-on ("pkgdcl" "utils"))
-   (:file "select" :depends-on ("pkgdcl" "utils" "multiplexer"))
-   #+linux (:file "epoll" :depends-on ("pkgdcl" "utils" "multiplexer"))
-   #+bsd (:file "kqueue" :depends-on ("pkgdcl" "utils" "multiplexer"))
+   (:file "select" :depends-on ("pkgdcl" "utils" "fd-entry" "multiplexer"))
+   #+linux (:file "epoll" :depends-on ("pkgdcl" "utils" "fd-entry" "multiplexer"))
+   #+bsd (:file "kqueue" :depends-on ("pkgdcl" "utils" "fd-entry" "multiplexer"))
    (:file "detect" :depends-on ("pkgdcl" "multiplexer" "select"
                                 #+linux "epoll" #+bsd "kqueue"))))
