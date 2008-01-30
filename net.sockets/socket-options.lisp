@@ -166,18 +166,18 @@
 (define-socket-option-type :timeval (sec (usec 0)))
 
 (define-socket-option-helper (:get :timeval) (fd level option)
-  (with-foreign-object (optval 'nix::timeval)
-    (with-socklen (optlen nix::size-of-timeval)
+  (with-foreign-object (optval 'timeval)
+    (with-socklen (optlen size-of-timeval)
       (%getsockopt fd level option optval optlen)
-      (with-foreign-slots ((nix::sec nix::usec) optval nix::timeval)
-        (values nix::sec nix::usec)))))
+      (with-foreign-slots ((sec usec) optval timeval)
+        (values sec usec)))))
 
-(define-socket-option-helper (:set :timeval) (fd level option sec usec)
-  (with-foreign-object (optval 'nix::timeval)
-    (with-foreign-slots ((nix::sec nix::usec) optval nix::timeval)
-      (setf nix::sec sec
-            nix::usec usec))
-    (%setsockopt fd level option optval nix::size-of-timeval)
+(define-socket-option-helper (:set :timeval) (fd level option %sec %usec)
+  (with-foreign-object (optval 'timeval)
+    (with-foreign-slots ((sec usec) optval timeval)
+      (setf sec  %sec
+            usec %usec))
+    (%setsockopt fd level option optval size-of-timeval)
     (values)))
 
 ;;; IFREQ-NAME

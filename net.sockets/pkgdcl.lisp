@@ -28,7 +28,8 @@
   (:use #:common-lisp :cffi :alexandria :split-sequence :io.streams :series)
   (:import-from #:osicat-posix #:system-error #:posix-error
                 #:system-error-message #:errno-wrapper
-                #:pid #:gid #:uid #:size #:ssize #:bzero)
+                #:pid #:gid #:uid #:size #:ssize #:bzero
+                #:timeval #:size-of-timeval #:sec #:usec)
   (:import-from #:osicat-sys #:size-of-int)
   (:shadow #:let #:let* #:multiple-value-bind #:funcall #:defun)
   (:export
