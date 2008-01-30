@@ -24,8 +24,8 @@
 (in-package :net.sockets)
 
 (defclass interface ()
-  ((name  :initarg :name :reader interface-name
-   (index :initarg :index :reader interface-index)))
+  ((name  :initarg :name :reader interface-name)
+   (index :initarg :index :reader interface-index))
   (:documentation "Class describing a network interface."))
 
 (defmethod print-object ((interface interface) stream)
@@ -52,7 +52,7 @@
 
 (defun list-network-interfaces ()
   "Returns a list of network interfaces currently available."
-  (let (ifptr (null-pointer))
+  (let ((ifptr (null-pointer)))
     (macrolet ((%if-slot-value (slot index)
                  `(foreign-slot-value
                    (mem-aref ifptr 'if-nameindex ,index)
