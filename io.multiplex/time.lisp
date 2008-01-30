@@ -2,7 +2,7 @@
 ;;;
 ;;; time.lisp --- Various time-related functions.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -34,9 +34,9 @@
     (integer (values timeout 0))
     (null    nil)
     (real
-     (multiple-value-bind (q r) (truncate (coerce timeout 'double-float))
+     (multiple-value-bind (q r) (truncate (coerce timeout 'timeout))
        (declare (type unsigned-byte q)
-                (type double-float r))
+                (type timeout r))
        (values q (the (values unsigned-byte t) (truncate (* r 1d6))))))
     (t
      (error "Timeout is not a real number or NIL: ~S" timeout))))
@@ -44,7 +44,7 @@
 (defun normalize-timeout (timeout)
   (assert (not (minusp timeout)) (timeout)
           "The timeout must be non-negative: ~A" timeout)
-  (coerce timeout 'double-float))
+  (coerce timeout 'timeout))
 
 (defun abs-timeout (timeout)
   (+ (osicat:get-monotonic-time) (normalize-timeout timeout)))
