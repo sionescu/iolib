@@ -159,15 +159,20 @@
 ;;;; net/if.h
 
 (defcfun ("if_nametoindex" %if-nametoindex)
-    (errno-wrapper :unsigned-int :error-predicate zerop)
+    (errno-wrapper :unsigned-int :error-predicate zerop
+                   :error-generator (lambda (r)
+                                      (declare (ignore r))
+                                      (nix::posix-error :enxio)))
   (ifname :string))
 
-(define-socket-call ("if_indextoname" %if-indextoname) :string
+(defcfun ("if_indextoname" %if-indextoname)
+    (errno-wrapper :string)
   (ifindex :unsigned-int)
   (ifname  :pointer))
 
-(define-socket-call ("if_nameindex" %if-nameindex) :pointer
+(defcfun ("if_nameindex" %if-nameindex)
+    (errno-wrapper :pointer)
   "Return all network interface names and indexes")
 
-(define-socket-call ("if_freenameindex" %if-freenameindex) :void
+(defcfun ("if_freenameindex" %if-freenameindex) :void
   (ptr :pointer))

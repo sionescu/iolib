@@ -25,11 +25,7 @@
 
 (defclass interface ()
   ((name  :initarg :name :reader interface-name
-          :initform (error "The interface must have a name.")
-          :documentation "The interface's name.")
-   (index :initarg :index :reader interface-index
-          :initform (error "The interface must have an index.")
-          :documentation "The interface's index number."))
+   (index :initarg :index :reader interface-index)))
   (:documentation "Class describing a network interface."))
 
 (defmethod print-object ((interface interface) stream)
@@ -71,9 +67,9 @@
         (unless (null-pointer-p ifptr) (%if-freenameindex ifptr))))))
 
 (defun get-interface-by-index (index)
-  (with-foreign-object (buff :uint8 ifnamesize)
+  (with-foreign-object (buffer :uint8 ifnamesize)
     (handler-case
-        (%if-indextoname index buff)
+        (%if-indextoname index buffer)
       (nix:enxio (error)
         (signal-unknown-interface-error error index))
       (:no-error (name)
@@ -82,7 +78,7 @@
 (defun get-interface-by-name (name)
   (handler-case
       (%if-nametoindex name)
-    (nix:enodev (error)
+    (nix:enxio (error)
       (signal-unknown-interface-error error name))
     (:no-error (index)
       (make-interface (copy-seq name) index))))
