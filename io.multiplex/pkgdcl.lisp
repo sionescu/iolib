@@ -66,3 +66,7 @@
    #:poll-timeout-fd
    #:poll-timeout-event-type
    ))
+
+(in-package :io.multiplex)
+
+(series::install)
