@@ -332,7 +332,7 @@
 
 ;;;; SHUTDOWN
 
-(defmethod shutdown ((socket active-socket) &key read write)
+(defmethod shutdown ((socket socket) &key read write)
   (assert (or read write) (read write)
           "You must select at least one direction to shut down.")
   (%shutdown (fd-of socket)
@@ -341,9 +341,6 @@
                ((nil _)   shut-wr)
                (t         shut-rdwr)))
   (values socket))
-
-(defmethod shutdown ((socket passive-socket) &key)
-  (error "You cannot shut down passive sockets."))
 
 ;;;; SENDTO
 
@@ -482,8 +479,6 @@
         (values buffer bytes-received remote-address remote-port)))))
 
 (defun %receive-from (socket buffer start end size flags)
-  (when (typep socket 'passive-socket)
-    (error "You cannot receive data from a passive socket."))
   (unless buffer
     (check-type size unsigned-byte "a non-negative integer")
     (setf buffer (make-array size :element-type 'ub8)
