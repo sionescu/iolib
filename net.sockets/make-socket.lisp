@@ -107,7 +107,7 @@ On error call CLOSE with :ABORT T on VAR."
         (bind-address socket (ensure-hostname local-host)
                       :port local-port
                       :reuse-address reuse-address)
-        (socket-listen socket :backlog backlog)))))
+        (listen-on socket :backlog backlog)))))
 
 (defun %make-internet-stream-passive-socket (args family ef)
   (destructuring-bind (&key interface (reuse-address t)
@@ -162,7 +162,7 @@ On error call CLOSE with :ABORT T on VAR."
     (when local-filename
       (bind-address socket (ensure-address local-filename :family :local)
                     :reuse-address reuse-address)
-      (socket-listen socket :backlog backlog))))
+      (listen-on socket :backlog backlog))))
 
 (defun %make-local-stream-passive-socket (args family ef)
   (destructuring-bind (&key local-filename (reuse-address t)

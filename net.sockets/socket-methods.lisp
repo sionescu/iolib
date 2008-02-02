@@ -261,7 +261,7 @@
 
 ;;;; LISTEN
 
-(defmethod socket-listen ((socket passive-socket) &key backlog)
+(defmethod listen-on ((socket passive-socket) &key backlog)
   (unless backlog (setf backlog (min *default-backlog-size*
                                      +max-backlog-size+)))
   (check-type backlog unsigned-byte "a non-negative integer")
@@ -269,7 +269,7 @@
   (setf (slot-value socket 'listening) t)
   (values socket))
 
-(defmethod socket-listen ((socket active-socket) &key)
+(defmethod listen-on ((socket active-socket) &key)
   (error "You can't listen on active sockets."))
 
 ;;;; ACCEPT

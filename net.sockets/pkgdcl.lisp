@@ -182,6 +182,7 @@
    #:bind-address
    #:connect
    #:disconnect
+   #:listen-on
    #:local-filename
    #:local-host
    #:local-name
@@ -197,7 +198,6 @@
    #:shutdown
    #:socket-connected-p
    #:socket-family
-   #:socket-listen
    #:socket-open-p
    #:socket-option
    #:socket-os-fd

@@ -69,7 +69,7 @@ Works only on INTERNET sockets."))
 
 (defgeneric remote-filename (socket)
   (:documentation "Returns the remote filename of `SOCKET'.
-Works only on REMOTE sockets."))
+Works only on LOCAL sockets."))
 
 (defgeneric socket-option (socket option-name)
   (:documentation "Returns the value(s) of OS options on `SOCKET'.
@@ -161,7 +161,7 @@ Returns the number of bytes sent."))
   (:documentation "Sets the local address of `SOCKET' to `ADDRESS'(and `PORT' for INTERNET sockets).
 `REUSE-ADDRESS' sets the SO_REUSEADDR socket option on `SOCKET'."))
 
-(defgeneric socket-listen (socket &key &allow-other-keys)
+(defgeneric listen-on (socket &key &allow-other-keys)
   (:documentation "Start allowing incoming connections on `SOCKET'.
 `BACKLOG' specifies the maximum length of the queue of pending connections."))
 
