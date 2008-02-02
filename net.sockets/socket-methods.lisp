@@ -56,11 +56,8 @@
               (t (lookup-protocol protocol)))))
     (values sf st sp)))
 
-(defmethod socket-fd ((socket socket))
+(defmethod socket-os-fd ((socket socket))
   (fd-of socket))
-
-(defmethod (setf socket-fd) (fd (socket socket))
-  (setf (fd-of socket) fd))
 
 (defmethod initialize-instance :after ((socket socket) &key
                                        file-descriptor family type
@@ -99,19 +96,19 @@
   (print-unreadable-object (socket stream :identity t)
     (format stream "active ~A stream socket" (sock-fam socket))
     (if (socket-connected-p socket)
-        (multiple-value-bind (addr port) (remote-name socket)
+        (multiple-value-bind (host port) (remote-name socket)
           (format stream " connected to ~A/~A"
-                  (address-to-string addr) port))
+                  (address-to-string host) port))
         (format stream ", ~:[closed~;unconnected~]" (fd-of socket)))))
 
 (defmethod print-object ((socket socket-stream-internet-passive) stream)
   (print-unreadable-object (socket stream :identity t)
     (format stream "passive ~A stream socket" (sock-fam socket))
     (if (socket-bound-p socket)
-        (multiple-value-bind (addr port) (local-name socket)
+        (multiple-value-bind (host port) (local-name socket)
           (format stream " ~:[bound to~;waiting @~] ~A/~A"
                   (socket-listening-p socket)
-                  (address-to-string addr) port))
+                  (address-to-string host) port))
         (format stream ", ~:[closed~;unbound~]" (fd-of socket)))))
 
 (defmethod print-object ((socket socket-stream-local-active) stream)
@@ -119,7 +116,7 @@
     (format stream "active local stream socket")
     (if (socket-connected-p socket)
         (format stream " connected to ~S"
-                (address-to-string (remote-address socket)))
+                (address-to-string (remote-filename socket)))
         (format stream ", ~:[closed~;unconnected~]" (fd-of socket)))))
 
 (defmethod print-object ((socket socket-stream-local-passive) stream)
@@ -128,7 +125,7 @@
     (if (socket-bound-p socket)
         (format stream " ~:[bound to~;waiting @~] ~S"
                   (socket-listening-p socket)
-                  (address-to-string (local-address socket)))
+                  (address-to-string (local-filename socket)))
         (format stream ", ~:[closed~;unbound~]" (fd-of socket)))))
 
 (defmethod print-object ((socket socket-datagram-local-active) stream)
@@ -136,22 +133,22 @@
     (format stream "local datagram socket")
     (if (socket-connected-p socket)
         (format stream " connected to ~S"
-                (address-to-string (remote-address socket)))
+                (address-to-string (remote-filename socket)))
         (if (fd-of socket)
-            (format stream " waiting @ ~S" (address-to-string (local-address socket)))
+            (format stream " waiting @ ~S" (address-to-string (local-filename socket)))
             (format stream ", closed" )))))
 
 (defmethod print-object ((socket socket-datagram-internet-active) stream)
   (print-unreadable-object (socket stream :identity t)
     (format stream "~A datagram socket" (sock-fam socket))
     (if (socket-connected-p socket)
-        (multiple-value-bind (addr port) (remote-name socket)
+        (multiple-value-bind (host port) (remote-name socket)
           (format stream " connected to ~A/~A"
-                  (address-to-string addr) port))
+                  (address-to-string host) port))
         (if (fd-of socket)
-            (multiple-value-bind (addr port) (local-name socket)
+            (multiple-value-bind (host port) (local-name socket)
               (format stream " waiting @ ~A/~A"
-                      (address-to-string addr) port))
+                      (address-to-string host) port))
             (format stream ", closed" )))))
 
 ;;;; CLOSE
@@ -186,31 +183,43 @@
 
 ;;;; GETSOCKNAME
 
-(defmethod local-name ((socket socket))
+(defun %local-name (socket)
   (with-sockaddr-storage (ss)
     (with-socklen (size size-of-sockaddr-storage)
       (%getsockname (fd-of socket) ss size)
       (sockaddr-storage->sockaddr ss))))
 
-(defmethod local-address ((socket socket))
+(defmethod local-name ((socket socket))
+  (%local-name socket))
+
+(defmethod local-host ((socket internet-socket))
   (nth-value 0 (local-name socket)))
 
 (defmethod local-port ((socket internet-socket))
   (nth-value 1 (local-name socket)))
 
+(defmethod local-filename ((socket local-socket))
+  (%local-name socket))
+
 ;;;; GETPEERNAME
 
-(defmethod remote-name ((socket socket))
+(defun %remote-name (socket)
   (with-sockaddr-storage (ss)
     (with-socklen (size size-of-sockaddr-storage)
       (%getpeername (fd-of socket) ss size)
       (sockaddr-storage->sockaddr ss))))
 
-(defmethod remote-address ((socket socket))
+(defmethod remote-name ((socket socket))
+  (%remote-name socket))
+
+(defmethod remote-host ((socket internet-socket))
   (nth-value 0 (remote-name socket)))
 
 (defmethod remote-port ((socket internet-socket))
   (nth-value 1 (remote-name socket)))
+
+(defmethod remote-filename ((socket local-socket))
+  (%remote-name socket))
 
 ;;;; BIND
 
@@ -373,10 +382,8 @@
          ,@(mapcar #'dflag forms))))
 
   (define-sendmsg-flags
-    (:end-of-record msg-eor       (:not :windows))
     (:dont-route    msg-dontroute)
     (:dont-wait     msg-dontwait  (:not :windows))
-    (:no-signal     msg-nosignal  (:not (:or :darwin :windows)))
     (:out-of-band   msg-oob)
     (:more          msg-more      :linux)
     (:confirm       msg-confirm   :linux)))
@@ -392,41 +399,43 @@
     (vector (values (coerce buff 'ub8-sarray)
                     start (- end start)))))
 
-(defun %send-to (socket buffer start end remote-address remote-port flags)
-  (when (typep socket 'passive-socket)
-    (error "You cannot send data on a passive socket."))
-  (when remote-address (setf remote-address (ensure-hostname remote-address)))
-  (when remote-port (setf remote-port (ensure-numerical-service remote-port)))
-  (when (and (ipv4-address-p remote-address)
-             (eq :ipv6 (socket-family socket)))
-    (setf remote-address (map-ipv4-address-to-ipv6 remote-address)))
-  (multiple-value-bind (buff start-offset bufflen)
-      (%normalize-send-buffer buffer start end (external-format-of socket))
+(defun %send-to (socket buffer start end remote-host remote-port remote-filename flags)
+  (let ((got-peer t))
     (with-sockaddr-storage (ss)
-      (when remote-address
-        (sockaddr->sockaddr-storage ss remote-address remote-port))
-      (with-pointer-to-vector-data (buff-sap buff)
-        (incf-pointer buff-sap start-offset)
-        (%sendto (fd-of socket) buff-sap bufflen flags
-                 (if remote-address ss (null-pointer))
-                 (if remote-address size-of-sockaddr-storage 0))))))
+      (cond
+        (remote-host
+         (check-type socket internet-socket "an INTERNET socket")
+         (sockaddr->sockaddr-storage ss (ensure-hostname remote-host)
+                                     (ensure-numerical-service remote-port)))
+        (remote-filename
+         (check-type socket local-socket "an LOCAL socket")
+         (sockaddr->sockaddr-storage ss (ensure-address remote-filename :family :local) 0))
+        (t (setf got-peer nil)))
+      (multiple-value-bind (buff start-offset bufflen)
+          (%normalize-send-buffer buffer start end (external-format-of socket))
+        (with-pointer-to-vector-data (buff-sap buff)
+          (incf-pointer buff-sap start-offset)
+          (%sendto (fd-of socket) buff-sap bufflen flags
+                   (if got-peer ss (null-pointer))
+                   (if got-peer size-of-sockaddr-storage 0)))))))
 
 (defmethod send-to ((socket active-socket) buffer &rest args
-                    &key (start 0) end remote-address (remote-port 0) (ipv6 *ipv6*))
+                    &key (start 0) end remote-host (remote-port 0)
+                    remote-filename (ipv6 *ipv6*))
   (let ((*ipv6* ipv6))
-    (%send-to socket buffer start end remote-address remote-port
-              (compute-flags *sendmsg-flags* args))))
+    (%send-to socket buffer start end remote-host remote-port
+              remote-filename (compute-flags *sendmsg-flags* args))))
 
 (define-compiler-macro send-to (&whole form socket buffer &rest args
-                                &key (start 0) end remote-address (remote-port 0)
-                                (ipv6 '*ipv6* ipv6p))
+                                &key (start 0) end remote-host (remote-port 0)
+                                remote-filename (ipv6 '*ipv6* ipv6p))
   (let ((flags (compute-flags *sendmsg-flags* args)))
     (cond (flags (if ipv6p
                      `(let ((*ipv6* ,ipv6))
                         (%send-to ,socket ,buffer ,start ,end
-                                  ,remote-address ,remote-port ,flags))
+                                  ,remote-host ,remote-port ,remote-filename ,flags))
                      `(%send-to ,socket ,buffer ,start ,end
-                                ,remote-address ,remote-port ,flags)))
+                                ,remote-host ,remote-port ,remote-filename ,flags)))
           (t form))))
 
 ;;;; RECVFROM
@@ -445,8 +454,7 @@
     (:out-of-band msg-oob)
     (:peek        msg-peek)
     (:wait-all    msg-waitall  (:not :windows))
-    (:dont-wait   msg-dontwait (:not :windows))
-    (:no-signal   msg-nosignal (:not (:or :darwin :windows)))))
+    (:dont-wait   msg-dontwait (:not :windows))))
 
 (defun %normalize-receive-buffer (buff start end)
   (check-bounds buff start end)
@@ -474,9 +482,8 @@
   (with-sockaddr-storage (ss)
     (let ((bytes-received (%socket-receive-bytes (fd-of socket) buffer
                                                  start end flags ss)))
-      (multiple-value-bind (remote-address remote-port)
-          (sockaddr-storage->sockaddr ss)
-        (values buffer bytes-received remote-address remote-port)))))
+      (multiple-value-call #'values buffer bytes-received
+                           (sockaddr-storage->sockaddr ss)))))
 
 (defun %receive-from (socket buffer start end size flags)
   (unless buffer

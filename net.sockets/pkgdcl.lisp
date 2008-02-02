@@ -182,23 +182,25 @@
    #:bind-address
    #:connect
    #:disconnect
-   #:local-address
+   #:local-filename
+   #:local-host
    #:local-name
    #:local-port
    #:make-socket
    #:make-socket-stream
    #:receive-from
-   #:remote-address
+   #:remote-filename
+   #:remote-host
    #:remote-name
    #:remote-port
    #:send-to
    #:shutdown
    #:socket-connected-p
    #:socket-family
-   #:socket-fd
    #:socket-listen
    #:socket-open-p
    #:socket-option
+   #:socket-os-fd
    #:socket-protocol
    #:socket-type
    #:with-open-socket

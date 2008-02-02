@@ -307,7 +307,7 @@
   (is (equalp (with-open-socket (s :family :ipv4)
                 (values (socket-connected-p s)
                         (socket-open-p s)
-                        (> (socket-fd s) 1)
+                        (> (socket-os-fd s) 1)
                         (socket-family s)
                         (socket-protocol s)))
               (values nil t t :ipv4 :default)))) ; why isn't it :TCP?
@@ -357,7 +357,7 @@
   (is-true
    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                         :family :ipv4)
-     (and (ipv4-address-p (remote-address s))
+     (and (ipv4-address-p (remote-host s))
           (numberp (remote-port s))))))
 
 ;;; We don't support streams with UDP sockets ATM.  But when we do,
@@ -379,7 +379,7 @@
   (is-true
    (with-open-socket (s :type :datagram :family :ipv4)
      (send-to s "here is some more text"
-              :remote-address *echo-address*
+              :remote-host *echo-address*
               :remote-port *echo-port*)
      (multiple-value-bind (data nbytes)
          (receive-from s :size 200)

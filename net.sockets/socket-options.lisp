@@ -63,7 +63,7 @@
      (declare (ignorable socket option-name))
      ,(if (or (eq :any os) (featurep os))
           (let ((getter (socktype-getter type)))
-            `(,getter (socket-fd socket) ,level ,optname))
+            `(,getter (fd-of socket) ,level ,optname))
           `(error 'socket-option-not-supported-error
                   :message ,(format nil "Unsupported socket option: ~S" name)))))
 
@@ -87,7 +87,7 @@
                  nil
                  glist
                  `(,(socktype-setter type)
-                    (socket-fd ,socket) ,level ,optname
+                    (fd-of ,socket) ,level ,optname
                     ,@(%make-arglist (socktype-args type) glist))
                  socket)))
             `(error 'socket-option-not-supported-error
