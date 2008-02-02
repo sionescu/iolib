@@ -408,7 +408,7 @@
          (sockaddr->sockaddr-storage ss (ensure-hostname remote-host)
                                      (ensure-numerical-service remote-port)))
         (remote-filename
-         (check-type socket local-socket "an LOCAL socket")
+         (check-type socket local-socket "a LOCAL socket")
          (sockaddr->sockaddr-storage ss (ensure-address remote-filename :family :local) 0))
         (t (setf got-peer nil)))
       (multiple-value-bind (buff start-offset bufflen)
