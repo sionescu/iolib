@@ -193,10 +193,10 @@
 
 (defun sockaddr-storage->sockaddr (ss)
   (with-foreign-slots ((family) ss sockaddr-storage)
-    (ecase family
-      (#.af-inet (sockaddr-in->sockaddr ss))
-      (#.af-inet6 (sockaddr-in6->sockaddr ss))
-      (#.af-local (sockaddr-un->sockaddr ss)))))
+    (switch (family :test #'=)
+      (af-inet (sockaddr-in->sockaddr ss))
+      (af-inet6 (sockaddr-in6->sockaddr ss))
+      (af-local (sockaddr-un->sockaddr ss)))))
 
 (defun sockaddr->sockaddr-storage (ss sockaddr &optional (port 0))
   (etypecase sockaddr
