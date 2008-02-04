@@ -507,7 +507,7 @@
 
 ;;;; Datagram Sockets
 
-(defmethod disconnect :before ((socket active-socket))
+(defmethod disconnect :before ((socket socket))
   (unless (typep socket 'datagram-socket)
     (error "You can only disconnect active datagram sockets.")))
 
