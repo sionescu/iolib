@@ -27,7 +27,8 @@
   :description "Gray streams."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "LLGPL-2.1"
-  :depends-on (:cffi :osicat :io.multiplex :trivial-gray-streams :alexandria)
+  :depends-on (:cffi :osicat :io.multiplex :trivial-gray-streams
+               :alexandria :trivial-garbage)
   :pathname (merge-pathnames #p"io.streams/" *load-truename*)
   :components
   ((:file "pkgdcl")

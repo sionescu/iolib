@@ -25,6 +25,10 @@
 
 ;;;; Instance Initialization
 
+(defun free-stream-buffers (ib ob)
+  (when ib (free-iobuf ib))
+  (when ob (free-iobuf ob)))
+
 ;;; TODO: use the buffer pool
 ;;; TODO: handle instance reinitialization
 (defmethod shared-initialize :after ((stream dual-channel-gray-stream) slot-names
@@ -42,7 +46,8 @@
       stream
     (setf ib (allocate-iobuf input-buffer-size)
           ob (allocate-iobuf output-buffer-size)
-          ef external-format)))
+          ef external-format)
+    (trivial-garbage:finalize stream #'(lambda () (free-stream-buffers ib ob)))))
 
 ;;;; Common Methods
 
@@ -54,9 +59,9 @@
   (with-accessors ((ib input-buffer-of)
                    (ob output-buffer-of))
       stream
+    (trivial-garbage:cancel-finalization stream)
     (unless (or abort (null ib)) (finish-output stream))
-    (when ib (free-iobuf ib))
-    (when ob (free-iobuf ob))
+    (free-stream-buffers ib ob)
     (setf ib nil ob nil))
   (call-next-method)
   (values stream))
