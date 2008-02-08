@@ -35,8 +35,8 @@
                      :external-format external-format)))
 
 (defmacro with-close-on-error ((var value) &body body)
-  "Bind VAR to VALUE, execute BODY as implicit PROGN and return VAR.
-On error call CLOSE with :ABORT T on VAR."
+  "Bind `VAR' to `VALUE', execute `BODY' as implicit PROGN and return `VAR'.
+If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT T on `VAR'."
   (with-gensyms (errorp)
     `(let ((,var ,value) (,errorp t))
        (unwind-protect
