@@ -261,17 +261,21 @@
                 `(memq ,val ',var))
                (t
                 `(eq ,val ',var))))
-           (%do-clause (c)
+           (%do-clause (c gensyms)
              (destructuring-bind ((&rest vals) &rest code) c
-               `((and ,@(mapcar #'%do-var vals values)) ,@code)))
-           (%do-last-clause (c)
+               `((and ,@(mapcar #'%do-var vals gensyms)) ,@code)))
+           (%do-last-clause (c gensyms)
              (when c
                (destructuring-bind (test &rest code) c
                  (if (member test '(otherwise t))
                      `((t ,@code))
-                     `(,(%do-clause c)))))))
-    `(cond ,@(append (mapcar #'%do-clause (butlast body))
-                     (%do-last-clause (lastcar body))))))
+                     `(,(%do-clause c gensyms)))))))
+    (let ((gensyms (mapcar #'(lambda (v) (gensym (string v)))
+                           values)))
+      `(let ,(mapcar #'list gensyms values)
+         (cond ,@(append (mapcar #'(lambda (c) (%do-clause c gensyms))
+                                 (butlast body))
+                         (%do-last-clause (lastcar body) gensyms)))))))
 
 ;;; Reader macros
 
