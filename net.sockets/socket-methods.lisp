@@ -395,12 +395,10 @@
   (check-bounds buff start end)
   (etypecase buff
     (ub8-sarray (values buff start (- end start)))
-    (ub8-vector (values (coerce buff 'ub8-sarray)
-                        start (- end start)))
     (string     (values (%to-octets buff ef start end)
                         0 (- end start)))
-    (vector (values (coerce buff 'ub8-sarray)
-                    start (- end start)))))
+    (vector     (values (coerce buff 'ub8-sarray)
+                        start (- end start)))))
 
 (defun %%send-to (socket ss got-peer buffer start end flags)
   (multiple-value-bind (buff start-offset bufflen)
