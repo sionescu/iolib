@@ -395,8 +395,8 @@
   (check-bounds buff start end)
   (etypecase buff
     (ub8-sarray (values buff start (- end start)))
-    (string     (values (%to-octets buff ef start end)
-                        0 (- end start)))
+    (string     (let ((vector (%to-octets buff ef start end)))
+                  (values vector 0 (length vector))))
     (vector     (values (coerce buff 'ub8-sarray)
                         start (- end start)))))
 
