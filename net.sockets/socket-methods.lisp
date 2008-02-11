@@ -253,7 +253,7 @@
 
 (defmethod bind-address ((socket local-socket) (address local-address) &key)
   (with-sockaddr-un (sun (address-name address))
-      (%bind (fd-of socket) sun size-of-sockaddr-un))
+    (%bind (fd-of socket) sun size-of-sockaddr-un))
   (values socket))
 
 (defmethod bind-address :after ((socket socket) (address address) &key)
