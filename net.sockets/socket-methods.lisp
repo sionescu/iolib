@@ -402,43 +402,58 @@
     (vector (values (coerce buff 'ub8-sarray)
                     start (- end start)))))
 
-(defun %send-to (socket buffer start end remote-host remote-port remote-filename flags)
-  (let ((got-peer t))
-    (with-sockaddr-storage (ss)
-      (cond
-        (remote-host
-         (check-type socket internet-socket "an INTERNET socket")
-         (sockaddr->sockaddr-storage ss (ensure-hostname remote-host)
-                                     (ensure-numerical-service remote-port)))
-        (remote-filename
-         (check-type socket local-socket "a LOCAL socket")
-         (sockaddr->sockaddr-storage ss (ensure-address remote-filename :family :local) 0))
-        (t (setf got-peer nil)))
-      (multiple-value-bind (buff start-offset bufflen)
-          (%normalize-send-buffer buffer start end (external-format-of socket))
-        (with-pointer-to-vector-data (buff-sap buff)
-          (incf-pointer buff-sap start-offset)
-          (%sendto (fd-of socket) buff-sap bufflen flags
-                   (if got-peer ss (null-pointer))
-                   (if got-peer size-of-sockaddr-storage 0)))))))
+(defun %%send-to (socket ss got-peer buffer start end flags)
+  (multiple-value-bind (buff start-offset bufflen)
+      (%normalize-send-buffer buffer start end (external-format-of socket))
+    (with-pointer-to-vector-data (buff-sap buff)
+      (incf-pointer buff-sap start-offset)
+      (%sendto (fd-of socket) buff-sap bufflen flags
+               (if got-peer ss (null-pointer))
+               (if got-peer size-of-sockaddr-storage 0)))))
 
-(defmethod send-to ((socket active-socket) buffer &rest args
-                    &key (start 0) end remote-host (remote-port 0)
-                    remote-filename (ipv6 *ipv6*))
+(defun %inet-send-to (socket buffer start end remote-host remote-port flags)
+  (let (got-peer)
+    (with-sockaddr-storage (ss)
+      (when remote-host
+        (sockaddr->sockaddr-storage ss (ensure-hostname remote-host)
+                                    (ensure-numerical-service remote-port))
+        (setf got-peer t))
+      (%%send-to socket ss got-peer buffer start end flags))))
+
+(defun %local-send-to (socket buffer start end remote-filename flags)
+  (let (got-peer)
+    (with-sockaddr-storage (ss)
+      (when remote-filename
+        (sockaddr->sockaddr-storage ss (ensure-address remote-filename :family :local) 0)
+        (setf got-peer t))
+      (%%send-to socket ss got-peer buffer start end flags))))
+
+(defmethod send-to ((socket internet-socket) buffer &rest args
+                    &key (start 0) end remote-host (remote-port 0) (ipv6 *ipv6*))
   (let ((*ipv6* ipv6))
-    (%send-to socket buffer start end remote-host remote-port
-              remote-filename (compute-flags *sendmsg-flags* args))))
+    (%inet-send-to socket buffer start end remote-host remote-port
+                   (compute-flags *sendmsg-flags* args))))
+
+(defmethod send-to ((socket local-socket) buffer &rest args
+                    &key (start 0) end remote-filename)
+  (%local-send-to socket buffer start end remote-filename
+                  (compute-flags *sendmsg-flags* args)))
 
 (define-compiler-macro send-to (&whole form socket buffer &rest args
                                 &key (start 0) end remote-host (remote-port 0)
-                                remote-filename (ipv6 '*ipv6* ipv6p))
+                                remote-filename (ipv6 '*ipv6*))
   (let ((flags (compute-flags *sendmsg-flags* args)))
-    (cond (flags (if ipv6p
-                     `(let ((*ipv6* ,ipv6))
-                        (%send-to ,socket ,buffer ,start ,end
-                                  ,remote-host ,remote-port ,remote-filename ,flags))
-                     `(%send-to ,socket ,buffer ,start ,end
-                                ,remote-host ,remote-port ,remote-filename ,flags)))
+    (cond (flags
+           (once-only (socket buffer start end remote-host
+                       remote-port remote-filename flags)
+             `(etypecase ,socket
+                (internet-socket
+                 (let ((*ipv6* ,ipv6))
+                   (%inet-send-to ,socket ,buffer ,start ,end
+                                  ,remote-host ,remote-port ,flags)))
+                (local-socket
+                 (%local-send-to ,socket ,buffer ,start ,end
+                                 ,remote-filename ,flags)))))
           (t form))))
 
 ;;;; RECVFROM
