@@ -85,6 +85,9 @@
 (defmethod socket-type ((socket datagram-socket))
   :datagram)
 
+(defun ipv6-socket-p (socket)
+  (eq :ipv6 (socket-family socket)))
+
 ;;;; Printing
 
 (defun sock-fam (socket)
@@ -239,7 +242,7 @@
 
 (defmethod bind-address ((socket internet-socket) (address ipv4-address)
                          &key (port 0))
-  (if (eq :ipv6 (socket-family socket))
+  (if (ipv6-socket-p socket)
       (bind-ipv6-address (fd-of socket)
                          (map-ipv4-vector-to-ipv6 (address-name address))
                          port)
@@ -294,9 +297,9 @@
 
 ;;;; CONNECT
 
+(defmethod connect :before ((socket active-socket) address &key)
+  (declare (ignore address))
 #+freebsd
-(defmethod connect :before ((socket active-socket) sockaddr &key)
-  (declare (ignore sockaddr))
   (setf (socket-option socket :no-sigpipe) t))
 
 (defun ipv4-connect (fd address port)
@@ -309,7 +312,7 @@
 
 (defmethod connect ((socket internet-socket) (address ipv4-address)
                     &key (port 0))
-  (if (eq :ipv6 (socket-family socket))
+  (if (ipv6-socket-p socket)
       (ipv6-connect (fd-of socket)
                     (map-ipv4-vector-to-ipv6 (address-name address))
                     port)
