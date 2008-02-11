@@ -118,9 +118,9 @@ disallowed; if `WRITE' is non-NIL, further transmissions are disallowed. CLOSE m
 `SOCKET' in order to release OS resources."))
 
 (defgeneric receive-from (socket &rest args &key &allow-other-keys)
-  (:documentation "Receives data from `SOCKET'. If `BUFFER' is specified - which must be of type
- (simple-array (unsigned-byte 8) *) - then `START' and `END' are used as bounding index, otherwise a
-buffer of size `SIZE' will be allocated.
+  (:documentation "Receives data from `SOCKET'. If `BUFFER' is specified - which must be either a
+string or a (simple-array (unsigned-byte 8) *) - then `START' and `END' are used as bounding index,
+otherwise a buffer of size `SIZE' will be allocated.
 
 Some flags can also be passed to recvfrom(2):
 * `OUT-OF-BAND' for receiving out-of-band data - only for stream sockets
@@ -128,7 +128,7 @@ Some flags can also be passed to recvfrom(2):
 * `WAIT-ALL' for waiting until the entire buffer can be filled
 * `DONT-WAIT' for making only the current call non-blocking
 
-The first two values returned are the buffer and the number of bytes received.
+The first two values returned are the buffer and the number of elements that have been copied into the buffer.
 For INTERNET DATAGRAM sockets, two additional values are returned: the host and port of the remote peer
 from which the data was received.
 For LOCAL DATAGRAM sockets, one additional values is returned: the filename of the remote peer

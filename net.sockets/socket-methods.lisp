@@ -472,33 +472,49 @@
     (:wait-all    msg-waitall  (:not :windows))
     (:dont-wait   msg-dontwait (:not :windows))))
 
-(defun %normalize-receive-buffer (buff start end)
-  (check-bounds buff start end)
-  (etypecase buff
-    (ub8-sarray (values buff start (- end start)))))
+(defun allocate-ub8-buffer-for-string (length ef)
+  (let* ((units-per-char (babel-encodings:enc-max-units-per-char
+                          (babel:external-format-encoding ef)))
+         (length (* units-per-char length)))
+    (values (make-array length :element-type 'ub8)
+            0 length)))
 
-(defun %socket-receive-bytes (fd buffer start end flags ss)
+(defun %normalize-receive-buffer (buff start end ef)
+  (etypecase buff
+    (ub8-sarray (values buff start (- end start)))
+    (string     (allocate-ub8-buffer-for-string (- end start) ef))))
+
+(defun %%receive-from (fd buffer start end flags ss ef)
+  (check-bounds buffer start end)
   (multiple-value-bind (buff start-offset bufflen)
-      (%normalize-receive-buffer buffer start end)
+      (%normalize-receive-buffer buffer start end ef)
     (with-socklen (size size-of-sockaddr-storage)
       (bzero ss size-of-sockaddr-storage)
       (with-pointer-to-vector-data (buff-sap buff)
         (incf-pointer buff-sap start-offset)
-        (%recvfrom fd buff-sap bufflen flags ss size)))))
+        (let ((nbytes (%recvfrom fd buff-sap bufflen flags ss size)))
+          (if (stringp buffer)
+              ;; FIXME: convert the octets directly into the buffer
+              (let ((str (babel:octets-to-string buff :start 0 :end nbytes
+                                                 :encoding (babel:external-format-encoding ef)
+                                                 :errorp nil)))
+                (replace buffer str :start1 start :end1 end)
+                (- end start))
+              nbytes))))))
 
 (declaim (inline %receive-from-stream-socket))
 (defun %receive-from-stream-socket (socket buffer start end flags)
   (with-sockaddr-storage (ss)
-    (let ((bytes-received (%socket-receive-bytes (fd-of socket) buffer
-                                                 start end flags ss)))
-      (values buffer bytes-received))))
+    (let ((nelements (%%receive-from (fd-of socket) buffer start end
+                                     flags ss (external-format-of socket))))
+      (values buffer nelements))))
 
 (declaim (inline %receive-from-datagram-socket))
 (defun %receive-from-datagram-socket (socket buffer start end flags)
   (with-sockaddr-storage (ss)
-    (let ((bytes-received (%socket-receive-bytes (fd-of socket) buffer
-                                                 start end flags ss)))
-      (multiple-value-call #'values buffer bytes-received
+    (let ((nelements (%%receive-from (fd-of socket) buffer start end
+                                     flags ss (external-format-of socket))))
+      (multiple-value-call #'values buffer nelements
                            (sockaddr-storage->sockaddr ss)))))
 
 (defun %receive-from (socket buffer start end size flags)
