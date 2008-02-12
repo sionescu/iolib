@@ -127,6 +127,7 @@
    #:inet-address-type
    #:inet-address-unicast-p
    #:inet-address-unspecified-p
+   #:inet-address-private-p
    #:ipv4-address-p
    #:ipv6-address-p
    #:ipv6-admin-local-multicast-p

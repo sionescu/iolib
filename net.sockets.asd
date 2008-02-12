@@ -23,7 +23,7 @@
 
 (in-package :common-lisp-user)
 
-(eval-when (:load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (asdf:oos 'asdf:load-op :cffi-grovel))
 
 (asdf:defsystem :net.sockets

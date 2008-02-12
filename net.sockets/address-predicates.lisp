@@ -124,6 +124,22 @@ address object, NIL is returned.")
              (not (inet-address-loopback-p address))
              (not (inet-address-multicast-p address))))))
 
+(defgeneric inet-address-private-p (address)
+  (:documentation "Returns T if ADDRESS is in a private network range.
+Private IPv4 networks are 10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16.
+See http://en.wikipedia.org/wiki/Private_network for details.")
+  (:method ((address ipv4-address))
+    (let* ((address-name (address-name address))
+           (first (aref address-name 0))
+           (second (aref address-name 1)))
+      (or (= first 10)
+          (and (= first 172)
+               (<= 16 second 31))
+          (and (= first 192)
+               (= second 168)))))
+  (:method ((address address))
+    nil))
+
 (defun ipv6-ipv4-mapped-p (address)
   "Returns T if ADDRESS is an IPv6 address representing an IPv4
 mapped address."
