@@ -73,7 +73,7 @@ of a file descriptor."))
 `TIMEOUT' must be either a non-negative integer measured in seconds,
 or `NIL' meaning no timeout at all. If `ERRORP' is not NIL and a timeout
 occurs, then a condition of type `POLL-TIMEOUT' is signaled.
-Returns two boolean values indicating readbility and writability of `FILE-DESCRIPTOR'."
+Returns two boolean values indicating readability and writeability of `FILE-DESCRIPTOR'."
   (flet ((poll-error (unix-err)
            (error 'poll-error :fd file-descriptor
                   :identifier (osicat-sys:system-error-identifier unix-err))))
