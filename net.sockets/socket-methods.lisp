@@ -348,7 +348,7 @@
   (assert (or read write) (read write)
           "You must select at least one direction to shut down.")
   (%shutdown (fd-of socket)
-             (multiple-value-case (read write)
+             (multiple-value-case ((read write))
                ((_   nil) shut-rd)
                ((nil _)   shut-wr)
                (t         shut-rdwr)))

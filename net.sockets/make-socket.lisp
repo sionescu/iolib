@@ -248,7 +248,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
     (when (eq :ipv4 family) (setf ipv6 nil))
     (let ((*ipv6* ipv6))
       (when (eq :internet family) (setf family +default-inet-family+))
-      (multiple-value-case (family type connect)
+      (multiple-value-case ((family type connect))
         (((:ipv4 :ipv6) :stream :active)
          (%make-internet-stream-active-socket args family external-format))
         (((:ipv4 :ipv6) :stream :passive)
@@ -271,7 +271,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
      (check-type type (member :stream :datagram) "either :STREAM or :DATAGRAM")
      (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
      (let ((lower-function
-            (multiple-value-case (family type connect)
+            (multiple-value-case ((family type connect))
               (((:ipv4 :ipv6 :internet) :stream :active) '%make-internet-stream-active-socket)
               (((:ipv4 :ipv6 :internet) :stream :passive) '%make-internet-stream-passive-socket)
               ((:local :stream :active) '%make-local-stream-active-socket)
@@ -279,7 +279,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
               (((:ipv4 :ipv6 :internet) :datagram) '%make-internet-datagram-socket)
               ((:local :datagram) '%make-local-datagram-socket)))
            (newargs (remove-from-plist args :family :type :connect :external-format :ipv6)))
-       (case family
+       (multiple-value-case (family)
          (:internet (setf family '+default-inet-family+))
          (:ipv4     (setf ipv6 nil)))
        (let ((expansion `(,lower-function (list ,@newargs) ,family ,external-format)))

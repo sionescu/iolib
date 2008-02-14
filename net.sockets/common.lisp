@@ -250,20 +250,27 @@
 (defun memq (value list)
   (member value list :test #'eq))
 
-(defmacro multiple-value-case (values &body body)
+(defmacro multiple-value-case ((values &key (test 'eq)) &body body)
   (setf values (ensure-list values))
+  (setf test (alexandria::extract-function-name test))
   (assert values () "Must provide at least one value to test")
   (labels ((%do-var (var val)
              (cond
                ((and (symbolp var) (member var '("_" "*") :test #'string=))
                 t)
                ((consp var)
-                `(memq ,val ',var))
+                (if (eq 'eq test)
+                    `(memq ,val ',var)
+                    `(member ,val ',var :test ,test)))
                (t
-                `(eq ,val ',var))))
+                `(,test ,val ',var))))
            (%do-clause (c gensyms)
-             (destructuring-bind ((&rest vals) &rest code) c
-               `((and ,@(mapcar #'%do-var vals gensyms)) ,@code)))
+             (destructuring-bind (vals &rest code) c
+               (let* ((tests (remove t (mapcar #'%do-var (ensure-list vals) gensyms)))
+                      (clause-test (if (> 2 (length tests))
+                                       (first tests)
+                                       `(and ,@tests))))
+                 `(,clause-test ,@code))))
            (%do-last-clause (c gensyms)
              (when c
                (destructuring-bind (test &rest code) c
@@ -273,6 +280,7 @@
     (let ((gensyms (mapcar #'(lambda (v) (gensym (string v)))
                            values)))
       `(let ,(mapcar #'list gensyms values)
+         (declare (ignorable ,@gensyms))
          (cond ,@(append (mapcar #'(lambda (c) (%do-clause c gensyms))
                                  (butlast body))
                          (%do-last-clause (lastcar body) gensyms)))))))
