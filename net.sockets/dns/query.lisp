@@ -221,7 +221,7 @@
 
 (defconstant +dns-port+ 53)
 
-(defun do-udp-dns-query (buffer length nameserver timeout)
+(defun dns-query/udp (buffer length nameserver timeout)
   (with-open-stream
       (socket (make-socket :connect :active :type :datagram
                            :remote-host nameserver :remote-port +dns-port+
@@ -263,7 +263,7 @@
            (when (= off message-length)
              (return (values input-buffer off))))))))
 
-(defun do-tcp-dns-query (buffer length nameserver timeout)
+(defun dns-query/tcp (buffer length nameserver timeout)
   (let* ((t0 (osicat-sys:get-monotonic-time))
          (tend (+ t0 timeout)))
     (flet ((remtime ()
@@ -294,19 +294,19 @@
            ;; if the query size fits into a datagram(512 bytes max) do a
            ;; UDP query, otherwise use TCP
            (if (eq :udp protocol)
-               (do-udp-query)
-               (do-tcp-query)))
-         (do-udp-query ()
+               (query/udp)
+               (query/tcp)))
+         (query/udp ()
            ;; do a UDP query; in case of a socket error, try again
            (handler-case
-               (do-udp-dns-query buffer bufflen ns timeout)
+               (dns-query/udp buffer bufflen ns timeout)
              (socket-error () (%error "UDP socket error"))
              (iomux:poll-timeout () (try-again :udp))
              (:no-error (buf bytes) (parse-response buf bytes))))
-         (do-tcp-query ()
+         (query/tcp ()
            ;; do a TCP query; in case of a socket error, try again
            (handler-case
-               (do-tcp-dns-query buffer bufflen ns timeout)
+               (dns-query/tcp buffer bufflen ns timeout)
              (socket-connection-timeout-error () (try-again :tcp))
              (socket-error () (%error "TCP socket error"))
              (iomux:poll-timeout () (try-again :tcp))
