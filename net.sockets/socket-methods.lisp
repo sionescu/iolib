@@ -492,15 +492,24 @@
       (bzero ss size-of-sockaddr-storage)
       (with-pointer-to-vector-data (buff-sap buff)
         (incf-pointer buff-sap start-offset)
-        (let ((nbytes (%recvfrom fd buff-sap bufflen flags ss size)))
-          (if (stringp buffer)
-              ;; FIXME: convert the octets directly into the buffer
-              (let ((str (babel:octets-to-string buff :start 0 :end nbytes
-                                                 :encoding (babel:external-format-encoding ef)
-                                                 :errorp nil)))
-                (replace buffer str :start1 start :end1 end)
-                (- end start))
-              nbytes))))))
+        (loop
+           (restart-case
+               (let ((nbytes (%recvfrom fd buff-sap bufflen flags ss size)))
+                 (return-from %%receive-from
+                   (if (stringp buffer)
+                       ;; FIXME: convert the octets directly into the buffer
+                       (let ((str (babel:octets-to-string buff :start 0 :end nbytes
+                                                          :encoding (babel:external-format-encoding ef)
+                                                          :errorp nil)))
+                         (replace buffer str :start1 start :end1 end)
+                         (- end start))
+                       nbytes)))
+             (ignore ()
+               :report "Ignore this socket condition"
+               (return-from %%receive-from 0))
+             (continue (&optional (wait 0))
+               :report "Try to receive data again"
+               (when (plusp wait) (sleep wait)))))))))
 
 (declaim (inline %receive-from-stream-socket))
 (defun %receive-from-stream-socket (socket buffer start end flags)
