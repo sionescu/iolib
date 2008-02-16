@@ -400,15 +400,15 @@
     (vector     (values (coerce buff 'ub8-sarray)
                         start (- end start)))))
 
-(defun %%send-to (socket ss got-peer buffer start end flags)
+(defun %%send-to (fd ss got-peer buffer start end flags ef)
   (multiple-value-bind (buff start-offset bufflen)
-      (%normalize-send-buffer buffer start end (external-format-of socket))
+      (%normalize-send-buffer buffer start end ef)
     (with-pointer-to-vector-data (buff-sap buff)
       (incf-pointer buff-sap start-offset)
       (loop
          (restart-case
              (return-from %%send-to
-               (%sendto (fd-of socket) buff-sap bufflen flags
+               (%sendto fd buff-sap bufflen flags
                         (if got-peer ss (null-pointer))
                         (if got-peer size-of-sockaddr-storage 0)))
            (ignore ()
@@ -425,7 +425,8 @@
         (sockaddr->sockaddr-storage ss (ensure-hostname remote-host)
                                     (ensure-numerical-service remote-port))
         (setf got-peer t))
-      (%%send-to socket ss got-peer buffer start end flags))))
+      (%%send-to (fd-of socket) ss got-peer buffer start end flags
+                 (external-format-of socket)))))
 
 (defun %local-send-to (socket buffer start end remote-filename flags)
   (let (got-peer)
@@ -433,7 +434,8 @@
       (when remote-filename
         (sockaddr->sockaddr-storage ss (ensure-address remote-filename :family :local) 0)
         (setf got-peer t))
-      (%%send-to socket ss got-peer buffer start end flags))))
+      (%%send-to (fd-of socket) ss got-peer buffer start end flags
+                 (external-format-of socket)))))
 
 (defmethod send-to ((socket internet-socket) buffer &rest args
                     &key (start 0) end remote-host (remote-port 0) (ipv6 *ipv6*))
