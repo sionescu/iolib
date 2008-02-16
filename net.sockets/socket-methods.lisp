@@ -546,7 +546,7 @@
     (cond (flags `(%receive-from ,socket ,buffer ,start ,end ,size ,flags))
           (t form))))
 
-;;;; Datagram Sockets
+;;;; DISCONNECT
 
 (defmethod disconnect :before ((socket socket))
   (unless (typep socket 'datagram-socket)
