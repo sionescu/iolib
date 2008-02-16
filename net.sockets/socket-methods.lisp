@@ -439,7 +439,7 @@
 
 (define-compiler-macro send-to (&whole form socket buffer &rest args
                                 &key (start 0) end remote-host (remote-port 0)
-                                remote-filename (ipv6 '*ipv6*))
+                                remote-filename (ipv6 '*ipv6*) &allow-other-keys)
   (let ((flags (compute-flags *sendmsg-flags* args)))
     (cond (flags
            (once-only (socket buffer start end remote-host
@@ -532,7 +532,7 @@
                  (compute-flags *recvfrom-flags* args)))
 
 (define-compiler-macro receive-from (&whole form socket &rest args
-                                     &key buffer size (start 0) end)
+                                     &key buffer size (start 0) end &allow-other-keys)
   (let ((flags (compute-flags *recvfrom-flags* args)))
     (cond (flags `(%receive-from ,socket ,buffer ,start ,end ,size ,flags))
           (t form))))
