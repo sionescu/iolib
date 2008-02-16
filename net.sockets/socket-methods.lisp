@@ -405,9 +405,18 @@
       (%normalize-send-buffer buffer start end (external-format-of socket))
     (with-pointer-to-vector-data (buff-sap buff)
       (incf-pointer buff-sap start-offset)
-      (%sendto (fd-of socket) buff-sap bufflen flags
-               (if got-peer ss (null-pointer))
-               (if got-peer size-of-sockaddr-storage 0)))))
+      (loop
+         (restart-case
+             (return-from %%send-to
+               (%sendto (fd-of socket) buff-sap bufflen flags
+                        (if got-peer ss (null-pointer))
+                        (if got-peer size-of-sockaddr-storage 0)))
+           (ignore ()
+             :report "Ignore this socket condition"
+             (return-from %%send-to 0))
+           (continue (&optional (wait 0))
+             :report "Try to send data again"
+             (when (plusp wait) (sleep wait))))))))
 
 (defun %inet-send-to (socket buffer start end remote-host remote-port flags)
   (let (got-peer)
