@@ -493,7 +493,7 @@
     (ub8-sarray (values buff start (- end start)))
     (string     (allocate-ub8-buffer-for-string (- end start) ef))))
 
-(defun %%receive-from (fd buffer start end flags ss ef)
+(defun %%receive-from (fd ss buffer start end flags ef)
   (check-bounds buffer start end)
   (multiple-value-bind (buff start-offset bufflen)
       (%normalize-receive-buffer buffer start end ef)
@@ -523,15 +523,15 @@
 (declaim (inline %receive-from-stream-socket))
 (defun %receive-from-stream-socket (socket buffer start end flags)
   (with-sockaddr-storage (ss)
-    (let ((nelements (%%receive-from (fd-of socket) buffer start end
-                                     flags ss (external-format-of socket))))
+    (let ((nelements (%%receive-from (fd-of socket) ss buffer start end
+                                     flags (external-format-of socket))))
       (values buffer nelements))))
 
 (declaim (inline %receive-from-datagram-socket))
 (defun %receive-from-datagram-socket (socket buffer start end flags)
   (with-sockaddr-storage (ss)
-    (let ((nelements (%%receive-from (fd-of socket) buffer start end
-                                     flags ss (external-format-of socket))))
+    (let ((nelements (%%receive-from (fd-of socket) ss buffer start end
+                                     flags (external-format-of socket))))
       (multiple-value-call #'values buffer nelements
                            (sockaddr-storage->sockaddr ss)))))
 
