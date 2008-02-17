@@ -38,6 +38,12 @@
 (define-address +ipv6-unspecified+ "::"        "Unspecified IPv6 address.")
 (define-address +ipv6-loopback+    "::1"       "Loopback IPv6 address.")
 
+(define-symbol-macro +any-host+
+    (if *ipv6* +ipv6-unspecified+ +ipv4-unspecified+))
+
+(define-symbol-macro +loopback+
+    (if *ipv6* +ipv6-loopback+ +ipv4-loopback+))
+
 ;;;; Multicast addresses replacing IPv4 broadcast addresses
 
 (define-address +ipv6-interface-local-all-nodes+ "ff01::1"
