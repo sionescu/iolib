@@ -149,6 +149,13 @@
    #:ipv6-unicast-type
    #:local-address-p
 
+   ;; Network masks and subnets
+   #:make-subnet-mask
+   #:address-network-portion
+   #:address-host-portion
+   #:address-in-network-p
+   #:addresses-in-same-network-p
+
    ;; Hostname, Service, and Protocol Lookups
    #:ensure-hostname
    #:lookup-host

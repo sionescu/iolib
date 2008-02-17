@@ -46,6 +46,7 @@
 
    (:file "address" :depends-on ("pkgdcl" "common"))
    (:file "address-predicates" :depends-on ("pkgdcl" "common" "address"))
+   (:file "address-arithmetic" :depends-on ("pkgdcl" "address" "address-predicates"))
 
    (:file "base-sockets" :depends-on ("pkgdcl" "bsd" "config"))
    (:file "socket-options"
