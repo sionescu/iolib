@@ -204,6 +204,13 @@
     (ipv6-address (make-sockaddr-in6 ss (address-name sockaddr) port))
     (local-address (make-sockaddr-un ss (address-name sockaddr)))))
 
+(defun sockaddr-size (ss)
+  (with-foreign-slots ((family) ss sockaddr-storage)
+    (switch (family :test #'=)
+      (af-inet  size-of-sockaddr-in)
+      (af-inet6 size-of-sockaddr-in6)
+      (af-local size-of-sockaddr-un))))
+
 ;;;; Misc
 
 (defmacro check-bounds (sequence start end)

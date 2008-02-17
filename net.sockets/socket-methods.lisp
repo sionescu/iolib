@@ -410,7 +410,7 @@
              (return-from %%send-to
                (%sendto fd buff-sap bufflen flags
                         (if got-peer ss (null-pointer))
-                        (if got-peer size-of-sockaddr-storage 0)))
+                        (if got-peer (sockaddr-size ss) 0)))
            (ignore ()
              :report "Ignore this socket condition"
              (return-from %%send-to 0))
