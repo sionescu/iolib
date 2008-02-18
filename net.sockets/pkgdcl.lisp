@@ -155,6 +155,7 @@
    #:inet-address-host-portion
    #:inet-address-in-network-p
    #:inet-addresses-in-same-network-p
+   #:inet-address-network-class
 
    ;; Hostname, Service, and Protocol Lookups
    #:ensure-hostname
