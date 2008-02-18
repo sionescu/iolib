@@ -36,7 +36,7 @@
     (setf (ldb (byte (- 32 cidr) 0) mask) 0)
     (make-instance 'ipv4-address :name (integer-to-vector mask))))
 
-(defgeneric address-network-portion (address mask)
+(defgeneric inet-address-network-portion (address mask)
   (:documentation "Apply network mask MASK to ADDRESS in order to calculate the
 network part of ADDRESS.")
   (:method ((address ipv4-address)
@@ -50,7 +50,7 @@ network part of ADDRESS.")
                       (aref mv i))))
       (make-instance 'ipv4-address :name v))))
 
-(defgeneric address-host-portion (address mask)
+(defgeneric inet-address-host-portion (address mask)
   (:documentation "Apply network mask MASK to ADDRESS in order to calculate the
 host part of ADDRESS.")
   (:method ((address ipv4-address)
@@ -64,7 +64,7 @@ host part of ADDRESS.")
                       (logxor (aref mv i) 255))))
       (make-instance 'ipv4-address :name v))))
 
-(defgeneric address-in-network-p (address network mask)
+(defgeneric inet-address-in-network-p (address network mask)
   (:documentation "Return T if ADDRESS is part of the subnet specified by
 NETWORK and MASK.")
   (:method ((address ipv4-address)
@@ -73,7 +73,7 @@ NETWORK and MASK.")
     (address= (address-network-portion address mask)
               (address-network-portion network mask))))
 
-(defgeneric addresses-in-same-network-p (address1 address2 network mask)
+(defgeneric inet-addresses-in-same-network-p (address1 address2 network mask)
   (:documentation "Return T if ADDRESS1 and ADDRESS2 are both part part of the
 subnet specified by NETWORK and MASK.")
   (:method ((address1 ipv4-address)

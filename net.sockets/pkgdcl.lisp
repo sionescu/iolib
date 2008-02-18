@@ -151,10 +151,10 @@
 
    ;; Network masks and subnets
    #:make-subnet-mask
-   #:address-network-portion
-   #:address-host-portion
-   #:address-in-network-p
-   #:addresses-in-same-network-p
+   #:inet-address-network-portion
+   #:inet-address-host-portion
+   #:inet-address-in-network-p
+   #:inet-addresses-in-same-network-p
 
    ;; Hostname, Service, and Protocol Lookups
    #:ensure-hostname
