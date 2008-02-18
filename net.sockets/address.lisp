@@ -304,17 +304,34 @@ returned unmodified."
       (address-name address)))
 
 (defmethod print-object ((address ipv4-address) stream)
-  (print-unreadable-object (address stream :type nil :identity nil)
-    (format stream "IPv4 address: ~A" (address-to-string address))))
+  (format stream "@~A" (address-to-string address)))
 
 (defmethod print-object ((address ipv6-address) stream)
-  (print-unreadable-object (address stream :type nil :identity nil)
-    (format stream "IPv6 address: ~A" (address-to-string address))))
+  (format stream "@~A" (address-to-string address)))
 
 (defmethod print-object ((address local-address) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
     (format stream "Unix socket address: ~A. Abstract: ~:[no~;yes~]"
             (address-to-string address) (abstract-address-p address))))
+
+;;;; Reader Macro
+
+(defun read-literal-ip-address (stream &optional c n)
+  (declare (ignore c n))
+  (loop :with sstr := (make-string-output-stream)
+        :for char := (read-char stream nil nil)
+        :while char
+        :do (cond ((or (digit-char-p char 16)
+                       (member char '(#\. #\:) :test #'char=))
+                   (write-char char sstr))
+                  (t
+                   (unread-char char stream)
+                   (loop-finish)))
+        :finally (return (or (ensure-address (get-output-stream-string sstr)
+                                             :errorp nil)
+                             (error 'reader-error :stream stream)))))
+
+(set-macro-character #\@ 'read-literal-ip-address t)
 
 ;;;; Equality Methods
 
