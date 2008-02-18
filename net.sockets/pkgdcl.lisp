@@ -128,7 +128,6 @@
    #:inet-address-type
    #:inet-address-unicast-p
    #:inet-address-unspecified-p
-   #:inet-address-private-p
    #:ipv4-address-p
    #:ipv6-address-p
    #:ipv6-admin-local-multicast-p
@@ -151,6 +150,7 @@
 
    ;; Network masks and subnets
    #:make-subnet-mask
+   #:inet-address-private-p
    #:inet-address-network-portion
    #:inet-address-host-portion
    #:inet-address-in-network-p
