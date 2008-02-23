@@ -29,7 +29,7 @@
   :licence "LLGPL-2.1"
   :depends-on (:cffi :osicat :io.multiplex :trivial-gray-streams
                :alexandria :trivial-garbage)
-  :pathname (merge-pathnames #p"io.streams/" *load-truename*)
+  :pathname (merge-pathnames #p"io.streams/gray/" *load-truename*)
   :components
   ((:file "pkgdcl")
    (:file "classes" :depends-on ("pkgdcl"))
