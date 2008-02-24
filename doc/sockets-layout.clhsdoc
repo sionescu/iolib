@@ -1,0 +1,11 @@
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;
+;;; sockets-layout.clhsdoc --- Sockets documentation layout.
+;;;
+;;; Copyright (C) 2008, Stelian Ionescu  <sionescu@common-lisp.net>
+
+;; :navbar
+
+:dictionary
+
+;; :indexes

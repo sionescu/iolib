@@ -1,0 +1,25 @@
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;
+;;; sockets-contents.clhsdoc --- Sockets documentation.
+;;;
+;;; Copyright (C) 2008, Stelian Ionescu  <sionescu@common-lisp.net>
+
+(define-function make-socket (&key (family :internet) (type :stream)
+                              (connect :active) (ipv6 *ipv6*)
+                              (external-format :default) &allow-other-keys)
+  (:args
+   (family "A socket family specifier")
+   (type "A socket type specifier")
+   (connect "A socket connect specifier")
+   (ipv6 "One of NIL, T or :IPV6")
+   (external-format "An external format specifier"))
+  (:return
+    (socket "A socket"))
+  (:description
+   "Creates a socket instance of the appropriate subclass of SOCKET.")
+  (:examples)
+  (:affected-by *ipv6*)
+  (:exceptional-situations
+   "Can signal conditions which are subtypes of SOCKET-ERROR or of POSIX-ERROR.")
+  (:see-also with-open-socket with-accept-connection)
+  (:notes))

@@ -1,0 +1,13 @@
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;
+;;; iolib.clhsdoc --- Main iolib documentation.
+;;;
+;;; Copyright (C) 2008, Stelian Ionescu  <sionescu@common-lisp.net>
+
+(defdoc "IOLib" ()
+  (:author "Stelian Ionescu")
+  (:author-email "<sionescu@common-lisp.net>")
+  (:contents
+;;;    (chapter "I/O Events" :file "ioevents")
+;;;    (chapter "Streams")
+   (chapter "Sockets")))
