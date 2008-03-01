@@ -407,7 +407,7 @@
         ;; BUG: this comparision is probably buggy, FIXME.  A similar
         ;; bug was fixed in STREAM-READ-CHAR.  Must write a test for
         ;; this one first.
-        (when (< 0 (iobuf-end-space-length ib) 4)
+        (when (< 0 (iobuf-end-space-length ib) +max-octets-per-char+)
           (iobuf-copy-data-to-start ib))
         (when (and (iomux:fd-ready-p fd :read)
                    (eq :eof (%fill-ibuf read-fn fd ib)))
