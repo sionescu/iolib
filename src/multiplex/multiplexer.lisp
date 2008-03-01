@@ -31,15 +31,15 @@
   (:documentation "Close multiplexer MUX, calling close() on the multiplexer's FD if bound."))
 
 (defgeneric monitor-fd (mux fd-entry)
-  (:documentation "Add the descriptor reppresented by FD-ENTRY to multiplexer MUX.
+  (:documentation "Add the descriptor represented by FD-ENTRY to multiplexer MUX.
 Must return NIL on failure, T otherwise."))
 
 (defgeneric update-fd (mux fd-entry event-type edge-change)
-  (:documentation "Update the status of the descriptor reppresented by FD-ENTRY in multiplexer MUX.
+  (:documentation "Update the status of the descriptor represented by FD-ENTRY in multiplexer MUX.
 Must return NIL on failure, T otherwise."))
 
 (defgeneric unmonitor-fd (mux fd-entry)
-  (:documentation "Remove the descriptor reppresented by FD-ENTRY from multiplexer MUX.
+  (:documentation "Remove the descriptor represented by FD-ENTRY from multiplexer MUX.
 Must return NIL on failure, T otherwise."))
 
 (defgeneric harvest-events (mux timeout)
