@@ -167,13 +167,14 @@
       stream
     (let ((nbytes (min (- end start)
                        (iobuf-length ib))))
-      (iobuf-copy-into-lisp-array ib (iobuf-start ib)
-                                  sequence start
-                                  nbytes)
-      (incf (iobuf-start ib) nbytes)
-      (let ((len (iobuf-length ib)))
-        (values (+ start nbytes)
-                (and (plusp len) len))))))
+      (when (plusp nbytes)
+        (iobuf-copy-into-lisp-array ib (iobuf-start ib)
+                                    sequence start
+                                    nbytes)
+        (incf (iobuf-start ib) nbytes)
+        (let ((len (iobuf-length ib)))
+          (values (+ start nbytes)
+                  (and (plusp len) len)))))))
 
 ;;;; Output Methods
 
