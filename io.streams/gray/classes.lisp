@@ -133,6 +133,21 @@
 (defgeneric (setf external-format-of) (external-format stream)
   (:documentation "placeholder"))
 
+(defgeneric drain-input-buffer (stream sequence &key start end)
+  (:documentation ""))
+
+(defgeneric read-buffer-size (stream)
+  (:documentation ""))
+
+(defgeneric read-buffer-empty-p (stream)
+  (:documentation ""))
+
+(defgeneric write-buffer-size (stream)
+  (:documentation ""))
+
+(defgeneric write-buffer-empty-p (stream)
+  (:documentation ""))
+
 (defclass dual-channel-single-fd-gray-stream
     (dual-channel-gray-stream dual-channel-single-fd-mixin)
   ()

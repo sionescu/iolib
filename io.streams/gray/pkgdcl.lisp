@@ -51,7 +51,12 @@
    #:input-fd-of
    #:output-fd-non-blocking
    #:output-fd-of
+   #:read-buffer-size
+   #:read-buffer-empty-p
+   #:write-buffer-size
+   #:write-buffer-empty-p
 
    #:read-sequence*
    #:write-sequence*
+   #:drain-input-buffer
    ))

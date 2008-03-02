@@ -160,6 +160,21 @@
     ((stream dual-channel-gray-stream) sequence start end &key)
   (%read-sequence stream sequence start end))
 
+(defmethod drain-input-buffer
+    ((stream dual-channel-gray-stream) sequence &key (start 0) end)
+  (check-bounds sequence start end)
+  (with-accessors ((ib input-buffer-of))
+      stream
+    (let ((nbytes (min (- end start)
+                       (iobuf-length ib))))
+      (iobuf-copy-into-lisp-array ib (iobuf-start ib)
+                                  sequence start
+                                  nbytes)
+      (incf (iobuf-start ib) nbytes)
+      (let ((len (iobuf-length ib)))
+        (values (+ start nbytes)
+                (and (plusp len) len))))))
+
 ;;;; Output Methods
 
 (defun %write-n-bytes (write-fn fd buf nbytes &optional timeout)
@@ -548,3 +563,17 @@
       stream
     (%flush-obuf-if-needed stream)
     (iobuf-push-octet ob integer)))
+
+;;;; Buffer-related stuff
+
+(defmethod input-buffer-size ((stream dual-channel-gray-stream))
+  (iobuf-length (input-buffer-of stream)))
+
+(defmethod input-buffer-empty-p ((stream dual-channel-gray-stream))
+  (iobuf-empty-p (input-buffer-of stream)))
+
+(defmethod output-buffer-size ((stream dual-channel-gray-stream))
+  (iobuf-length (output-buffer-of stream)))
+
+(defmethod output-buffer-empty-p ((stream dual-channel-gray-stream))
+  (iobuf-empty-p (output-buffer-of stream)))
