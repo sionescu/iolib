@@ -196,10 +196,10 @@
   (%local-name socket))
 
 (defmethod local-host ((socket internet-socket))
-  (nth-value 0 (local-name socket)))
+  (nth-value 0 (%local-name socket)))
 
 (defmethod local-port ((socket internet-socket))
-  (nth-value 1 (local-name socket)))
+  (nth-value 1 (%local-name socket)))
 
 (defmethod local-filename ((socket local-socket))
   (%local-name socket))
@@ -216,10 +216,10 @@
   (%remote-name socket))
 
 (defmethod remote-host ((socket internet-socket))
-  (nth-value 0 (remote-name socket)))
+  (nth-value 0 (%remote-name socket)))
 
 (defmethod remote-port ((socket internet-socket))
-  (nth-value 1 (remote-name socket)))
+  (nth-value 1 (%remote-name socket)))
 
 (defmethod remote-filename ((socket local-socket))
   (%remote-name socket))
