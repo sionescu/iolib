@@ -136,16 +136,16 @@
 (defgeneric drain-input-buffer (stream sequence &key start end)
   (:documentation ""))
 
-(defgeneric read-buffer-size (stream)
+(defgeneric input-buffer-size (stream)
   (:documentation ""))
 
-(defgeneric read-buffer-empty-p (stream)
+(defgeneric input-buffer-empty-p (stream)
   (:documentation ""))
 
-(defgeneric write-buffer-size (stream)
+(defgeneric output-buffer-size (stream)
   (:documentation ""))
 
-(defgeneric write-buffer-empty-p (stream)
+(defgeneric output-buffer-empty-p (stream)
   (:documentation ""))
 
 (defclass dual-channel-single-fd-gray-stream
