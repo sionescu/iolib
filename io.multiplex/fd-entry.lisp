@@ -45,9 +45,10 @@
 (defstruct (fd-entry (:constructor make-fd-entry (fd))
                      (:copier nil))
   (fd 0 :type unsigned-byte)
-  (read-event  nil :type (or null fd-event))
-  (write-event nil :type (or null fd-event))
-  (error-event nil :type (or null fd-event)))
+  ;; TODO KLUDGE (member t), delme
+  (read-event  nil :type (or null (member t) fd-event))
+  (write-event nil :type (or null (member t) fd-event))
+  (error-event nil :type (or null (member t) fd-event)))
 
 (defun fd-entry-event (fd-entry event-type)
   (check-type fd-entry fd-entry)
