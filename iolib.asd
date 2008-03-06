@@ -21,7 +21,9 @@
 ;;; Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 ;;; Boston, MA 02110-1301, USA
 
-(defsystem :iolib
+(in-package :common-lisp-user)
+
+(asdf:defsystem :iolib
   :description "I/O library."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
@@ -32,8 +34,8 @@
                              *load-truename*)
   :components ((:file "pkgdcl")))
 
-(defmethod perform ((o test-op) (c (eql (find-system :iolib))))
-  (operate 'test-op :iolib-tests))
+(defmethod asdf:perform ((o asdf:test-op) (c (eql (asdf:find-system :iolib))))
+  (asdf:operate 'asdf:test-op :iolib-tests))
 
-(defmethod operation-done-p ((o test-op) (c (eql (find-system :iolib))))
+(defmethod asdf:operation-done-p ((o asdf:test-op) (c (eql (asdf:find-system :iolib))))
   nil)
