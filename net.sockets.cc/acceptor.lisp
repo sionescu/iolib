@@ -63,8 +63,7 @@
                (bind-address socket (ensure-hostname address)
                              :port port
                              :reuse-address t)
-               (apply 'listen-on socket (when backlog
-                                          (list :backlog backlog)))
+               (listen-on socket :backlog backlog)
                (setf (accepting-connection-of acceptor)
                      (make-instance 'accepting-connection
                                     :continuation (with-call/cc
