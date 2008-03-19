@@ -1,4 +1,4 @@
-;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
 ;;; scheduler.lisp --- Controlling the queue of scheduled events
 ;;;                    and running expired timers.

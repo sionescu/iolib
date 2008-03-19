@@ -1,4 +1,4 @@
-;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
 ;;; iface.lisp --- Network interface class and operators.
 ;;;

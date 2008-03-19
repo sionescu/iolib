@@ -1,4 +1,4 @@
-;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Indent-tabs-mode: NIL -*-
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
 ;;; dynamic-buffer.lisp --- Read/write adjustable buffer.
 ;;;
