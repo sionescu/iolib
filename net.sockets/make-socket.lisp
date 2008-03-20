@@ -24,15 +24,20 @@
 (in-package :net.sockets)
 
 (defun create-socket (family type connect external-format &key fd ibs obs)
-  (if (or ibs obs)
-      (make-instance (select-socket-class family type connect :default)
-                     :family family :file-descriptor fd
-                     :external-format external-format
-                     :input-buffer-size ibs
-                     :output-buffer-size obs)
-      (make-instance (select-socket-class family type connect :default)
-                     :family family :file-descriptor fd
-                     :external-format external-format)))
+  (cond
+    ;; this is necessary because passive sockets don't inherit from
+    ;; stream classes, therefore keyword args :INPUT-BUFFER-SIZE and
+    ;; :OUTPUT-BUFFER-SIZE are invalid for them
+    ((or ibs obs)
+     (assert (eq connect :active))
+     (make-instance (select-socket-class family type connect :default)
+                    :family family :file-descriptor fd
+                    :external-format external-format
+                    :input-buffer-size ibs
+                    :output-buffer-size obs))
+    (t (make-instance (select-socket-class family type connect :default)
+                      :family family :file-descriptor fd
+                      :external-format external-format))))
 
 (defmacro with-close-on-error ((var value) &body body)
   "Bind `VAR' to `VALUE', execute `BODY' as implicit PROGN and return `VAR'.
