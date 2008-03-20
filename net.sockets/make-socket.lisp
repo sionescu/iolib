@@ -310,17 +310,21 @@ is automatically closed upon exit."
       (%getsockname fd ss size)
       (foreign-slot-value ss 'sockaddr-storage 'family))))
 
-(defun make-socket-stream (fd &key (external-format :default) (errorp t))
+(defun make-socket-stream (fd &key (external-format :default) (errorp t)
+                           input-buffer-size output-buffer-size)
   "Creates an active stream socket instance of the appropriate subclass of SOCKET using `FD'.
-The address family of the sockets is automatically discovered using OS functions. If `FD' is
-an invalid socket descriptor and `ERRORP' is not NIL a condition subtype of POSIX-ERROR
+The address family of the sockets is automatically discovered using OS functions. Buffer sizes
+for the new socket can also be specified using `INPUT-BUFFER-SIZE' and `OUTPUT-BUFFER-SIZE'.
+If `FD' is an invalid socket descriptor and `ERRORP' is not NIL a condition subtype of POSIX-ERROR
 is signaled, otherwise two values are returned: NIL and the specific condition object."
   (flet ((%make-socket-stream ()
            (let ((family (switch ((get-address-family fd) :test #'=)
                            (af-inet :ipv4)
                            (af-inet6 :ipv6)
                            (af-local :local))))
-             (create-socket family :stream :active external-format :fd fd))))
+             (create-socket family :stream :active external-format :fd fd
+                            :input-buffer-size input-buffer-size
+                            :output-buffer-size output-buffer-size))))
     (if errorp
         (%make-socket-stream)
         (ignore-some-conditions (posix-error)
