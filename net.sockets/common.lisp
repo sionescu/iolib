@@ -258,7 +258,7 @@
 (defun memq (value list)
   (member value list :test #'eq))
 
-(defmacro multiple-value-case ((values &key (test 'eq)) &body body)
+(defmacro multiple-value-case ((values &key (test 'eql)) &body body)
   (setf values (ensure-list values))
   (setf test (alexandria::extract-function-name test))
   (assert values () "Must provide at least one value to test")
