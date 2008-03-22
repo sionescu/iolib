@@ -169,7 +169,7 @@ of :TCP, :UDP or :ANY."
   (check-type service (or tcp-port string symbol) "an '(unsigned-byte 16), a string or a symbol")
   (check-type protocol (member :tcp :udp :any) "one of :TCP, :UDP or :ANY")
   (update-monitor *services-monitor*)
-  (let* ((service (ensure-string-or-unsigned-byte service :ub16))
+  (let* ((service (ensure-string-or-unsigned-byte service :type 'ub16))
          (serv (etypecase service
                  (tcp-port (lookup-service-by-number service protocol))
                  (string   (lookup-service-by-name service protocol)))))

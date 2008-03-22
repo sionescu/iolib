@@ -227,23 +227,24 @@
   (babel:string-to-octets buff :start start :end end
                           :encoding (babel:external-format-encoding ef)))
 
-(defun parse-number-or-nil (value &optional (type :any) (radix 10))
+(declaim (inline ensure-number))
+(defun ensure-number (value &key (start 0) end (radix 10) (type t) (errorp t))
   (check-type value (or string unsigned-byte) "a string or an unsigned-byte")
   (let ((parsed
-         (if (stringp value)
-             (ignore-errors (parse-integer value :radix radix
-                                           :junk-allowed nil))
-             value)))
-    (and parsed
-         ;; if it's a number and its type is ok return it
-         (typep parsed (ecase type
-                         (:any  t)     (:ub8  'ub8)
-                         (:ub16 'ub16) (:ub32 'ub32)))
-         (values parsed))))
+         (etypecase value
+           (string
+            (ignore-errors (parse-integer value :start start :end end
+                                          :radix radix :junk-allowed nil)))
+           (t value))))
+    (if (and parsed (typep parsed type))
+        (values parsed)
+        (if errorp
+            (error 'parse-error)
+            nil))))
 
-(defun ensure-string-or-unsigned-byte (thing &optional (type :any) (radix 10))
+(defun ensure-string-or-unsigned-byte (thing &key (type t) (radix 10))
   (or (and (symbolp thing) (string-downcase thing))
-      (parse-number-or-nil thing type radix)
+      (ensure-number thing :type type :radix radix :errorp nil)
       thing))
 
 (defun lisp->c-bool (val)
