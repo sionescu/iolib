@@ -58,6 +58,58 @@ ADDRESS-NAME reader."))
                   :name ,(address-name address)
                   :abstrace ,(abstract-address-p address)))
 
+;;;; Conversion functions for SOCKADDR_* structs
+
+(defun sockaddr-in->sockaddr (sin)
+  (with-foreign-slots ((addr port) sin sockaddr-in)
+    (values (make-instance 'ipv4-address
+                           :name (integer-to-vector (ntohl addr)))
+            (ntohs port))))
+
+(defun sockaddr-in6->sockaddr (sin6)
+  (with-foreign-slots ((addr port) sin6 sockaddr-in6)
+    (values (make-instance 'ipv6-address
+                           :name (in6-addr-to-ipv6-array addr))
+            (ntohs port))))
+
+(defun sockaddr-un->sockaddr (sun)
+  (with-foreign-slots ((path) sun sockaddr-un)
+    (let ((name (make-string (1- unix-path-max)))
+          (abstract nil))
+      (cond ((zerop (mem-aref path :uint8 0))
+             ;; abstract address
+             (setf abstract t)
+             (loop :for sindex :from 0 :below (1- unix-path-max)
+                   :for pindex :from 1 :below unix-path-max
+                   :do (setf (schar name sindex)
+                             (code-char (mem-aref path :uint8 pindex)))))
+            (t 
+             ;; address is in the filesystem
+             (setf name (foreign-string-to-lisp path))))
+      (make-instance 'local-address
+                     :name name
+                     :abstract abstract))))
+
+(defun sockaddr-storage->sockaddr (ss)
+  (with-foreign-slots ((family) ss sockaddr-storage)
+    (switch (family :test #'=)
+      (af-inet (sockaddr-in->sockaddr ss))
+      (af-inet6 (sockaddr-in6->sockaddr ss))
+      (af-local (sockaddr-un->sockaddr ss)))))
+
+(defun sockaddr->sockaddr-storage (ss sockaddr &optional (port 0))
+  (etypecase sockaddr
+    (ipv4-address (make-sockaddr-in ss (address-name sockaddr) port))
+    (ipv6-address (make-sockaddr-in6 ss (address-name sockaddr) port))
+    (local-address (make-sockaddr-un ss (address-name sockaddr)))))
+
+(defun sockaddr-size (ss)
+  (with-foreign-slots ((family) ss sockaddr-storage)
+    (switch (family :test #'=)
+      (af-inet  size-of-sockaddr-in)
+      (af-inet6 size-of-sockaddr-in6)
+      (af-local size-of-sockaddr-un))))
+
 ;;;; Conversion functions
 
 (defun integer-to-dotted (integer)
