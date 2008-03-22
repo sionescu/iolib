@@ -294,35 +294,25 @@
 
 ;;; Reader macros
 
-(defun make-ht-from-list (list stream test)
+(defun make-ht-from-list (alist stream test)
   (flet ((err () (error 'reader-error :stream stream))
-         (separatorp (s) (string= s ","))
-         (middlep (s) (string= s "=>")))
-    (let* ((series (scan 'list list))
-           (slen (collect-length series))
-           (separators (choose (mask (scan-range :from 3 :by 4)) series)))
-      (unless (collect-and (map-fn 'boolean #'separatorp separators)) (err))
-      (multiple-value-bind (keys middles values) (chunk 3 4 series)
-        (unless (or (zerop slen) (= slen (1- (* 4 (collect-length values))))) (err))
-        (unless (collect-and (map-fn 'boolean #'middlep middles)) (err))
-        (collect-hash keys values :test test :size (collect-length keys))))))
+         (alistp (alist) (every #'consp alist)))
+    (unless (alistp alist) (err))
+    (alist-hash-table alist :test test :size (length alist))))
 
 (defun read-literal-ht (stream &optional c n)
   (declare (ignore c n))
   (let ((*readtable* (copy-readtable))
         (c (read-char stream))
         (test 'eql))
-    (set-syntax-from-char #\} #\))
-    (set-syntax-from-char #\{ #\))
-    (set-syntax-from-char #\, #\$)
     (flet ((err () (error 'reader-error :stream stream)))
       (case c
-        (#\{ t)
-        (#\: (let ((l (read-delimited-list #\{ stream)))
+        (#\( t)
+        (#\: (let ((l (read-delimited-list #\( stream)))
                (unless (= 1 (length l)) (err))
                (setf test (car l))))
         (t   (err))))
-    (make-ht-from-list (read-delimited-list #\} stream)
+    (make-ht-from-list (read-delimited-list #\) stream)
                        stream test)))
 
 (set-dispatch-macro-character #\# #\h 'read-literal-ht)
