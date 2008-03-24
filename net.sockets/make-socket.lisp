@@ -31,6 +31,17 @@
                  :input-buffer-size input-buffer-size
                  :output-buffer-size output-buffer-size))
 
+(define-compiler-macro create-socket (&whole form family type connect external-format
+                                      &key fd input-buffer-size output-buffer-size)
+  (cond
+    ((and (constantp family) (constantp type) (constantp connect))
+     `(make-instance ',(select-socket-class family type connect :default)
+                     :family ,family :file-descriptor ,fd
+                     :external-format ,external-format
+                     :input-buffer-size ,input-buffer-size
+                     :output-buffer-size ,output-buffer-size))
+    (t form)))
+
 (defmacro with-close-on-error ((var value) &body body)
   "Bind `VAR' to `VALUE', execute `BODY' as implicit PROGN and return `VAR'.
 If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT T on `VAR'."
@@ -39,6 +50,11 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
        (unwind-protect
             (multiple-value-prog1 (locally ,@body ,var) (setf ,errorp nil))
          (when (and ,var ,errorp) (close ,var :abort t))))))
+
+(defmacro %create-internet-socket (family &rest args)
+  `(case ,family
+     ,@(loop :for f :in '(:ipv4 :ipv6) :collect
+          `(,f (create-socket ,f ,@args)))))
 
 (defmacro with-guard-again-non-list-args-and-destructuring-bind-errors
     (form args &body body)
@@ -49,23 +65,29 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 
 ;;; Internet Stream Active Socket creation
 
+(defun %%init-internet-stream-active-socket (socket keepalive nodelay reuse-address
+                                             local-host local-port remote-host remote-port)
+  (let ((local-port  (ensure-numerical-service local-port))
+        (remote-port (ensure-numerical-service remote-port)))
+    (when keepalive (setf (socket-option socket :keep-alive) t))
+    (when nodelay (setf (socket-option socket :tcp-nodelay) t))
+    (when local-host
+      (bind-address socket (ensure-hostname local-host)
+                    :port local-port
+                    :reuse-address reuse-address))
+    (when (plusp remote-port)
+      (connect socket (ensure-hostname remote-host)
+               :port remote-port))))
+
+(declaim (inline %%make-internet-stream-active-socket))
 (defun %%make-internet-stream-active-socket (family ef keepalive nodelay reuse-address
                                              local-host local-port remote-host remote-port
                                              input-buffer-size output-buffer-size)
-  (let ((local-port  (ensure-numerical-service local-port))
-        (remote-port (ensure-numerical-service remote-port)))
-    (with-close-on-error (socket (create-socket family :stream :active ef
-                                                :input-buffer-size input-buffer-size
-                                                :output-buffer-size output-buffer-size))
-      (when keepalive (setf (socket-option socket :keep-alive) t))
-      (when nodelay (setf (socket-option socket :tcp-nodelay) t))
-      (when local-host
-        (bind-address socket (ensure-hostname local-host)
-                      :port local-port
-                      :reuse-address reuse-address))
-      (when (plusp remote-port)
-        (connect socket (ensure-hostname remote-host)
-                 :port remote-port)))))
+  (with-close-on-error (socket (%create-internet-socket family :stream :active ef
+                                                        :input-buffer-size input-buffer-size
+                                                        :output-buffer-size output-buffer-size))
+    (%%init-internet-stream-active-socket socket keepalive nodelay reuse-address
+                                          local-host local-port remote-host remote-port)))
 
 (defun %make-internet-stream-active-socket (args family ef)
   (destructuring-bind (&key keepalive nodelay (reuse-address t)
@@ -91,17 +113,23 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 
 ;;; Internet Stream Passive Socket creation
 
-(defun %%make-internet-stream-passive-socket (family ef interface reuse-address
+(defun %%init-internet-stream-passive-socket (socket interface reuse-address
                                               local-host local-port backlog)
   (let ((local-port  (ensure-numerical-service local-port)))
-    (with-close-on-error (socket (create-socket family :stream :passive ef))
-      (when local-host
-        (when interface
-          (setf (socket-option socket :bind-to-device) interface))
-        (bind-address socket (ensure-hostname local-host)
-                      :port local-port
-                      :reuse-address reuse-address)
-        (listen-on socket :backlog backlog)))))
+    (when local-host
+      (when interface
+        (setf (socket-option socket :bind-to-device) interface))
+      (bind-address socket (ensure-hostname local-host)
+                    :port local-port
+                    :reuse-address reuse-address)
+      (listen-on socket :backlog backlog))))
+
+(declaim (inline %%make-internet-stream-passive-socket))
+(defun %%make-internet-stream-passive-socket (family ef interface reuse-address
+                                              local-host local-port backlog)
+  (with-close-on-error (socket (%create-internet-socket family :stream :passive ef))
+    (%%init-internet-stream-passive-socket socket interface reuse-address
+                                           local-host local-port backlog)))
 
 (defun %make-internet-stream-passive-socket (args family ef)
   (destructuring-bind (&key interface (reuse-address t)
@@ -123,15 +151,22 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 
 ;;; Local Stream Active Socket creation
 
+(defun %%init-local-stream-active-socket (socket local-filename remote-filename
+                                          input-buffer-size output-buffer-size)
+  (when local-filename
+    (bind-address socket (ensure-address local-filename :family :local)))
+  (when remote-filename
+    (connect socket (ensure-address remote-filename :family :local))))
+
+(declaim (inline %%make-local-stream-active-socket))
 (defun %%make-local-stream-active-socket (family ef local-filename remote-filename
                                           input-buffer-size output-buffer-size)
-  (with-close-on-error (socket (create-socket family :stream :active ef
+  (declare (ignore family))
+  (with-close-on-error (socket (create-socket :local :stream :active ef
                                               :input-buffer-size input-buffer-size
                                               :output-buffer-size output-buffer-size))
-    (when local-filename
-      (bind-address socket (ensure-address local-filename :family :local)))
-    (when remote-filename
-      (connect socket (ensure-address remote-filename :family :local)))))
+    (%%init-local-stream-active-socket socket local-filename remote-filename
+                                       input-buffer-size output-buffer-size)))
 
 (defun %make-local-stream-active-socket (args family ef)
   (destructuring-bind (&key local-filename remote-filename
@@ -151,12 +186,17 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 
 ;;; Local Stream Passive Socket creation
 
+(defun %%init-local-stream-passive-socket (socket local-filename reuse-address backlog)
+  (when local-filename
+    (bind-address socket (ensure-address local-filename :family :local)
+                  :reuse-address reuse-address)
+    (listen-on socket :backlog backlog)))
+
+(declaim (inline %%make-local-stream-passive-socket))
 (defun %%make-local-stream-passive-socket (family ef local-filename reuse-address backlog)
-  (with-close-on-error (socket (create-socket family :stream :passive ef))
-    (when local-filename
-      (bind-address socket (ensure-address local-filename :family :local)
-                    :reuse-address reuse-address)
-      (listen-on socket :backlog backlog))))
+  (declare (ignore family))
+  (with-close-on-error (socket (create-socket :local :stream :passive ef))
+    (%%init-local-stream-passive-socket socket local-filename reuse-address backlog)))
 
 (defun %make-local-stream-passive-socket (args family ef)
   (destructuring-bind (&key local-filename (reuse-address t)
@@ -174,21 +214,27 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 
 ;;; Internet Datagram Socket creation
 
-(defun %%make-internet-datagram-socket (family ef broadcast interface reuse-address
+(defun %%init-internet-datagram-socket (socket broadcast interface reuse-address
                                         local-host local-port remote-host remote-port)
   (let ((local-port  (ensure-numerical-service local-port))
         (remote-port (ensure-numerical-service remote-port)))
-    (with-close-on-error (socket (create-socket family :datagram :active ef))
-      (when broadcast (setf (socket-option socket :broadcast) t))
-      (when local-host
-        (bind-address socket (ensure-hostname local-host)
-                      :port local-port
-                      :reuse-address reuse-address)
-        (when interface
-          (setf (socket-option socket :bind-to-device) interface)))
-      (when (plusp remote-port)
-        (connect socket (ensure-hostname remote-host)
-                 :port remote-port)))))
+    (when broadcast (setf (socket-option socket :broadcast) t))
+    (when local-host
+      (bind-address socket (ensure-hostname local-host)
+                    :port local-port
+                    :reuse-address reuse-address)
+      (when interface
+        (setf (socket-option socket :bind-to-device) interface)))
+    (when (plusp remote-port)
+      (connect socket (ensure-hostname remote-host)
+               :port remote-port))))
+
+(declaim (inline %%make-internet-datagram-socket))
+(defun %%make-internet-datagram-socket (family ef broadcast interface reuse-address
+                                        local-host local-port remote-host remote-port)
+  (with-close-on-error (socket (%create-internet-socket family :datagram :active ef))
+    (%%init-internet-datagram-socket socket broadcast interface reuse-address
+                                     local-host local-port remote-host remote-port)))
 
 (defun %make-internet-datagram-socket (args family ef)
   (destructuring-bind (&key broadcast interface (reuse-address t)
@@ -210,12 +256,17 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 
 ;;; Local Datagram Socket creation
 
+(defun %%init-local-datagram-socket (socket local-filename remote-filename)
+  (when local-filename
+    (bind-address socket (ensure-address local-filename :family :local)))
+  (when remote-filename
+    (connect socket (ensure-address remote-filename :family :local))))
+
+(declaim (inline %%make-local-datagram-socket))
 (defun %%make-local-datagram-socket (family ef local-filename remote-filename)
-  (with-close-on-error (socket (create-socket family :datagram :active ef))
-    (when local-filename
-      (bind-address socket (ensure-address local-filename :family :local)))
-    (when remote-filename
-      (connect socket (ensure-address remote-filename :family :local)))))
+  (declare (ignore family))
+  (with-close-on-error (socket (create-socket :local :datagram :active ef))
+    (%%init-local-datagram-socket socket local-filename remote-filename)))
 
 (defun %make-local-datagram-socket (args family ef)
   (destructuring-bind (&key local-filename remote-filename)
@@ -310,13 +361,14 @@ for the new socket can also be specified using `INPUT-BUFFER-SIZE' and `OUTPUT-B
 If `FD' is an invalid socket descriptor and `ERRORP' is not NIL a condition subtype of POSIX-ERROR
 is signaled, otherwise two values are returned: NIL and the specific condition object."
   (flet ((%make-socket-stream ()
-           (let ((family (switch ((get-address-family fd) :test #'=)
-                           (af-inet :ipv4)
-                           (af-inet6 :ipv6)
-                           (af-local :local))))
-             (create-socket family :stream :active external-format :fd fd
-                            :input-buffer-size input-buffer-size
-                            :output-buffer-size output-buffer-size))))
+           (macrolet ((%create-socket (family)
+                        `(create-socket ,family :stream :active external-format :fd fd
+                                        :input-buffer-size input-buffer-size
+                                        :output-buffer-size output-buffer-size)))
+             (switch ((get-address-family fd) :test #'=)
+               (af-inet  (%create-socket :ipv4))
+               (af-inet6 (%create-socket :ipv6))
+               (af-local (%create-socket :local))))))
     (if errorp
         (%make-socket-stream)
         (ignore-some-conditions (posix-error)
