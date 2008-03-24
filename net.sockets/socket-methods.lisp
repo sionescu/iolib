@@ -75,8 +75,10 @@
   (setf (slot-value socket 'external-format)
         (babel:ensure-external-format external-format)))
 
-(defmethod initialize-instance :after ((socket passive-socket)
-                                       &key external-format)
+(defmethod initialize-instance :after ((socket passive-socket) &key external-format
+                                       input-buffer-size output-buffer-size)
+  ;; Makes CREATE-SOCKET simpler
+  (declare (ignore input-buffer-size output-buffer-size))
   (setf (external-format-of socket) external-format))
 
 (defmethod socket-type ((socket stream-socket))
