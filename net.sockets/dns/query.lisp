@@ -293,9 +293,9 @@
         ((start (protocol)
            ;; if the query size fits into a datagram(512 bytes max) do a
            ;; UDP query, otherwise use TCP
-           (if (eq :udp protocol)
-               (query/udp)
-               (query/tcp)))
+           (ecase protocol
+             (:udp (query/udp))
+             (:tcp (query/tcp))))
          (query/udp ()
            ;; do a UDP query; in case of a socket error, try again
            (handler-case
