@@ -151,8 +151,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 
 ;;; Local Stream Active Socket creation
 
-(defun %%init-local-stream-active-socket (socket local-filename remote-filename
-                                          input-buffer-size output-buffer-size)
+(defun %%init-local-stream-active-socket (socket local-filename remote-filename)
   (when local-filename
     (bind-address socket (ensure-address local-filename :family :local)))
   (when remote-filename
@@ -165,8 +164,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
   (with-close-on-error (socket (create-socket :local :stream :active ef
                                               :input-buffer-size input-buffer-size
                                               :output-buffer-size output-buffer-size))
-    (%%init-local-stream-active-socket socket local-filename remote-filename
-                                       input-buffer-size output-buffer-size)))
+    (%%init-local-stream-active-socket socket local-filename remote-filename)))
 
 (defun %make-local-stream-active-socket (args family ef)
   (destructuring-bind (&key local-filename remote-filename
