@@ -222,10 +222,9 @@
 (defconstant +dns-port+ 53)
 
 (defun dns-query/udp (buffer length nameserver timeout)
-  (with-open-stream
-      (socket (make-socket :connect :active :type :datagram
-                           :remote-host nameserver :remote-port +dns-port+
-                           :ipv6 (ipv6-address-p nameserver)))
+  (with-open-socket
+      (socket :type :datagram :ipv6 (ipv6-address-p nameserver)
+              :remote-host nameserver :remote-port +dns-port+)
     (send-to socket buffer :end length)
     (iomux:wait-until-fd-ready (fd-of socket) :read timeout t)
     (multiple-value-bind (buf len)
