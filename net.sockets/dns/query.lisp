@@ -269,9 +269,9 @@
              (let ((rem (- tend (osicat-sys:get-monotonic-time))))
                (if (not (minusp rem)) rem
                    (error 'socket-connection-timeout-error)))))
-      (with-open-stream
-          (socket (make-socket :connect :active :type :stream
-                               :ipv6 (ipv6-address-p nameserver)))
+      (with-open-socket
+          (socket :connect :active :type :stream
+                  :ipv6 (ipv6-address-p nameserver))
         (setf (fd-non-blocking socket) t)
         (handler-case
             (connect socket nameserver :port +dns-port+)
