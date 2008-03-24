@@ -23,18 +23,18 @@
 
 (in-package :net.sockets)
 
-(defun create-socket (family type connect external-format &key fd ibs obs)
+(defun create-socket (family type connect external-format &key fd input-buffer-size output-buffer-size)
   (cond
     ;; this is necessary because passive sockets don't inherit from
     ;; stream classes, therefore keyword args :INPUT-BUFFER-SIZE and
     ;; :OUTPUT-BUFFER-SIZE are invalid for them
-    ((or ibs obs)
+    ((or input-buffer-size output-buffer-size)
      (assert (eq connect :active))
      (make-instance (select-socket-class family type connect :default)
                     :family family :file-descriptor fd
                     :external-format external-format
-                    :input-buffer-size ibs
-                    :output-buffer-size obs))
+                    :input-buffer-size input-buffer-size
+                    :output-buffer-size output-buffer-size))
     (t (make-instance (select-socket-class family type connect :default)
                       :family family :file-descriptor fd
                       :external-format external-format))))
@@ -63,8 +63,8 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
   (let ((local-port  (ensure-numerical-service local-port))
         (remote-port (ensure-numerical-service remote-port)))
     (with-close-on-error (socket (create-socket family :stream :active ef
-                                                :ibs input-buffer-size
-                                                :obs output-buffer-size))
+                                                :input-buffer-size input-buffer-size
+                                                :output-buffer-size output-buffer-size))
       (when keepalive (setf (socket-option socket :keep-alive) t))
       (when nodelay (setf (socket-option socket :tcp-nodelay) t))
       (when local-host
@@ -134,8 +134,8 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 (defun %%make-local-stream-active-socket (family ef local-filename remote-filename
                                           input-buffer-size output-buffer-size)
   (with-close-on-error (socket (create-socket family :stream :active ef
-                                              :ibs input-buffer-size
-                                              :obs output-buffer-size))
+                                              :input-buffer-size input-buffer-size
+                                              :output-buffer-size output-buffer-size))
     (when local-filename
       (bind-address socket (ensure-address local-filename :family :local)))
     (when remote-filename
