@@ -79,7 +79,7 @@
                            `(or ,earg ,(cadr targ))
                            earg))
                    type-args expanded-args)))
-    (if-let ((data (gethash option-name *set-socket-options*)))
+    (if-let (data (gethash option-name *set-socket-options*))
             (destructuring-bind (type level optname) data
               (let ((glist (make-gensym-list (length (socktype-args type)))))
                 (values
