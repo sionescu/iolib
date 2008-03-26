@@ -29,7 +29,7 @@
 
 (defun start-reverser-server (&key (address +loopback+) (port 4242) (worker-count 4)
                               (external-format *external-format*))
-  (bind ((acceptor (make-connection-acceptor 'reverser-connection-handler
+  (bind ((acceptor (make-connection-acceptor "reverser server" 'reverser-connection-handler
                                              :worker-count worker-count
                                              :external-format external-format)))
     (finishes
@@ -45,30 +45,44 @@
 
 (defun/cc reverser-connection-handler (connection)
   (loop
-     for line = (read-line/cc connection)
-     until (zerop (length line)) do
-     (progn
-       (write-string (nreverse line) connection)
-       (terpri connection)
-       (force-output connection))))
+     :for line = (read-line/cc connection nil :eof)
+     :until (or (eq line :eof)
+                (zerop (length line)))
+     :do (progn
+           (format *debug-io* "SERVER: read line ~S~%" line)
+           (write-string/cc (nreverse line) connection)
+           (terpri connection)
+           (finish-output connection)
+           (format *debug-io* "SERVER: written, looping~%" line))))
 
-#+nil
-(defun start-reverser-client (&key (address +loopback+) (port 4242) (worker-count 4)
+(defun start-reverser-client (&key (address +loopback+) (port 4242) (worker-count 0)
                               (external-format *external-format*))
-  (bind ((multiplexer (make-instance 'connection-multiplexer)))
-    )
+  (if (zerop worker-count)
+      (with-open-socket (stream :remote-host address :remote-port port :external-format external-format)
+        (loop
+           (format *debug-io* "CLIENT: writing line~%")
+           (write-line "asdf" stream)
+           (finish-output stream)
+           (format *debug-io* "CLIENT: reading answer~%")
+           (format *debug-io* "CLIENT: at ~A, answer is ~S~%" (get-universal-time) (read-line stream))
+           (sleep 1)))
+      (error "TODO not yet")))
 
-  (bind ((acceptor (make-connection-acceptor 'reversering-connection-handler
-                                             :worker-count worker-count
-                                             :external-format '(:utf-8 :eol-style :crlf))))
-    (finishes
-      (unwind-protect
-           (progn
-             (startup-acceptor acceptor :address address :port port)
-             ;;(break "Acceptor running, continue this thread to shut it down")
-             )
-        (shutdown-acceptor acceptor))))
-  (values))
+#+nil(defun start-reverser-client (&key (address +loopback+) (port 4242) ;; (worker-count 4)
+                              (external-format *external-format*))
+  (bind ((multiplexer (make-connection-multiplexer "reverser client"))
+         (connection (make-client-connection address :port port
+                                             :external-format external-format
+                                             :wait-reason :write)))
+    (setf (continuation-of connection) (with-call/cc
+                                         (let/cc k
+                                           k)
+                                         (loop
+                                            (write-line/cc "asdf" connection)
+                                            (finish-output connection)
+                                            (format *debug-io* "~A: ~S" (get-universal-time) (read-line/cc connection)))))
+    (startup-connection-multiplexer multiplexer)
+    (register-connection multiplexer connection)))
 
 #+nil
 (defun reverser-client-worker-loop (address port external-format)

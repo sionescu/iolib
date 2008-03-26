@@ -22,7 +22,6 @@
 (in-package :common-lisp-user)
 
 (defpackage :net.sockets.cc
-  (:nicknames #:sockets/cc)
   (:use #:common-lisp :cl-cont :alexandria :io.streams :metabang-bind
         :net.sockets :trivial-gray-streams :io.multiplex)
   (:export
@@ -30,16 +29,28 @@
    #:shadowing-import-sockets/cc-symbols
 
    #:connection
+   #:continuation-of
+   #:make-connection
+   #:make-client-connection
    #:connection-acceptor
-   #:connection-multiplexer
    #:make-connection-acceptor
 
    #:startup-acceptor
    #:shutdown-acceptor
 
+   #:connection-multiplexer
+   #:make-connection-multiplexer
+   #:register-connection
+   #:unregister-connection
+   #:startup-connection-multiplexer
+   #:shutdown-connection-multiplexer
+
    ;; primitives that can be used in cc code and transparently putting the connection on sleep
    #:read-char/cc
+   #:write-char/cc
    #:read-line/cc
+   #:write-line/cc
+   #:write-string/cc
    #:wait-until-fd-ready/cc
    )
 
@@ -49,6 +60,7 @@
    #:with-socklen
    #:size-of-sockaddr-storage
    #:%accept
+   #:%sendto
    )
 
   (:shadowing-import-from :io.multiplex
@@ -59,12 +71,14 @@
    ))
 
 #|
+
 (defpackage :net.sockets.cc.shadows
   (:nicknames #:sockets/cc)
   (:use #:common-lisp :cl-cont :alexandria :io.streams :metabang-bind :net.sockets :net.sockets.cc)
 
   (:shadow
-   #:read-char/cc
+   #:read-char
+   #:read-line
 
    #:receive-from
    #:send-to
@@ -80,8 +94,6 @@
    #:write-line
    #:write-sequence
 
-   #:receive-from
-   #:send-to
    ))
 
 (in-package :net.sockets.cc)
@@ -91,4 +103,5 @@
     (do-external-symbols (symbol :net.sockets.cc.shadows)
       (push symbol exported-symbols))
     (shadowing-import exported-symbols into-package)))
+
 |#

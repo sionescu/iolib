@@ -22,33 +22,47 @@
 (in-package :net.sockets.cc)
 
 (defclass connection-multiplexer ()
-  ((lock
+  ((name
+    :initform "unnamed connection-multiplexer"
+    :initarg :name
+    :accessor name-of)
+   (lock
     :initform (bordeaux-threads:make-recursive-lock "connection-multiplexer lock")
     :accessor lock-of)
    (fd->connection
     :initform (make-array 128 :adjustable t :initial-element nil)
     :accessor fd->connection-of)
    (fd-multiplexer
-    :accessor fd-multiplexer-of)))
-
-(defgeneric register-connection (multiplexer connection))
-(defgeneric unregister-connection (multiplexer connection))
-(defgeneric connection-registered-p (multiplexer connection))
-(defgeneric close-connection-multiplexer (multiplexer))
-
-(defclass connection-acceptor ()
-  (;; slots for the runtime state
-   (connection-multiplexer
-    :accessor connection-multiplexer-of)
-   (lock
-    :initform (bordeaux-threads:make-lock "acceptor lock")
-    :accessor lock-of)
+    :initform nil
+    :accessor fd-multiplexer-of)
    (shutdown-requested
     :initform nil
     :accessor shutdown-requested-p)
    (workers
     :initform (make-array 4 :adjustable t :fill-pointer 0)
     :accessor workers-of)
+   ;; configuration slots
+   (worker-count
+    :initform 4
+    :initarg :worker-count
+    :accessor worker-count-of)
+   (external-format
+    :initform :default
+    :initarg :external-format
+    :accessor external-format-of)
+   (fd-multiplexer-type
+    :initarg :fd-multiplexer-type
+    :accessor fd-multiplexer-type-of)))
+
+(defgeneric startup-connection-multiplexer (multiplexer &key &allow-other-keys))
+(defgeneric shutdown-connection-multiplexer (multiplexer &key force))
+
+(defgeneric register-connection (multiplexer connection))
+(defgeneric unregister-connection (multiplexer connection))
+(defgeneric connection-registered-p (multiplexer connection))
+
+(defclass connection-acceptor (connection-multiplexer)
+  (;; slots for the runtime state
    (accepting-connection
     :initform nil
     :initarg :accepting-connection
@@ -57,15 +71,7 @@
    (connection-handler
     :initarg :connection-handler
     :accessor connection-handler-of
-    :type (or symbol function))
-   (worker-count
-    :initform 4
-    :initarg :worker-count
-    :accessor worker-count-of)
-   (external-format
-    :initform :default
-    :initarg :external-format
-    :reader external-format-of)))
+    :type (or symbol function))))
 
 (defclass connection-with-continuation-mixin ()
   ((continuation
@@ -81,6 +87,8 @@
                       socket-stream-internet-active)
   ())
 
+;; TODO why does connection inherit from socket-stream-internet-active and
+;; accepting-connection only contain a socket slot?
 (defclass accepting-connection (connection-with-continuation-mixin)
   ((socket
     :initarg :socket

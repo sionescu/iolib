@@ -24,20 +24,21 @@
 (defun/cc read-char/cc (connection &optional eof-error-p eof-value recursive-p)
   (loop
      (bind ((result (read-char-no-hang connection eof-error-p eof-value recursive-p)))
-       (if result
+       (if (or result
+               (and eof-value
+                    (eq result eof-value)))
            (return-from read-char/cc result)
            (let/cc k
              (values k :read))))))
 
-(defun/cc read-line/cc (connection)
-  ;; TODO this is really naiive
+(defun/cc read-line/cc (connection &optional eof-error-p eof-value recursive-p)
+  ;; TODO lame, but works for now
   (bind ((length 80)
          (result (make-array length :element-type 'character :adjustable t :fill-pointer 0)))
     (loop
-       (bind ((ch (read-char/cc connection nil :eof)))
-         (assert ch)
-         (if (eq ch :eof)
-             (return (values result t))
+       (bind ((ch (read-char/cc connection eof-error-p eof-value recursive-p)))
+         (if (eq ch eof-value)
+             (return (values eof-value t))
              (progn
                (when (char= ch #\Newline)
                  (return (values result nil)))
@@ -45,6 +46,42 @@
 
 (defun/cc wait-until-fd-ready/cc (file-descriptor event-type)
   (loop
-     until (fd-ready-p file-descriptor event-type) do
-     (let/cc k
-       (values k event-type))))
+     :until (fd-ready-p file-descriptor event-type)
+     :do (let/cc k
+           (values k event-type))))
+
+(defun/cc write-char/cc (character connection)
+  ;; TODO lame, but works for now
+  (write-string/cc (make-string 1 :initial-element character) connection)
+  character)
+
+(defun/cc write-string/cc (string connection)
+  (bind ((buffer (babel:string-to-octets string :encoding (external-format-of connection)))
+         (bytes-to-write (length buffer))
+         (start 0))
+    (loop
+       while (> bytes-to-write 0) do
+       (bind ((written-count (%write-ub8-vector-without-blocking
+                              connection buffer start bytes-to-write)))
+         (if (zerop written-count)
+             (let/cc k
+               (values k :write))
+             (progn
+               (decf bytes-to-write written-count)
+               (incf start written-count))))))
+  string)
+
+(defun %write-ub8-vector-without-blocking (connection buffer start count)
+  (handler-case
+      (progn
+        ;; TODO fix error handling in io.streams::%write-simple-array-ub8
+        (io.streams::%write-simple-array-ub8 connection buffer start count)
+        count)
+    (nix:ewouldblock ()
+      0)))
+
+(defun/cc write-line/cc (string connection)
+  (write-string/cc string connection)
+  ;; TODO handle different line endings through babel
+  (write-char/cc #\Newline connection)
+  string)
