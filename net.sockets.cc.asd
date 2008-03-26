@@ -33,6 +33,7 @@
   ((:file "package")
    (:file "duplicates")
    (:file "classes")
+   (:file "connection")
    (:file "cc-primitives")
    (:file "multiplexer")
    (:file "acceptor")))
