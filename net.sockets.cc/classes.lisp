@@ -83,7 +83,24 @@
     :initarg :wait-reason
     :type (member :read :write))))
 
+(defclass bandwidth-information-mixin ()
+  ((created-at
+    :initform (get-internal-real-time)
+    :accessor created-at-of)
+   (total-bytes-written
+    :initform 0
+    :accessor total-bytes-written-of)
+   (total-bytes-read
+    :initform 0
+    :accessor total-bytes-read-of)))
+
+(defgeneric notify-bytes-written (connection count))
+(defgeneric average-writing-speed-of (connection))
+(defgeneric notify-bytes-read (connection count))
+(defgeneric average-reading-speed-of (connection))
+
 (defclass connection (connection-with-continuation-mixin
+                      bandwidth-information-mixin
                       socket-stream-internet-active)
   ())
 

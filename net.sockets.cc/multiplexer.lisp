@@ -37,28 +37,6 @@
                  :name name
                  :external-format external-format))
 
-(defun make-connection (fd &key external-format input-buffer-size
-                        output-buffer-size continuation wait-reason)
-  (bind ((result (make-instance 'connection
-                                :file-descriptor fd
-                                :continuation continuation
-                                :wait-reason wait-reason
-                                :external-format external-format
-                                :input-buffer-size input-buffer-size
-                                :output-buffer-size output-buffer-size)))
-    (assert (fd-of result))
-    result))
-
-(defun make-client-connection (address &key (port 4242) (external-format :default)
-                               continuation wait-reason)
-  (bind ((socket (make-socket :connect :active :external-format external-format)))
-    (sockets:connect socket address :port port)
-    (bind ((connection (make-connection (fd-of socket)
-                                        :external-format external-format
-                                        :continuation continuation
-                                        :wait-reason wait-reason)))
-      connection)))
-
 (defmethod startup-connection-multiplexer ((self connection-multiplexer) &key)
   (with-lock-held-on-connection-multiplexer self
     (bind ((fd-multiplexer (fd-multiplexer-of self)))
