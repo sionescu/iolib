@@ -53,8 +53,8 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 
 (defmacro %create-internet-socket (family &rest args)
   `(case ,family
-     ,@(loop :for f :in '(:ipv4 :ipv6) :collect
-          `(,f (create-socket ,f ,@args)))))
+     (:ipv4 (create-socket :ipv4 ,@args))
+     (:ipv6 (create-socket :ipv6 ,@args))))
 
 (defmacro with-guard-again-non-list-args-and-destructuring-bind-errors
     (form args &body body)
