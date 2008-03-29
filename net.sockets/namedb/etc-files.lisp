@@ -2,7 +2,7 @@
 ;;;
 ;;; etc-files.lisp --- Common parsing routines for /etc namedb files.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -25,8 +25,8 @@
 
 (defun space-char-p (char)
   (declare (type character char))
-  (or (char-equal char #\Space)
-      (char-equal char #\Tab)))
+  (or (char= char #\Space)
+      (char= char #\Tab)))
 
 (defun split-etc-tokens (line)
   (declare (type string line))
