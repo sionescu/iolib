@@ -159,6 +159,16 @@
      (bzero ,var size-of-sockaddr-storage)
      ,@body))
 
+(defmacro with-socklen ((var value) &body body)
+  `(with-foreign-object (,var 'socklen)
+     (setf (mem-ref ,var 'socklen) ,value)
+     ,@body))
+
+(defmacro with-sockaddr-storage-and-socklen ((ss-var size-var) &body body)
+  `(with-sockaddr-storage (,ss-var)
+     (with-socklen (,size-var size-of-sockaddr-storage)
+       ,@body)))
+
 ;;;; Misc
 
 (defmacro check-bounds (sequence start end)
@@ -197,11 +207,6 @@
 
 (defun lisp->c-bool (val)
   (if val 1 0))
-
-(defmacro with-socklen ((var value) &body body)
-  `(with-foreign-object (,var 'socklen)
-     (setf (mem-ref ,var 'socklen) ,value)
-     ,@body))
 
 (defun memq (value list)
   (member value list :test #'eq))

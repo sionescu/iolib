@@ -178,21 +178,19 @@
 
 (defmethod socket-open-p ((socket socket))
   (when (fd-of socket)
-    (with-sockaddr-storage (ss)
-      (with-socklen (size size-of-sockaddr-storage)
-        (handler-case
-            (%getsockname (fd-of socket) ss size)
-          (nix:ebadf () nil)
-          (nix:econnreset () nil)
-          (:no-error (_) (declare (ignore _)) t))))))
+    (with-sockaddr-storage-and-socklen (ss size)
+      (handler-case
+          (%getsockname (fd-of socket) ss size)
+        (nix:ebadf () nil)
+        (nix:econnreset () nil)
+        (:no-error (_) (declare (ignore _)) t)))))
 
 ;;;; GETSOCKNAME
 
 (defun %local-name (socket)
-  (with-sockaddr-storage (ss)
-    (with-socklen (size size-of-sockaddr-storage)
-      (%getsockname (fd-of socket) ss size)
-      (sockaddr-storage->sockaddr ss))))
+  (with-sockaddr-storage-and-socklen (ss size)
+    (%getsockname (fd-of socket) ss size)
+    (sockaddr-storage->sockaddr ss)))
 
 (defmethod local-name ((socket socket))
   (%local-name socket))
@@ -209,10 +207,9 @@
 ;;;; GETPEERNAME
 
 (defun %remote-name (socket)
-  (with-sockaddr-storage (ss)
-    (with-socklen (size size-of-sockaddr-storage)
-      (%getpeername (fd-of socket) ss size)
-      (sockaddr-storage->sockaddr ss))))
+  (with-sockaddr-storage-and-socklen (ss size)
+    (%getpeername (fd-of socket) ss size)
+    (sockaddr-storage->sockaddr ss)))
 
 (defmethod remote-name ((socket socket))
   (%remote-name socket))
@@ -291,11 +288,10 @@
                                                (external-format-of socket))
                           :input-buffer-size input-buffer-size
                           :output-buffer-size output-buffer-size)))
-    (with-sockaddr-storage (ss)
-      (with-socklen (size size-of-sockaddr-storage)
-        (handler-case
-            (make-client-socket (%accept (fd-of socket) ss size))
-          (nix:ewouldblock ()))))))
+    (with-sockaddr-storage-and-socklen (ss size)
+      (handler-case
+          (make-client-socket (%accept (fd-of socket) ss size))
+        (nix:ewouldblock ())))))
 
 ;;;; CONNECT
 
@@ -337,12 +333,11 @@
 
 (defmethod socket-connected-p ((socket socket))
   (when (fd-of socket)
-    (with-sockaddr-storage (ss)
-      (with-socklen (size size-of-sockaddr-storage)
-        (handler-case
-            (%getpeername (fd-of socket) ss size)
-          (socket-not-connected-error () nil)
-          (:no-error (_) (declare (ignore _)) t))))))
+    (with-sockaddr-storage-and-socklen (ss size)
+      (handler-case
+          (%getpeername (fd-of socket) ss size)
+        (socket-not-connected-error () nil)
+        (:no-error (_) (declare (ignore _)) t)))))
 
 ;;;; SHUTDOWN
 
@@ -497,44 +492,42 @@
     (ub8-sarray (values buff start (- end start)))
     (string     (allocate-ub8-buffer-for-string (- end start) ef))))
 
-(defun %%receive-from (fd ss buffer start end flags ef)
+(defun %%receive-from (fd ss size buffer start end flags ef)
   (check-bounds buffer start end)
   (multiple-value-bind (buff start-offset bufflen)
       (%normalize-receive-buffer buffer start end ef)
-    (with-socklen (size size-of-sockaddr-storage)
-      (bzero ss size-of-sockaddr-storage)
-      (with-pointer-to-vector-data (buff-sap buff)
-        (incf-pointer buff-sap start-offset)
-        (loop
-           (restart-case
-               (let ((nbytes (%recvfrom fd buff-sap bufflen flags ss size)))
-                 (return-from %%receive-from
-                   (if (stringp buffer)
-                       ;; FIXME: convert the octets directly into the buffer
-                       (let ((str (babel:octets-to-string buff :start 0 :end nbytes
-                                                          :encoding (babel:external-format-encoding ef)
-                                                          :errorp nil)))
-                         (replace buffer str :start1 start :end1 end)
-                         (- end start))
-                       nbytes)))
-             (ignore ()
-               :report "Ignore this socket condition"
-               (return-from %%receive-from 0))
-             (continue (&optional (wait 0))
-               :report "Try to receive data again"
-               (when (plusp wait) (sleep wait)))))))))
+    (with-pointer-to-vector-data (buff-sap buff)
+      (incf-pointer buff-sap start-offset)
+      (loop
+         (restart-case
+             (let ((nbytes (%recvfrom fd buff-sap bufflen flags ss size)))
+               (return-from %%receive-from
+                 (if (stringp buffer)
+                     ;; FIXME: convert the octets directly into the buffer
+                     (let ((str (babel:octets-to-string buff :start 0 :end nbytes
+                                                        :encoding (babel:external-format-encoding ef)
+                                                        :errorp nil)))
+                       (replace buffer str :start1 start :end1 end)
+                       (- end start))
+                     nbytes)))
+           (ignore ()
+             :report "Ignore this socket condition"
+             (return-from %%receive-from 0))
+           (continue (&optional (wait 0))
+             :report "Try to receive data again"
+             (when (plusp wait) (sleep wait))))))))
 
 (declaim (inline %receive-from-stream-socket))
 (defun %receive-from-stream-socket (socket buffer start end flags)
-  (with-sockaddr-storage (ss)
-    (let ((nelements (%%receive-from (fd-of socket) ss buffer start end
+  (with-sockaddr-storage-and-socklen (ss size)
+    (let ((nelements (%%receive-from (fd-of socket) ss size buffer start end
                                      flags (external-format-of socket))))
       (values buffer nelements))))
 
 (declaim (inline %receive-from-datagram-socket))
 (defun %receive-from-datagram-socket (socket buffer start end flags)
-  (with-sockaddr-storage (ss)
-    (let ((nelements (%%receive-from (fd-of socket) ss buffer start end
+  (with-sockaddr-storage-and-socklen (ss size)
+    (let ((nelements (%%receive-from (fd-of socket) ss size buffer start end
                                      flags (external-format-of socket))))
       (multiple-value-call #'values buffer nelements
                            (sockaddr-storage->sockaddr ss)))))

@@ -353,10 +353,9 @@ for the new socket can also be specified using `INPUT-BUFFER-SIZE' and `OUTPUT-B
 If `FD' is an invalid socket descriptor and `ERRORP' is not NIL a condition subtype of POSIX-ERROR
 is signaled, otherwise two values are returned: NIL and the specific condition object."
   (labels ((get-address-family (fd)
-             (with-sockaddr-storage (ss)
-               (with-socklen (size size-of-sockaddr-storage)
-                 (%getsockname fd ss size)
-                 (foreign-slot-value ss 'sockaddr-storage 'family))))
+             (with-sockaddr-storage-and-socklen (ss size)
+               (%getsockname fd ss size)
+               (foreign-slot-value ss 'sockaddr-storage 'family)))
            (%make-socket-stream ()
              (macrolet ((%create-socket (family)
                           `(create-socket ,family :stream :active external-format :fd fd
