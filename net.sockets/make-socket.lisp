@@ -347,14 +347,12 @@ is automatically closed upon exit."
 
 ;;; FIXME: must come up with a way to find out
 ;;; whether a socket is active or passive
-(defun make-socket-from-fd (fd &key (connect :active) (external-format :default) (errorp t)
+(defun make-socket-from-fd (fd &key (connect :active) (external-format :default)
                             input-buffer-size output-buffer-size)
   "Creates an socket instance of the appropriate subclass of SOCKET using `FD'.
 The connection type of the socket must be specified(:ACTIVE or :PASSIVE).
 The address family and type of the socket is automatically discovered using OS functions. Buffer sizes
-for the new socket can also be specified using `INPUT-BUFFER-SIZE' and `OUTPUT-BUFFER-SIZE'.
-If `FD' is an invalid socket descriptor and `ERRORP' is not NIL a condition subtype of POSIX-ERROR
-is signaled, otherwise two values are returned: NIL and the specific condition object."
+for the new socket can also be specified using `INPUT-BUFFER-SIZE' and `OUTPUT-BUFFER-SIZE'."
   (labels ((%get-address-family (fd)
              (with-sockaddr-storage-and-socklen (ss size)
                (%getsockname fd ss size)
@@ -366,17 +364,12 @@ is signaled, otherwise two values are returned: NIL and the specific condition o
            (%get-type (fd)
              (eswitch ((get-socket-option-int fd sol-socket so-type) :test #'=)
                (sock-stream :stream)
-               (sock-dgram  :datagram)))
-           (%make-socket-from-fd ()
-             (create-socket (%get-address-family fd)
-                            (%get-type fd)
-                            connect external-format :fd fd
-                            :input-buffer-size input-buffer-size
-                            :output-buffer-size output-buffer-size)))
-    (if errorp
-        (%make-socket-from-fd)
-        (ignore-some-conditions (posix-error)
-          (%make-socket-from-fd)))))
+               (sock-dgram  :datagram))))
+    (create-socket (%get-address-family fd)
+                   (%get-type fd)
+                   connect external-format :fd fd
+                   :input-buffer-size input-buffer-size
+                   :output-buffer-size output-buffer-size)))
 
 ;;; MAKE-SOCKET-PAIR
 
