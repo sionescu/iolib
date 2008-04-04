@@ -371,8 +371,7 @@
    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                         :type :datagram :family :ipv4)
      (send-to s "here is some text")
-     (multiple-value-bind (data nbytes)
-         (receive-from s :size 200)
+     (let ((nbytes (nth-value 1 (receive-from s :size 200))))
        (plusp nbytes)))))
 
 (test simple-udp-client.2
@@ -381,8 +380,7 @@
      (send-to s "here is some more text"
               :remote-host *echo-address*
               :remote-port *echo-port*)
-     (multiple-value-bind (data nbytes)
-         (receive-from s :size 200)
+     (let ((nbytes (nth-value 1 (receive-from s :size 200))))
        (plusp nbytes)))))
 
 (test simple-local-sockets
