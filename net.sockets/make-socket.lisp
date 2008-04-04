@@ -343,29 +343,37 @@ ACCEPT-CONNECTION and BODY is executed as implicit PROGN.  The socket
 is automatically closed upon exit."
   `(with-open-stream (,var (accept-connection ,passive-socket ,@args)) ,@body))
 
-;;; MAKE-SOCKET-STREAM
+;;; MAKE-SOCKET-FROM-FD
 
-(defun make-socket-stream (fd &key (external-format :default) (errorp t)
-                           input-buffer-size output-buffer-size)
-  "Creates an active stream socket instance of the appropriate subclass of SOCKET using `FD'.
-The address family of the sockets is automatically discovered using OS functions. Buffer sizes
+;;; FIXME: must come up with a way to find out
+;;; whether a socket is active or passive
+(defun make-socket-from-fd (fd &key (connect :active) (external-format :default) (errorp t)
+                            input-buffer-size output-buffer-size)
+  "Creates an socket instance of the appropriate subclass of SOCKET using `FD'.
+The connection type of the socket must be specified(:ACTIVE or :PASSIVE).
+The address family and type of the socket is automatically discovered using OS functions. Buffer sizes
 for the new socket can also be specified using `INPUT-BUFFER-SIZE' and `OUTPUT-BUFFER-SIZE'.
 If `FD' is an invalid socket descriptor and `ERRORP' is not NIL a condition subtype of POSIX-ERROR
 is signaled, otherwise two values are returned: NIL and the specific condition object."
-  (labels ((get-address-family (fd)
+  (labels ((%get-address-family (fd)
              (with-sockaddr-storage-and-socklen (ss size)
                (%getsockname fd ss size)
-               (foreign-slot-value ss 'sockaddr-storage 'family)))
-           (%make-socket-stream ()
-             (macrolet ((%create-socket (family)
-                          `(create-socket ,family :stream :active external-format :fd fd
-                                          :input-buffer-size input-buffer-size
-                                          :output-buffer-size output-buffer-size)))
-               (switch ((get-address-family fd) :test #'=)
-                 (af-inet  (%create-socket :ipv4))
-                 (af-inet6 (%create-socket :ipv6))
-                 (af-local (%create-socket :local))))))
+               (foreign-slot-value ss 'sockaddr-storage 'family)
+               (eswitch ((foreign-slot-value ss 'sockaddr-storage 'family) :test #'=)
+                 (af-inet  :ipv4)
+                 (af-inet6 :ipv6)
+                 (af-local :local))))
+           (%get-type (fd)
+             (eswitch ((get-socket-option-int fd sol-socket so-type) :test #'=)
+               (sock-stream :stream)
+               (sock-dgram  :datagram)))
+           (%make-socket-from-fd ()
+             (create-socket (%get-address-family fd)
+                            (%get-type fd)
+                            connect external-format :fd fd
+                            :input-buffer-size input-buffer-size
+                            :output-buffer-size output-buffer-size)))
     (if errorp
-        (%make-socket-stream)
+        (%make-socket-from-fd)
         (ignore-some-conditions (posix-error)
-          (%make-socket-stream)))))
+          (%make-socket-from-fd)))))

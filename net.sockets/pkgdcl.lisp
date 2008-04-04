@@ -198,7 +198,7 @@
    #:local-name
    #:local-port
    #:make-socket
-   #:make-socket-stream
+   #:make-socket-from-fd
    #:receive-from
    #:remote-filename
    #:remote-host
