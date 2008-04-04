@@ -199,6 +199,7 @@
    #:local-port
    #:make-socket
    #:make-socket-from-fd
+   #:make-socket-pair
    #:receive-from
    #:remote-filename
    #:remote-host

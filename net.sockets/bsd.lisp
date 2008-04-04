@@ -137,14 +137,12 @@
 (define-socket-call ("sockatmark" %sockatmark) :int
   (socket fd))
 
-#-(and) ; unused
 (define-socket-call ("socketpair" %%socketpair) :int
   (domain   :int)  ; af-*
   (type     :int)  ; sock-*
-  (protocol :int)
+  (protocol :int)  ; usually 0 - "default protocol", whatever that is
   (filedes  :pointer))
 
-#-(and) ; unused
 (defun %socketpair (domain type protocol)
   (with-foreign-object (filedes :int 2)
     (%%socketpair domain type protocol filedes)

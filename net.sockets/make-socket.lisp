@@ -377,3 +377,20 @@ is signaled, otherwise two values are returned: NIL and the specific condition o
         (%make-socket-from-fd)
         (ignore-some-conditions (posix-error)
           (%make-socket-from-fd)))))
+
+;;; MAKE-SOCKET-PAIR
+
+(defun make-socket-pair (&key (type :stream) (protocol :default) (external-format :default)
+                         input-buffer-size output-buffer-size)
+  "Creates an pair of sockets connected to each other.
+The socket type can be either :STREAM or DATAGRAM. Currently OSes can only create :LOCAL sockets this way.
+Buffer sizes for the new sockets can also be specified using `INPUT-BUFFER-SIZE' and `OUTPUT-BUFFER-SIZE'."
+  (flet ((%make-socket-pair (fd)
+           (make-socket-from-fd fd :external-format external-format
+                                :input-buffer-size input-buffer-size
+                                :output-buffer-size output-buffer-size)))
+    (multiple-value-bind (fd1 fd2)
+        (multiple-value-call #'%socketpair
+          (translate-make-socket-keywords-to-constants :local type protocol))
+      (values (%make-socket-pair fd1)
+              (%make-socket-pair fd2)))))
