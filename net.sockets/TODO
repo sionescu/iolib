@@ -8,9 +8,7 @@
 - add/fix socket options
 
 * Low priority
-- add MAKE-SOCKET-PAIR
-- grovel CMSG_* macros
-- make it possible to send descriptors/credentials over unix sockets
+- make it possible to send credentials over unix sockets
 - unlink socket file when closing a passive local socket
 
 * Very low priority
