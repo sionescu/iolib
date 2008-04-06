@@ -37,6 +37,7 @@
   :components
   ((:file "pkgdcl")
    (cffi-grovel:grovel-file "grovel" :depends-on ("pkgdcl"))
+   (cffi-grovel:wrapper-file "wrappers" :depends-on ("pkgdcl"))
    (:file "conditions" :depends-on ("pkgdcl" "grovel"))
    (:file "bsd" :depends-on ("pkgdcl" "grovel" "conditions"))
    (:file "common" :depends-on ("pkgdcl" "grovel" "bsd"))
@@ -69,8 +70,8 @@
                        "address" "address-predicates" "base-sockets" "socket-options"
                        "protocols" "services"))
    (:file "make-socket"
-          :depends-on ("pkgdcl" "common" "config" "address" "address-predicates"
-                       "socket-options" "services" "socket-methods"))
+          :depends-on ("pkgdcl" "grovel" "wrappers" "common" "config" "address"
+                       "address-predicates" "socket-options" "services" "socket-methods"))
 
    (:file "dns-common" :pathname #p"dns/common"
           :depends-on ("pkgdcl" "common"))

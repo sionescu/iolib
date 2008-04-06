@@ -200,11 +200,13 @@
    #:make-socket
    #:make-socket-from-fd
    #:make-socket-pair
+   #:receive-file-descriptor
    #:receive-from
    #:remote-filename
    #:remote-host
    #:remote-name
    #:remote-port
+   #:send-file-descriptor
    #:send-to
    #:shutdown
    #:socket-connected-p

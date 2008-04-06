@@ -94,6 +94,14 @@ Works only on DATAGRAM sockets."))
 (defclass local-socket (socket) ()
   (:default-initargs :family :local))
 
+(defgeneric send-file-descriptor (socket file-descriptor)
+  (:documentation "Send `FILE-DESCRIPTOR' through `SOCKET'.
+The receiving process must use RECEIVE-FILE-DESCRIPTOR to receive the
+file descriptor in order for it to be valid in the receiving process."))
+
+(defgeneric receive-file-descriptor (socket)
+  (:documentation "Receive a file descriptor as ancillary data through `SOCKET'."))
+
 (defun socket-read-fn (fd buffer nbytes)
   (%recvfrom fd buffer nbytes 0 (null-pointer) (null-pointer)))
 

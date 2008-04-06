@@ -218,7 +218,6 @@
 (constant (msg-eor "MSG_EOR"))                        ; recvmsg sendmsg
 (constant (msg-ctrunc "MSG_CTRUNC"))                  ; recvmsg
 
-#-(and) ; unused
 (cstruct msghdr "struct msghdr"
   (name       "msg_name"       :type :pointer)
   (namelen    "msg_namelen"    :type socklen)
@@ -228,7 +227,6 @@
   (controllen "msg_controllen" :type socklen)
   (flags      "msg_flags"      :type :int))
 
-#-(and) ; unused
 (cstruct cmsghdr "struct cmsghdr"
   (len   "cmsg_len"   :type socklen)
   (level "cmsg_level" :type :int)
@@ -246,7 +244,6 @@
   (ngroups "cmcred_ngroups" :type :short)
   (groups  "cmcred_groups"  :type gid :count :auto))
 
-#-(and) ; unused
 (constant (scm-rights "SCM_RIGHTS"))
 (constant (scm-credentials "SCM_CREDENTIALS") :optional t)
 

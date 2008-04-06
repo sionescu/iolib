@@ -102,13 +102,11 @@
   (destaddr :pointer)
   (destlen  socklen))
 
-#-(and) ; unused
 (define-socket-call ("recvmsg" %recvmsg) ssize
   (socket  fd)
   (message :pointer)
   (flags   :int))
 
-#-(and) ; unused
 (define-socket-call ("sendmsg" %sendmsg) ssize
   (socket  fd)
   (message :pointer)
