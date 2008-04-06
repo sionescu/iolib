@@ -375,7 +375,7 @@ for the new socket can also be specified using `INPUT-BUFFER-SIZE' and `OUTPUT-B
 
 (defun make-socket-pair (&key (type :stream) (protocol :default) (external-format :default)
                          input-buffer-size output-buffer-size)
-  "Creates an pair of sockets connected to each other.
+  "Creates a pair of sockets connected to each other.
 The socket type can be either :STREAM or :DATAGRAM. Currently OSes can only create :LOCAL sockets this way.
 Buffer sizes for the new sockets can also be specified using `INPUT-BUFFER-SIZE' and `OUTPUT-BUFFER-SIZE'."
   (flet ((%make-socket-pair (fd)
