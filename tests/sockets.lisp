@@ -35,16 +35,6 @@
 
 (in-suite* :net.sockets :in :iolib)
 
-;;; A couple of these tests require an echo server.  You can either
-;;; compile and run the provided tests/echo-server.c or enabled the
-;;; echo services in (x)inetd.
-;;;
-;;; (Note: on Darwin, this can be achieved by uncommenting the echo
-;;;  service in /etc/inetd.conf and running:
-;;;    sudo xinetd -dontfork -inetd_compat)
-;;;
-;;; Set these appropriately if you want to point the echo tests
-;;; somewhere else.
 (defparameter *echo-address* (ensure-address #(127 0 0 1)))
 (defparameter *echo-port* 7)
 
