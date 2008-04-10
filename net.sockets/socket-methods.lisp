@@ -405,23 +405,19 @@
              (when (plusp wait) (sleep wait))))))))
 
 (defun %inet-send-to (socket buffer start end remote-host remote-port flags)
-  (let (got-peer)
-    (with-sockaddr-storage (ss)
-      (when remote-host
-        (sockaddr->sockaddr-storage ss (ensure-hostname remote-host)
-                                    (ensure-numerical-service remote-port))
-        (setf got-peer t))
-      (%%send-to (fd-of socket) ss got-peer buffer start end flags
-                 (external-format-of socket)))))
+  (with-sockaddr-storage (ss)
+    (when remote-host
+      (sockaddr->sockaddr-storage ss (ensure-hostname remote-host)
+                                  (ensure-numerical-service remote-port)))
+    (%%send-to (fd-of socket) ss (if remote-host t) buffer start end flags
+               (external-format-of socket))))
 
 (defun %local-send-to (socket buffer start end remote-filename flags)
-  (let (got-peer)
-    (with-sockaddr-storage (ss)
-      (when remote-filename
-        (sockaddr->sockaddr-storage ss (ensure-address remote-filename :family :local) 0)
-        (setf got-peer t))
-      (%%send-to (fd-of socket) ss got-peer buffer start end flags
-                 (external-format-of socket)))))
+  (with-sockaddr-storage (ss)
+    (when remote-filename
+      (sockaddr->sockaddr-storage ss (ensure-address remote-filename :family :local) 0))
+    (%%send-to (fd-of socket) ss (if remote-filename t) buffer start end flags
+               (external-format-of socket))))
 
 (defmethod send-to ((socket internet-socket) buffer &rest args
                     &key (start 0) end remote-host (remote-port 0) (ipv6 *ipv6*))
