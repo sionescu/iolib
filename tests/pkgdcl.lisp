@@ -28,4 +28,5 @@
 
 (defpackage #:iolib-tests
   (:use #:common-lisp :5am :net.sockets :io.streams
-        :trivial-gray-streams :alexandria :io.multiplex))
+        :trivial-gray-streams :alexandria :io.multiplex)
+  (:export #:*echo-address* #:*echo-port*))
