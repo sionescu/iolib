@@ -182,7 +182,7 @@
       (handler-case
           (%getsockname (fd-of socket) ss size)
         (nix:ebadf () nil)
-        (nix:econnreset () nil)
+        (socket-connection-reset-error () nil)
         (:no-error (_) (declare (ignore _)) t)))))
 
 ;;;; GETSOCKNAME
