@@ -245,6 +245,18 @@
          (cond ,@(append (mapcar #'(lambda (c) (%do-clause c gensyms))
                                  (butlast body))
                          (%do-last-clause (lastcar body) gensyms)))))))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun compute-flags (flags args)
+    (loop :with flag-combination := 0
+          :for cons :on args :by #'cddr
+          :for flag := (car cons)
+          :for val := (cadr cons)
+          :for const := (cdr (assoc flag flags))
+          :when const :do
+       (when (not (constantp val)) (return-from compute-flags))
+       (setf flag-combination (logior flag-combination const))
+       :finally (return flag-combination))))
 
 ;;; Reader macros
 

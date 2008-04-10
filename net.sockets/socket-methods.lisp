@@ -351,42 +351,31 @@
                (t         shut-rdwr)))
   (values socket))
 
+;;;; Socket flag definition
+
+(defmacro define-socket-flag (place name value platform)
+  (let ((val (cond ((or (not platform)
+                        (featurep platform)) value)
+                   ((not (featurep platform)) 0))))
+    `(pushnew (cons ,name ,val) ,place)))
+
+(defmacro define-socket-flags (place &body definitions)
+  (flet ((dflag (form)
+           (destructuring-bind (name value &optional platform) form
+             `(define-socket-flag ,place ,name ,value ,platform))))
+    `(progn
+       ,@(mapcar #'dflag definitions))))
+
 ;;;; SENDTO
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun compute-flags (flags args)
-    (loop :with flag-combination := 0
-          :for cons :on args :by #'cddr
-          :for flag := (car cons)
-          :for val := (cadr cons)
-          :for const := (cdr (assoc flag flags))
-          :when const :do
-       (when (not (constantp val)) (return-from compute-flags))
-       (setf flag-combination (logior flag-combination const))
-       :finally (return flag-combination)))
+(defvar *sendto-flags* ())
 
-  (defmacro define-socket-flag (place name value platform)
-    (let ((val (cond ((or (not platform)
-                          (featurep platform)) value)
-                     ((not (featurep platform)) 0))))
-      `(push (cons ,name ,val) ,place))))
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defparameter *sendmsg-flags* nil)
-
-  (defmacro define-sendmsg-flags (&rest forms)
-    (flet ((dflag (form)
-             (destructuring-bind (name value &optional platform) form
-               `(define-socket-flag *sendmsg-flags* ,name ,value ,platform))))
-      `(progn
-         ,@(mapcar #'dflag forms))))
-
-  (define-sendmsg-flags
-    (:dont-route    msg-dontroute)
-    (:dont-wait     msg-dontwait  (:not :windows))
-    (:out-of-band   msg-oob)
-    (:more          msg-more      :linux)
-    (:confirm       msg-confirm   :linux)))
+(define-socket-flags *sendto-flags*
+  (:dont-route    msg-dontroute)
+  (:dont-wait     msg-dontwait  (:not :windows))
+  (:out-of-band   msg-oob)
+  (:more          msg-more      :linux)
+  (:confirm       msg-confirm   :linux))
 
 (defun %normalize-send-buffer (buff start end ef)
   (check-bounds buff start end)
@@ -438,17 +427,17 @@
                     &key (start 0) end remote-host (remote-port 0) (ipv6 *ipv6*))
   (let ((*ipv6* ipv6))
     (%inet-send-to socket buffer start end remote-host remote-port
-                   (compute-flags *sendmsg-flags* args))))
+                   (compute-flags *sendto-flags* args))))
 
 (defmethod send-to ((socket local-socket) buffer &rest args
                     &key (start 0) end remote-filename)
   (%local-send-to socket buffer start end remote-filename
-                  (compute-flags *sendmsg-flags* args)))
+                  (compute-flags *sendto-flags* args)))
 
 (define-compiler-macro send-to (&whole form socket buffer &rest args
                                 &key (start 0) end remote-host (remote-port 0)
                                 remote-filename (ipv6 '*ipv6*) &allow-other-keys)
-  (let ((flags (compute-flags *sendmsg-flags* args)))
+  (let ((flags (compute-flags *sendto-flags* args)))
     (cond (flags
            (once-only (socket buffer start end remote-host
                        remote-port remote-filename flags)
@@ -464,21 +453,13 @@
 
 ;;;; RECVFROM
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defparameter *recvfrom-flags* nil)
+(defvar *recvfrom-flags* ())
 
-  (defmacro define-recvfrom-flags (&rest forms)
-    (flet ((dflag (form)
-             (destructuring-bind (name value &optional platform) form
-               `(define-socket-flag *recvfrom-flags* ,name ,value ,platform))))
-      `(progn
-         ,@(mapcar #'dflag forms))))
-
-  (define-recvfrom-flags
-    (:out-of-band msg-oob)
-    (:peek        msg-peek)
-    (:wait-all    msg-waitall  (:not :windows))
-    (:dont-wait   msg-dontwait (:not :windows))))
+(define-socket-flags *recvfrom-flags*
+  (:out-of-band msg-oob)
+  (:peek        msg-peek)
+  (:wait-all    msg-waitall  (:not :windows))
+  (:dont-wait   msg-dontwait (:not :windows)))
 
 (defun allocate-ub8-buffer-for-string (length ef)
   (let* ((units-per-char (babel-encodings:enc-max-units-per-char
