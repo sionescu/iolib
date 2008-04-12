@@ -226,6 +226,13 @@
    #:*dns-nameservers*
    #:*dns-domain*
    #:*dns-search-domain*
+
+   ;; Miscellaneous
+   #:enable-reader-macro
+   #:disable-reader-macro*
+   #:define-syntax
+   #:literal-hash-table
+   #:ip-address
    ))
 
 (in-package :net.sockets)
