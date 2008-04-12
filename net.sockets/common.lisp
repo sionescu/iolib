@@ -260,6 +260,39 @@
 
 ;;; Reader macros
 
+(defgeneric enable-reader-macro* (name))
+
+(defgeneric disable-reader-macro* (name))
+
+(defmacro enable-reader-macro (name)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (enable-reader-macro* ,name)))
+
+(defmacro disable-reader-macro (name)
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
+     (disable-reader-macro* ,name)))
+
+(defun save-old-readtable (symbol readtable)
+  (setf (getf (symbol-plist symbol) 'old-readtable) readtable))
+
+(defun get-old-readtable (symbol readtable)
+  (getf (symbol-plist symbol) 'old-readtable))
+
+(defmethod enable-reader-macro* :before ((name symbol))
+  (save-old-readtable name *readtable*)
+  (setf *readtable* (copy-readtable)))
+
+(defmethod disable-reader-macro* ((name symbol))
+  (assert (readtablep (get-old-readtable name 'old-readtable)))
+  (setf *readtable* (get-old-readtable name 'old-readtable))
+  (save-old-readtable name nil))
+
+(defmacro define-syntax (name &body body)
+  `(defmethod enable-reader-macro* ((name (eql ',name)))
+     ,@body))
+
+;;; Literal hash tables reader macro
+
 (defun make-ht-from-list (alist stream test)
   (flet ((err () (error 'reader-error :stream stream))
          (alistp (alist) (every #'consp alist)))
