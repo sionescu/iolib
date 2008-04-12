@@ -23,6 +23,8 @@
 
 (in-package :net.sockets)
 
+(enable-reader-macro 'literal-hash-table)
+
 (defconstant +dns-max-datagram-size+ 4096)
 
 (defconstant +opcode-standard+ 0)
@@ -85,3 +87,5 @@
 
 (defun rcode-id (number)
   (gethash number +value-to-rcode-map+))
+
+(disable-reader-macro 'literal-hash-table)

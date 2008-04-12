@@ -379,7 +379,8 @@ returned unmodified."
                                              :errorp nil)
                              (error 'reader-error :stream stream)))))
 
-(set-macro-character #\@ 'read-literal-ip-address t)
+(define-syntax ip-address
+  (set-macro-character #\@ 'read-literal-ip-address t))
 
 ;;;; Equality Methods
 

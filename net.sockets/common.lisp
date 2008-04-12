@@ -314,4 +314,5 @@
     (make-ht-from-list (read-delimited-list #\) stream)
                        stream test)))
 
-(set-dispatch-macro-character #\# #\h 'read-literal-ht)
+(define-syntax literal-hash-table
+  (set-dispatch-macro-character #\# #\h 'read-literal-ht))
