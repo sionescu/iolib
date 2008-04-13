@@ -1,12 +1,11 @@
 @menu
-* Overview::                    
-* Socket Addresses::            
-* Name Service::                
-* Services::                    
-* Protocols::                   
-* Network Interfaces::          
-* Sockets::                     
-* Comprehensive Index::         
+* Sockets Overview::
+* Addresses::
+* Name Service::
+* Services::
+* Protocols::
+* Network Interfaces::
+@c * Sockets::
 @end menu
 
 @node Sockets Overview
@@ -14,13 +13,13 @@
 
 Describe sockets here.
 
-@node Socket Addresses
+@node Addresses
 @section Socket Addresses
 
 @menu
-* Address Objects::             
-* Sockets Address Predicates::  
-* Sockets Low-level Address Manipulation::  
+* Address Objects::
+* Address Predicates::
+* Low-level Address Manipulation::
 @end menu
 
 @node Address Objects
@@ -54,7 +53,7 @@ Describe sockets here.
 @include include/constant-sockets-plus-ipv6-site-local-all-routers-plus.texinfo
 @include include/constant-sockets-plus-ipv6-unspecified-plus.texinfo
 
-@node Sockets Address Predicates
+@node Address Predicates
 @subsection Address Predicates
 
 @include include/fun-sockets-address-equal-p.texinfo
@@ -86,7 +85,7 @@ Describe sockets here.
 @include include/fun-sockets-ipv6-unicast-type.texinfo
 @include include/fun-sockets-local-address-p.texinfo
 
-@node Sockets Low-level Address Manipulation
+@node Low-level Address Manipulation
 @subsection Low-level Address Manipulation
 
 @include include/constant-sockets-plus-max-ipv4-value-plus.texinfo
@@ -98,63 +97,58 @@ Describe sockets here.
 @include include/fun-sockets-dotted-to-integer.texinfo
 @include include/fun-sockets-dotted-to-vector.texinfo
 
-@node Sockets Name Service
+@node Name Service
 @section Name Service
 
+@subsection Functions
+@include include/fun-sockets-lookup-host.texinfo
+@include include/fun-sockets-ensure-hostname.texinfo
+
 @subsection Conditions
-@include include/condition-sockets-resolver-again-error.texinfo
 @include include/condition-sockets-resolver-error.texinfo
+@include include/condition-sockets-resolver-again-error.texinfo
 @include include/condition-sockets-resolver-fail-error.texinfo
 @include include/condition-sockets-resolver-no-name-error.texinfo
-@include include/condition-sockets-resolver-no-service-error.texinfo
 @include include/condition-sockets-resolver-unknown-error.texinfo
 
-@subsection Classes and Functions
-@include include/class-sockets-host.texinfo
-@include include/fun-sockets-lookup-host.texinfo
-@include include/fun-sockets-convert-or-lookup-inet-address.texinfo
-
-@node Socket Services
+@node Services
 @section Services
 
-@include include/class-sockets-service.texinfo
-@include include/fun-sockets-make-service.texinfo
 @include include/fun-sockets-lookup-service.texinfo
+@include include/condition-sockets-unknown-service.texinfo
 
-@node Socket Protocols
+@node Protocols
 @section Protocols
 
-@include include/class-sockets-protocol.texinfo
-@include include/fun-sockets-make-protocol.texinfo
-@include include/condition-sockets-unknown-protocol.texinfo
 @include include/fun-sockets-lookup-protocol.texinfo
+@include include/condition-sockets-unknown-protocol.texinfo
 
-@node socket Network Interfaces
+@node Network Interfaces
 @section Network Interfaces
 
 @include include/class-sockets-interface.texinfo
-@include include/condition-sockets-unknown-interface.texinfo
 @include include/fun-sockets-make-interface.texinfo
 @include include/fun-sockets-lookup-interface.texinfo
 @include include/fun-sockets-list-network-interfaces.texinfo
+@include include/condition-sockets-unknown-interface.texinfo
 
-@node Sockets
-@section Sockets
+@c @node Sockets
+@c @section Sockets
 
-@menu
-* Socket Classes::              
-* Socket Options::              
-* Socket Methods::              
-@end menu
+@c @menu
+@c * Socket Classes::
+@c * Socket Options::
+@c * Socket Methods::
+@c @end menu
 
-@node Socket Classes
-@subsection Socket Classes
+@c @node Socket Classes
+@c @subsection Socket Classes
 
-@subsubsection INET Domain Sockets
-@subsubsection Local Domain Sockets
+@c @subsubsection INET Domain Sockets
+@c @subsubsection Local Domain Sockets
 
-@node Socket Options
-@subsection Socket Options
+@c @node Socket Options
+@c @subsection Socket Options
 
-@node Socket Methods
-@subsection Socket Methods
+@c @node Socket Methods
+@c @subsection Socket Methods

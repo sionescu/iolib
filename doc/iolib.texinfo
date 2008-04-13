@@ -39,16 +39,16 @@
 
 @ifnottex
 @node Top
-@top net.sockets
+@top IOLib
 @insertcopying
 @end ifnottex
 
 @c Top Menu
 @menu
-* Overview::                    
-* Streams::                     
-* Sockets::                     
-* Comprehensive Index::         
+* Overview::
+@c * Stream Library::
+* Socket Library::
+* Comprehensive Index::
 @end menu
 
 @node Overview
@@ -56,11 +56,11 @@
 
 Describe IOLib here.
 
-@node Streams
-@chapter Streams
-@include streams.texinfo
+@c @node Stream Library
+@c @chapter Streams
+@c @include streams.texinfo
 
-@node Sockets
+@node Socket Library
 @chapter Sockets
 @include sockets.texinfo
 
