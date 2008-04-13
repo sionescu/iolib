@@ -150,6 +150,7 @@
 
    ;; Network masks and subnets
    #:make-subnet-mask
+   #:ensure-subnet-mask
    #:inet-address-private-p
    #:inet-address-network-portion
    #:inet-address-host-portion
