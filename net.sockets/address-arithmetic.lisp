@@ -25,8 +25,8 @@
 
 (defun make-subnet-mask (&key cidr class)
   (assert (or cidr class) (cidr class) "You must either specify a CIDR or a network class.")
-  (check-type cidr (or null (mod 32)) "a number between 0 and 31")
-  (check-type class (member nil :a :b :c) "a valid network class - one of :A, :B or :C")
+  (when cidr (check-type cidr (mod 32) "a number between 0 and 31"))
+  (when class (check-type class (member :a :b :c) "a valid network class - one of :A, :B or :C"))
   (let ((mask #xFFFFFFFF))
     (declare (type ub32 mask))
     (when class (setf cidr (case class
