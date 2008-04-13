@@ -275,7 +275,7 @@
 (defun save-old-readtable (symbol readtable)
   (setf (getf (symbol-plist symbol) 'old-readtable) readtable))
 
-(defun get-old-readtable (symbol readtable)
+(defun get-old-readtable (symbol)
   (getf (symbol-plist symbol) 'old-readtable))
 
 (defmethod enable-reader-macro* :before ((name symbol))
@@ -283,8 +283,8 @@
   (setf *readtable* (copy-readtable)))
 
 (defmethod disable-reader-macro* ((name symbol))
-  (assert (readtablep (get-old-readtable name 'old-readtable)))
-  (setf *readtable* (get-old-readtable name 'old-readtable))
+  (assert (readtablep (get-old-readtable name)))
+  (setf *readtable* (get-old-readtable name))
   (save-old-readtable name nil))
 
 (defmacro define-syntax (name &body body)
