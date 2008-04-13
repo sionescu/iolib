@@ -25,14 +25,13 @@
 
 (defun make-subnet-mask (&key cidr class)
   (assert (or cidr class) (cidr class) "You must either specify a CIDR or a network class.")
-  (when cidr (check-type cidr (mod 33) "a number between 0 and 32"))
-  (when class (check-type class (member :a :b :c) "a valid network class - one of :A, :B or :C"))
+  (cond
+    (cidr (check-type cidr (mod 33) "a number between 0 and 32"))
+    (class (check-type class (member :a :b :c)
+                       "a valid network class - one of :A, :B or :C")
+           (setf cidr (case class (:a 8) (:b 16) (:c 24)))))
   (let ((mask #xFFFFFFFF))
     (declare (type ub32 mask))
-    (when class (setf cidr (case class
-                             (:a 8)
-                             (:b 16)
-                             (:c 24))))
     (setf (ldb (byte (- 32 cidr) 0) mask) 0)
     (make-instance 'ipv4-address :name (integer-to-vector mask))))
 
