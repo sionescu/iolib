@@ -35,7 +35,6 @@
   (:export
    ;; Conditions
    #:posix-error
-   #:possible-bug
    #:resolver-error
    #:resolver-again-error
    #:resolver-fail-error
@@ -67,7 +66,6 @@
 
    ;; Condition Accessors
    #:address-type
-   #:bug-data
    #:error-code
    #:error-identifier
    #:error-message
