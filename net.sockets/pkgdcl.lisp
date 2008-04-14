@@ -190,6 +190,7 @@
    #:bind-address
    #:connect
    #:disconnect
+   #:ipv6-socket-p
    #:listen-on
    #:local-filename
    #:local-host

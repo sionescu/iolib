@@ -88,6 +88,7 @@
   :datagram)
 
 (defun ipv6-socket-p (socket)
+  "Return T if SOCKET is an AF_INET6 socket."
   (eq :ipv6 (socket-family socket)))
 
 ;;;; Printing
@@ -339,6 +340,18 @@
         (socket-not-connected-error () nil)
         (:no-error (_) (declare (ignore _)) t)))))
 
+;;;; DISCONNECT
+
+(defmethod disconnect :before ((socket socket))
+  (unless (typep socket 'datagram-socket)
+    (error "You can only disconnect active datagram sockets.")))
+
+(defmethod disconnect ((socket datagram-socket))
+  (with-foreign-object (sin 'sockaddr-in)
+    (bzero sin size-of-sockaddr-in)
+    (setf (foreign-slot-value sin 'sockaddr-in 'addr) af-unspec)
+    (%connect (fd-of socket) sin size-of-sockaddr-in)))
+
 ;;;; SHUTDOWN
 
 (defmethod shutdown ((socket socket) &key read write)
@@ -528,15 +541,3 @@
   (let ((flags (compute-flags *recvfrom-flags* args)))
     (cond (flags `(%receive-from ,socket ,buffer ,start ,end ,size ,flags))
           (t form))))
-
-;;;; DISCONNECT
-
-(defmethod disconnect :before ((socket socket))
-  (unless (typep socket 'datagram-socket)
-    (error "You can only disconnect active datagram sockets.")))
-
-(defmethod disconnect ((socket datagram-socket))
-  (with-foreign-object (sin 'sockaddr-in)
-    (bzero sin size-of-sockaddr-in)
-    (setf (foreign-slot-value sin 'sockaddr-in 'addr) af-unspec)
-    (%connect (fd-of socket) sin size-of-sockaddr-in)))

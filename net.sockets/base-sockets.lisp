@@ -28,7 +28,10 @@
 (defclass socket (dual-channel-single-fd-mixin)
   ((family   :initarg :family   :accessor socket-family)
    (protocol :initarg :protocol :accessor socket-protocol)
-   (bound    :initform nil      :reader   socket-bound-p :type boolean)))
+   (bound    :initform nil      :reader   socket-bound-p :type boolean))
+  (:documentation "Base class for sockets."))
+(setf (documentation 'socket-family 'function) "Return the family of a socket.")
+(setf (documentation 'socket-protocol 'function) "Return the protocol of a socket.")
 
 (defgeneric socket-os-fd (socket)
   (:documentation "Returns the OS file descriptor of `SOCKET'."))
@@ -76,10 +79,12 @@ Works only on LOCAL sockets."))
 For a complete list of supported options see net.sockets/socket-options.lisp ."))
 
 (defclass stream-socket (socket) ()
-  (:default-initargs :type :stream))
+  (:default-initargs :type :stream)
+  (:documentation "Mixin for sockets of type SOCK_STREAM."))
 
 (defclass datagram-socket (socket) ()
-  (:default-initargs :type :datagram))
+  (:default-initargs :type :datagram)
+  (:documentation "Mixin for sockets of type SOCK_DGRAM."))
 
 (defgeneric disconnect (socket)
   (:documentation "Disassociates `SOCKET' from any remote address.
@@ -89,10 +94,12 @@ Works only on DATAGRAM sockets."))
     (if *ipv6* :ipv6 :ipv4))
 
 (defclass internet-socket (socket) ()
-  (:default-initargs :family +default-inet-family+))
+  (:default-initargs :family +default-inet-family+)
+  (:documentation "Mixin for sockets of domain AF_INET or AF_INET6."))
 
 (defclass local-socket (socket) ()
-  (:default-initargs :family :local))
+  (:default-initargs :family :local)
+  (:documentation "Mixin for sockets of domain AF_LOCAL."))
 
 (defgeneric send-file-descriptor (socket file-descriptor)
   (:documentation "Send `FILE-DESCRIPTOR' through `SOCKET'.
@@ -110,7 +117,8 @@ file descriptor in order for it to be valid in the receiving process."))
 
 (defclass active-socket (socket dual-channel-gray-stream) ()
   (:default-initargs :read-fn 'socket-read-fn
-                     :write-fn 'socket-write-fn))
+                     :write-fn 'socket-write-fn)
+  (:documentation "Mixin class for active(client) sockets."))
 
 (defgeneric connect (socket address &key &allow-other-keys)
   (:documentation "Connects `SOCKET' to `ADDRESS'. For INTERNET sockets you can specify
@@ -163,7 +171,8 @@ Returns the number of bytes sent."))
    (external-format :initarg :external-format :reader external-format-of)
    (active-class :initarg :active-class :reader active-class
                  :type symbol :allocation :class))
-  (:default-initargs :external-format :default))
+  (:default-initargs :external-format :default)
+  (:documentation "Mixin class for passive(server) sockets."))
 
 (defgeneric bind-address (socket address &key &allow-other-keys)
   (:documentation "Sets the local address of `SOCKET' to `ADDRESS'(and `PORT' for INTERNET sockets).
@@ -180,26 +189,27 @@ that of `SOCKET'. Buffer sizes for the new socket can also be specified using `I
 and `OUTPUT-BUFFER-SIZE'."))
 
 (defclass socket-stream-internet-active
-    (active-socket stream-socket internet-socket)
-  ())
+    (active-socket stream-socket internet-socket) ()
+  (:documentation "Class representing active sockets of type SOCK_STREAM and domain AF_INET or AF_INET6."))
 
 (defclass socket-stream-internet-passive
-    (passive-socket stream-socket internet-socket)
-  ()
-  (:default-initargs :active-class 'socket-stream-internet-active))
+    (passive-socket stream-socket internet-socket) ()
+  (:default-initargs :active-class 'socket-stream-internet-active)
+  (:documentation "Class representing passive sockets of type SOCK_STREAM and domain AF_INET or AF_INET6."))
 
-(defclass socket-stream-local-active (active-socket stream-socket local-socket)
-  ())
+(defclass socket-stream-local-active
+    (active-socket stream-socket local-socket) ()
+  (:documentation "Class representing active sockets of type SOCK_STREAM and domain AF_LOCAL."))
 
 (defclass socket-stream-local-passive
-    (passive-socket stream-socket local-socket)
-  ()
-  (:default-initargs :active-class 'socket-stream-local-active))
-
-(defclass socket-datagram-local-active
-    (active-socket datagram-socket local-socket)
-  ())
+    (passive-socket stream-socket local-socket) ()
+  (:default-initargs :active-class 'socket-stream-local-active)
+  (:documentation "Class representing passive sockets of type SOCK_STREAM and domain AF_LOCAL."))
 
 (defclass socket-datagram-internet-active
-    (active-socket datagram-socket internet-socket)
-  ())
+    (active-socket datagram-socket internet-socket) ()
+  (:documentation "Class representing active sockets of type SOCK_DGRAM and domain AF_INET or AF_INET6."))
+
+(defclass socket-datagram-local-active
+    (active-socket datagram-socket local-socket) ()
+  (:documentation "Class representing active sockets of type SOCK_DGRAM and domain AF_LOCAL."))

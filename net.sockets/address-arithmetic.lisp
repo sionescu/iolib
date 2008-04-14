@@ -24,6 +24,8 @@
 (in-package :net.sockets)
 
 (defun make-subnet-mask (&key cidr class)
+  "Create a subnet mask by specifying either its class(:A, :B or :C) or
+a CIDR suffix(a number between 0 and 32)."
   (assert (or cidr class) (cidr class) "You must either specify a CIDR or a network class.")
   (cond
     (cidr (check-type cidr (mod 33) "a number between 0 and 32"))
