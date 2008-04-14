@@ -36,10 +36,10 @@ Describe sockets here.
 @subsubsection Functions and Methods
 
 @include include/fun-sockets-make-address.texinfo
-@include include/fun-sockets-address-to-string.texinfo
-@include include/fun-sockets-address-to-vector.texinfo
 @include include/fun-sockets-copy-address.texinfo
 @include include/fun-sockets-ensure-address.texinfo
+@include include/fun-sockets-address-to-string.texinfo
+@include include/fun-sockets-address-to-vector.texinfo
 
 @subsubsection Constants
 
@@ -52,21 +52,25 @@ Describe sockets here.
 @include include/constant-sockets-plus-ipv6-loopback-plus.texinfo
 @include include/constant-sockets-plus-ipv6-site-local-all-routers-plus.texinfo
 @include include/constant-sockets-plus-ipv6-unspecified-plus.texinfo
+@c @include include/constant-sockets-plus-any-host-plus.texinfo
+@c @include include/constant-sockets-plus-loopback-plus.texinfo
 
 @node Address Predicates
 @subsection Address Predicates
 
-@include include/fun-sockets-address-equal-p.texinfo
 @include include/fun-sockets-addressp.texinfo
-@include include/fun-sockets-address-type.texinfo
 @include include/fun-sockets-address=.texinfo
+@include include/fun-sockets-address-equal-p.texinfo
+@include include/fun-sockets-ipv4-address-p.texinfo
+@include include/fun-sockets-ipv6-address-p.texinfo
+@include include/fun-sockets-local-address-p.texinfo
+@include include/fun-sockets-abstract-address-p.texinfo
+@include include/fun-sockets-address-type.texinfo
 @include include/fun-sockets-inet-address-loopback-p.texinfo
 @include include/fun-sockets-inet-address-multicast-p.texinfo
 @include include/fun-sockets-inet-address-type.texinfo
 @include include/fun-sockets-inet-address-unicast-p.texinfo
 @include include/fun-sockets-inet-address-unspecified-p.texinfo
-@include include/fun-sockets-ipv4-address-p.texinfo
-@include include/fun-sockets-ipv6-address-p.texinfo
 @include include/fun-sockets-ipv6-admin-local-multicast-p.texinfo
 @include include/fun-sockets-ipv6-global-multicast-p.texinfo
 @include include/fun-sockets-ipv6-global-unicast-p.texinfo
@@ -83,19 +87,22 @@ Describe sockets here.
 @include include/fun-sockets-ipv6-transient-multicast-p.texinfo
 @include include/fun-sockets-ipv6-unassigned-multicast-p.texinfo
 @include include/fun-sockets-ipv6-unicast-type.texinfo
-@include include/fun-sockets-local-address-p.texinfo
 
 @node Low-level Address Manipulation
 @subsection Low-level Address Manipulation
 
 @include include/constant-sockets-plus-max-ipv4-value-plus.texinfo
-@include include/fun-sockets-integer-to-dotted.texinfo
-@include include/fun-sockets-colon-separated-to-vector.texinfo
-@include include/fun-sockets-string-address-to-vector.texinfo
-@include include/fun-sockets-vector-to-colon-separated.texinfo
-@include include/fun-sockets-vector-to-dotted.texinfo
 @include include/fun-sockets-dotted-to-integer.texinfo
+@include include/fun-sockets-integer-to-dotted.texinfo
+@include include/fun-sockets-vector-to-integer.texinfo
+@include include/fun-sockets-integer-to-vector.texinfo
 @include include/fun-sockets-dotted-to-vector.texinfo
+@include include/fun-sockets-vector-to-dotted.texinfo
+@include include/fun-sockets-colon-separated-to-vector.texinfo
+@include include/fun-sockets-vector-to-colon-separated.texinfo
+@include include/fun-sockets-string-address-to-vector.texinfo
+@include include/fun-sockets-map-ipv4-address-to-ipv6.texinfo
+@include include/fun-sockets-map-ipv6-address-to-ipv4.texinfo
 
 @node Name Service
 @section Name Service
@@ -106,6 +113,7 @@ Describe sockets here.
 
 @subsection Conditions
 @include include/condition-sockets-resolver-error.texinfo
+@include include/fun-sockets-resolver-error-datum.texinfo
 @include include/condition-sockets-resolver-again-error.texinfo
 @include include/condition-sockets-resolver-fail-error.texinfo
 @include include/condition-sockets-resolver-no-name-error.texinfo
@@ -116,21 +124,26 @@ Describe sockets here.
 
 @include include/fun-sockets-lookup-service.texinfo
 @include include/condition-sockets-unknown-service.texinfo
+@include include/fun-sockets-unknown-service-datum.texinfo
 
 @node Protocols
 @section Protocols
 
 @include include/fun-sockets-lookup-protocol.texinfo
 @include include/condition-sockets-unknown-protocol.texinfo
+@include include/fun-sockets-unknown-protocol-datum.texinfo
 
 @node Network Interfaces
 @section Network Interfaces
 
 @include include/class-sockets-interface.texinfo
+@include include/fun-sockets-interface-index.texinfo
+@include include/fun-sockets-interface-name.texinfo
 @include include/fun-sockets-make-interface.texinfo
 @include include/fun-sockets-lookup-interface.texinfo
 @include include/fun-sockets-list-network-interfaces.texinfo
 @include include/condition-sockets-unknown-interface.texinfo
+@include include/fun-sockets-unknown-interface-datum.texinfo
 
 @c @node Sockets
 @c @section Sockets
