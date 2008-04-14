@@ -257,6 +257,12 @@
        (when (not (constantp val)) (return-from compute-flags))
        (setf flag-combination (logior flag-combination const))
        :finally (return flag-combination))))
+
+(defun set-function-docstring (function docstring)
+  (setf (documentation function 'function) docstring))
+
+(defun unset-method-docstring (gf qualifiers specializers)
+  (setf (documentation (find-method gf qualifiers (mapcar #'find-class specializers)) t) nil))
 
 ;;; Reader macros
 

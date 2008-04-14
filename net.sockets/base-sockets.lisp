@@ -30,8 +30,10 @@
    (protocol :initarg :protocol :accessor socket-protocol)
    (bound    :initform nil      :reader   socket-bound-p :type boolean))
   (:documentation "Base class for sockets."))
-(setf (documentation 'socket-family 'function) "Return the family of a socket.")
-(setf (documentation 'socket-protocol 'function) "Return the protocol of a socket.")
+(unset-method-docstring #'socket-family () '(socket))
+(set-function-docstring 'socket-family "Return the family of a socket.")
+(unset-method-docstring #'socket-protocol () '(socket))
+(set-function-docstring 'socket-protocol "Return the protocol of a socket.")
 
 (defgeneric socket-os-fd (socket)
   (:documentation "Returns the OS file descriptor of `SOCKET'."))

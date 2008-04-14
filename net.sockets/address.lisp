@@ -46,8 +46,8 @@ ADDRESS-NAME reader."))
   ((abstract :initform nil :initarg :abstract
              :reader abstract-address-p :type boolean))
   (:documentation "UNIX socket address."))
-(setf (documentation 'abstract-address-p 'function)
-      "Return T if ADDRESS is a LOCAL-ADDRESS that lives in the abstract namespace.")
+(unset-method-docstring #'abstract-address-p () '(local-address))
+(set-function-docstring 'abstract-address-p "Return T if ADDRESS is a LOCAL-ADDRESS that lives in the abstract namespace.")
 
 (defmethod make-load-form ((address inet-address) &optional env)
   (declare (ignore env))
