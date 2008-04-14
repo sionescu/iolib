@@ -296,9 +296,9 @@ otherwise NIL is returned."
       ((vector * 8) (and (ignore-parse-errors
                            (setf vector (coerce address 'ipv6-array)))
                          (setf addr-type :ipv6)))
-      (ipv4-address (setf vector (address-name address)
+      (ipv4-address (setf vector (copy-seq (address-name address))
                           addr-type :ipv4))
-      (ipv6-address (setf vector (address-name address)
+      (ipv6-address (setf vector (copy-seq (address-name address))
                           addr-type :ipv6)))
     (when vector
       (values vector addr-type))))
