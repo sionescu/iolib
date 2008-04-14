@@ -27,6 +27,10 @@
   ((name  :initarg :name :reader interface-name)
    (index :initarg :index :reader interface-index))
   (:documentation "Class describing a network interface."))
+(setf (documentation 'interface-name 'function)
+      "Return the name of an INTERFACE.")
+(setf (documentation 'interface-index 'function)
+      "Return the index number of an INTERFACE.")
 
 (defmethod print-object ((interface interface) stream)
   (print-unreadable-object (interface stream :type nil :identity nil)
@@ -43,6 +47,8 @@
              (format stream "Unknown interface: ~A"
                      (unknown-interface-datum condition))))
   (:documentation "Condition raised when a network interface is not found."))
+(setf (documentation 'unknown-interface-datum 'function)
+      "Return the datum that caused the signalling of an UNKNOWN-INTERFACE condition.")
 
 (defun signal-unknown-interface-error (system-error datum)
   (error 'unknown-interface

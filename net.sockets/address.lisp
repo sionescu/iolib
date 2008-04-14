@@ -2,7 +2,7 @@
 ;;;
 ;;; address.lisp --- IP address classes.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -46,6 +46,8 @@ ADDRESS-NAME reader."))
   ((abstract :initform nil :initarg :abstract
              :reader abstract-address-p :type boolean))
   (:documentation "UNIX socket address."))
+(setf (documentation 'abstract-address-p 'function)
+      "Return T if ADDRESS is a LOCAL-ADDRESS that lives in the abstract namespace.")
 
 (defmethod make-load-form ((address inet-address) &optional env)
   (declare (ignore env))
@@ -419,12 +421,14 @@ returned unmodified."
                  :name (copy-seq (address-name addr))
                  :abstract (abstract-address-p addr)))
 
-;;; Returns an IPv6 address by mapping ADDR onto it.
 (defun map-ipv4-address-to-ipv6 (address)
+  "Returns an IPv6 address by mapping ADDRESS onto it."
   (make-instance 'ipv6-address
                  :name (map-ipv4-vector-to-ipv6 (address-name address))))
 
 (defun map-ipv6-address-to-ipv4 (address)
+  "Extracts the IPv4 part of an IPv6-mapped IPv4 address.
+Signals an error if ADDRESS is not an IPv6-mapped IPv4 address."
   (assert (ipv6-ipv4-mapped-p address) (address)
           "Not an IPv6-mapped IPv4 address: ~A" address)
   (make-instance 'ipv4-address

@@ -2,7 +2,7 @@
 ;;;
 ;;; protocols.lisp --- Protocol lookup.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -73,10 +73,12 @@
           (when proto (return-from lookup-protocol-on-disk-by-number proto)))))))
 
 (define-condition unknown-protocol ()
-  ((name :initarg :name :initform nil :reader unknown-protocol-name))
+  ((datum :initarg :name :initform nil :reader unknown-protocol-datum))
   (:report (lambda (condition stream)
-             (format stream "Unknown protocol: ~S" (unknown-protocol-name condition))))
+             (format stream "Unknown protocol: ~S" (unknown-protocol-datum condition))))
   (:documentation "Condition raised when a network protocol is not found."))
+(setf (documentation 'unknown-protocol-datum 'function)
+      "Return the datum that caused the signalling of an UNKNOWN-PROTOCOL condition.")
 
 (defvar *protocols-cache-by-name*   (make-hash-table :test #'equal))
 (defvar *protocols-cache-by-number* (make-hash-table :test #'eql))
@@ -127,4 +129,4 @@ UNKNOWN-PROTOCOL error if no protocol is found."
     (if proto (values (protocol-number proto)
                       (protocol-name proto)
                       (protocol-aliases proto))
-        (error 'unknown-protocol :name protocol))))
+        (error 'unknown-protocol :datum protocol))))

@@ -24,14 +24,16 @@
 (in-package :net.sockets)
 
 (define-condition resolver-error ()
-  ((data :initarg :data :reader resolver-error-data))
+  ((datum :initarg :data :reader resolver-error-datum))
   (:documentation
    "Signaled when an error occurs while trying to resolve an address."))
+(setf (documentation 'resolver-error-datum 'function)
+      "Return the datum that caused the signalling of a RESOLVER-ERROR condition.")
 
 (defmacro define-resolver-error (name format-string &optional documentation)
   `(define-condition ,name (resolver-error) ()
      (:report (lambda (condition stream)
-                (format stream ,format-string (resolver-error-data condition))))
+                (format stream ,format-string (resolver-error-datum condition))))
      (:documentation ,documentation)))
 
 (define-resolver-error resolver-again-error

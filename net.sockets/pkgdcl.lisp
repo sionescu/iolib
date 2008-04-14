@@ -68,9 +68,9 @@
    #:error-code
    #:error-identifier
    #:error-message
-   #:resolver-error-data
-   #:unknown-protocol-name
-   #:unknown-service-name
+   #:resolver-error-datum
+   #:unknown-protocol-datum
+   #:unknown-service-datum
    #:unknown-interface-datum
 
    ;; Address Classes

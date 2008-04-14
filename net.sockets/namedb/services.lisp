@@ -2,7 +2,7 @@
 ;;;
 ;;; services.lisp --- Service lookup.
 ;;;
-;;; Copyright (C) 2006-2007, Stelian Ionescu  <sionescu@common-lisp.net>
+;;; Copyright (C) 2006-2008, Stelian Ionescu  <sionescu@common-lisp.net>
 ;;;
 ;;; This code is free software; you can redistribute it and/or
 ;;; modify it under the terms of the version 2.1 of
@@ -92,10 +92,12 @@
                         proto)))))))
 
 (define-condition unknown-service ()
-  ((name :initarg :name :initform nil :reader unknown-service-name))
+  ((datum :initarg :datum :initform nil :reader unknown-service-datum))
   (:report (lambda (condition stream)
-             (format stream "Unknown service: ~S" (unknown-service-name condition))))
+             (format stream "Unknown service: ~S" (unknown-service-datum condition))))
   (:documentation "Condition raised when a network service is not found."))
+(setf (documentation 'unknown-service-datum 'function)
+      "Return the datum that caused the signalling of an UNKNOWN-SERVICE condition.")
 
 (defvar *tcp-services-cache-by-name*   (make-hash-table :test #'equal))
 (defvar *tcp-services-cache-by-number* (make-hash-table :test #'eql))
@@ -176,7 +178,7 @@ of :TCP, :UDP or :ANY."
     (if serv (values (service-port serv)
                      (service-name serv)
                      (service-protocol serv))
-        (error 'unknown-service :name service))))
+        (error 'unknown-service :datum service))))
 
 (defun ensure-numerical-service (service &optional (protocol :tcp))
   (etypecase service
