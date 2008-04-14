@@ -56,7 +56,7 @@ ADDRESS-NAME reader."))
   (declare (ignore env))
   `(make-instance ,(class-of address)
                   :name ,(address-name address)
-                  :abstrace ,(abstract-address-p address)))
+                  :abstract ,(abstract-address-p address)))
 
 ;;;; Conversion functions for SOCKADDR_* structs
 
