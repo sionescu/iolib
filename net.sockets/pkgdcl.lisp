@@ -81,7 +81,6 @@
    #:local-address
 
    ;; Address Functions
-   #:address-name
    #:address-type
    #:address-to-string
    #:address-to-vector
