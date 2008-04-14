@@ -35,11 +35,8 @@
   (:export
    ;; Conditions
    #:posix-error
-   #:resolver-error
-   #:resolver-again-error
-   #:resolver-fail-error
-   #:resolver-no-name-error
-   #:resolver-unknown-error
+   #:system-error
+   #:socket-error
    #:socket-address-in-use-error
    #:socket-address-not-available-error
    #:socket-already-connected-error
@@ -48,7 +45,6 @@
    #:socket-connection-reset-error
    #:socket-connection-timeout-error
    #:socket-endpoint-shutdown-error
-   #:socket-error
    #:socket-host-down-error
    #:socket-host-unreachable-error
    #:socket-network-down-error
@@ -59,33 +55,23 @@
    #:socket-not-connected-error
    #:socket-operation-not-supported-error
    #:socket-option-not-supported-error
-   #:system-error
+   #:resolver-error
+   #:resolver-again-error
+   #:resolver-fail-error
+   #:resolver-no-name-error
+   #:resolver-unknown-error
    #:unknown-interface
    #:unknown-protocol
    #:unknown-service
 
    ;; Condition Accessors
-   #:address-type
    #:error-code
    #:error-identifier
    #:error-message
    #:resolver-error-data
    #:unknown-protocol-name
    #:unknown-service-name
-
-   ;; Low-level Address Conversion
-   #:address-to-vector
-   #:colon-separated-to-vector
-   #:dotted-to-integer
-   #:dotted-to-vector
-   #:integer-to-dotted
-   #:integer-to-vector
-   #:string-address-to-vector
-   #:vector-to-colon-separated
-   #:vector-to-dotted
-   #:vector-to-integer
-   #:map-ipv4-address-to-ipv6
-   #:map-ipv6-address-to-ipv4
+   #:unknown-interface-datum
 
    ;; Address Classes
    #:address
@@ -95,10 +81,10 @@
    #:local-address
 
    ;; Address Functions
-   #:address-equal-p
    #:address-name
+   #:address-type
    #:address-to-string
-   #:address=
+   #:address-to-vector
    #:copy-address
    #:ensure-address
    #:make-address
@@ -119,6 +105,8 @@
 
    ;; Address Predicates
    #:abstract-address-p
+   #:address=
+   #:address-equal-p
    #:addressp
    #:inet-address-loopback-p
    #:inet-address-multicast-p
@@ -156,6 +144,19 @@
    #:inet-addresses-in-same-network-p
    #:inet-address-network-class
 
+   ;; Low-level Address Conversion
+   #:colon-separated-to-vector
+   #:dotted-to-integer
+   #:dotted-to-vector
+   #:integer-to-dotted
+   #:integer-to-vector
+   #:string-address-to-vector
+   #:vector-to-colon-separated
+   #:vector-to-dotted
+   #:vector-to-integer
+   #:map-ipv4-address-to-ipv6
+   #:map-ipv6-address-to-ipv4
+
    ;; Hostname, Service, and Protocol Lookups
    #:ensure-hostname
    #:lookup-host
@@ -169,7 +170,6 @@
    #:interface-name
    #:lookup-interface
    #:make-interface
-   #:unknown-interface-datum
 
    ;; Socket Classes
    #:active-socket
