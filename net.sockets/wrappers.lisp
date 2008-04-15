@@ -30,6 +30,7 @@
 (define "_FILE_OFFSET_BITS" 64)
 (c "#endif")
 
+(include "stdlib.h")
 (include "sys/socket.h")
 
 (defwrapper* ("cmsg_space" %cmsg-space) ("unsigned" :unsigned-int)
