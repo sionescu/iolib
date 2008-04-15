@@ -56,7 +56,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
      (:ipv4 (create-socket :ipv4 ,@args))
      (:ipv6 (create-socket :ipv6 ,@args))))
 
-(defmacro with-guard-again-non-list-args-and-destructuring-bind-errors
+(defmacro with-guard-against-non-list-args-and-destructuring-bind-errors
     (form args &body body)
   `(if (listp ,args)
        (handler-case (progn ,@body)
@@ -100,7 +100,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
                                           input-buffer-size output-buffer-size)))
 
 (define-compiler-macro %make-internet-stream-active-socket (&whole form args family ef)
-  (with-guard-again-non-list-args-and-destructuring-bind-errors
+  (with-guard-against-non-list-args-and-destructuring-bind-errors
       form args
     (destructuring-bind (&key keepalive nodelay (reuse-address t)
                               local-host (local-port 0)
@@ -140,7 +140,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
                                            local-host local-port backlog)))
 
 (define-compiler-macro %make-internet-stream-passive-socket (&whole form args family ef)
-  (with-guard-again-non-list-args-and-destructuring-bind-errors
+  (with-guard-against-non-list-args-and-destructuring-bind-errors
       form args
     (destructuring-bind (&key interface (reuse-address t)
                               (local-host +any-host+) (local-port 0)
@@ -174,7 +174,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
                                        input-buffer-size output-buffer-size)))
 
 (define-compiler-macro %make-local-stream-active-socket (&whole form args family ef)
-  (with-guard-again-non-list-args-and-destructuring-bind-errors
+  (with-guard-against-non-list-args-and-destructuring-bind-errors
       form args
     (destructuring-bind (&key local-filename remote-filename
                               input-buffer-size output-buffer-size)
@@ -203,7 +203,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
     (%%make-local-stream-passive-socket family ef local-filename reuse-address backlog)))
 
 (define-compiler-macro %make-local-stream-passive-socket (&whole form args family ef)
-  (with-guard-again-non-list-args-and-destructuring-bind-errors
+  (with-guard-against-non-list-args-and-destructuring-bind-errors
       form args
     (destructuring-bind (&key local-filename (reuse-address t)
                               (backlog *default-backlog-size*))
@@ -243,7 +243,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
                                      local-host local-port remote-host remote-port)))
 
 (define-compiler-macro %make-internet-datagram-socket (&whole form args family ef)
-  (with-guard-again-non-list-args-and-destructuring-bind-errors
+  (with-guard-against-non-list-args-and-destructuring-bind-errors
       form args
     (destructuring-bind (&key broadcast interface (reuse-address t)
                               local-host (local-port 0)
@@ -272,7 +272,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
     (%%make-local-datagram-socket family ef local-filename remote-filename)))
 
 (define-compiler-macro %make-local-datagram-socket (&whole form args family ef)
-  (with-guard-again-non-list-args-and-destructuring-bind-errors
+  (with-guard-against-non-list-args-and-destructuring-bind-errors
       form args
     (destructuring-bind (&key local-filename remote-filename)
         (cdr args)
