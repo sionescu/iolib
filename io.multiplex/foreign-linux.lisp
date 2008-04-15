@@ -1,6 +1,6 @@
-;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; linux.lisp --- Linux-specific definitions.
+;;; --- Linux-specific definitions.
 ;;;
 ;;; Copyright (C) 2005-2006, Matthew Backes  <lucca@accela.net>
 ;;; Copyright (C) 2005-2006, Dan Knapp  <dankna@accela.net>

@@ -1,10 +1,10 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; unixint.lisp --- Grovel definitions for IO.MULTIPLEX
+;;; --- Grovel definitions for IO.MULTIPLEX
 ;;;
 ;;; Copyright (C) 2005-2006, Matthew Backes  <lucca@accela.net>
 ;;; Copyright (C) 2005-2006, Dan Knapp  <dankna@accela.net>
-;;; Copyright (C) 2007, Stelian Ionescu  <stelian.ionescu-zeus@poste.it>
+;;; Copyright (C) 2007, Stelian Ionescu  <sionescu-@common-lisp.net>
 ;;;
 ;;; Permission is hereby granted, free of charge, to any person
 ;;; obtaining a copy of this software and associated documentation

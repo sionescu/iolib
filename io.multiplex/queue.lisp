@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; queue.lisp --- Data structures for managing scheduled timers.
+;;; --- Data structures for managing scheduled timers.
 ;;;
 ;;; Copyright (C) 2003 Zach Beane <xach@xach.com>
 ;;;

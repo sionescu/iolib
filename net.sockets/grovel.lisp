@@ -1,6 +1,6 @@
-;;;; -*- Mode: lisp; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; grovel.lisp --- Grovelling for socket constants and types.
+;;; --- Grovelling for socket constants and types.
 ;;;
 ;;; Copyright (C) 2005-2006, Matthew Backes  <lucca@accela.net>
 ;;; Copyright (C) 2005-2006, Dan Knapp  <dankna@accela.net>

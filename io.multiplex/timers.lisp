@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; timers.lisp --- Creating and manipulating timer structures.
+;;; --- Creating and manipulating timer structures.
 ;;;
 ;;; Copyright (C) 2003 Zach Beane <xach@xach.com>
 ;;;

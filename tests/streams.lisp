@@ -1,6 +1,6 @@
-;;;; -*- Mode: lisp; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; streams.lisp --- IO.STREAMS test suite.
+;;; --- IO.STREAMS test suite.
 ;;;
 ;;; Copyright (c) 2006-2007, Dr. Edmund Weitz.  All rights reserved.
 ;;; Copyright (c) 2007, Luis Oliveira  <loliveira@common-lisp.net>
