@@ -72,9 +72,10 @@
                     (fd-of ,socket) ,level ,optname
                     ,@(%make-arglist (socktype-args type) glist))
                  socket)))
-            `(error 'socket-option-not-supported-error
-                    :message ,(format nil "Unsupported socket option: ~S"
-                                      option-name)))))
+            (values nil nil nil
+                    `(error 'socket-option-not-supported-error
+                            :message ,(format nil "Unsupported socket option: ~S"
+                                              option-name))))))
 
 (defmacro define-socket-option (name action optname level argtype os)
   (let ((eql-name (make-keyword name)))
