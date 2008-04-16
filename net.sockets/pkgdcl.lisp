@@ -13,6 +13,7 @@
                 #:pid #:gid #:uid #:size #:ssize #:bzero
                 #:timeval #:size-of-timeval #:sec #:usec)
   (:import-from #:osicat-sys #:size-of-int)
+  (:import-from #:io.multiplex #:decode-timeout)
   (:shadow #:let #:let* #:multiple-value-bind #:funcall #:defun)
   (:export
    ;; Conditions
