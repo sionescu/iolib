@@ -106,7 +106,7 @@
   (with-foreign-object (optval :int)
     (setf (mem-ref optval :int) (lisp->c-bool value))
     (%setsockopt fd level option optval size-of-int)
-    (values)))
+    (values value)))
 
 ;;; INT
 
@@ -122,7 +122,7 @@
   (with-foreign-object (optval :int)
     (setf (mem-ref optval :int) value)
     (%setsockopt fd level option optval size-of-int)
-    (values)))
+    (values value)))
 
 ;;; LINGER
 
@@ -141,7 +141,7 @@
       (setf onoff (lisp->c-bool new-onoff)
             linger new-linger))
     (%setsockopt fd level option optval size-of-linger)
-    (values)))
+    (values new-onoff new-linger)))
 
 ;;; TIMEVAL
 
@@ -154,13 +154,13 @@
       (with-foreign-slots ((sec usec) optval timeval)
         (values sec usec)))))
 
-(define-socket-option-helper (:set :timeval) (fd level option %sec %usec)
+(define-socket-option-helper (:set :timeval) (fd level option new-sec new-usec)
   (with-foreign-object (optval 'timeval)
     (with-foreign-slots ((sec usec) optval timeval)
-      (setf sec  %sec
-            usec %usec))
+      (setf sec  new-sec
+            usec new-usec))
     (%setsockopt fd level option optval size-of-timeval)
-    (values)))
+    (values new-sec new-usec)))
 
 ;;; IFREQ-NAME
 
@@ -174,7 +174,7 @@
       (with-foreign-string (ifname interface)
         (nix:memcpy name ifname (min (length interface) (1- ifnamsiz)))))
     (%setsockopt fd level option optval size-of-ifreq)
-    (values)))
+    (values interface)))
 
 ;;;; Option Definitions
 
