@@ -168,6 +168,8 @@ Returns the number of bytes sent."))
 
 (defgeneric accept-connection (passive-socket &key &allow-other-keys)
   (:documentation "Returns one connection from the queue of pending connections on `SOCKET'.
+If `WAIT' is true, waits until a connection is received or `TIMEOUT' expires in which case returns NIL.
+If `WAIT' is false and there are no pending connections return NIL.
 `EXTERNAL-FORMAT' optionally specifies the external format of the new socket - the default being
 that of `SOCKET'. Buffer sizes for the new socket can also be specified using `INPUT-BUFFER-SIZE'
 and `OUTPUT-BUFFER-SIZE'."))
