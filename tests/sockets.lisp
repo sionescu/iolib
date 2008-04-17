@@ -266,16 +266,16 @@
     (make-socket :this-kw-arg-doesnt-exist t)))
 
 (test make-socket.2
-  (is (equalp (with-open-socket (s :family :ipv4)
+  (is (equalp (with-open-socket (s :address-family :ipv4)
                 (values (socket-connected-p s)
                         (socket-open-p s)
                         (> (socket-os-fd s) 1)
-                        (socket-family s)
+                        (socket-address-family s)
                         (socket-protocol s)))
               (values nil t t :ipv4 :default)))) ; why isn't it :TCP?
 
 (test make-socket.3
-  (is-true (with-open-socket (s :family :ipv4)
+  (is-true (with-open-socket (s :address-family :ipv4)
              (typep s 'socket))))
 
 ;;; Given the functions we've got so far, if you can think of a better
@@ -284,13 +284,13 @@
 ;;; as me.
 (test inet.socket-bind.1
   (signals socket-address-in-use-error
-    (with-open-socket (s :family :ipv4 :connect :passive
+    (with-open-socket (s :address-family :ipv4 :connect :passive
                          :local-host #(127 0 0 1) :local-port 1974)
-      (with-open-socket (s :family :ipv4 :connect :passive
+      (with-open-socket (s :address-family :ipv4 :connect :passive
                            :local-host #(127 0 0 1) :local-port 1974)))))
 
 (test sockopt.1
-  (is-true (with-open-socket (s :family :ipv4)
+  (is-true (with-open-socket (s :address-family :ipv4)
              (setf (socket-option s :reuse-address) t)
              (socket-option s :reuse-address))))
 
@@ -307,7 +307,7 @@
 (test simple-tcp-client
   (is-true
    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
-                        :family :ipv4)
+                        :address-family :ipv4)
      (let ((data (make-string 200)))
        (format s "here is some text")
        (finish-output s)
@@ -318,7 +318,7 @@
 (test sockaddr-return-type
   (is-true
    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
-                        :family :ipv4)
+                        :address-family :ipv4)
      (and (ipv4-address-p (remote-host s))
           (numberp (remote-port s))))))
 
@@ -331,14 +331,14 @@
 (test simple-udp-client.1
   (is-true
    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
-                        :type :datagram :family :ipv4)
+                        :type :datagram :address-family :ipv4)
      (send-to s "here is some text")
      (let ((nbytes (nth-value 1 (receive-from s :size 200))))
        (plusp nbytes)))))
 
 (test simple-udp-client.2
   (is-true
-   (with-open-socket (s :type :datagram :family :ipv4)
+   (with-open-socket (s :type :datagram :address-family :ipv4)
      (send-to s "here is some more text"
               :remote-host *echo-address*
               :remote-port *echo-port*)
@@ -352,8 +352,8 @@
                                                       (asdf:system-definition-pathname
                                                        (asdf:find-system '#:iolib-tests)))))))
                  ;; (ignore-errors (delete-file file))
-                 (with-open-socket (p :family :local :connect :passive :local-filename file)
-                   (with-open-socket (a :family :local :remote-filename file)
+                 (with-open-socket (p :address-family :local :connect :passive :local-filename file)
+                   (with-open-socket (a :address-family :local :remote-filename file)
                      (format a "local socket test")
                      (finish-output a))
                    (let ((s (accept-connection p)))
@@ -363,7 +363,7 @@
                "local socket test")))
 
 (defmacro with-http-stream ((var host port request) &body body)
-  `(with-open-socket (,var :family :ipv4 :remote-host ,host :remote-port ,port)
+  `(with-open-socket (,var :address-family :ipv4 :remote-host ,host :remote-port ,port)
      (format ,var ,(concatenate 'string request " HTTP/1.0~%~%"))
      (finish-output ,var)
      ,@body))
@@ -396,7 +396,7 @@
 
 (test socket-open-p.2
   (is-true (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
-                                :family :ipv4)
+                                :address-family :ipv4)
              (socket-open-p s))))
 
 (test socket-open-p.3

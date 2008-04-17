@@ -192,7 +192,7 @@
    #:send-to
    #:shutdown
    #:socket-connected-p
-   #:socket-family
+   #:socket-address-family
    #:socket-open-p
    #:socket-option
    #:socket-os-fd

@@ -8,12 +8,12 @@
 ;;;; Sockets
 
 (defclass socket (dual-channel-single-fd-mixin)
-  ((family   :initarg :family   :accessor socket-family)
+  ((address-family :initarg :address-family :accessor socket-address-family)
    (protocol :initarg :protocol :accessor socket-protocol)
    (bound    :initform nil      :reader   socket-bound-p :type boolean))
   (:documentation "Base class for sockets."))
-(unset-method-docstring #'socket-family () '(socket))
-(set-function-docstring 'socket-family "Return the family of a socket.")
+(unset-method-docstring #'socket-address-family () '(socket))
+(set-function-docstring 'socket-address-family "Return the address family of a socket.")
 (unset-method-docstring #'socket-protocol () '(socket))
 (set-function-docstring 'socket-protocol "Return the protocol of a socket.")
 
@@ -74,15 +74,15 @@ For a complete list of supported options see net.sockets/socket-options.lisp .")
   (:documentation "Disassociates `SOCKET' from any remote address.
 Works only on DATAGRAM sockets."))
 
-(define-symbol-macro +default-inet-family+
+(define-symbol-macro +default-inet-address-family+
     (if *ipv6* :ipv6 :ipv4))
 
 (defclass internet-socket (socket) ()
-  (:default-initargs :family +default-inet-family+)
+  (:default-initargs :address-family +default-inet-address-family+)
   (:documentation "Mixin for sockets of domain AF_INET or AF_INET6."))
 
 (defclass local-socket (socket) ()
-  (:default-initargs :family :local)
+  (:default-initargs :address-family :local)
   (:documentation "Mixin for sockets of domain AF_LOCAL."))
 
 (defgeneric send-file-descriptor (socket file-descriptor)

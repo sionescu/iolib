@@ -8,7 +8,7 @@
 (defun create-socket (family type connect external-format &key
                       fd input-buffer-size output-buffer-size)
   (make-instance (select-socket-class family type connect :default)
-                 :family family :file-descriptor fd
+                 :address-family family :file-descriptor fd
                  :external-format external-format
                  :input-buffer-size input-buffer-size
                  :output-buffer-size output-buffer-size))
@@ -18,7 +18,7 @@
   (cond
     ((and (constantp family) (constantp type) (constantp connect))
      `(make-instance ',(select-socket-class family type connect :default)
-                     :family ,family :file-descriptor ,fd
+                     :address-family ,family :file-descriptor ,fd
                      :external-format ,external-format
                      :input-buffer-size ,input-buffer-size
                      :output-buffer-size ,output-buffer-size))
@@ -270,53 +270,53 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 
 ;;; MAKE-SOCKET
 
-(defun make-socket (&rest args &key (family :internet) (type :stream)
+(defun make-socket (&rest args &key (address-family :internet) (type :stream)
                     (connect :active) (ipv6 *ipv6*)
                     (external-format :default) &allow-other-keys)
   "Creates a socket instance of the appropriate subclass of SOCKET."
-  (check-type family (member :internet :local :ipv4 :ipv6) "one of :INTERNET, :LOCAL, :IPV4 or :IPV6")
+  (check-type address-family (member :internet :local :ipv4 :ipv6) "one of :INTERNET, :LOCAL, :IPV4 or :IPV6")
   (check-type type (member :stream :datagram) "either :STREAM or :DATAGRAM")
   (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
-  (let ((args (remove-from-plist args :family :type :connect :external-format :ipv6)))
-    (when (eq :ipv4 family) (setf ipv6 nil))
+  (let ((args (remove-from-plist args :address-family :type :connect :external-format :ipv6)))
+    (when (eq :ipv4 address-family) (setf ipv6 nil))
     (let ((*ipv6* ipv6))
-      (when (eq :internet family) (setf family +default-inet-family+))
-      (multiple-value-case ((family type connect) :test #'eq)
+      (when (eq :internet address-family) (setf address-family +default-inet-address-family+))
+      (multiple-value-case ((address-family type connect) :test #'eq)
         (((:ipv4 :ipv6) :stream :active)
-         (%make-internet-stream-active-socket args family external-format))
+         (%make-internet-stream-active-socket args address-family external-format))
         (((:ipv4 :ipv6) :stream :passive)
-         (%make-internet-stream-passive-socket args family external-format))
+         (%make-internet-stream-passive-socket args address-family external-format))
         ((:local :stream :active)
          (%make-local-stream-active-socket args :local external-format))
         ((:local :stream :passive)
          (%make-local-stream-passive-socket args :local external-format))
         (((:ipv4 :ipv6) :datagram)
-         (%make-internet-datagram-socket args family external-format))
+         (%make-internet-datagram-socket args address-family external-format))
         ((:local :datagram)
          (%make-local-datagram-socket args :local external-format))))))
 
-(define-compiler-macro make-socket (&whole form &rest args &key (family :internet) (type :stream)
+(define-compiler-macro make-socket (&whole form &rest args &key (address-family :internet) (type :stream)
                                     (connect :active) (ipv6 '*ipv6* ipv6p)
                                     (external-format :default) &allow-other-keys)
   (cond
-    ((and (constantp family) (constantp type) (constantp connect))
-     (check-type family (member :internet :local :ipv4 :ipv6) "one of :INTERNET, :LOCAL, :IPV4 or :IPV6")
+    ((and (constantp address-family) (constantp type) (constantp connect))
+     (check-type address-family (member :internet :local :ipv4 :ipv6) "one of :INTERNET, :LOCAL, :IPV4 or :IPV6")
      (check-type type (member :stream :datagram) "either :STREAM or :DATAGRAM")
      (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
      (let ((lower-function
-            (multiple-value-case ((family type connect) :test #'eq)
+            (multiple-value-case ((address-family type connect) :test #'eq)
               (((:ipv4 :ipv6 :internet) :stream :active) '%make-internet-stream-active-socket)
               (((:ipv4 :ipv6 :internet) :stream :passive) '%make-internet-stream-passive-socket)
               ((:local :stream :active) '%make-local-stream-active-socket)
               ((:local :stream :passive) '%make-local-stream-passive-socket)
               (((:ipv4 :ipv6 :internet) :datagram) '%make-internet-datagram-socket)
               ((:local :datagram) '%make-local-datagram-socket)))
-           (newargs (remove-from-plist args :family :type :connect :external-format :ipv6)))
-       (multiple-value-case (family)
-         (:internet (setf family '+default-inet-family+))
+           (newargs (remove-from-plist args :address-family :type :connect :external-format :ipv6)))
+       (multiple-value-case (address-family)
+         (:internet (setf address-family '+default-inet-address-family+))
          (:ipv4     (setf ipv6 nil)))
-       (let ((expansion `(,lower-function (list ,@newargs) ,family ,external-format)))
-         (if (or ipv6p (eq :ipv4 family))
+       (let ((expansion `(,lower-function (list ,@newargs) ,address-family ,external-format)))
+         (if (or ipv6p (eq :ipv4 address-family))
              `(let ((*ipv6* ,ipv6)) ,expansion)
              expansion))))
     (t form)))

@@ -198,7 +198,7 @@ Describe sockets here.
 @include include/fun-sockets-socket-os-fd.texinfo
 @include include/fun-sockets-socket-type.texinfo
 @include include/fun-sockets-socket-protocol.texinfo
-@include include/fun-sockets-socket-family.texinfo
+@include include/fun-sockets-socket-address-family.texinfo
 @include include/fun-sockets-socket-open-p.texinfo
 @include include/fun-sockets-ipv6-socket-p.texinfo
 @include include/fun-sockets-local-name.texinfo

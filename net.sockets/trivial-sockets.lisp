@@ -50,7 +50,7 @@
     (error 'unsupported :feature `(:protocol ,protocol)))
   (let ((net.sockets:*ipv6* nil))
     (handler-bind ((error (lambda (c) (error 'socket-error :nested-error c))))
-      (net.sockets:make-socket :family :internet
+      (net.sockets:make-socket :address-family :internet
                                :connect :active
                                :type :stream
                                :remote-host (resolve-hostname peer-host)
@@ -69,7 +69,7 @@
   (let ((net.sockets:*ipv6* nil))
     (handler-bind ((error (lambda (c) (error 'socket-error :nested-error c))))
       (let* ((host (if (eq host :any) net.sockets:+ipv4-unspecified+ host))
-             (socket (net.sockets:make-socket :family :internet
+             (socket (net.sockets:make-socket :address-family :internet
                                               :type :stream
                                               :connect :passive
                                               :local-host host

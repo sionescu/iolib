@@ -17,15 +17,15 @@
     ((:ipv6  :datagram :active  :default) . socket-datagram-internet-active)))
 
 ;;; FIXME: should match :default to whatever protocol is the default.
-(defun select-socket-class (family type connect protocol)
-  (or (cdr (assoc (list family type connect protocol) *socket-type-map*
+(defun select-socket-class (address-family type connect protocol)
+  (or (cdr (assoc (list address-family type connect protocol) *socket-type-map*
                   :test #'equal))
       (error "No socket class found !!")))
 
 ;;;; Shared Initialization
 
-(defun translate-make-socket-keywords-to-constants (family type protocol)
-  (let ((sf (ecase family
+(defun translate-make-socket-keywords-to-constants (address-family type protocol)
+  (let ((sf (ecase address-family
               (:ipv4  af-inet)
               (:ipv6  af-inet6)
               (:local af-local)))
@@ -42,15 +42,15 @@
   (fd-of socket))
 
 (defmethod initialize-instance :after ((socket socket) &key
-                                       file-descriptor family type
+                                       file-descriptor address-family type
                                        (protocol :default))
-  (with-accessors ((fd fd-of) (fam socket-family) (proto socket-protocol))
+  (with-accessors ((fd fd-of) (fam socket-address-family) (proto socket-protocol))
       socket
     (setf fd (or file-descriptor
                  (multiple-value-call #'%socket
                    (translate-make-socket-keywords-to-constants
-                    family type protocol))))
-    (setf fam family
+                    address-family type protocol))))
+    (setf fam address-family
           proto protocol)))
 
 (defmethod (setf external-format-of) (external-format (socket passive-socket))
@@ -71,12 +71,12 @@
 
 (defun ipv6-socket-p (socket)
   "Return T if SOCKET is an AF_INET6 socket."
-  (eq :ipv6 (socket-family socket)))
+  (eq :ipv6 (socket-address-family socket)))
 
 ;;;; Printing
 
 (defun sock-fam (socket)
-  (ecase (socket-family socket)
+  (ecase (socket-address-family socket)
     (:ipv4 "IPv4")
     (:ipv6 "IPv6")))
 

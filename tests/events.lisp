@@ -68,9 +68,9 @@
 (test event-base-with-open-sockets
   (is-false
    (with-event-base (base)
-     (with-open-socket (passive :family :ipv4 :connect :passive
+     (with-open-socket (passive :address-family :ipv4 :connect :passive
                                 :local-host +ipv4-unspecified+)
-       (with-open-socket (active :family :ipv4
+       (with-open-socket (active :address-family :ipv4
                                  :remote-port (local-port passive)
                                  :remote-host #(127 0 0 1))
          (add-timer base #'timeout-cb 5)
