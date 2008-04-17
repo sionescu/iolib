@@ -280,11 +280,6 @@
 
 ;;;; CONNECT
 
-(defmethod connect :before ((socket active-socket) address &key)
-  (declare (ignore address))
-#+freebsd
-  (setf (socket-option socket :no-sigpipe) t))
-
 (defun ipv4-connect (fd address port)
   (with-sockaddr-in (sin address port)
     (%connect fd sin size-of-sockaddr-in)))
