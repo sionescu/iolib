@@ -336,7 +336,8 @@
   (with-foreign-object (sin 'sockaddr-in)
     (bzero sin size-of-sockaddr-in)
     (setf (foreign-slot-value sin 'sockaddr-in 'addr) af-unspec)
-    (%connect (fd-of socket) sin size-of-sockaddr-in)))
+    (%connect (fd-of socket) sin size-of-sockaddr-in)
+    (values socket)))
 
 ;;;; SHUTDOWN
 
