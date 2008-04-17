@@ -55,7 +55,7 @@
           (when proto (return-from lookup-protocol-on-disk-by-number proto)))))))
 
 (define-condition unknown-protocol ()
-  ((datum :initarg :name :initform nil :reader unknown-protocol-datum))
+  ((datum :initarg :datum :initform nil :reader unknown-protocol-datum))
   (:report (lambda (condition stream)
              (format stream "Unknown protocol: ~S" (unknown-protocol-datum condition))))
   (:documentation "Condition raised when a network protocol is not found."))
