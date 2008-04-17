@@ -294,7 +294,8 @@
     (%connect fd sin6 size-of-sockaddr-in6)))
 
 (defmethod connect ((socket internet-socket) (address ipv4-address)
-                    &key (port 0))
+                    &key (port 0) (timeout nil))
+  (iomux:wait-until-fd-ready (fd-of socket) :write timeout t)
   (if (ipv6-socket-p socket)
       (ipv6-connect (fd-of socket)
                     (map-ipv4-vector-to-ipv6 (address-name address))
@@ -303,7 +304,8 @@
   (values socket))
 
 (defmethod connect ((socket internet-socket) (address ipv6-address)
-                    &key (port 0))
+                    &key (port 0) (timeout nil))
+  (iomux:wait-until-fd-ready (fd-of socket) :write timeout t)
   (ipv6-connect (fd-of socket) (address-name address) port)
   (values socket))
 
