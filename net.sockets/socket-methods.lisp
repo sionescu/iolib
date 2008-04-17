@@ -293,20 +293,35 @@
   (with-sockaddr-in6 (sin6 address port)
     (%connect fd sin6 size-of-sockaddr-in6)))
 
+(defun call-with-socket-to-wait-connect (socket thunk wait timeout)
+  (handler-case
+      (funcall thunk)
+    (nix:ewouldblock (err)
+      (cond
+        (wait
+         (iomux:wait-until-fd-ready (fd-of socket) :write timeout t)
+         (let ((errcode (socket-option socket :error)))
+           (unless (zerop errcode)
+             (signal-socket-error errcode))))
+        (t (error err))))))
+
+(defmacro with-socket-to-wait-connect ((socket wait timeout) &body body)
+  `(call-with-socket-to-wait-connect ,socket #'(lambda () ,@body) ,wait ,timeout))
+
 (defmethod connect ((socket internet-socket) (address ipv4-address)
-                    &key (port 0) (timeout nil))
-  (iomux:wait-until-fd-ready (fd-of socket) :write timeout t)
-  (if (ipv6-socket-p socket)
-      (ipv6-connect (fd-of socket)
-                    (map-ipv4-vector-to-ipv6 (address-name address))
-                    port)
-      (ipv4-connect (fd-of socket) (address-name address) port))
+                    &key (port 0) (wait t) (timeout nil))
+  (with-socket-to-wait-connect (socket wait timeout)
+    (if (ipv6-socket-p socket)
+        (ipv6-connect (fd-of socket)
+                      (map-ipv4-vector-to-ipv6 (address-name address))
+                      port)
+        (ipv4-connect (fd-of socket) (address-name address) port)))
   (values socket))
 
 (defmethod connect ((socket internet-socket) (address ipv6-address)
                     &key (port 0) (timeout nil))
-  (iomux:wait-until-fd-ready (fd-of socket) :write timeout t)
-  (ipv6-connect (fd-of socket) (address-name address) port)
+  (with-socket-to-wait-connect (socket wait timeout)
+    (ipv6-connect (fd-of socket) (address-name address) port))
   (values socket))
 
 (defmethod connect ((socket local-socket) (address local-address) &key)

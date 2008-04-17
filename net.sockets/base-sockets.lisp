@@ -108,8 +108,8 @@ file descriptor in order for it to be valid in the receiving process."))
   (:documentation "Connects `SOCKET' to `ADDRESS'. For INTERNET sockets you can specify
 the port to connect to using keyword argument `PORT'. The default value of `PORT' is 0,
 which usually means letting the OS choose a random port to connect to.
-For `INTERNET' sockets, if a connection cannot be established within `TIMEOUT' seconds,
-signal `IOMUX:POLL-TIMEOUT'."))
+For `INTERNET' sockets, if `WAIT' is true and a connection cannot be established within
+`TIMEOUT' seconds signal `IOMUX:POLL-TIMEOUT', but it works only with non-blocking sockets."))
 
 (defgeneric socket-connected-p (socket)
   (:documentation "Returns a boolean specifying whether or not `SOCKET' is connected."))
