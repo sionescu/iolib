@@ -163,6 +163,6 @@ of :TCP, :UDP or :ANY."
         (error 'unknown-service :datum service))))
 
 (defun ensure-numerical-service (service &optional (protocol :tcp))
-  (etypecase service
+  (typecase service
     (tcp-port service)
     (t        (nth-value 0 (lookup-service service protocol)))))

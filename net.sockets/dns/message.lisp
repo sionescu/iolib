@@ -310,11 +310,11 @@
           (class (query-class-id (read-ub16 buffer))))
       (make-question name type class))))
 
-(defgeneric read-rr-data (buffer type class &optional length))
+(defgeneric read-rr-data (buffer type class length))
 
 (defmethod read-rr-data ((buffer dynamic-buffer)
                          (type (eql :a)) (class (eql :in))
-                         &optional resource-length)
+                         resource-length)
   (unless (= resource-length 4)
     (error 'dns-message-error))
   (let ((address (make-array 4 :element-type 'ub8)))
@@ -324,7 +324,7 @@
 
 (defmethod read-rr-data ((buffer dynamic-buffer)
                          (type (eql :aaaa)) (class (eql :in))
-                         &optional resource-length)
+                         resource-length)
   (unless (= resource-length 16)
     (error 'dns-message-error))
   (let ((address (make-array 8 :element-type '(unsigned-byte 16))))
@@ -334,39 +334,39 @@
 
 (defmethod read-rr-data ((buffer dynamic-buffer)
                          (type (eql :cname)) (class (eql :in))
-                         &optional resource-length)
+                         resource-length)
   (declare (ignore resource-length))
   (read-domain-name buffer))            ; CNAME
 
 (defmethod read-rr-data ((buffer dynamic-buffer)
                          (type (eql :hinfo)) (class (eql :in))
-                         &optional resource-length)
+                         resource-length)
   (declare (ignore resource-length))
   (list (read-dns-string buffer)        ; CPU
         (read-dns-string buffer)))      ; OS
 
 (defmethod read-rr-data ((buffer dynamic-buffer)
                          (type (eql :mx)) (class (eql :in))
-                         &optional resource-length)
+                         resource-length)
   (declare (ignore resource-length))
   (list (read-ub16 buffer)              ; PREFERENCE
         (read-domain-name buffer)))     ; EXCHANGE
 
 (defmethod read-rr-data ((buffer dynamic-buffer)
                          (type (eql :ns)) (class (eql :in))
-                         &optional resource-length)
+                         resource-length)
   (declare (ignore resource-length))
   (read-domain-name buffer))            ; NSDNAME
 
 (defmethod read-rr-data ((buffer dynamic-buffer)
                          (type (eql :ptr)) (class (eql :in))
-                         &optional resource-length)
+                         resource-length)
   (declare (ignore resource-length))
   (read-domain-name buffer))            ; PTRDNAME
 
 (defmethod read-rr-data ((buffer dynamic-buffer)
                          (type (eql :soa)) (class (eql :in))
-                         &optional resource-length)
+                         resource-length)
   (declare (ignore type class resource-length))
   (list (read-domain-name buffer)       ; MNAME
         (read-domain-name buffer)       ; RNAME
@@ -378,7 +378,7 @@
 
 (defmethod read-rr-data ((buffer dynamic-buffer)
                          (type (eql :txt)) (class (eql :in))
-                         &optional resource-length)
+                         resource-length)
   (declare (ignore type class))
   (loop :for string := (read-dns-string buffer) ; TXT-DATA
         :for total-length := (1+ (length string))
@@ -389,7 +389,7 @@
                    (error 'dns-message-error))))
 
 (defmethod read-rr-data ((buffer dynamic-buffer)
-                         type class &optional resource-length)
+                         type class resource-length)
   (declare (ignore buffer type class resource-length))
   (error 'dns-message-error))
 
@@ -423,7 +423,6 @@
 
 (defgeneric read-dns-message (buffer)
   (:method ((buffer dynamic-buffer))
-    (defparameter *msg* buffer)
     (let ((msg (read-message-header buffer)))
       (with-accessors ((qdcount dns-message-question-count)
                        (ancount dns-message-answer-count)

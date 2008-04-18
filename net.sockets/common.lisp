@@ -171,7 +171,7 @@
 (defun ensure-number (value &key (start 0) end (radix 10) (type t) (errorp t))
   (check-type value (or string unsigned-byte) "a string or an unsigned-byte")
   (let ((parsed
-         (etypecase value
+         (typecase value
            (string
             (ignore-errors (parse-integer value :start start :end end
                                           :radix radix :junk-allowed nil)))
