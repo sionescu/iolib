@@ -51,7 +51,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
                                              local-host local-port remote-host remote-port)
   (let ((local-port  (ensure-numerical-service local-port))
         (remote-port (ensure-numerical-service remote-port)))
-    #+freebsd (setf (socket-option socket :no-sigpipe) t)
+    (setf (socket-option socket :no-sigpipe :if-does-not-exist nil) t)
     (when keepalive (setf (socket-option socket :keep-alive) t))
     (when nodelay (setf (socket-option socket :tcp-nodelay) t))
     (when local-host
@@ -98,10 +98,8 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 
 (defun %%init-internet-stream-passive-socket (socket interface reuse-address
                                               local-host local-port backlog)
-  #-linux (declare (ignore interface))
   (let ((local-port  (ensure-numerical-service local-port)))
     (when local-host
-      #+linux
       (when interface
         (setf (socket-option socket :bind-to-device) interface))
       (bind-address socket (ensure-hostname local-host)
@@ -137,7 +135,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 ;;; Local Stream Active Socket creation
 
 (defun %%init-local-stream-active-socket (socket local-filename remote-filename)
-  #+freebsd (setf (socket-option socket :no-sigpipe) t)
+  (setf (socket-option socket :no-sigpipe :if-does-not-exist nil) t)
   (when local-filename
     (bind-address socket (ensure-address local-filename :family :local)))
   (when remote-filename
@@ -200,8 +198,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 
 (defun %%init-internet-datagram-socket (socket broadcast interface reuse-address
                                         local-host local-port remote-host remote-port)
-  #-linux (declare (ignore interface))
-  #+freebsd (setf (socket-option socket :no-sigpipe) t)
+  (setf (socket-option socket :no-sigpipe :if-does-not-exist nil) t)
   (let ((local-port  (ensure-numerical-service local-port))
         (remote-port (ensure-numerical-service remote-port)))
     (when broadcast (setf (socket-option socket :broadcast) t))
@@ -209,7 +206,6 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
       (bind-address socket (ensure-hostname local-host)
                     :port local-port
                     :reuse-address reuse-address)
-      #+linux
       (when interface
         (setf (socket-option socket :bind-to-device) interface)))
     (when (plusp remote-port)
@@ -244,7 +240,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
 ;;; Local Datagram Socket creation
 
 (defun %%init-local-datagram-socket (socket local-filename remote-filename)
-  #+freebsd (setf (socket-option socket :no-sigpipe) t)
+  (setf (socket-option socket :no-sigpipe :if-does-not-exist nil) t)
   (when local-filename
     (bind-address socket (ensure-address local-filename :family :local)))
   (when remote-filename

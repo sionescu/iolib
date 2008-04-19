@@ -54,7 +54,7 @@
     `(setf (gethash ,name *set-socket-options*)
            (list ,type ,level ,optname))))
 
-(define-setf-expander socket-option (socket option-name)
+(define-setf-expander socket-option (socket option-name &key (if-does-not-exist :error))
   (flet ((%make-arglist (type-args expanded-args)
            (mapcar #'(lambda (targ earg)
                        (if (consp targ)
@@ -70,9 +70,12 @@
                            ,@(%make-arglist (socktype-args type) glist))
                         socket)))
             (values nil nil nil
-                    `(error 'socket-option-not-supported-error
-                            :message ,(format nil "Unsupported socket option: ~S"
-                                              option-name))))))
+                    (case if-does-not-exist
+                      (:error
+                       `(error 'socket-option-not-supported-error
+                               :message ,(format nil "Unsupported socket option: ~S"
+                                                 option-name)))
+                      (nil nil))))))
 
 (defmacro define-socket-option (name action optname level argtype os)
   (let ((eql-name (make-keyword name)))
