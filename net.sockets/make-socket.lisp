@@ -340,7 +340,6 @@ for the new socket can also be specified using `INPUT-BUFFER-SIZE' and `OUTPUT-B
   (flet ((%get-address-family (fd)
            (with-sockaddr-storage-and-socklen (ss size)
              (%getsockname fd ss size)
-             (foreign-slot-value ss 'sockaddr-storage 'family)
              (eswitch ((foreign-slot-value ss 'sockaddr-storage 'family) :test #'=)
                (af-inet  :ipv4)
                (af-inet6 :ipv6)
