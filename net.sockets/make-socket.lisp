@@ -310,11 +310,9 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
            (newargs (remove-from-plist args :address-family :type :connect :external-format :ipv6)))
        (multiple-value-case (address-family)
          (:internet (setf address-family '+default-inet-address-family+))
-         (:ipv4     (setf ipv6 nil)))
+         (:ipv4     (setf ipv6 nil ipv6p t)))
        (let ((expansion `(,lower-function (list ,@newargs) ,address-family ,external-format)))
-         (if (or ipv6p (eq :ipv4 address-family))
-             `(let ((*ipv6* ,ipv6)) ,expansion)
-             expansion))))
+         (if ipv6p `(let ((*ipv6* ,ipv6)) ,expansion) expansion))))
     (t form)))
 
 (defmacro with-open-socket ((var &rest args) &body body)
