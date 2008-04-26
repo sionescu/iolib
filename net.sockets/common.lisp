@@ -190,9 +190,6 @@
 (defun lisp->c-bool (val)
   (if val 1 0))
 
-(defun memq (value list)
-  (member value list :test #'eq))
-
 (defmacro multiple-value-case ((values &key (test 'eql)) &body body)
   (setf values (ensure-list values))
   (setf test (alexandria::extract-function-name test))
@@ -202,9 +199,7 @@
                ((and (symbolp var) (member var '("_" "*") :test #'string=))
                 t)
                ((consp var)
-                (if (eq 'eq test)
-                    `(memq ,val ',var)
-                    `(member ,val ',var :test ,test)))
+                `(member ,val ',var :test ,test))
                (t
                 `(,test ,val ',var))))
            (%do-clause (c gensyms)
