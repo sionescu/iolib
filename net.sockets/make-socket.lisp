@@ -87,7 +87,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
       form args
     (destructuring-bind (&key keepalive nodelay (reuse-address t)
                               local-host (local-port 0)
-                              (remote-host +any-host+) (remote-port 0)
+                              (remote-host '+any-host+) (remote-port 0)
                               input-buffer-size output-buffer-size)
         (cdr args)
       `(%%make-internet-stream-active-socket ,family ,ef ,keepalive ,nodelay ,reuse-address
@@ -126,7 +126,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
   (with-guard-against-non-list-args-and-destructuring-bind-errors
       form args
     (destructuring-bind (&key interface (reuse-address t)
-                              (local-host +any-host+) (local-port 0)
+                              (local-host '+any-host+) (local-port 0)
                               (backlog *default-backlog-size*))
         (cdr args)
       `(%%make-internet-stream-passive-socket ,family ,ef ,interface ,reuse-address
@@ -232,7 +232,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
       form args
     (destructuring-bind (&key broadcast interface (reuse-address t)
                               local-host (local-port 0)
-                              (remote-host +any-host+) (remote-port 0))
+                              (remote-host '+any-host+) (remote-port 0))
         (cdr args)
       `(%%make-internet-datagram-socket ,family ,ef ,broadcast ,interface ,reuse-address
                                         ,local-host ,local-port ,remote-host ,remote-port))))
