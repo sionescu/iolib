@@ -351,7 +351,7 @@
   (assert (or read write) (read write)
           "You must select at least one direction to shut down.")
   (%shutdown (fd-of socket)
-             (multiple-value-case ((read write) :test #'eq)
+             (multiple-value-case ((read write))
                ((*   nil) shut-rd)
                ((nil *)   shut-wr)
                (t         shut-rdwr)))
