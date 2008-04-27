@@ -57,7 +57,9 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
                  ((consp arg)   (list (first arg) `(quote ,(second arg))))))
          (arg-name (arg)
            (cond ((symbolp arg) arg)
-                 ((consp arg)   (first arg)))))
+                 ((consp arg)   (first arg))))
+         (quotify (form)
+           `(list (quote ,(car form)) ,@(cdr form))))
     (let* ((arg-names (mapcar #'arg-name args))
            (1°-level-function (make-1°-level-name socket-family socket-type socket-connect))
            (2°-level-function (format-symbol t "%~A" 1°-level-function))
@@ -74,11 +76,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
              ;; in the compilation environment
              (destructuring-bind (&key ,@(mapcar #'maybe-quote-default-value args))
                  (cdr arguments)
-               (flet ((replace-arguments-with-their-values (form)
-                        (sublis (mapcar #'cons ',(list* 'family 'ef arg-names)
-                                        (list family ef ,@arg-names))
-                                form)))
-                 (replace-arguments-with-their-values ',1°-level-body)))))))))
+               ,(quotify 1°-level-body))))))))
 
 ;;; Internet Stream Active Socket creation
 
