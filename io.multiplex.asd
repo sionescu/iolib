@@ -4,9 +4,10 @@
 
 ;;; Need trivial-features to correctly handle the reader conditionals
 ;;; in the system definition form.
-(eval-when (:load-toplevel)
-  (asdf:oos 'asdf:load-op :cffi)
-  (asdf:oos 'asdf:load-op :trivial-features))
+(eval-when (:load-toplevel :execute)
+  (asdf:oos 'asdf:load-op :cffi-grovel)
+  (asdf:oos 'asdf:load-op :trivial-features)
+  #+cmu (require :gray-streams))
 
 (asdf:defsystem :io.multiplex
   :description "I/O multiplexing library."
