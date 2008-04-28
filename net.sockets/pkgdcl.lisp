@@ -213,7 +213,6 @@
    #:enable-reader-macro
    #:disable-reader-macro
    #:define-syntax
-   #:literal-hash-table
    #:ip-address
    ))
 

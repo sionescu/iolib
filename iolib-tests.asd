@@ -10,7 +10,6 @@
   :components
   ((:file "pkgdcl")
    (:file "mainsuite" :depends-on ("pkgdcl"))
-   (:file "misc" :depends-on ("pkgdcl" "mainsuite"))
    (:file "events" :depends-on ("pkgdcl" "mainsuite"))
    (:file "streams" :depends-on ("pkgdcl" "mainsuite"))
    (:file "sockets" :depends-on ("pkgdcl" "mainsuite"))))

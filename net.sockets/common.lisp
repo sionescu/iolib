@@ -274,29 +274,3 @@
 (defmacro define-syntax (name &body body)
   `(defmethod enable-reader-macro* ((name (eql ',name)))
      ,@body))
-
-;;; Literal hash tables reader macro
-
-(defun make-ht-from-list (alist stream test)
-  (flet ((err () (error 'reader-error :stream stream))
-         (alistp (alist) (every #'consp alist)))
-    (unless (alistp alist) (err))
-    (alist-hash-table alist :test test :size (length alist))))
-
-(defun read-literal-ht (stream &optional c n)
-  (declare (ignore c n))
-  (let ((*readtable* (copy-readtable))
-        (c (read-char stream))
-        (test 'eql))
-    (flet ((err () (error 'reader-error :stream stream)))
-      (case c
-        (#\( t)
-        (#\: (let ((l (read-delimited-list #\( stream)))
-               (unless (= 1 (length l)) (err))
-               (setf test (car l))))
-        (t   (err))))
-    (make-ht-from-list (read-delimited-list #\) stream)
-                       stream test)))
-
-(define-syntax literal-hash-table
-  (set-dispatch-macro-character #\# #\h 'read-literal-ht))
