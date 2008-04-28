@@ -249,11 +249,11 @@
 (defgeneric disable-reader-macro* (name))
 
 (defmacro enable-reader-macro (name)
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
+  `(eval-when (:compile-toplevel)
      (enable-reader-macro* ,name)))
 
 (defmacro disable-reader-macro (name)
-  `(eval-when (:compile-toplevel :load-toplevel :execute)
+  `(eval-when (:compile-toplevel)
      (disable-reader-macro* ,name)))
 
 (defun save-old-readtable (symbol readtable)
