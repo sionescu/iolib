@@ -97,11 +97,11 @@
 ;;; A list of test files where each entry consists of the name
 ;;; prefix and a list of encodings.
 (defvar *test-files*
-  '(("kafka" (:utf-8 :latin-1 #|:cp1252|#))
-    ("tilton" (:utf-8 :ascii))
-    ("hebrew" (:utf-8 #|:latin-8|#))
-    ("russian" (:utf-8 #|:koi8r|#))
-    ("unicode_demo" (:utf-8 #|:utf-16 :utf-32|#))))
+  '(("kafka" (#-cmu :utf-8 :latin-1 #|:cp1252|#))
+    ("tilton" (#-cmu :utf-8 :ascii))
+    ("hebrew" (#-cmu :utf-8 #|:latin-8|#))
+    ("russian" (#-cmu :utf-8 #|:koi8r|#))
+    ("unicode_demo" (#-cmu :utf-8 #|:utf-16 :utf-32|#))))
 
 ;;; For a name suffix FILE-NAME and a symbol SYMBOL denoting an
 ;;; encoding returns a list of pairs where the car is a full file name
