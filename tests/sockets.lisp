@@ -255,8 +255,8 @@
             (and (string= (interface-name if1) (interface-name if2))
                  (eql (interface-index if1) (interface-index if2)))))
      (loop for nif in (list-network-interfaces)
-        always (nif-equal nif (lookup-interface (interface-name nif)))
-        always (nif-equal nif (lookup-interface (interface-index nif)))))))
+        always (and (nif-equal nif (lookup-interface (interface-name nif)))
+                    (nif-equal nif (lookup-interface (interface-index nif))))))))
 
 ;;;; Sockets
 
