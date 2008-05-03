@@ -67,7 +67,7 @@ ADDRESS-NAME reader."))
                    :for pindex :from 1 :below unix-path-max
                    :do (setf (schar name sindex)
                              (code-char (mem-aref path :uint8 pindex)))))
-            (t 
+            (t
              ;; address is in the filesystem
              (setf name (foreign-string-to-lisp path))))
       (make-instance 'local-address

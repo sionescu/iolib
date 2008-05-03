@@ -265,7 +265,7 @@
                                          (iobuf-end ob) octets-needed)
              (incf (iobuf-end ob) octets-needed)
              (%flush-obuf-if-needed stream))
-            (t 
+            (t
              (with-pointer-to-vector-data (ptr array)
                (%flush-obuf write-fn fd ob)
                (let ((ret (%write-n-bytes write-fn fd (inc-pointer ptr start)

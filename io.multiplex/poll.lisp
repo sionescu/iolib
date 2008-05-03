@@ -55,7 +55,7 @@
     (with-accessors ((fd-set fd-set-of) (size fd-set-size-of)
                      (count fd-count-of)) mux
       (when (= count size)
-        (setf (values fd-set size) (extend-pollfd-set fd-set size)))      
+        (setf (values fd-set size) (extend-pollfd-set fd-set size)))
       (set-pollfd-entry fd-set count fd readp writep)
       (setf (gethash fd *pollfd-table*) count)
       (incf count))))

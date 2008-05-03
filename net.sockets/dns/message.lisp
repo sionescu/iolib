@@ -283,7 +283,7 @@
                    (cond (rec
                           (setf pointer-seen t)
                           (setf offset (+ (read-cursor-of buffer) 2)))
-                         (t 
+                         (t
                           (setf offset (+ (read-cursor-of buffer) 1)))))
                  (dynamic-buffer-seek-read-cursor buffer :offset pointer)
                  (setf string (read-dns-string buffer)))

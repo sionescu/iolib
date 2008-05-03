@@ -19,7 +19,7 @@
 ;;;;
 
 ;; you're using a part of the interface that the implementation doesn't do
-(define-condition unsupported (error) 
+(define-condition unsupported (error)
   ((feature :initarg :feature :reader unsupported-feature))
   (:report (lambda (c s)
              (format s "~S does not support trivial-socket feature ~S."

@@ -85,5 +85,5 @@
            (cond ((timer-expired-p next-timer now)
                   (setf expired-p t)
                   (handle-expired-timer (priority-queue-extract-minimum schedule)))
-                 (t 
+                 (t
                   (%return))))))))

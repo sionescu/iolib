@@ -185,7 +185,7 @@ within the extent of BODY.  Closes VAR."
                (unmonitor-fd (mux-of event-base) current-entry)
                (update-fd (mux-of event-base) current-entry
                           (fd-event-type event) :del)))
-          (t 
+          (t
            (%remove-fd event-base event)))))
 
 (defun %remove-timer (event-base timer)
@@ -285,7 +285,7 @@ within the extent of BODY.  Closes VAR."
                      (when errorp (do-error))
                      (when (member :read ev-types) (do-read))
                      (when (member :write ev-types) (do-write)))
-                    (t 
+                    (t
                      (warn "Got spurious event for non-monitored FD: ~A" fd)))))))
       (priority-queue-reorder fd-timers)
       (values (consp fd-events) deletion-list))))
