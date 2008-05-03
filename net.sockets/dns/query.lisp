@@ -208,13 +208,13 @@
       (socket :type :datagram :ipv6 (ipv6-address-p nameserver)
               :remote-host nameserver :remote-port +dns-port+)
     (send-to socket buffer :end length)
-    (iomux:wait-until-fd-ready (fd-of socket) :read timeout t)
+    (iomux:wait-until-fd-ready (fd-of socket) :input timeout t)
     (multiple-value-bind (buf len)
         (receive-from socket :size +dns-max-datagram-size+)
       (values buf len))))
 
 (defun wait-until-socket-connected (socket timeout)
-  (if (nth-value 1 (iomux:wait-until-fd-ready (fd-of socket) :write timeout))
+  (if (nth-value 1 (iomux:wait-until-fd-ready (fd-of socket) :output timeout))
       (let ((errcode (socket-option socket :error)))
         (when (minusp errcode) (signal-socket-error)))
       (error 'socket-connection-timeout-error)))
@@ -227,7 +227,7 @@
     (send-to socket minibuf :end (+ length 2))))
 
 (defun get-tcp-query-length (socket timeout)
-  (iomux:wait-until-fd-ready (fd-of socket) :read timeout t)
+  (iomux:wait-until-fd-ready (fd-of socket) :input timeout t)
   (multiple-value-bind (minibuf)
       (receive-from socket :size 2)
     (+ (ash (aref minibuf 0) 8)
@@ -238,7 +238,7 @@
     (let* ((message-length (get-tcp-query-length socket (funcall time-fn)))
            (input-buffer (make-array message-length :element-type 'ub8)))
       (loop :with off := 0 :do
-         (iomux:wait-until-fd-ready fd :read (funcall time-fn) t)
+         (iomux:wait-until-fd-ready fd :input (funcall time-fn) t)
          (let ((inbytes (nth-value 1 (receive-from socket :buffer input-buffer :start off))))
            (incf off inbytes)
            (when (= off message-length)

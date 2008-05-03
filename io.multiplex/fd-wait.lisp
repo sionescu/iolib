@@ -34,9 +34,9 @@ of a file descriptor."))
 
 (defun compute-poll-flags (type)
   (ecase type
-    (:read (logior pollin pollrdhup pollpri))
-    (:write (logior pollout pollhup))
-    (:read-write (logior pollin pollrdhup pollpri pollout pollhup))))
+    (:input  (logior pollin pollrdhup pollpri))
+    (:output (logior pollout))
+    (:io     (logior pollin pollrdhup pollpri pollout))))
 
 (defun process-poll-revents (revents fd)
   (let ((readp nil) (writep nil))
@@ -50,8 +50,8 @@ of a file descriptor."))
     (values readp writep)))
 
 (defun wait-until-fd-ready (file-descriptor event-type &optional timeout errorp)
-  "Poll file descriptor `FILE-DESCRIPTOR' for I/O readiness. `EVENT-TYPE' must be
-:READ, :WRITE or :READ-WRITE which means \"either :READ or :WRITE\".
+  "Poll file descriptor `FILE-DESCRIPTOR' for I/O readiness.
+`EVENT-TYPE' must be either :INPUT, :OUTPUT or :IO.
 `TIMEOUT' must be either a non-negative integer measured in seconds,
 or `NIL' meaning no timeout at all. If `ERRORP' is not NIL and a timeout
 occurs, then a condition of type `POLL-TIMEOUT' is signaled.
@@ -75,19 +75,18 @@ Returns two boolean values indicating readability and writeability of `FILE-DESC
           (nix:posix-error (err) (poll-error err)))
         (process-poll-revents revents file-descriptor)))))
 
-(defun fd-ready-p (fd &optional (event-type :read))
-  "Tests file-descriptor `FD' for I/O readiness. `EVENT-TYPE'
-must be :READ, :WRITE or :READ-WRITE which means \"either :READ
-or :WRITE\"."
+(defun fd-ready-p (fd &optional (event-type :input))
+  "Tests file-descriptor `FD' for I/O readiness.
+`EVENT-TYPE' must be either :INPUT, :OUTPUT or :IO ."
   (multiple-value-bind (readp writep)
       (wait-until-fd-ready fd event-type 0)
     (ecase event-type
-      (:read readp)
-      (:write writep)
-      (:read-write (or readp writep)))))
+      (:input  readp)
+      (:output writep)
+      (:io     (or readp writep)))))
 
 (defun fd-readablep (fd)
-  (nth-value 0 (wait-until-fd-ready fd :read 0)))
+  (nth-value 0 (wait-until-fd-ready fd :input 0)))
 
 (defun fd-writablep (fd)
-  (nth-value 1 (wait-until-fd-ready fd :write 0)))
+  (nth-value 1 (wait-until-fd-ready fd :output 0)))

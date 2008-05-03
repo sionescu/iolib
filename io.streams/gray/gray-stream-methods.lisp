@@ -70,7 +70,7 @@
 
 (defun %fill-ibuf (read-fn fd buf &optional timeout)
   (when timeout
-    (let ((readablep (iomux:wait-until-fd-ready fd :read timeout)))
+    (let ((readablep (iomux:wait-until-fd-ready fd :input timeout)))
       (unless readablep
         (return-from %fill-ibuf :timeout))))
   (let ((num (nix:repeat-upon-eintr
@@ -182,7 +182,7 @@
                    ;; FIXME signal something better -- maybe analyze the status
                    (return-from %write-n-bytes (values nil :fail)))))
              (buffer-emptyp () (= bytes-written nbytes))
-             (errorp () (handler-case (iomux:wait-until-fd-ready fd :write)
+             (errorp () (handler-case (iomux:wait-until-fd-ready fd :output)
                           (iomux:poll-error () t)
                           (:no-error (r w) (declare (ignore r w)) nil))))
       (loop :until (buffer-emptyp) :do (write-or-return)
@@ -214,7 +214,7 @@
              (buffer-emptyp ()
                (when (iobuf-empty-p buf)
                  (iobuf-reset buf) t))
-             (errorp () (handler-case (iomux:wait-until-fd-ready fd :write)
+             (errorp () (handler-case (iomux:wait-until-fd-ready fd :output)
                           (iomux:poll-error () t)
                           (:no-error (r w) (declare (ignore r w)) nil))))
       (loop :until (buffer-emptyp) :do (write-or-return)
@@ -409,7 +409,7 @@
         ;; this one first.
         (when (< 0 (iobuf-end-space-length ib) 4)
           (iobuf-copy-data-to-start ib))
-        (when (and (iomux:fd-ready-p fd :read)
+        (when (and (iomux:fd-ready-p fd :input)
                    (eq :eof (%fill-ibuf read-fn fd ib)))
           (setf eof t))
         (when (zerop (iobuf-length ib))

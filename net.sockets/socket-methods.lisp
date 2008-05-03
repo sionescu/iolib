@@ -273,7 +273,7 @@
                           :input-buffer-size input-buffer-size
                           :output-buffer-size output-buffer-size)))
     (ignore-some-conditions (iomux:poll-timeout)
-      (when wait (iomux:wait-until-fd-ready (fd-of socket) :read timeout t))
+      (when wait (iomux:wait-until-fd-ready (fd-of socket) :input timeout t))
       (with-sockaddr-storage-and-socklen (ss size)
         (ignore-some-conditions (nix:ewouldblock)
           (make-client-socket (%accept (fd-of socket) ss size)))))))
@@ -294,7 +294,7 @@
     (nix:ewouldblock (err)
       (cond
         (wait
-         (iomux:wait-until-fd-ready (fd-of socket) :write timeout t)
+         (iomux:wait-until-fd-ready (fd-of socket) :output timeout t)
          (let ((errcode (socket-option socket :error)))
            (unless (zerop errcode)
              (signal-socket-error errcode))))
