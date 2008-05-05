@@ -13,7 +13,7 @@
   :description "I/O multiplexing library."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
-  :licence "LLGPL-2.1"
+  :licence "MIT"
   :depends-on (:osicat :alexandria :series)
   :pathname (merge-pathnames #p"io.multiplex/" *load-truename*)
   :components

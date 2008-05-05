@@ -9,7 +9,7 @@
   :description "Socket library."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
-  :licence "LLGPL-2.1"
+  :licence "MIT"
   :depends-on (:osicat :babel :bordeaux-threads :series
                :io.streams :alexandria :split-sequence)
   :pathname (merge-pathnames #p"net.sockets/" *load-truename*)

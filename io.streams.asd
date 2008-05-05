@@ -5,7 +5,7 @@
 (asdf:defsystem :io.streams
   :description "Gray streams."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
-  :licence "LLGPL-2.1"
+  :licence "MIT"
   :depends-on (:cffi :osicat :io.multiplex :trivial-gray-streams
                :alexandria :trivial-garbage)
   :pathname (merge-pathnames #p"io.streams/gray/" *load-truename*)
