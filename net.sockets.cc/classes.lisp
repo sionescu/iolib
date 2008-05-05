@@ -54,6 +54,7 @@
     :initarg :fd-multiplexer-type
     :accessor fd-multiplexer-type-of)))
 
+;; TODO use progn combination
 (defgeneric startup-connection-multiplexer (multiplexer &key &allow-other-keys))
 (defgeneric shutdown-connection-multiplexer (multiplexer &key force))
 

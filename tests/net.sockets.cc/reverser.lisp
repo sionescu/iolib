@@ -25,22 +25,22 @@
 
 (in-suite test)
 
-(defparameter *external-format* (babel:ensure-external-format '(:utf-8 :eol-style :crlf)))
+(defparameter *reverser-external-format* (babel:ensure-external-format '(:utf-8 :eol-style :crlf)))
 
 (defun start-reverser-server (&key (address +loopback+) (port 4242) (worker-count 4)
-                              (external-format *external-format*))
-  (bind ((acceptor (make-connection-acceptor "reverser server" 'reverser-connection-handler
+                              (external-format *reverser-external-format*))
+  (bind ((acceptor (make-connection-acceptor "reverser server"
+                                             'reverser-connection-handler
                                              :worker-count worker-count
                                              :external-format external-format)))
-    (finishes
-      (unwind-protect
-           (progn
-             (startup-acceptor acceptor :address address :port port)
-             ;; TODO until epoll based multiplexing is added
-             (break "Server started, continue to shut it down")
-             ;;(sockets/cc::busy-loop-hack acceptor)
-             )
-        (shutdown-acceptor acceptor))))
+    (unwind-protect
+         (progn
+           (startup-acceptor acceptor :address address :port port)
+           ;; TODO until epoll based multiplexing is added
+           (break "Server started, continue to shut it down")
+           ;;(sockets/cc::busy-loop-hack acceptor)
+           )
+      (shutdown-acceptor acceptor)))
   (values))
 
 (defun/cc reverser-connection-handler (connection)
@@ -56,7 +56,7 @@
            (format *debug-io* "SERVER: written, looping~%" line))))
 
 (defun start-reverser-client (&key (address +loopback+) (port 4242) (worker-count 0)
-                              (external-format *external-format*))
+                              (external-format *reverser-external-format*))
   (if (zerop worker-count)
       (with-open-socket (stream :remote-host address :remote-port port :external-format external-format)
         (loop
@@ -69,7 +69,7 @@
       (error "TODO not yet")))
 
 #+nil(defun start-reverser-client (&key (address +loopback+) (port 4242) ;; (worker-count 4)
-                              (external-format *external-format*))
+                              (external-format *reverser-external-format*))
   (bind ((multiplexer (make-connection-multiplexer "reverser client"))
          (connection (make-client-connection address :port port
                                              :external-format external-format
