@@ -22,3 +22,6 @@
 
   (defconduit :iolib
     (:use :io.multiplex :io.streams :net.sockets)))
+
+;; SBCL changes *package* if LOAD-OPing :iolib in the REPL
+t
