@@ -46,7 +46,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
        ,form))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun make-1°-level-name (family type connect)
+  (defun make-first-level-name (family type connect)
     (format-symbol :net.sockets "%~A-~A-~A-~A-~A" :make family type connect :socket)))
 
 (defmacro define-socket-creator ((socket-family socket-type socket-connect)
@@ -61,22 +61,22 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
          (quotify (form)
            `(list (quote ,(car form)) ,@(cdr form))))
     (let* ((arg-names (mapcar #'arg-name args))
-           (1°-level-function (make-1°-level-name socket-family socket-type socket-connect))
-           (2°-level-function (format-symbol t "%~A" 1°-level-function))
-           (1°-level-body `(,2°-level-function family ef ,@arg-names)))
+           (first-level-function (make-first-level-name socket-family socket-type socket-connect))
+           (second-level-function (format-symbol t "%~A" first-level-function))
+           (first-level-body `(,second-level-function family ef ,@arg-names)))
       `(progn
-         (declaim (inline ,2°-level-function))
-         (defun ,2°-level-function (,family ,ef ,@arg-names) ,@body)
-         (defun ,1°-level-function (arguments family ef)
-           (destructuring-bind (&key ,@args) arguments ,1°-level-body))
-         (define-compiler-macro ,1°-level-function (&whole form arguments family ef)
+         (declaim (inline ,second-level-function))
+         (defun ,second-level-function (,family ,ef ,@arg-names) ,@body)
+         (defun ,first-level-function (arguments family ef)
+           (destructuring-bind (&key ,@args) arguments ,first-level-body))
+         (define-compiler-macro ,first-level-function (&whole form arguments family ef)
            (with-guard-against-non-list-args-and-destructuring-bind-errors
                form arguments
              ;; Must quote default values in order for them not to be evaluated
              ;; in the compilation environment
              (destructuring-bind (&key ,@(mapcar #'maybe-quote-default-value args))
                  (cdr arguments)
-               ,(quotify 1°-level-body))))))))
+               ,(quotify first-level-body))))))))
 
 ;;; Internet Stream Active Socket creation
 
@@ -237,7 +237,7 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
      (check-type type (member :stream :datagram) "either :STREAM or :DATAGRAM")
      (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
      (let* ((family (if (member address-family '(:ipv4 :ipv6)) :internet address-family))
-            (lower-function (make-1°-level-name family type connect))
+            (lower-function (make-first-level-name family type connect))
            (newargs (remove-from-plist args :address-family :type :connect :external-format :ipv6)))
        (multiple-value-case (address-family)
          (:internet (setf address-family '+default-inet-address-family+))
