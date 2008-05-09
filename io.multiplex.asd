@@ -6,15 +6,14 @@
 ;;; in the system definition form.
 (eval-when (:load-toplevel :execute)
   (asdf:oos 'asdf:load-op :cffi-grovel)
-  (asdf:oos 'asdf:load-op :trivial-features)
-  #+cmu (require :gray-streams))
+  (asdf:oos 'asdf:load-op :trivial-features))
 
 (asdf:defsystem :io.multiplex
   :description "I/O multiplexing library."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:osicat :alexandria :series)
+  :depends-on (:osicat :alexandria :series :trivial-gray-streams)
   :pathname (merge-pathnames #p"io.multiplex/" *load-truename*)
   :components
   ((:file "pkgdcl")
