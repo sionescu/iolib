@@ -238,8 +238,8 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
      (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
      (let* ((family (if (member address-family '(:ipv4 :ipv6)) :internet address-family))
             (lower-function (make-first-level-name family type connect))
-           (newargs (remove-from-plist args :address-family :type :connect :external-format :ipv6)))
-       (multiple-value-case (address-family)
+            (newargs (remove-from-plist args :address-family :type :connect :external-format :ipv6)))
+       (case address-family
          (:internet (setf address-family '+default-inet-address-family+))
          (:ipv4     (setf ipv6 nil ipv6p t)))
        (let ((expansion `(,lower-function (list ,@newargs) ,address-family ,external-format)))
