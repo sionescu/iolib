@@ -32,7 +32,7 @@
     (check-reply-for-errors reply address :ptr)
     (let ((hostname (remove-trailing-dot
                      (dns-rr-data (aref (dns-message-answer reply) 0)))))
-      (values (list address)
+      (values address '()
               hostname
               (list (cons hostname address))))))
 
@@ -58,9 +58,10 @@
                        (push address addresses)
                        (push (cons name address) aliases)))
          (t (warn "Invalid RR type: ~S" (dns-record-type rr)))))
-    (values (nreverse addresses)
-            (remove-trailing-dot truename)
-            (nreverse aliases))))
+    (let ((addresses (nreverse addresses)))
+      (values (car addresses) (cdr addresses)
+              (remove-trailing-dot truename)
+              (nreverse aliases)))))
 
 (defun dns-lookup-host-in-one-domain (host query-type)
   (let ((reply (dns-query host :type query-type)))
@@ -68,12 +69,12 @@
     (process-one-reply reply query-type)))
 
 (defun merge-a-and-aaaa-replies (4-reply 6-reply)
-  (multiple-value-bind (4-addresses 4-truename 4-aliases)
+  (multiple-value-bind (4-main 4-addresses 4-truename 4-aliases)
       (process-one-reply 4-reply :a)
-    (multiple-value-bind (6-addresses 6-truename 6-aliases)
+    (multiple-value-bind (6-main 6-addresses 6-truename 6-aliases)
         (process-one-reply 6-reply :aaaa)
       (declare (ignore 6-truename))
-      (values (nconc 4-addresses 6-addresses)
+      (values 4-main (nconc 4-addresses (list 6-main) 6-addresses)
               4-truename
               (nconc 4-aliases 6-aliases)))))
 
@@ -108,8 +109,13 @@
 ;;       * add caching
 ;;       * profile the whole thing
 (defun lookup-host (host &key (ipv6 *ipv6*))
-  "Looks up a host by name or address.  IPV6 determines the IPv6
-behaviour, defaults to *IPV6*."
+  "Looks up a host by name or address. IPV6 determines the
+IPv6 behaviour, defaults to *IPV6*.
+Returns 4 values:
+* an address
+* a list of additional addresses(if existent)
+* the canonical name of the host
+* an alist of all the host's names with their respective addresses"
   (check-type ipv6 *ipv6*-type "one of T, NIL or :IPV6")
   (let ((address (if (stringp host)
                      (ensure-address host :errorp nil)
@@ -130,8 +136,7 @@ return its primary address as the first return value and the
 remaining address list as the second return value."
   (flet ((%do-ensure-hostname ()
            (or (ensure-address address :family :internet :errorp nil)
-               (let ((addresses (lookup-host address :ipv6 ipv6)))
-                 (values (car addresses) (cdr addresses))))))
+               (nth-value 0 (lookup-host address :ipv6 ipv6)))))
     (if errorp
         (%do-ensure-hostname)
         (ignore-some-conditions (socket-error resolver-error)

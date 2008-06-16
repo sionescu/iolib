@@ -78,9 +78,9 @@
                     (mapc #'(lambda (alias) (push (cons alias address) aliases))
                           (host-aliases host))))
               hosts)
-        (values (nreverse addresses)
-                name
-                (nreverse aliases))))))
+        (let ((addresses (nreverse addresses)))
+          (values (car addresses) (cdr addresses)
+                  name (nreverse aliases)))))))
 
 (defun search-host-by-address (address)
   (let* ((address (ensure-address address))
@@ -90,7 +90,7 @@
                                         address))
                           *hosts-cache*))))
     (when host
-      (values (list address)
+      (values address '()
               (host-truename host)
               (list* (cons (host-truename host) address)
                      (mapcar #'(lambda (alias) (cons alias address))
