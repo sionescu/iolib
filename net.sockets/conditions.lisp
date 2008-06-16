@@ -27,8 +27,7 @@
       (format stream "~S ~S ~S"
               (or code "[Unknown code]")
               (error-identifier socket-error)
-              (if code (nix:strerror code)
-                  "[Can't get error string.]")))))
+              (if code (nix:strerror code) "[Can't get error string.]")))))
 
 (defvar *socket-error-map* (make-hash-table :test 'eq))
 

@@ -108,7 +108,8 @@ UNKNOWN-PROTOCOL error if no protocol is found."
         (proto (etypecase protocol
                  (unsigned-byte (lookup-protocol-by-number protocol))
                  (string        (lookup-protocol-by-name protocol)))))
-    (if proto (values (protocol-number proto)
-                      (protocol-name proto)
-                      (protocol-aliases proto))
+    (if proto
+        (values (protocol-number proto)
+                (protocol-name proto)
+                (protocol-aliases proto))
         (error 'unknown-protocol :datum protocol))))

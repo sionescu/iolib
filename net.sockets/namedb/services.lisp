@@ -157,9 +157,10 @@ of :TCP, :UDP or :ANY."
          (serv (etypecase service
                  (tcp-port (lookup-service-by-number service protocol))
                  (string   (lookup-service-by-name service protocol)))))
-    (if serv (values (service-port serv)
-                     (service-name serv)
-                     (service-protocol serv))
+    (if serv
+        (values (service-port serv)
+                (service-name serv)
+                (service-protocol serv))
         (error 'unknown-service :datum service))))
 
 (defun ensure-numerical-service (service &optional (protocol :tcp))

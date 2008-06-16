@@ -249,7 +249,8 @@
          (tend (+ t0 timeout)))
     (flet ((remtime ()
              (let ((rem (- tend (osicat-sys:get-monotonic-time))))
-               (if (not (minusp rem)) rem
+               (if (not (minusp rem))
+                   rem
                    (error 'socket-connection-timeout-error)))))
       (with-open-socket
           (socket :connect :active :type :stream
