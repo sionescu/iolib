@@ -117,9 +117,7 @@ Returns 4 values:
 * the canonical name of the host
 * an alist of all the host's names with their respective addresses"
   (check-type ipv6 *ipv6*-type "one of T, NIL or :IPV6")
-  (let ((address (if (stringp host)
-                     (ensure-address host :errorp nil)
-                     (ensure-address host))))
+  (let ((address (ensure-address host :errorp (not (stringp host)))))
     (update-monitor *resolv.conf-monitor*)
     (update-monitor *hosts-monitor*)
     (cond (address
