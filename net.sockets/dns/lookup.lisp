@@ -85,11 +85,9 @@
          (6-err (reply-error-condition 6-reply :aaaa)))
     (cond
       ((and 4-err 6-err)
-       (error (if (member 'resolver-fail-error (list 4-err 6-err)
-                          :test #'eq)
-                  'resolver-fail-error
-                  'resolver-no-name-error)
-              :data host))
+       (if (member 'resolver-fail-error (list 4-err 6-err))
+           (error 'resolver-fail-error :data host)
+           (error 'resolver-no-name-error :data host)))
       (4-err (process-one-reply 6-reply :aaaa))
       (6-err (process-one-reply 4-reply :a))
       (t (merge-a-and-aaaa-replies 4-reply 6-reply)))))
