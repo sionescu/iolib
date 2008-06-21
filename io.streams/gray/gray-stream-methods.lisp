@@ -356,7 +356,7 @@
                (iobuf-copy-data-to-start ib)
                (setf unread-index 0)))
         ;; line-end handling
-        (when-let ((it (maybe-find-line-ending read-fn fd ib ef)))
+        (when-let (it (maybe-find-line-ending read-fn fd ib ef))
           (return-from stream-read-char it))
         (tagbody :start
            (handler-case

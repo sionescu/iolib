@@ -24,7 +24,7 @@
          'resolver-no-name-error)))
 
 (defun check-reply-for-errors (reply host query-type)
-  (when-let ((condition (reply-error-condition reply query-type)))
+  (when-let (condition (reply-error-condition reply query-type))
     (error condition :data host)))
 
 (defun dns-lookup-host-by-address (address)

@@ -69,7 +69,7 @@
 (define-socket-error socket-operation-not-supported-error :eopnotsupp)
 
 (defun %socket-error (id code)
-  (when-let ((err (lookup-socket-error id)))
+  (when-let (err (lookup-socket-error id))
     (error err :identifier id :code code)))
 
 ;;; Used in the ERRNO-WRAPPER foreign type.
