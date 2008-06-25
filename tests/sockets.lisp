@@ -174,15 +174,16 @@
 
 #-no-internet-available
 (test lookup-host.1
-  (is (equalp (multiple-value-bind (addresses truename)
+  (is (equalp (multiple-value-bind (address addresses truename)
                   (lookup-host "a.root-servers.net" :ipv6 nil)
-                (values (address-equal-p (car addresses) #(198 41 0 4))
+                (declare (ignore addresses))
+                (values (address-equal-p address #(198 41 0 4))
                         truename))
               (values t "a.root-servers.net"))))
 
 #-no-internet-available
 (test lookup-host.2
-  (is-true (string= (nth-value 1 (lookup-host #(198 41 0 4)))
+  (is-true (string= (nth-value 2 (lookup-host #(198 41 0 4)))
                     "a.root-servers.net")))
 
 ;;; These days lots of people seem to be using DNS servers that don't
@@ -193,7 +194,7 @@
     (lookup-host "foo.tninkpad.telent.net.")))
 
 (test lookup-host.4
-  (is-true (address-equal-p (car (lookup-host #(127 0 0 1) :ipv6 nil))
+  (is-true (address-equal-p (lookup-host #(127 0 0 1) :ipv6 nil)
                             #(127 0 0 1))))
 
 (test lookup-host.5
