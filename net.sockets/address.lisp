@@ -129,7 +129,7 @@ ADDRESS-NAME reader."))
 (defun vector-to-dotted (vector)
   "Convert an 4-element vector to a dotted string."
   (coercef vector 'ipv4-array)
-  (let ((*print-pretty* nil))
+  (let ((*print-pretty* nil) (*print-base* 10))
     (with-output-to-string (s)
       (princ (aref vector 0) s) (princ #\. s)
       (princ (aref vector 1) s) (princ #\. s)
