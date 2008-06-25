@@ -99,11 +99,12 @@ ADDRESS-NAME reader."))
 (defun integer-to-dotted (integer)
   "Convert a 32-bit unsigned integer to a dotted string."
   (check-type integer ub32 "an '(unsigned-byte 32)")
-  (format nil "~A.~A.~A.~A"
-          (ldb (byte 8 24) integer)
-          (ldb (byte 8 16) integer)
-          (ldb (byte 8 8) integer)
-          (ldb (byte 8 0) integer)))
+  (let ((*print-pretty* nil) (*print-base* 10))
+    (format nil "~A.~A.~A.~A"
+            (ldb (byte 8 24) integer)
+            (ldb (byte 8 16) integer)
+            (ldb (byte 8 8) integer)
+            (ldb (byte 8 0) integer))))
 
 (defun dotted-to-vector (address)
   "Convert a dotted IPv4 address to a (simple-array (unsigned-byte 8) 4)."
