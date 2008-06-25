@@ -143,7 +143,7 @@
 
 (defmacro with-socklen ((var value) &body body)
   `(with-foreign-object (,var 'socklen)
-     (setf (mem-ref ,var 'socklen) ,value)
+     (setf (mem-aref ,var 'socklen) ,value)
      ,@body))
 
 (defmacro with-sockaddr-storage-and-socklen ((ss-var size-var) &body body)

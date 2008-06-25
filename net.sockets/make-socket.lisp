@@ -325,7 +325,7 @@ Buffer sizes for the new sockets can also be specified using `INPUT-BUFFER-SIZE'
 (defmethod send-file-descriptor ((socket local-socket) file-descriptor)
   (with-buffers-for-fd-passing (msg cmsg)
     (let ((data (%cmsg-data cmsg)))
-      (setf (mem-ref data :int) file-descriptor)
+      (setf (mem-aref data :int) file-descriptor)
       (%sendmsg (fd-of socket) msg 0)
       (values))))
 
@@ -333,4 +333,4 @@ Buffer sizes for the new sockets can also be specified using `INPUT-BUFFER-SIZE'
   (with-buffers-for-fd-passing (msg cmsg)
     (let ((data (%cmsg-data cmsg)))
       (%recvmsg (fd-of socket) msg 0)
-      (mem-ref data :int))))
+      (mem-aref data :int))))

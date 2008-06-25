@@ -101,11 +101,11 @@
   (with-foreign-object (optval :int)
     (with-socklen (optlen size-of-int)
       (%getsockopt fd level option optval optlen)
-      (mem-ref optval :boolean))))
+      (mem-aref optval :boolean))))
 
 (define-socket-option-helper (:set :bool) (fd level option value)
   (with-foreign-object (optval :int)
-    (setf (mem-ref optval :int) (lisp->c-bool value))
+    (setf (mem-aref optval :int) (lisp->c-bool value))
     (%setsockopt fd level option optval size-of-int)
     (values value)))
 
@@ -117,11 +117,11 @@
   (with-foreign-object (optval :int)
     (with-socklen (optlen size-of-int)
       (%getsockopt fd level option optval optlen)
-      (mem-ref optval :int))))
+      (mem-aref optval :int))))
 
 (define-socket-option-helper (:set :int) (fd level option value)
   (with-foreign-object (optval :int)
-    (setf (mem-ref optval :int) value)
+    (setf (mem-aref optval :int) value)
     (%setsockopt fd level option optval size-of-int)
     (values value)))
 
