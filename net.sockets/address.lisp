@@ -302,10 +302,11 @@ returned unmodified."
   (ecase family
     (:internet
      (typecase address
-       (address (if errorp
-                    (check-type address inet-address "an INET address")
-                    (unless (typep address 'inet-address)
-                      (return-from ensure-address)))
+       (address (cond
+                  (errorp
+                   (check-type address inet-address "an INET address"))
+                  ((not (typep address 'inet-address))
+                   (return-from ensure-address)))
                 address)
        (t (let ((vector (address-to-vector address)))
             (cond
@@ -314,10 +315,11 @@ returned unmodified."
     (:local
      (etypecase address
        (string (make-instance 'local-address :name address))
-       (address (if errorp
-                    (check-type address local-address "a local address")
-                    (unless (typep address 'local-address)
-                      (return-from ensure-address)))
+       (address (cond
+                  (errorp
+                   (check-type address local-address "a local address"))
+                  ((not (typep address 'local-address))
+                   (return-from ensure-address)))
                 address)))))
 
 ;;;; Print Methods
