@@ -31,6 +31,12 @@ ADDRESS-NAME reader."))
 (unset-method-docstring #'abstract-address-p () '(local-address))
 (set-function-docstring 'abstract-address-p "Return T if ADDRESS is a LOCAL-ADDRESS that lives in the abstract namespace.")
 
+(defmethod initialize-instance :after ((address local-address) &key)
+  (with-slots (name) address
+    (etypecase name
+      (string t)
+      (pathname (setf name (namestring name))))))
+
 (defmethod make-load-form ((address inet-address) &optional env)
   (declare (ignore env))
   `(make-instance ,(class-of address)
