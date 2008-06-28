@@ -62,21 +62,15 @@ ADDRESS-NAME reader."))
                            :name (in6-addr-to-ipv6-array addr))
             (ntohs port))))
 
-(defun parse-abstract-un-path (path)
-  (let ((name (make-string (1- unix-path-max) :element-type 'base-char)))
-    (dotimes (i (1- unix-path-max))
-      (setf (schar name i) (code-char (mem-aref path :uint8 i))))
-    (values name t)))
-
-(defun parse-concrete-un-path (path)
-  (values (foreign-string-to-lisp path) nil))
+(defun parse-un-path (path)
+  (foreign-string-to-lisp path :max-chars (1- unix-path-max)))
 
 (defun sockaddr-un->sockaddr (sun)
   (with-foreign-slots ((path) sun sockaddr-un)
     (multiple-value-bind (name abstract)
         (if (zerop (mem-aref path :uint8 0))
-            (parse-abstract-un-path (inc-pointer path 1))
-            (parse-concrete-un-path path))
+            (values (parse-un-path (inc-pointer path 1)) t)
+            (values (parse-un-path path) nil))
       (make-instance 'local-address :name name :abstract abstract))))
 
 (defun sockaddr-storage->sockaddr (ss)
@@ -339,9 +333,7 @@ returned unmodified."
   (vector-to-colon-separated (address-name address)))
 
 (defmethod address-to-string ((address local-address))
-  (if (abstract-address-p address)
-      "<no local address>"
-      (address-name address)))
+  (address-name address))
 
 (defmethod print-object ((address ipv4-address) stream)
   (format stream "@~A" (address-to-string address)))
