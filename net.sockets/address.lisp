@@ -293,7 +293,7 @@ otherwise NIL is returned."
     (when vector
       (values vector addr-type))))
 
-(defun ensure-address (address &key (family :internet) (errorp t))
+(defun ensure-address (address &key (family :internet) abstract (errorp t))
   "If FAMILY is :LOCAL, a LOCAL-ADDRESS is instantiated with
 ADDRESS as its NAME slot. If FAMILY is :INTERNET, an appropriate
 subtype of INET-ADDRESS is instantiated after guessing the
@@ -319,7 +319,7 @@ returned unmodified."
               (errorp (error 'parse-error)))))))
     (:local
      (etypecase address
-       (string (make-instance 'local-address :name address))
+       (string (make-instance 'local-address :name address :abstract abstract))
        (address (cond
                   (errorp
                    (check-type address local-address "a local address"))
