@@ -340,7 +340,7 @@ returned unmodified."
 
 (defmethod address-to-string ((address local-address))
   (if (abstract-address-p address)
-      "<unknown local address>"
+      "<no local address>"
       (address-name address)))
 
 (defmethod print-object ((address ipv4-address) stream)
