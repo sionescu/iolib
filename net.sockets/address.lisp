@@ -56,23 +56,22 @@ ADDRESS-NAME reader."))
                            :name (in6-addr-to-ipv6-array addr))
             (ntohs port))))
 
+(defun parse-abstract-un-path (path)
+  (let ((name (make-string (1- unix-path-max) :element-type 'base-char)))
+    (dotimes (i (1- unix-path-max))
+      (setf (schar name i) (code-char (mem-aref path :uint8 i))))
+    (values name t)))
+
+(defun parse-concrete-un-path (path)
+  (values (foreign-string-to-lisp path) nil))
+
 (defun sockaddr-un->sockaddr (sun)
   (with-foreign-slots ((path) sun sockaddr-un)
-    (let ((name (make-string (1- unix-path-max)))
-          (abstract nil))
-      (cond ((zerop (mem-aref path :uint8 0))
-             ;; abstract address
-             (setf abstract t)
-             (loop :for sindex :from 0 :below (1- unix-path-max)
-                   :for pindex :from 1 :below unix-path-max
-                   :do (setf (schar name sindex)
-                             (code-char (mem-aref path :uint8 pindex)))))
-            (t
-             ;; address is in the filesystem
-             (setf name (foreign-string-to-lisp path))))
-      (make-instance 'local-address
-                     :name name
-                     :abstract abstract))))
+    (multiple-value-bind (name abstract)
+        (if (zerop (mem-aref path :uint8 0))
+            (parse-abstract-un-path (inc-pointer path 1))
+            (parse-concrete-un-path path))
+      (make-instance 'local-address :name name :abstract abstract))))
 
 (defun sockaddr-storage->sockaddr (ss)
   (with-foreign-slots ((family) ss sockaddr-storage)
