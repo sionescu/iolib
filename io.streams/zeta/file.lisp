@@ -9,15 +9,16 @@
   '(member :input :output :io))
 
 (deftype file-if-exists ()
-  '(member :error :error-if-symlink :unlink :overwrite))
+  '(member :default :error :error-if-symlink :unlink :overwrite))
 
 (deftype file-if-does-not-exist ()
-  '(member :error :create))
+  '(member :default :error :create))
 
 (defmethod initialize-instance :after ((device file-device)
                                        &key filename (direction :input)
-                                       if-exists if-does-not-exist truncate append
-                                       nonblocking (extra-flags 0) (mode #o666))
+                                       (if-exists :default) (if-does-not-exist :default)
+                                       truncate append nonblocking (extra-flags 0)
+                                       (mode #o666))
   (when (and (eql :error if-exists)
              (eql :error if-does-not-exist))
     (error 'program-error))
@@ -73,19 +74,19 @@
        (add-flags nix:o-rdonly)
        (check-type if-exists (member nil :error-if-symlink))
        (check-type if-does-not-exist (member nil :error))
-       (unless if-does-not-exist (setf if-does-not-exist :error)))
+       (when (eql :default if-does-not-exist) (setf if-does-not-exist :error)))
       (:output
        (add-flags nix:o-wronly)
        (check-type if-exists file-if-exists)
        (check-type if-does-not-exist file-if-does-not-exist)
-       (unless if-exists (setf if-exists :overwrite))
-       (unless if-does-not-exist (setf if-does-not-exist :create)))
+       (when (eql :default if-exists) (setf if-exists :overwrite))
+       (when (eql :default if-does-not-exist) (setf if-does-not-exist :create)))
       (:io
        (add-flags nix:o-rdwr)
        (check-type if-exists file-if-exists)
        (check-type if-does-not-exist file-if-does-not-exist)
-       (unless if-exists (setf if-exists :overwrite))
-       (unless if-does-not-exist (setf if-does-not-exist :create))))
+       (when (eql :default if-exists) (setf if-exists :overwrite))
+       (when (eql :default if-does-not-exist) (setf if-does-not-exist :create))))
     (values flags if-exists if-does-not-exist)))
 
 (defun process-file-flags (direction flags if-exists if-does-not-exist
@@ -120,8 +121,8 @@
 (defmethod device-position ((device file-device))
   (position-of device))
 
-(defmethod (setf device-position) (offset (device file-device) &key (type :start))
-  (ecase type
+(defmethod (setf device-position) (offset (device file-device) &key (from :start))
+  (ecase from
     (:start
      (nix:lseek (input-handle-of device) offset nix:seek-set)
      (setf (position-of device) offset))
@@ -140,18 +141,18 @@
   (nix:stat-size (nix:fstat (input-handle-of device))))
 
 (defun open-file (filename &key (direction :input)
-                  (if-exists nil if-exists-p)
-                  (if-does-not-exist nil if-does-not-exist-p)
+                  (if-exists :default if-exists-p)
+                  (if-does-not-exist :default if-does-not-exist-p)
                   truncate append nonblocking (extra-flags 0) (mode #o666))
+  (when (and (null if-exists)
+             (null if-does-not-exist))
+    (error 'program-error))
   (handler-case
       (make-instance 'file-device
                      :filename (namestring filename)
                      :direction direction
-                     :if-exists (if (and if-exists-p (null if-exists))
-                                    :error if-exists)
-                     :if-does-not-exist (if (and if-does-not-exist
-                                                 (null if-does-not-exist-p))
-                                            :error if-does-not-exist)
+                     :if-exists if-exists
+                     :if-does-not-exist if-does-not-exist
                      :truncate truncate
                      :append append
                      :nonblocking nonblocking
