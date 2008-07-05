@@ -9,6 +9,20 @@
 
 (define-constant +bytes-per-iobuf+ 4096)
 
+;;; almost 128 MB: large enough for a stream buffer,
+;;; but small enough to fit into a fixnum
+(deftype iobuf-index () '(unsigned-byte 27))
+(deftype iobuf-length () '(integer 0 #.(expt 2 27)))
+
+(deftype iobuf-buffer () '(simple-array ub8 (*)))
+
+(defstruct (iobuf (:constructor %make-iobuf ()))
+  (data (make-array 0 :element-type 'ub8)
+        :type iobuf-buffer)
+  (size 0 :type iobuf-length)
+  (start 0 :type iobuf-index)
+  (end 0 :type iobuf-index))
+
 (defun make-iobuf (&optional (size +bytes-per-iobuf+))
   (let ((b (%make-iobuf)))
     (setf (iobuf-data b) (make-array size :element-type 'ub8)

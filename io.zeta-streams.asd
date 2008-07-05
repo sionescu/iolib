@@ -14,4 +14,7 @@
   :components
   ((:file "pkgdcl")
    (:file "classes" :depends-on ("pkgdcl"))
-   (:file "buffer" :depends-on ("pkgdcl" "classes"))))
+   (:file "conditions" :depends-on ("pkgdcl" "classes"))
+   (:file "common" :depends-on ("pkgdcl" "classes" "conditions"))
+   (:file "internal" :depends-on ("pkgdcl" "classes" "conditions" "common"))
+   (:file "file" :depends-on ("pkgdcl" "classes" "conditions" "common" "internal"))))

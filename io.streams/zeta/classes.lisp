@@ -5,7 +5,9 @@
 
 (in-package :io.zeta-streams)
 
-;;;; Types
+;;;-----------------------------------------------------------------------------
+;;; Types
+;;;-----------------------------------------------------------------------------
 
 (deftype ub8  () '(unsigned-byte 8))
 (deftype ub16 () '(unsigned-byte 16))
@@ -21,34 +23,75 @@
 
 (deftype ub16-sarray (&optional (size '*))
   `(simple-array ub16 (,size)))
+
 
-;;;; Buffers
-
-;;; almost 128 MB: large enough for a stream buffer,
-;;; but small enough to fit into a fixnum
-(deftype iobuf-index () '(unsigned-byte 27))
-(deftype iobuf-length () '(integer 0 #.(expt 2 27)))
-
-(deftype iobuf-buffer () '(simple-array ub8 (*)))
-
-(defstruct (iobuf (:constructor %make-iobuf ()))
-  (data (make-array 0 :element-type 'ub8)
-        :type iobuf-buffer)
-  (size 0 :type iobuf-length)
-  (start 0 :type iobuf-index)
-  (end 0 :type iobuf-index))
-
-;;;; Stream Classes
+;;;-----------------------------------------------------------------------------
+;;; Device Classes
+;;;-----------------------------------------------------------------------------
 
 (deftype stream-position () '(unsigned-byte 64))
 
-(defclass zeta-stream () ())
+(defclass device ()
+  ((input-handle :initarg :input-handle :accessor input-handle-of)
+   (input-timeout :initarg :input-timeout :accessor input-timeout-of)
+   (output-handle :initarg :output-handle :accessor output-handle-of)
+   (output-timeout :initarg :output-timeout :accessor output-timeout-of))
+  (:default-initargs :input-timeout nil
+                     :output-timeout nil))
 
-(defclass single-channel-zeta-stream (zeta-stream)
-  ())
+(defclass single-channel-device (device)
+  ((position :initarg :position :accessor position-of))
+  (:default-initargs :position 0))
 
-(defclass dual-channel-zeta-stream (zeta-stream)
-  ())
+(defclass dual-channel-device (device) ())
 
-(defclass memory-buffer-zeta-stream (zeta-stream)
-  ())
+(defclass file-device (single-channel-device)
+  ((filename :initarg :filename :accessor filename-of)
+   (direction :initarg :direction :accessor direction-of)
+   (if-exists :initarg :if-exists :accessor if-exists-of)
+   (if-does-not-exist :initarg :if-does-not-exist :accessor if-does-not-exist-of)))
+
+(defclass direct-device (single-channel-device) ())
+
+(defclass memory-mapped-file-device (file-device direct-device) ())
+
+(defclass memory-buffer-device (direct-device) ())
+
+(defclass socket-device (dual-channel-device)
+  ((domain :initarg :domain)
+   (type :initarg :type)
+   (protocol :initarg :protocol)))
+
+
+;;;-----------------------------------------------------------------------------
+;;; Generic functions
+;;;-----------------------------------------------------------------------------
+
+(defgeneric device-open (device &rest initargs))
+
+(defgeneric device-close (device))
+
+(defgeneric device-read (device buffer start end &optional timeout))
+
+(defgeneric device-write (device buffer start end &optional timeout))
+
+(defgeneric device-clear-input (device)
+  (:method ((device device))
+    (values)))
+
+(defgeneric device-clear-output (device)
+  (:method ((device device))
+    (values)))
+
+(defgeneric device-flush-output (device blocking)
+  (:method ((device device) blocking)
+    (declare (ignore blocking))
+    (values)))
+
+(defgeneric device-position (device))
+
+(defgeneric (setf device-position) (offset device &rest args))
+
+(defgeneric device-length (device)
+  (:method ((device device))
+    nil))
