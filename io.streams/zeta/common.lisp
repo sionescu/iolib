@@ -32,7 +32,8 @@
         (nbytes (if (and timeout (zerop timeout))
                     (read-octets-non-blocking (input-handle-of device) buffer start end)
                     (read-octets-with-timeout (input-handle-of device) buffer start end timeout))))
-    (when (plusp nbytes) (incf (device-position device) nbytes))))
+    (when (plusp nbytes) (incf (device-position device) nbytes))
+    (values nbytes)))
 
 (defun read-octets-non-blocking (fd buffer start end)
   (declare (type unsigned-byte fd)
@@ -73,7 +74,8 @@
          (nbytes (if (and timeout (zerop timeout))
                      (write-octets-non-blocking (output-handle-of device) buffer start end)
                      (write-octets-with-timeout (output-handle-of device) buffer start end timeout))))
-    (when (plusp nbytes) (incf (device-position device) nbytes))))
+    (when (plusp nbytes) (incf (device-position device) nbytes))
+    (values nbytes)))
 
 (defun write-octets-non-blocking (fd buffer start end)
   (declare (type unsigned-byte fd)

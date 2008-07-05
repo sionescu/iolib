@@ -9,25 +9,15 @@
   '(member :input :output :io))
 
 (deftype file-if-exists ()
-  '(member nil :error :error-if-symlink :unlink :overwrite))
+  '(member :error :error-if-symlink :unlink :overwrite))
 
 (deftype file-if-does-not-exist ()
-  '(member nil :error :create))
-
-(defun file-extra-options-p (options)
-  (subsetp options '(:direct :sync) :test #'eq))
-
-(deftype file-extra-options ()
-  '(satisfies file-extra-options-p))
-
-(defparameter *extra-open-flags*
-  '((:direct . nix:o-direct)
-    (:sync . nix:o-sync)))
+  '(member :error :create))
 
 (defmethod initialize-instance :after ((device file-device)
                                        &key filename (direction :input)
                                        if-exists if-does-not-exist truncate append
-                                       nonblocking extra-options (mode #o666))
+                                       nonblocking (extra-flags 0) (mode #o666))
   (when (and (eql :error if-exists)
              (eql :error if-does-not-exist))
     (error 'program-error))
@@ -36,7 +26,7 @@
           (process-file-direction direction flags if-exists if-does-not-exist))
     (setf (values flags if-exists if-does-not-exist)
           (process-file-flags direction flags if-exists if-does-not-exist
-                              truncate append nonblocking extra-options))
+                              truncate append nonblocking extra-flags))
     (setf (filename-of device) (copy-seq filename)
           (direction-of device) direction
           (if-exists-of device) if-exists
@@ -46,8 +36,7 @@
                      :mode mode :if-exists if-exists
                      :if-does-not-exist if-does-not-exist)
       (when append
-        (setf (slot-value device 'position)
-              (device-length device))))))
+        (setf (position-of device) (device-length device))))))
 
 (defmethod device-open ((device file-device) &key filename flags mode
                         if-exists if-does-not-exist &allow-other-keys)
@@ -99,16 +88,8 @@
        (unless if-does-not-exist (setf if-does-not-exist :create))))
     (values flags if-exists if-does-not-exist)))
 
-(defun compute-extra-flags (options)
-  (let ((flags 0))
-    (dolist (option options)
-      (if-let (value (cdr (assoc option *extra-open-flags*)))
-        (setf flags (logior flags value))
-        (error "Invalid option: ~A" option)))
-    (values flags)))
-
 (defun process-file-flags (direction flags if-exists if-does-not-exist
-                           truncate append nonblocking extra-options)
+                           truncate append nonblocking extra-flags)
   (macrolet ((add-flags (&rest %flags)
                `(setf flags (logior flags ,@%flags))))
     (case if-exists
@@ -126,8 +107,8 @@
        (when (eql :output direction) (add-flags nix:o-append)))
       (nonblocking
        (add-flags nix:o-nonblock))
-      (extra-options
-       (add-flags (compute-extra-flags extra-options)))))
+      (extra-flags
+       (add-flags extra-flags))))
   (values flags if-exists if-does-not-exist))
 
 (defmethod device-close ((device file-device))
@@ -139,21 +120,20 @@
 (defmethod device-position ((device file-device))
   (position-of device))
 
-(defmethod (setf device-position) (offset (device file-device) &rest args)
-  (destructuring-bind (type) args
-    (ecase type
-      (:start
-       (nix:lseek (input-handle-of device) offset nix:seek-set)
-       (setf (position-of device) offset))
-      (:current
-       (nix:lseek (input-handle-of device) offset nix:seek-cur)
-       (incf (position-of device) offset))
-      (:end
-       (nix:lseek (input-handle-of device) offset nix:seek-end)
-       ;; WARNING: possible race condition here: if betweek lseek() and fstat()
-       ;; the file size is modified, this calculation will be wrong
-       ;; perhaps fcntl() or ioctl() can be used to find out the file offset
-       (setf (position-of device) (+ (device-length device) offset)))))
+(defmethod (setf device-position) (offset (device file-device) &key (type :start))
+  (ecase type
+    (:start
+     (nix:lseek (input-handle-of device) offset nix:seek-set)
+     (setf (position-of device) offset))
+    (:current
+     (nix:lseek (input-handle-of device) offset nix:seek-cur)
+     (incf (position-of device) offset))
+    (:end
+     (nix:lseek (input-handle-of device) offset nix:seek-end)
+     ;; WARNING: possible race condition here: if betweek lseek() and fstat()
+     ;; the file size is modified, this calculation will be wrong
+     ;; perhaps fcntl() or ioctl() can be used to find out the file offset
+     (setf (position-of device) (+ (device-length device) offset))))
   (position-of device))
 
 (defmethod device-length ((device file-device))
@@ -162,7 +142,7 @@
 (defun open-file (filename &key (direction :input)
                   (if-exists nil if-exists-p)
                   (if-does-not-exist nil if-does-not-exist-p)
-                  truncate append nonblocking extra-options (mode #o666))
+                  truncate append nonblocking (extra-flags 0) (mode #o666))
   (handler-case
       (make-instance 'file-device
                      :filename (namestring filename)
@@ -175,7 +155,7 @@
                      :truncate truncate
                      :append append
                      :nonblocking nonblocking
-                     :extra-options extra-options
+                     :extra-flags extra-flags
                      :mode mode)
     (posix-file-error (error)
       (case (posix-file-error-identifier error)
