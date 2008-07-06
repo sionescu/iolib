@@ -141,8 +141,7 @@
   (nix:stat-size (nix:fstat (input-handle-of device))))
 
 (defun open-file (filename &key (direction :input)
-                  (if-exists :default if-exists-p)
-                  (if-does-not-exist :default if-does-not-exist-p)
+                  (if-exists :default) (if-does-not-exist :default)
                   truncate append nonblocking (extra-flags 0) (mode #o666))
   (when (and (null if-exists)
              (null if-does-not-exist))
