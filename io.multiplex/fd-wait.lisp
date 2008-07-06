@@ -66,8 +66,8 @@ Returns two boolean values indicating readability and writeability of `FILE-DESC
               events (compute-poll-flags event-type))
         (handler-case
             (let ((ret (nix:repeat-upon-condition-decreasing-timeout
-                           ((nix:eintr) tmp-timeout timeout)
-                         (poll pollfd 1 (timeout->milisec timeout)))))
+                           ((nix:eintr) remaining-time timeout)
+                         (poll pollfd 1 (timeout->milisec remaining-time)))))
               (when (zerop ret)
                 (if errorp
                     (error 'poll-timeout :fd file-descriptor :event-type event-type)
