@@ -75,23 +75,14 @@
 
 (defgeneric device-write (device buffer start end &optional timeout))
 
-(defgeneric device-clear-input (device)
-  (:method ((device device))
-    (values)))
+(defgeneric device-clear-input (device))
 
-(defgeneric device-clear-output (device)
-  (:method ((device device))
-    (values)))
+(defgeneric device-clear-output (device))
 
-(defgeneric device-flush-output (device blocking)
-  (:method ((device device) blocking)
-    (declare (ignore blocking))
-    (values)))
+(defgeneric device-flush-output (device &optional timeout))
 
 (defgeneric device-position (device))
 
-(defgeneric (setf device-position) (offset device &rest args))
+(defgeneric (setf device-position) (position device &rest args))
 
-(defgeneric device-length (device)
-  (:method ((device device))
-    nil))
+(defgeneric device-length (device))

@@ -6,6 +6,31 @@
 (in-package :io.zeta-streams)
 
 ;;;-----------------------------------------------------------------------------
+;;; Default no-op methods
+;;;-----------------------------------------------------------------------------
+
+(defmethod device-clear-input ((device device))
+  (values device))
+
+(defmethod device-clear-output ((device device))
+  (values device))
+
+(defmethod device-flush-output ((device device) &optional timeout)
+  (declare (ignore timeout))
+  (values device))
+
+(defmethod device-position ((device device))
+  (values nil))
+
+(defmethod (setf device-position) (position (device device) &rest args)
+  (declare (ignore position args))
+  (values nil))
+
+(defmethod device-length ((device device))
+  (values nil))
+
+
+;;;-----------------------------------------------------------------------------
 ;;; Get and Set O_NONBLOCK
 ;;;-----------------------------------------------------------------------------
 
@@ -28,10 +53,11 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod device-read ((device device) buffer start end &optional (timeout nil timeoutp))
-  (let ((timeout (if timeoutp timeout (input-timeout-of device)))
-        (nbytes (if (and timeout (zerop timeout))
-                    (read-octets-non-blocking (input-handle-of device) buffer start end)
-                    (read-octets-with-timeout (input-handle-of device) buffer start end timeout))))
+  (when (= start end) (return-from device-read 0))
+  (let* ((timeout (if timeoutp timeout (input-timeout-of device)))
+         (nbytes (if (and timeout (zerop timeout))
+                     (read-octets-non-blocking (input-handle-of device) buffer start end)
+                     (read-octets-with-timeout (input-handle-of device) buffer start end timeout))))
     (when (plusp nbytes) (incf (device-position device) nbytes))
     (values nbytes)))
 
@@ -70,6 +96,7 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod device-write ((device device) buffer start end &optional (timeout nil timeoutp))
+  (when (= start end) (return-from device-write 0))
   (let* ((timeout (if timeoutp timeout (output-timeout-of device)))
          (nbytes (if (and timeout (zerop timeout))
                      (write-octets-non-blocking (output-handle-of device) buffer start end)

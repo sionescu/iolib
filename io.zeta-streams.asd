@@ -17,4 +17,6 @@
    (:file "conditions" :depends-on ("pkgdcl" "classes"))
    (:file "common" :depends-on ("pkgdcl" "classes" "conditions"))
    (:file "internal" :depends-on ("pkgdcl" "classes" "conditions" "common"))
+
+   ;; Devices
    (:file "file" :depends-on ("pkgdcl" "classes" "conditions" "common" "internal"))))

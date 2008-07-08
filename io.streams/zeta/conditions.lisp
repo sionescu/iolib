@@ -14,3 +14,9 @@
                      (posix-file-error-action condition)
                      (file-error-pathname condition)
                      (nix:strerror (posix-file-error-code condition))))))
+
+(defun posix-file-error (posix-error filename action)
+  (error 'posix-file-error
+         :code (osicat-sys:system-error-code posix-error)
+         :identifier (osicat-sys:system-error-identifier posix-error)
+         :pathname filename :action action))

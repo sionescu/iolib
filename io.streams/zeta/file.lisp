@@ -32,38 +32,35 @@
           (direction-of device) direction
           (if-exists-of device) if-exists
           (if-does-not-exist-of device) if-does-not-exist)
-    (prog1
-        (device-open device :filename filename :flags flags
-                     :mode mode :if-exists if-exists
-                     :if-does-not-exist if-does-not-exist)
-      (when append
-        (setf (position-of device) (device-length device))))))
+    (device-open device :filename filename :flags flags
+                 :mode mode :if-exists if-exists
+                 :if-does-not-exist if-does-not-exist)))
 
 (defmethod device-open ((device file-device) &key filename flags mode
                         if-exists if-does-not-exist &allow-other-keys)
   (declare (ignore if-does-not-exist))
-  (labels ((handle-error (error)
-             (error 'posix-file-error
-                    :code (osicat-sys:system-error-code error)
-                    :identifier (osicat-sys:system-error-identifier error)
-                    :pathname filename :action "opening"))
+  (labels ((handle-error (c)
+             (posix-file-error c filename "opening"))
+           (try-unlink ()
+             (handler-case
+                 (nix:unlink filename)
+               (nix:posix-error (c) (handle-error c))))
            (try-open (&optional (retry-on-unlink t))
              (handler-case
                  (nix:open filename flags mode)
-               (nix:eexist (error)
+               (nix:eexist (c)
                  (cond ((and retry-on-unlink (eql :unlink if-exists))
-                        (handler-case
-                            (nix:unlink filename)
-                          (nix:posix-error (error) (handle-error error)))
-                        (try-open nil))
-                       (t (handle-error error))))
-               (nix:posix-error (error)
-                 (handle-error error))
+                        (try-unlink) (try-open nil))
+                       (t (handle-error c))))
+               (nix:posix-error (c)
+                 (handle-error c))
                (:no-error (fd) fd))))
     (let ((fd (try-open)))
       (%set-fd-nonblock-mode fd t)
       (setf (input-handle-of device) fd
-            (output-handle-of device) fd)))
+            (output-handle-of device) fd)
+      (when (logtest flags nix:o-append)
+        (setf (position-of device) (device-length device)))))
   (values device))
 
 (defun process-file-direction (direction flags if-exists if-does-not-exist)
@@ -121,20 +118,20 @@
 (defmethod device-position ((device file-device))
   (position-of device))
 
-(defmethod (setf device-position) (offset (device file-device) &key (from :start))
+(defmethod (setf device-position) (position (device file-device) &key (from :start))
   (ecase from
     (:start
-     (nix:lseek (input-handle-of device) offset nix:seek-set)
-     (setf (position-of device) offset))
+     (nix:lseek (input-handle-of device) position nix:seek-set)
+     (setf (position-of device) position))
     (:current
-     (nix:lseek (input-handle-of device) offset nix:seek-cur)
-     (incf (position-of device) offset))
+     (nix:lseek (input-handle-of device) position nix:seek-cur)
+     (incf (position-of device) position))
     (:end
-     (nix:lseek (input-handle-of device) offset nix:seek-end)
+     (nix:lseek (input-handle-of device) position nix:seek-end)
      ;; WARNING: possible race condition here: if betweek lseek() and fstat()
      ;; the file size is modified, this calculation will be wrong
      ;; perhaps fcntl() or ioctl() can be used to find out the file offset
-     (setf (position-of device) (+ (device-length device) offset))))
+     (setf (position-of device) (+ (device-length device) position))))
   (position-of device))
 
 (defmethod device-length ((device file-device))
