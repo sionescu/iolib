@@ -37,7 +37,7 @@
                  :if-does-not-exist if-does-not-exist)))
 
 (defmethod device-open ((device file-device) &key filename flags mode
-                        if-exists if-does-not-exist &allow-other-keys)
+                        if-exists if-does-not-exist)
   (declare (ignore if-does-not-exist))
   (labels ((handle-error (c)
              (posix-file-error c filename "opening"))
@@ -72,14 +72,8 @@
        (check-type if-exists (member nil :error-if-symlink))
        (check-type if-does-not-exist (member nil :error))
        (when (eql :default if-does-not-exist) (setf if-does-not-exist :error)))
-      (:output
-       (add-flags nix:o-wronly)
-       (check-type if-exists file-if-exists)
-       (check-type if-does-not-exist file-if-does-not-exist)
-       (when (eql :default if-exists) (setf if-exists :overwrite))
-       (when (eql :default if-does-not-exist) (setf if-does-not-exist :create)))
-      (:io
-       (add-flags nix:o-rdwr)
+      ((:output :io)
+       (add-flags (if (eql :io direction) nix:o-rdwr nix:o-wronly))
        (check-type if-exists file-if-exists)
        (check-type if-does-not-exist file-if-does-not-exist)
        (when (eql :default if-exists) (setf if-exists :overwrite))
@@ -94,8 +88,7 @@
       (:error
        (unless (eql :input direction) (add-flags nix:o-excl)))
       (:error-if-symlink
-       (add-flags nix:o-nofollow)
-       (setf if-exists :overwrite)))
+       (add-flags nix:o-nofollow)))
     (case if-does-not-exist
       (:create (add-flags nix:o-creat)))
     (cond
