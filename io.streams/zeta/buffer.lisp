@@ -12,7 +12,8 @@
 (defclass buffer (device)
   ((single-channel-p :initarg :single-channel :accessor single-channel-buffer-p)
    (input-buffer :initarg :input-buffer :accessor input-buffer-of)
-   (output-buffer :initarg :output-buffer :accessor output-buffer-of)))
+   (output-buffer :initarg :output-buffer :accessor output-buffer-of))
+  (:default-initargs :single-channel nil))
 
 
 ;;;-----------------------------------------------------------------------------
@@ -21,12 +22,19 @@
 
 (defmethod initialize-instance :after ((buffer buffer) &key single-channel
                                        input-buffer-size output-buffer-size)
-  (if (input-buffer-of buffer)
-      (check-type (input-buffer-of buffer) iobuf)
-      (setf (input-buffer-of buffer) (make-iobuf input-buffer-size)))
-  (if (output-buffer-of buffer)
-      (check-type (output-buffer-of buffer) iobuf)
-      (setf (output-buffer-of buffer) (make-iobuf output-buffer-size))))
+  (with-accessors ((input-buffer input-buffer-of)
+                   (output-buffer output-buffer-of))
+      buffer
+    (if input-buffer
+        (check-type input-buffer iobuf)
+        (setf input-buffer (make-iobuf input-buffer-size)))
+    (if single-channel
+        (setf output-buffer input-buffer)
+        (cond
+          (output-buffer
+           (check-type output-buffer iobuf)
+           (assert (not (eq input-buffer output-buffer))))
+          (t (setf output-buffer (make-iobuf output-buffer-size)))))))
 
 
 ;;;-----------------------------------------------------------------------------
