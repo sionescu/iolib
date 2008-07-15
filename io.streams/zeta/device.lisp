@@ -38,7 +38,7 @@
 
 (defgeneric device-open (device &rest initargs))
 
-(defgeneric device-close (device))
+(defgeneric device-close (device &optional abort))
 
 (defgeneric device-read (device vector start end &optional timeout))
 

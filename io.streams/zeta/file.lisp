@@ -137,7 +137,8 @@
 ;;; File DEVICE-CLOSE
 ;;;-----------------------------------------------------------------------------
 
-(defmethod device-close ((device file-device))
+(defmethod device-close ((device file-device) &optional abort)
+  (declare (ignore abort))
   (ignore-errors (nix:close (input-handle-of device)))
   (setf (input-handle-of device) nil
         (output-handle-of device) nil)

@@ -58,6 +58,28 @@
 
 
 ;;;-----------------------------------------------------------------------------
+;;; Buffer DEVICE-CLOSE
+;;;-----------------------------------------------------------------------------
+
+(defmethod device-close ((buffer buffer) &optional abort)
+  (with-accessors ((input-handle input-handle-of)
+                   (output-handle output-handle-of)
+                   (output-buffer output-buffer-of))
+      buffer
+    (cond
+      ((single-channel-buffer-p buffer)
+       (unless abort
+         (ignore-errors (flush-output-buffer output-handle output-buffer 0)))
+       (device-close output-handle))
+      (t
+       (unless abort
+         (ignore-errors (flush-output-buffer output-handle output-buffer 0)))
+       (device-close input-handle)
+       (device-close output-handle))))
+  (values buffer))
+
+
+;;;-----------------------------------------------------------------------------
 ;;; Buffer DEVICE-READ
 ;;;-----------------------------------------------------------------------------
 
