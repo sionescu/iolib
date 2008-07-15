@@ -56,11 +56,13 @@
         (iobuf-end iobuf)   0))
 
 (defun iobuf-next-data-zone (iobuf)
+  (declare (type iobuf iobuf))
   (values (iobuf-data iobuf)
           (iobuf-start iobuf)
           (iobuf-end iobuf)))
 
 (defun iobuf-next-empty-zone (iobuf)
+  (declare (type iobuf iobuf))
   (values (iobuf-data iobuf)
           (iobuf-end iobuf)
           (iobuf-size iobuf)))
@@ -103,7 +105,7 @@
     (replace destination source
              :start1 start1 :end1 end1
              :start2 start2 :end2 end2)
-    (values destination nbytes)))
+    (values nbytes)))
 
 (defun iobuf->vector (iobuf vector start end)
   (declare (type iobuf iobuf)
@@ -111,14 +113,12 @@
            (type iobuf-index start end))
   (when (iobuf-empty-p iobuf)
     (iobuf-reset iobuf))
-  (let* ((iobuf-start (iobuf-start iobuf))
-         (iobuf-end (iobuf-end iobuf))
-         (nbytes
-          (nth-value 1 (replace-ub8 vector (iobuf-data iobuf)
-                                    start end
-                                    iobuf-start iobuf-end))))
-    (setf (iobuf-start iobuf) (+ iobuf-start nbytes))
-    (values nbytes)))
+  (multiple-value-bind (iobuf-data data-start data-end)
+      (iobuf-next-data-zone iobuf)
+    (let ((nbytes
+           (replace-ub8 vector iobuf-data start end data-start data-end)))
+      (setf (iobuf-start iobuf) (+ data-start nbytes))
+      (values nbytes))))
 
 (defun vector->iobuf (iobuf vector start end)
   (declare (type iobuf iobuf)
@@ -126,11 +126,9 @@
            (type iobuf-index start end))
   (when (iobuf-empty-p iobuf)
     (iobuf-reset iobuf))
-  (let* ((iobuf-start (iobuf-start iobuf))
-         (iobuf-end (iobuf-end iobuf))
-         (nbytes
-          (nth-value 1 (replace-ub8 (iobuf-data iobuf) vector
-                                    iobuf-start iobuf-end
-                                    start end))))
-    (setf (iobuf-end iobuf) (+ iobuf-end nbytes))
-    (values nbytes)))
+  (multiple-value-bind (iobuf-data data-start data-end)
+      (iobuf-next-empty-zone iobuf)
+    (let ((nbytes
+           (replace-ub8 iobuf-data vector data-start data-end start end)))
+      (setf (iobuf-end iobuf) (+ data-end nbytes))
+      (values nbytes))))
