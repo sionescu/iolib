@@ -13,9 +13,11 @@
   ((single-channel-p :initarg :single-channel :accessor single-channel-buffer-p)
    (last-io-op :initform nil :accessor last-io-op-of)
    (input-buffer :initarg :input-buffer :accessor input-buffer-of)
-   (output-buffer :initarg :output-buffer :accessor output-buffer-of))
+   (output-buffer :initarg :output-buffer :accessor output-buffer-of)
+   (synchronized :initarg :synchronized :reader buffer-synchronized-p))
   (:default-initargs :input-buffer nil
-                     :output-buffer nil))
+                     :output-buffer nil
+                     :synchronized nil))
 
 
 ;;;-----------------------------------------------------------------------------
@@ -61,7 +63,10 @@
 
 (defmethod device-read ((device buffer) buffer start end &optional timeout)
   (when (= start end) (return-from device-read 0))
-  (read-octets/buffered device buffer start end timeout))
+  (if (buffer-synchronized-p device)
+      (bt:with-lock-held ((iobuf-lock (input-buffer-of device)))
+        (read-octets/buffered device buffer start end timeout))
+      (read-octets/buffered device buffer start end timeout)))
 
 (defun read-octets/buffered (device vector start end timeout)
   (declare (type buffer device)
@@ -114,7 +119,10 @@
 
 (defmethod device-write ((device buffer) buffer start end &optional timeout)
   (when (= start end) (return-from device-write 0))
-  (write-octets/buffered device buffer start end timeout))
+  (if (buffer-synchronized-p device)
+      (bt:with-lock-held ((iobuf-lock (output-buffer-of device)))
+        (write-octets/buffered device buffer start end timeout))
+      (write-octets/buffered device buffer start end timeout)))
 
 (defun write-octets/buffered (device vector start end timeout)
   (declare (type buffer device)

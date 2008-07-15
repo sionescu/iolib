@@ -19,6 +19,7 @@
 (deftype iobuf-data-vector () 'ub8-simple-vector)
 
 (defstruct (iobuf (:constructor %make-iobuf (data)))
+  (lock (bt:make-lock "IObuf lock") :read-only t)
   (data nil :type iobuf-data-vector :read-only t)
   (start 0 :type iobuf-index)
   (end 0 :type iobuf-index))
