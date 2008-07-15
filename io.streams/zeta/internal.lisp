@@ -16,12 +16,12 @@
 (deftype iobuf-index () '(unsigned-byte 27))
 (deftype iobuf-length () '(integer 0 #.(expt 2 27)))
 
-(deftype iobuf-buffer () 'ub8-sarray)
+(deftype iobuf-data-array () 'ub8-sarray)
 
 (defparameter *empty-array* (make-array 0 :element-type 'ub8))
 
 (defstruct (iobuf (:constructor %make-iobuf ()))
-  (data *empty-array* :type iobuf-buffer)
+  (data *empty-array* :type iobuf-data-array)
   (start 0 :type iobuf-index)
   (end 0 :type iobuf-index))
 
@@ -47,10 +47,25 @@
   (= (iobuf-start iobuf)
      (iobuf-end iobuf)))
 
+(defun iobuf-full-p (iobuf)
+  (declare (type iobuf iobuf))
+  (= (iobuf-end iobuf)
+     (iobuf-size iobuf)))
+
 (defun iobuf-reset (iobuf)
   (declare (type iobuf iobuf))
   (setf (iobuf-start iobuf) 0
         (iobuf-end iobuf)   0))
+
+(defun iobuf-next-data-zone (iobuf)
+  (values (iobuf-data iobuf)
+          (iobuf-start iobuf)
+          (iobuf-end iobuf)))
+
+(defun iobuf-next-empty-zone (iobuf)
+  (values (iobuf-data iobuf)
+          (iobuf-end iobuf)
+          (iobuf-size iobuf)))
 
 
 ;;;
@@ -83,7 +98,7 @@
       (incf (iobuf-end iobuf)))))
 
 (defun replace-ub8 (destination source start1 end1 start2 end2)
-  (declare (type iobuf-buffer destination source)
+  (declare (type iobuf-data-array destination source)
            (type iobuf-index start1 start2 end1 end2))
   (let ((nbytes (min (- end1 start1)
                      (- end2 start2))))
@@ -92,10 +107,12 @@
              :start2 start2 :end2 end2)
     (values destination nbytes)))
 
-(defun iobuf->array (array iobuf start end)
-  (declare (type iobuf-buffer array)
+(defun iobuf->array (iobuf array start end)
+  (declare (type iobuf-data-array array)
            (type iobuf iobuf)
            (type iobuf-index start end))
+  (when (iobuf-empty-p iobuf)
+    (iobuf-reset iobuf))
   (let ((nbytes
          (nth-value 1 (replace-ub8 array (iobuf-data iobuf)
                                    start end
@@ -105,9 +122,11 @@
     (values nbytes)))
 
 (defun array->iobuf (iobuf array start end)
-  (declare (type iobuf-buffer array)
+  (declare (type iobuf-data-array array)
            (type iobuf iobuf)
            (type iobuf-index start end))
+  (when (iobuf-empty-p iobuf)
+    (iobuf-reset iobuf))
   (let ((nbytes
          (nth-value 1 (replace-ub8 (iobuf-data iobuf) array
                                    (iobuf-start iobuf)

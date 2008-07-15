@@ -36,9 +36,7 @@
 
 (defclass device ()
   ((input-handle :initarg :input-handle :accessor input-handle-of)
-   (input-timeout :initarg :input-timeout :accessor input-timeout-of)
-   (output-handle :initarg :output-handle :accessor output-handle-of)
-   (output-timeout :initarg :output-timeout :accessor output-timeout-of))
+   (output-handle :initarg :output-handle :accessor output-handle-of))
   (:default-initargs :input-timeout nil
                      :output-timeout nil))
 
@@ -74,15 +72,9 @@
 
 (defgeneric device-close (device))
 
-(defgeneric device-read (device buffer start end &optional timeout))
+(defgeneric device-read (device array start end &optional timeout))
 
-(defgeneric device-write (device buffer start end &optional timeout))
-
-(defgeneric device-clear-input (device))
-
-(defgeneric device-clear-output (device))
-
-(defgeneric device-flush-output (device &optional timeout))
+(defgeneric device-write (device array start end &optional timeout))
 
 (defgeneric device-position (device))
 
