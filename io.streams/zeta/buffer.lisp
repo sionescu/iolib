@@ -11,6 +11,7 @@
 
 (defclass buffer (device)
   ((single-channel-p :initarg :single-channel :accessor single-channel-buffer-p)
+   (last-io-op :initform nil :accessor last-io-op-of)
    (input-buffer :initarg :input-buffer :accessor input-buffer-of)
    (output-buffer :initarg :output-buffer :accessor output-buffer-of))
   (:default-initargs :input-buffer nil
@@ -62,27 +63,49 @@
   (when (= start end) (return-from device-read 0))
   (read-octets/buffered device buffer start end timeout))
 
-(defun read-octets/buffered (buffer vector start end timeout)
-  (declare (type buffer buffer)
+(defun read-octets/buffered (device vector start end timeout)
+  (declare (type buffer device)
            (type ub8-simple-vector vector)
            (type iobuf-index start end)
            (type device-timeout timeout))
   (with-accessors ((input-handle input-handle-of)
-                   (input-buffer input-buffer-of))
-      buffer
+                   (input-buffer input-buffer-of)
+                   (output-handle output-handle-of)
+                   (output-buffer output-buffer-of))
+      device
+    ;; If the previous operation was a write, try to flush the output buffer.
+    ;; If the buffer couldn't be flushed at once, signal an error
+    (synchronize-input device output-handle output-buffer)
     (cond
       ((iobuf-empty-p input-buffer)
-       (let ((nbytes (fill-input-buffer input-handle input-buffer timeout)))
+       (let ((nbytes
+              (fill-input-buffer device input-handle input-buffer timeout)))
          (if (iobuf-empty-p input-buffer)
              (if (eql :eof nbytes) :eof 0)
              (iobuf->vector input-buffer vector start end))))
       (t
        (iobuf->vector input-buffer vector start end)))))
 
-(defun fill-input-buffer (input-handle input-buffer timeout)
+(defun synchronize-input (device output-handle output-buffer)
+  (when (and (single-channel-buffer-p device)
+             (eql :write (last-io-op-of device)))
+    (if (plusp (flush-output-buffer output-handle output-buffer 0))
+        (error "Could not flush the entire write buffer !")
+        (iobuf-reset output-buffer))))
+
+(defun fill-input-buffer (device input-handle input-buffer timeout)
   (multiple-value-bind (data start end)
       (iobuf-next-empty-zone input-buffer)
-    (device-read input-handle data start end timeout)))
+    (let ((nbytes
+           (device-read input-handle data start end timeout)))
+      (setf (iobuf-end input-buffer) (+ start nbytes))
+      (setf (last-io-op-of device) :read)
+      (values nbytes))))
+
+(defun flush-input-buffer (input-buffer)
+  (prog1
+      (iobuf-available-octets input-buffer)
+    (iobuf-reset input-buffer)))
 
 
 ;;;-----------------------------------------------------------------------------
@@ -93,22 +116,36 @@
   (when (= start end) (return-from device-write 0))
   (write-octets/buffered device buffer start end timeout))
 
-(defun write-octets/buffered (buffer vector start end timeout)
-  (declare (type buffer buffer)
+(defun write-octets/buffered (device vector start end timeout)
+  (declare (type buffer device)
            (type ub8-simple-vector vector)
            (type iobuf-index start end)
            (type device-timeout timeout))
   (with-accessors ((output-handle output-handle-of)
                    (output-buffer output-buffer-of))
-      buffer
-    (vector->iobuf output-buffer vector start end)
-    (when (iobuf-full-p output-buffer)
-      (flush-output-buffer output-handle output-buffer timeout))))
+      device
+    ;; If the previous operation was a read, flush the read buffer
+    ;; and reposition the file offset accordingly
+    (synchronize-output device)
+    (prog1
+        (vector->iobuf output-buffer vector start end)
+      (setf (last-io-op-of device) :write)
+      (when (iobuf-full-p output-buffer)
+        (flush-output-buffer output-handle output-buffer timeout)))))
+
+(defun synchronize-output (device)
+  (when (and (single-channel-buffer-p device)
+             (eql :read (last-io-op-of device)))
+    (let ((nbytes (flush-input-buffer (input-buffer-of device))))
+      (setf (device-position device :from :current) (- nbytes)))))
 
 (defun flush-output-buffer (output-handle output-buffer timeout)
   (multiple-value-bind (data start end)
       (iobuf-next-data-zone output-buffer)
-    (device-write output-handle data start end timeout)))
+    (let ((nbytes
+           (device-write output-handle data start end timeout)))
+      (setf (iobuf-start output-buffer) (+ start nbytes))))
+  (iobuf-available-octets output-buffer))
 
 
 ;;;-----------------------------------------------------------------------------
@@ -138,5 +175,4 @@
   (with-accessors ((output-handle output-handle-of)
                    (output-buffer output-buffer-of))
       buffer
-    (flush-output-buffer output-handle output-buffer timeout)
-    (iobuf-available-octets output-buffer)))
+    (flush-output-buffer output-handle output-buffer timeout)))

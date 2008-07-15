@@ -42,8 +42,7 @@
 
 (defun iobuf-empty-p (iobuf)
   (declare (type iobuf iobuf))
-  (= (iobuf-start iobuf)
-     (iobuf-end iobuf)))
+  (zerop (iobuf-available-octets iobuf)))
 
 (defun iobuf-full-p (iobuf)
   (declare (type iobuf iobuf))
