@@ -89,7 +89,7 @@
                    (output-buffer output-buffer-of))
       device
     ;; If the previous operation was a write, try to flush the output buffer.
-    ;; If the buffer couldn't be flushed at once, signal an error
+    ;; If the buffer couldn't be flushed entirely, signal an error
     (synchronize-input device output-handle output-buffer)
     (cond
       ((iobuf-empty-p input-buffer)
