@@ -92,14 +92,9 @@
 
 (defmethod device-read ((device device) vector start end &optional timeout)
   (when (= start end) (return-from device-read 0))
-  (let ((nbytes (if (and timeout (zerop timeout))
-                    (read-octets/non-blocking (input-handle-of device) vector start end)
-                    (read-octets/timeout (input-handle-of device) vector start end timeout))))
-    (cond
-      ((eql :eof nbytes) (return-from device-read :eof))
-      ((and (plusp nbytes) (typep device 'single-channel-device))
-       (incf (device-position device) nbytes)))
-    (values nbytes)))
+  (if (and timeout (zerop timeout))
+      (read-octets/non-blocking (input-handle-of device) vector start end)
+      (read-octets/timeout (input-handle-of device) vector start end timeout)))
 
 (defun read-octets/non-blocking (input-handle vector start end)
   (declare (type unsigned-byte input-handle)
@@ -138,14 +133,9 @@
 
 (defmethod device-write ((device device) vector start end &optional timeout)
   (when (= start end) (return-from device-write 0))
-  (let ((nbytes (if (and timeout (zerop timeout))
-                    (write-octets/non-blocking (output-handle-of device) vector start end)
-                    (write-octets/timeout (output-handle-of device) vector start end timeout))))
-    (cond
-      ((eql :eof nbytes) (return-from device-write :eof))
-      ((and (plusp nbytes) (typep device 'single-channel-device))
-       (incf (device-position device) nbytes)))
-    (values nbytes)))
+  (if (and timeout (zerop timeout))
+      (write-octets/non-blocking (output-handle-of device) vector start end)
+      (write-octets/timeout (output-handle-of device) vector start end timeout)))
 
 (defun write-octets/non-blocking (output-handle vector start end)
   (declare (type unsigned-byte output-handle)
