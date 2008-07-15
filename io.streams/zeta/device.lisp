@@ -44,9 +44,9 @@
 
 (defgeneric device-close (device))
 
-(defgeneric device-read (device array start end &optional timeout))
+(defgeneric device-read (device vector start end &optional timeout))
 
-(defgeneric device-write (device array start end &optional timeout))
+(defgeneric device-write (device vector start end &optional timeout))
 
 (defgeneric device-position (device))
 
@@ -92,22 +92,22 @@
 ;;; Default DEVICE-READ
 ;;;-----------------------------------------------------------------------------
 
-(defmethod device-read ((device device) array start end &optional timeout)
+(defmethod device-read ((device device) vector start end &optional timeout)
   (when (= start end) (return-from device-read 0))
   (let ((nbytes (if (and timeout (zerop timeout))
-                    (read-octets/non-blocking (input-handle-of device) array start end)
-                    (read-octets/timeout (input-handle-of device) array start end timeout))))
+                    (read-octets/non-blocking (input-handle-of device) vector start end)
+                    (read-octets/timeout (input-handle-of device) vector start end timeout))))
     (cond
       ((eql :eof nbytes) (return-from device-read :eof))
       ((and (plusp nbytes) (typep device 'single-channel-device))
        (incf (device-position device) nbytes)))
     (values nbytes)))
 
-(defun read-octets/non-blocking (input-handle array start end)
+(defun read-octets/non-blocking (input-handle vector start end)
   (declare (type unsigned-byte input-handle)
-           (type iobuf-data-array array)
+           (type ub8-simple-vector vector)
            (type iobuf-index start end))
-  (with-pointer-to-vector-data (buf array)
+  (with-pointer-to-vector-data (buf vector)
     (handler-case
         (nix:repeat-upon-eintr
           (nix:read input-handle (inc-pointer buf start) (- end start)))
@@ -115,12 +115,12 @@
       (:no-error (nbytes)
         (if (zerop nbytes) :eof nbytes)))))
 
-(defun read-octets/timeout (input-handle array start end timeout)
+(defun read-octets/timeout (input-handle vector start end timeout)
   (declare (type unsigned-byte input-handle)
-           (type iobuf-data-array array)
+           (type ub8-simple-vector vector)
            (type iobuf-index start end)
            (type device-timeout timeout))
-  (with-pointer-to-vector-data (buf array)
+  (with-pointer-to-vector-data (buf vector)
     (nix:repeat-decreasing-timeout (remaining timeout :rloop)
       (flet ((check-timeout ()
                (if (plusp remaining)
@@ -138,34 +138,34 @@
 ;;; Default DEVICE-WRITE
 ;;;-----------------------------------------------------------------------------
 
-(defmethod device-write ((device device) array start end &optional timeout)
+(defmethod device-write ((device device) vector start end &optional timeout)
   (when (= start end) (return-from device-write 0))
   (let ((nbytes (if (and timeout (zerop timeout))
-                    (write-octets/non-blocking (output-handle-of device) array start end)
-                    (write-octets/timeout (output-handle-of device) array start end timeout))))
+                    (write-octets/non-blocking (output-handle-of device) vector start end)
+                    (write-octets/timeout (output-handle-of device) vector start end timeout))))
     (cond
       ((eql :eof nbytes) (return-from device-write :eof))
       ((and (plusp nbytes) (typep device 'single-channel-device))
        (incf (device-position device) nbytes)))
     (values nbytes)))
 
-(defun write-octets/non-blocking (output-handle array start end)
+(defun write-octets/non-blocking (output-handle vector start end)
   (declare (type unsigned-byte output-handle)
-           (type iobuf-data-array array)
+           (type ub8-simple-vector vector)
            (type iobuf-index start end))
-  (with-pointer-to-vector-data (buf array)
+  (with-pointer-to-vector-data (buf vector)
     (handler-case
         (osicat-posix:repeat-upon-eintr
           (nix:write output-handle (inc-pointer buf start) (- end start)))
       (nix:ewouldblock () 0)
       (nix:epipe () :eof))))
 
-(defun write-octets/timeout (output-handle array start end timeout)
+(defun write-octets/timeout (output-handle vector start end timeout)
   (declare (type unsigned-byte output-handle)
-           (type iobuf-data-array array)
+           (type ub8-simple-vector vector)
            (type iobuf-index start end)
            (type device-timeout timeout))
-  (with-pointer-to-vector-data (buf array)
+  (with-pointer-to-vector-data (buf vector)
     (nix:repeat-decreasing-timeout (remaining timeout :rloop)
       (flet ((check-timeout ()
                (if (plusp remaining)

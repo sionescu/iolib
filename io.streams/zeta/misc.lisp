@@ -5,7 +5,7 @@
     (device-write device octets 0 (length octets))))
 
 (defun device-terpri (device)
-  (device-write device #.(coerce #(#xA) 'ub8-sarray) 0 1))
+  (device-write device #.(coerce #(#xA) 'ub8-simple-vector) 0 1))
 
 (defun device-write-line (device string)
   (device-write-string device string)

@@ -14,7 +14,7 @@
   :components
   ((:file "pkgdcl")
    (:file "types" :depends-on ("pkgdcl"))
-   (:file "conditions" :depends-on ("pkgdcl" "types"))
+   (:file "conditions" :depends-on ("pkgdcl"))
    (:file "device" :depends-on ("pkgdcl" "types" "conditions"))
 
    ;; Devices

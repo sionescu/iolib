@@ -16,21 +16,23 @@
 (deftype iobuf-index () '(unsigned-byte 27))
 (deftype iobuf-length () '(integer 0 #.(expt 2 27)))
 
-(deftype iobuf-data-array () 'ub8-sarray)
+(deftype iobuf-data-vector () 'ub8-simple-vector)
 
-(defparameter *empty-array* (make-array 0 :element-type 'ub8))
+(defparameter *empty-vector* (make-array 0 :element-type 'ub8))
 
 (defstruct (iobuf (:constructor %make-iobuf ()))
-  (data *empty-array* :type iobuf-data-array)
+  (data *empty-vector* :type iobuf-data-vector)
   (start 0 :type iobuf-index)
   (end 0 :type iobuf-index))
+
+(defun make-iobuf-data-vector (size)
+  (declare (type iobuf-index size))
+  (make-array size :element-type 'ub8 :initial-element 0))
 
 (defun make-iobuf (&optional size)
   (declare (type (or null iobuf-index) size))
   (let ((b (%make-iobuf)))
-    (setf (iobuf-data b) (make-array (or size +default-iobuf-size+)
-                                     :element-type 'ub8
-                                     :initial-element 0))
+    (setf (iobuf-data b) (make-iobuf-data-vector (or size +default-iobuf-size+)))
     (values b)))
 
 (defun iobuf-size (iobuf)
@@ -98,7 +100,7 @@
       (incf (iobuf-end iobuf)))))
 
 (defun replace-ub8 (destination source start1 end1 start2 end2)
-  (declare (type iobuf-data-array destination source)
+  (declare (type ub8-simple-vector destination source)
            (type iobuf-index start1 start2 end1 end2))
   (let ((nbytes (min (- end1 start1)
                      (- end2 start2))))
@@ -107,28 +109,28 @@
              :start2 start2 :end2 end2)
     (values destination nbytes)))
 
-(defun iobuf->array (iobuf array start end)
-  (declare (type iobuf-data-array array)
-           (type iobuf iobuf)
+(defun iobuf->vector (iobuf vector start end)
+  (declare (type iobuf iobuf)
+           (type ub8-simple-vector vector)
            (type iobuf-index start end))
   (when (iobuf-empty-p iobuf)
     (iobuf-reset iobuf))
   (let ((nbytes
-         (nth-value 1 (replace-ub8 array (iobuf-data iobuf)
+         (nth-value 1 (replace-ub8 vector (iobuf-data iobuf)
                                    start end
                                    (iobuf-start iobuf)
                                    (iobuf-end iobuf)))))
     (incf (iobuf-start iobuf) nbytes)
     (values nbytes)))
 
-(defun array->iobuf (iobuf array start end)
-  (declare (type iobuf-data-array array)
-           (type iobuf iobuf)
+(defun vector->iobuf (iobuf vector start end)
+  (declare (type iobuf iobuf)
+           (type ub8-simple-vector vector)
            (type iobuf-index start end))
   (when (iobuf-empty-p iobuf)
     (iobuf-reset iobuf))
   (let ((nbytes
-         (nth-value 1 (replace-ub8 (iobuf-data iobuf) array
+         (nth-value 1 (replace-ub8 (iobuf-data iobuf) vector
                                    (iobuf-start iobuf)
                                    (iobuf-end iobuf)
                                    start end))))

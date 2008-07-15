@@ -31,7 +31,7 @@
 
 
 ;;;-----------------------------------------------------------------------------
-;;; Buffer Generic functions
+;;; Buffer Generic Functions
 ;;;-----------------------------------------------------------------------------
 
 (defgeneric buffer-clear-input (buffer))
@@ -42,16 +42,16 @@
 
 
 ;;;-----------------------------------------------------------------------------
-;;; Buffered DEVICE-READ
+;;; Buffer DEVICE-READ
 ;;;-----------------------------------------------------------------------------
 
 (defmethod device-read ((device buffer) buffer start end &optional timeout)
   (when (= start end) (return-from device-read 0))
-  (read-octets/buffered (input-handle-of device) buffer start end timeout))
+  (read-octets/buffered device buffer start end timeout))
 
-(defun read-octets/buffered (buffer array start end timeout)
+(defun read-octets/buffered (buffer vector start end timeout)
   (declare (type buffer buffer)
-           (type iobuf-data-array array)
+           (type ub8-simple-vector vector)
            (type iobuf-index start end)
            (type device-timeout timeout))
   (with-accessors ((input-handle input-handle-of)
@@ -62,9 +62,9 @@
        (let ((nbytes (fill-input-buffer input-handle input-buffer timeout)))
          (if (iobuf-empty-p input-buffer)
              (if (eql :eof nbytes) :eof 0)
-             (iobuf->array input-buffer array start end))))
+             (iobuf->vector input-buffer vector start end))))
       (t
-       (iobuf->array input-buffer array start end)))))
+       (iobuf->vector input-buffer vector start end)))))
 
 (defun fill-input-buffer (input-handle input-buffer timeout)
   (multiple-value-bind (data start end)
@@ -73,22 +73,22 @@
 
 
 ;;;-----------------------------------------------------------------------------
-;;; Buffered DEVICE-WRITE
+;;; Buffer DEVICE-WRITE
 ;;;-----------------------------------------------------------------------------
 
 (defmethod device-write ((device buffer) buffer start end &optional timeout)
   (when (= start end) (return-from device-write 0))
-  (write-octets/buffered (output-handle-of device) buffer start end timeout))
+  (write-octets/buffered device buffer start end timeout))
 
-(defun write-octets/buffered (buffer array start end timeout)
+(defun write-octets/buffered (buffer vector start end timeout)
   (declare (type buffer buffer)
-           (type iobuf-data-array array)
+           (type ub8-simple-vector vector)
            (type iobuf-index start end)
            (type device-timeout timeout))
   (with-accessors ((output-handle output-handle-of)
                    (output-buffer output-buffer-of))
       buffer
-    (array->iobuf output-buffer array start end)
+    (vector->iobuf output-buffer vector start end)
     (when (iobuf-full-p output-buffer)
       (flush-output-buffer output-handle output-buffer timeout))))
 
