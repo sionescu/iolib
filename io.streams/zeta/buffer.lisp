@@ -137,7 +137,8 @@
   (when (and (single-channel-buffer-p device)
              (eql :read (last-io-op-of device)))
     (let ((nbytes (flush-input-buffer (input-buffer-of device))))
-      (setf (device-position device :from :current) (- nbytes)))))
+      (unless (zerop nbytes)
+        (setf (device-position device :from :current) (- nbytes))))))
 
 (defun flush-output-buffer (output-handle output-buffer timeout)
   (multiple-value-bind (data start end)
