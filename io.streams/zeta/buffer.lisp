@@ -10,7 +10,7 @@
 ;;;-----------------------------------------------------------------------------
 
 (defclass buffer (device)
-  ((single-channel :initarg :single-channel :accessor single-channel-buffer-p)
+  ((single-channel-p :initarg :single-channel :accessor single-channel-buffer-p)
    (input-buffer :initarg :input-buffer :accessor input-buffer-of)
    (output-buffer :initarg :output-buffer :accessor output-buffer-of)))
 
@@ -24,10 +24,9 @@
   (if (input-buffer-of buffer)
       (check-type (input-buffer-of buffer) iobuf)
       (setf (input-buffer-of buffer) (make-iobuf input-buffer-size)))
-  (unless single-channel
-    (if (output-buffer-of buffer)
-        (check-type (output-buffer-of buffer) iobuf)
-        (setf (output-buffer-of buffer) (make-iobuf output-buffer-size)))))
+  (if (output-buffer-of buffer)
+      (check-type (output-buffer-of buffer) iobuf)
+      (setf (output-buffer-of buffer) (make-iobuf output-buffer-size))))
 
 
 ;;;-----------------------------------------------------------------------------
