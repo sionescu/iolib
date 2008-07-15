@@ -15,9 +15,7 @@
   (:default-initargs :input-timeout nil
                      :output-timeout nil))
 
-(defclass single-channel-device (device)
-  ((position :initarg :position :accessor position-of))
-  (:default-initargs :position 0))
+(defclass single-channel-device (device) ())
 
 (defclass dual-channel-device (device) ())
 

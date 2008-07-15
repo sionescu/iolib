@@ -80,9 +80,7 @@
     (let ((fd (try-open)))
       (%set-fd-nonblock-mode fd t)
       (setf (input-handle-of device) fd
-            (output-handle-of device) fd)
-      (when (logtest flags nix:o-append)
-        (setf (position-of device) (device-length device)))))
+            (output-handle-of device) fd)))
   (values device))
 
 (defun process-file-direction (direction flags if-exists if-does-not-exist)
@@ -141,23 +139,14 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod device-position ((device file-device))
-  (position-of device))
+  (nix:lseek (input-handle-of device) 0 nix:seek-cur))
 
 (defmethod (setf device-position) (position (device file-device) &key (from :start))
-  (ecase from
-    (:start
-     (nix:lseek (input-handle-of device) position nix:seek-set)
-     (setf (position-of device) position))
-    (:current
-     (nix:lseek (input-handle-of device) position nix:seek-cur)
-     (incf (position-of device) position))
-    (:end
-     (nix:lseek (input-handle-of device) position nix:seek-end)
-     ;; WARNING: possible race condition here: if betweek lseek() and fstat()
-     ;; the file size is modified, this calculation will be incorrect
-     ;; perhaps fcntl() or ioctl() can be used to find out the file offset
-     (setf (position-of device) (+ (device-length device) position))))
-  (position-of device))
+  (nix:lseek (input-handle-of device) position
+             (ecase from
+               (:start nix:seek-set)
+               (:current nix:seek-cur)
+               (:end nix:seek-end))))
 
 
 ;;;-----------------------------------------------------------------------------
