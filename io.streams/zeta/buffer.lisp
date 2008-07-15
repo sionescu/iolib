@@ -13,18 +13,24 @@
   ((single-channel-p :initarg :single-channel :accessor single-channel-buffer-p)
    (input-buffer :initarg :input-buffer :accessor input-buffer-of)
    (output-buffer :initarg :output-buffer :accessor output-buffer-of))
-  (:default-initargs :single-channel nil))
+  (:default-initargs :input-buffer nil
+                     :output-buffer nil))
 
 
 ;;;-----------------------------------------------------------------------------
 ;;; Buffer Constructors
 ;;;-----------------------------------------------------------------------------
 
-(defmethod initialize-instance :after ((buffer buffer) &key single-channel
+(defmethod initialize-instance :after ((buffer buffer) &key
+                                       (single-channel nil single-channel-provided)
                                        input-buffer-size output-buffer-size)
-  (with-accessors ((input-buffer input-buffer-of)
+  (with-accessors ((single-channel-p single-channel-buffer-p)
+                   (input-handle input-handle-of)
+                   (input-buffer input-buffer-of)
                    (output-buffer output-buffer-of))
       buffer
+    (unless single-channel-provided
+      (setf single-channel-p (typep input-handle 'single-channel-device)))
     (if input-buffer
         (check-type input-buffer iobuf)
         (setf input-buffer (make-iobuf input-buffer-size)))
