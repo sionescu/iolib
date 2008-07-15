@@ -184,7 +184,11 @@
 (defmethod device-position ((device buffer))
   (when-let ((handle-position
               (device-position (input-handle-of device))))
-    (+ handle-position (iobuf-available-octets (input-buffer-of device)))))
+    (ecase (last-io-op-of device)
+      (:read
+       (- handle-position (iobuf-available-octets (input-buffer-of device))))
+      (:write
+       (+ handle-position (iobuf-available-octets (output-buffer-of device)))))))
 
 (defmethod (setf device-position) (position (device buffer) &key (from :start))
   (setf (device-position device :from from) position))
