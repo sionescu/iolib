@@ -62,22 +62,37 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod device-close ((buffer buffer) &optional abort)
-  (with-accessors ((input-handle input-handle-of)
-                   (output-handle output-handle-of)
+  (with-accessors ((input-buffer input-buffer-of)
                    (output-buffer output-buffer-of))
       buffer
     (cond
       ((single-channel-buffer-p buffer)
-       (unless abort
-         (ignore-errors (flush-output-buffer output-handle output-buffer 0)))
-       (device-close output-handle))
+       (if (buffer-synchronized-p buffer)
+           (bt:with-lock-held (output-buffer)
+             (close-single-channel-buffer buffer abort))
+           (close-single-channel-buffer buffer abort)))
       (t
-       (unless abort
-         (ignore-errors (flush-output-buffer output-handle output-buffer 0)))
-       (device-close input-handle)
-       (device-close output-handle))))
+       (if (buffer-synchronized-p buffer)
+           (bt:with-lock-held (input-buffer)
+             (bt:with-lock-held (output-buffer)
+               (close-dual-channel-buffer buffer abort)))
+           (close-dual-channel-buffer buffer abort)))))
   (values buffer))
 
+(defun close-single-channel-buffer (buffer abort)
+  (unless abort
+    (flush-output-buffer (output-handle-of buffer)
+                         (output-buffer-of buffer)
+                         0))
+  (device-close (output-handle-of buffer)))
+
+(defun close-dual-channel-buffer (buffer abort)
+  (unless abort
+    (flush-output-buffer (output-handle-of buffer)
+                         (output-buffer-of buffer)
+                         0))
+  (device-close (input-handle-of buffer))
+  (device-close (output-handle-of buffer)))
 
 ;;;-----------------------------------------------------------------------------
 ;;; Buffer DEVICE-READ
@@ -204,13 +219,20 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod device-position ((device buffer))
-  (when-let ((handle-position
-              (device-position (input-handle-of device))))
-    (ecase (last-io-op-of device)
+  (if (buffer-synchronized-p device)
+      (bt:with-lock-held ((input-buffer-of device))
+        (get-device-position device))
+      (get-device-position device)))
+
+(defun get-device-position (buffer)
+  (when-let ((single-channel-p (single-channel-buffer-p buffer))
+             (handle-position
+              (device-position (input-handle-of buffer))))
+    (ecase (last-io-op-of buffer)
       (:read
-       (- handle-position (iobuf-available-octets (input-buffer-of device))))
+       (- handle-position (iobuf-available-octets (input-buffer-of buffer))))
       (:write
-       (+ handle-position (iobuf-available-octets (output-buffer-of device)))))))
+       (+ handle-position (iobuf-available-octets (input-buffer-of buffer)))))))
 
 (defmethod (setf device-position) (position (device buffer) &key (from :start))
   (setf (device-position device :from from) position))
@@ -221,13 +243,26 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod buffer-clear-input ((buffer buffer))
-  (iobuf-reset (input-buffer-of buffer)))
+  (with-accessors ((input-buffer input-buffer-of))
+      buffer
+    (if (buffer-synchronized-p buffer)
+        (bt:with-lock-held (input-buffer)
+          (iobuf-reset input-buffer))
+        (iobuf-reset input-buffer))))
 
 (defmethod buffer-clear-output ((buffer buffer))
-  (iobuf-reset (output-buffer-of buffer)))
+  (with-accessors ((output-buffer output-buffer-of))
+      buffer
+    (if (buffer-synchronized-p buffer)
+        (bt:with-lock-held (output-buffer)
+          (iobuf-reset output-buffer))
+        (iobuf-reset output-buffer))))
 
 (defmethod buffer-flush-output ((buffer buffer) &optional timeout)
   (with-accessors ((output-handle output-handle-of)
                    (output-buffer output-buffer-of))
       buffer
-    (flush-output-buffer output-handle output-buffer timeout)))
+    (if (buffer-synchronized-p buffer)
+        (bt:with-lock-held (output-buffer)
+          (flush-output-buffer output-handle output-buffer timeout))
+        (flush-output-buffer output-handle output-buffer timeout))))
