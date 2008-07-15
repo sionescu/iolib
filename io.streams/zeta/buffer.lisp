@@ -32,12 +32,13 @@
                    (input-buffer input-buffer-of)
                    (output-buffer output-buffer-of))
       buffer
-    (unless single-channel-provided
-      (setf single-channel-p (typep input-handle 'single-channel-device)))
+    (setf single-channel-p (if single-channel-provided
+                               single-channel
+                               (typep input-handle 'single-channel-device)))
     (if input-buffer
         (check-type input-buffer iobuf)
         (setf input-buffer (make-iobuf input-buffer-size)))
-    (if single-channel
+    (if single-channel-p
         (setf output-buffer input-buffer)
         (cond
           (output-buffer
@@ -68,13 +69,13 @@
     (cond
       ((single-channel-buffer-p buffer)
        (if (buffer-synchronized-p buffer)
-           (bt:with-lock-held (output-buffer)
+           (bt:with-lock-held ((iobuf-lock output-buffer))
              (close-single-channel-buffer buffer abort))
            (close-single-channel-buffer buffer abort)))
       (t
        (if (buffer-synchronized-p buffer)
-           (bt:with-lock-held (input-buffer)
-             (bt:with-lock-held (output-buffer)
+           (bt:with-lock-held ((iobuf-lock input-buffer))
+             (bt:with-lock-held ((iobuf-lock output-buffer))
                (close-dual-channel-buffer buffer abort)))
            (close-dual-channel-buffer buffer abort)))))
   (values buffer))
@@ -220,7 +221,7 @@
 
 (defmethod device-position ((device buffer))
   (if (buffer-synchronized-p device)
-      (bt:with-lock-held ((input-buffer-of device))
+      (bt:with-lock-held ((iobuf-lock (input-buffer-of device)))
         (get-device-position device))
       (get-device-position device)))
 
@@ -246,7 +247,7 @@
   (with-accessors ((input-buffer input-buffer-of))
       buffer
     (if (buffer-synchronized-p buffer)
-        (bt:with-lock-held (input-buffer)
+        (bt:with-lock-held ((iobuf-lock input-buffer))
           (iobuf-reset input-buffer))
         (iobuf-reset input-buffer))))
 
@@ -254,7 +255,7 @@
   (with-accessors ((output-buffer output-buffer-of))
       buffer
     (if (buffer-synchronized-p buffer)
-        (bt:with-lock-held (output-buffer)
+        (bt:with-lock-held ((iobuf-lock output-buffer))
           (iobuf-reset output-buffer))
         (iobuf-reset output-buffer))))
 
@@ -263,6 +264,6 @@
                    (output-buffer output-buffer-of))
       buffer
     (if (buffer-synchronized-p buffer)
-        (bt:with-lock-held (output-buffer)
+        (bt:with-lock-held ((iobuf-lock output-buffer))
           (flush-output-buffer output-handle output-buffer timeout))
         (flush-output-buffer output-handle output-buffer timeout))))

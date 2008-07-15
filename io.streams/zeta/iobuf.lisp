@@ -130,5 +130,5 @@
       (iobuf-next-empty-zone iobuf)
     (let ((nbytes
            (replace-ub8 iobuf-data vector data-start data-end start end)))
-      (setf (iobuf-end iobuf) (+ data-end nbytes))
+      (setf (iobuf-end iobuf) (+ data-start nbytes))
       (values nbytes))))
