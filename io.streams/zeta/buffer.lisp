@@ -63,10 +63,20 @@
 
 (defmethod device-read ((device buffer) buffer start end &optional timeout)
   (when (= start end) (return-from device-read 0))
-  (if (buffer-synchronized-p device)
-      (bt:with-lock-held ((iobuf-lock (input-buffer-of device)))
-        (read-octets/buffered device buffer start end timeout))
-      (read-octets/buffered device buffer start end timeout)))
+  (cond
+    ((buffer-synchronized-p device)
+     (flet ((%read-octets ()
+              (bt:with-lock-held ((iobuf-lock (input-buffer-of device)))
+                (read-octets/buffered device buffer start end 0))))
+       (let ((nbytes (%read-octets)))
+         (cond
+           ((and (not (eql timeout 0))
+                 (eql nbytes 0))
+            (wait-for-input (input-handle-of device) timeout)
+            (%read-octets))
+           (t nbytes)))))
+    (t
+     (read-octets/buffered device buffer start end timeout))))
 
 (defun read-octets/buffered (device vector start end timeout)
   (declare (type buffer device)
@@ -119,10 +129,20 @@
 
 (defmethod device-write ((device buffer) buffer start end &optional timeout)
   (when (= start end) (return-from device-write 0))
-  (if (buffer-synchronized-p device)
-      (bt:with-lock-held ((iobuf-lock (output-buffer-of device)))
-        (write-octets/buffered device buffer start end timeout))
-      (write-octets/buffered device buffer start end timeout)))
+  (cond
+    ((buffer-synchronized-p device)
+     (flet ((%write-octets ()
+              (bt:with-lock-held ((iobuf-lock (output-buffer-of device)))
+                (write-octets/buffered device buffer start end 0))))
+       (let ((nbytes (%write-octets)))
+         (cond
+           ((and (not (eql timeout 0))
+                 (eql nbytes 0))
+            (wait-for-output (output-handle-of device) timeout)
+            (%write-octets))
+           (t nbytes)))))
+    (t
+     (write-octets/buffered device buffer start end timeout))))
 
 (defun write-octets/buffered (device vector start end timeout)
   (declare (type buffer device)
