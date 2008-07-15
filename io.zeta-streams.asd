@@ -19,4 +19,7 @@
    (:file "internal" :depends-on ("pkgdcl" "classes" "conditions" "common"))
 
    ;; Devices
-   (:file "file" :depends-on ("pkgdcl" "classes" "conditions" "common" "internal"))))
+   (:file "file" :depends-on ("pkgdcl" "classes" "conditions" "common" "internal"))
+
+   ;; Buffers
+   (:file "buffer" :depends-on ("pkgdcl" "classes" "conditions" "common"))))

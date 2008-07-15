@@ -23,6 +23,9 @@
 
 (deftype ub16-sarray (&optional (size '*))
   `(simple-array ub16 (,size)))
+
+(deftype device-timeout ()
+  `(or null non-negative-real))
 
 
 ;;;-----------------------------------------------------------------------------
