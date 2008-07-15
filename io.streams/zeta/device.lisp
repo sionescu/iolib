@@ -1,9 +1,59 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- Common functions.
+;;; --- Device common functions.
 ;;;
 
 (in-package :io.zeta-streams)
+
+;;;-----------------------------------------------------------------------------
+;;; Device Classes and Types
+;;;-----------------------------------------------------------------------------
+
+(defclass device ()
+  ((input-handle :initarg :input-handle :accessor input-handle-of)
+   (output-handle :initarg :output-handle :accessor output-handle-of))
+  (:default-initargs :input-timeout nil
+                     :output-timeout nil))
+
+(defclass single-channel-device (device)
+  ((position :initarg :position :accessor position-of))
+  (:default-initargs :position 0))
+
+(defclass dual-channel-device (device) ())
+
+(defclass direct-device (single-channel-device) ())
+
+(defclass memory-buffer-device (direct-device) ())
+
+(defclass socket-device (dual-channel-device)
+  ((domain :initarg :domain)
+   (type :initarg :type)
+   (protocol :initarg :protocol)))
+
+(deftype device-timeout ()
+  `(or null non-negative-real))
+
+(deftype stream-position () '(unsigned-byte 64))
+
+
+;;;-----------------------------------------------------------------------------
+;;; Generic functions
+;;;-----------------------------------------------------------------------------
+
+(defgeneric device-open (device &rest initargs))
+
+(defgeneric device-close (device))
+
+(defgeneric device-read (device array start end &optional timeout))
+
+(defgeneric device-write (device array start end &optional timeout))
+
+(defgeneric device-position (device))
+
+(defgeneric (setf device-position) (position device &rest args))
+
+(defgeneric device-length (device))
+
 
 ;;;-----------------------------------------------------------------------------
 ;;; Default no-op methods

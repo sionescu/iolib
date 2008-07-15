@@ -13,13 +13,13 @@
   :pathname (merge-pathnames #p"io.streams/zeta/" *load-truename*)
   :components
   ((:file "pkgdcl")
-   (:file "classes" :depends-on ("pkgdcl"))
-   (:file "conditions" :depends-on ("pkgdcl" "classes"))
-   (:file "common" :depends-on ("pkgdcl" "classes" "conditions"))
-   (:file "internal" :depends-on ("pkgdcl" "classes" "conditions" "common"))
+   (:file "types" :depends-on ("pkgdcl"))
+   (:file "conditions" :depends-on ("pkgdcl" "types"))
+   (:file "device" :depends-on ("pkgdcl" "types" "conditions"))
 
    ;; Devices
-   (:file "file" :depends-on ("pkgdcl" "classes" "conditions" "common" "internal"))
+   (:file "file" :depends-on ("pkgdcl" "types" "conditions" "device"))
 
    ;; Buffers
-   (:file "buffer" :depends-on ("pkgdcl" "classes" "conditions" "common"))))
+   (:file "iobuf" :depends-on ("pkgdcl" "types" "conditions" "device"))
+   (:file "buffer" :depends-on ("pkgdcl" "types" "conditions" "device" "iobuf"))))

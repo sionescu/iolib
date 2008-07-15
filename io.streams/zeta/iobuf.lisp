@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- Foreign memory buffers.
+;;; --- I/O buffers.
 ;;;
 
 (in-package :io.zeta-streams)

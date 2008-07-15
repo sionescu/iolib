@@ -5,6 +5,18 @@
 
 (in-package :io.zeta-streams)
 
+;;;-----------------------------------------------------------------------------
+;;; File Classes and Types
+;;;-----------------------------------------------------------------------------
+
+(defclass file-device (single-channel-device)
+  ((filename :initarg :filename :accessor filename-of)
+   (direction :initarg :direction :accessor direction-of)
+   (if-exists :initarg :if-exists :accessor if-exists-of)
+   (if-does-not-exist :initarg :if-does-not-exist :accessor if-does-not-exist-of)))
+
+(defclass memory-mapped-file-device (file-device direct-device) ())
+
 (deftype file-direction ()
   '(member :input :output :io))
 
@@ -13,6 +25,11 @@
 
 (deftype file-if-does-not-exist ()
   '(member :default :error :create))
+
+
+;;;-----------------------------------------------------------------------------
+;;; File Constructors
+;;;-----------------------------------------------------------------------------
 
 (defmethod initialize-instance :after ((device file-device)
                                        &key filename (direction :input)
@@ -35,6 +52,11 @@
     (device-open device :filename filename :flags flags
                  :mode mode :if-exists if-exists
                  :if-does-not-exist if-does-not-exist)))
+
+
+;;;-----------------------------------------------------------------------------
+;;; File DEVICE-OPEN
+;;;-----------------------------------------------------------------------------
 
 (defmethod device-open ((device file-device) &key filename flags mode
                         if-exists if-does-not-exist)
@@ -101,12 +123,22 @@
       (extra-flags
        (add-flags extra-flags))))
   (values flags if-exists if-does-not-exist))
+
+
+;;;-----------------------------------------------------------------------------
+;;; File DEVICE-CLOSE
+;;;-----------------------------------------------------------------------------
 
 (defmethod device-close ((device file-device))
   (ignore-errors (nix:close (input-handle-of device)))
   (setf (input-handle-of device) nil
         (output-handle-of device) nil)
   (values device))
+
+
+;;;-----------------------------------------------------------------------------
+;;; File DEVICE-POSITION
+;;;-----------------------------------------------------------------------------
 
 (defmethod device-position ((device file-device))
   (position-of device))
@@ -122,13 +154,23 @@
     (:end
      (nix:lseek (input-handle-of device) position nix:seek-end)
      ;; WARNING: possible race condition here: if betweek lseek() and fstat()
-     ;; the file size is modified, this calculation will be wrong
+     ;; the file size is modified, this calculation will be incorrect
      ;; perhaps fcntl() or ioctl() can be used to find out the file offset
      (setf (position-of device) (+ (device-length device) position))))
   (position-of device))
+
+
+;;;-----------------------------------------------------------------------------
+;;; File DEVICE-LENGTH
+;;;-----------------------------------------------------------------------------
 
 (defmethod device-length ((device file-device))
   (nix:stat-size (nix:fstat (input-handle-of device))))
+
+
+;;;-----------------------------------------------------------------------------
+;;; OPEN-FILE
+;;;-----------------------------------------------------------------------------
 
 (defun open-file (filename &key (direction :input)
                   (if-exists :default) (if-does-not-exist :default)
