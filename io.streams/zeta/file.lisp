@@ -49,9 +49,10 @@
           (direction-of device) direction
           (if-exists-of device) if-exists
           (if-does-not-exist-of device) if-does-not-exist)
-    (device-open device :filename filename :flags flags
-                 :mode mode :if-exists if-exists
-                 :if-does-not-exist if-does-not-exist)))
+    (with-device (device)
+      (device-open device :filename filename :flags flags
+                   :mode mode :if-exists if-exists
+                   :if-does-not-exist if-does-not-exist))))
 
 
 ;;;-----------------------------------------------------------------------------
@@ -86,17 +87,17 @@
 (defun process-file-direction (direction flags if-exists if-does-not-exist)
   (macrolet ((add-flags (&rest %flags)
                `(setf flags (logior flags ,@%flags))))
+    (when (eql :default if-exists) (setf if-exists :overwrite))
     (ecase direction
       (:input
        (add-flags nix:o-rdonly)
-       (check-type if-exists (member nil :error-if-symlink))
-       (check-type if-does-not-exist (member nil :error))
+       (check-type if-exists (member :overwrite :error-if-symlink))
+       (check-type if-does-not-exist (member :default :error))
        (when (eql :default if-does-not-exist) (setf if-does-not-exist :error)))
       ((:output :io)
        (add-flags (if (eql :io direction) nix:o-rdwr nix:o-wronly))
        (check-type if-exists file-if-exists)
        (check-type if-does-not-exist file-if-does-not-exist)
-       (when (eql :default if-exists) (setf if-exists :overwrite))
        (when (eql :default if-does-not-exist) (setf if-does-not-exist :create))))
     (values flags if-exists if-does-not-exist)))
 
@@ -139,14 +140,20 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod device-position ((device file-device))
-  (nix:lseek (input-handle-of device) 0 nix:seek-cur))
+  (handler-case
+      (nix:lseek (input-handle-of device) 0 nix:seek-cur)
+    (nix:posix-error (err)
+      (posix-file-error err device "seeking on"))))
 
 (defmethod (setf device-position) (position (device file-device) &key (from :start))
-  (nix:lseek (input-handle-of device) position
-             (ecase from
-               (:start nix:seek-set)
-               (:current nix:seek-cur)
-               (:end nix:seek-end))))
+  (handler-case
+      (nix:lseek (input-handle-of device) position
+                 (ecase from
+                   (:start nix:seek-set)
+                   (:current nix:seek-cur)
+                   (:end nix:seek-end)))
+    (nix:posix-error (err)
+      (posix-file-error err device "seeking on"))))
 
 
 ;;;-----------------------------------------------------------------------------
@@ -154,7 +161,10 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod device-length ((device file-device))
-  (nix:stat-size (nix:fstat (input-handle-of device))))
+  (handler-case
+      (nix:stat-size (nix:fstat (input-handle-of device)))
+    (nix:posix-error (err)
+      (posix-file-error err device "getting status of"))))
 
 
 ;;;-----------------------------------------------------------------------------
