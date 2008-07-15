@@ -10,3 +10,8 @@
 (defun device-write-line (device string)
   (device-write-string device string)
   (device-terpri device))
+
+(defun device-read-char (device)
+  (let ((vector (make-iobuf-data-vector 1)))
+    (device-read device vector 0 1)
+    (code-char (aref vector 0))))
