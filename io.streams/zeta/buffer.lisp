@@ -245,7 +245,8 @@
 
 (defmethod buffer-clear-input ((buffer buffer))
   (with-accessors ((input-buffer input-buffer-of)
-                   (last-io-op last-io-op-of))
+                   (last-io-op last-io-op-of)
+                   (single-channel-p single-channel-buffer-p))
       buffer
     (flet ((%buffer-clear-input ()
              (when (or (not single-channel-p)
