@@ -14,7 +14,8 @@
                 #:timeval #:size-of-timeval #:sec #:usec)
   (:import-from #:osicat-sys #:size-of-int)
   (:import-from #:io.multiplex #:decode-timeout)
-  (:shadow #:let #:let* #:multiple-value-bind #:funcall #:defun)
+  (:shadowing-import-from :series #:let #:let* #:multiple-value-bind
+                          #:funcall #:defun #:until #:collect)
   (:export
    ;; Conditions
    #:posix-error
@@ -218,7 +219,4 @@
    #:ip-address
    ))
 
-(in-package :net.sockets)
-
-(series::install)
 (setf series:*suppress-series-warnings* t)

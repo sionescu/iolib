@@ -5,6 +5,9 @@
 
 (in-package :net.sockets)
 
+(eval-when (:compile-toplevel)
+  (series::install :macro t :shadow nil :shadow-extensions t))
+
 (defun space-char-p (char)
   (declare (type character char))
   (or (char= char #\Space)
