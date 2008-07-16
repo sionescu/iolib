@@ -15,7 +15,7 @@
     (format stream "epoll(4) multiplexer")))
 
 (defconstant +epoll-default-size-hint+ 25)
-(defvar *epoll-max-events* 200)
+(defconstant +epoll-max-events+ 1024)
 
 (defmethod initialize-instance :after ((mux epoll-multiplexer)
                                        &key (size +epoll-default-size-hint+))
@@ -77,7 +77,7 @@
             (fd-entry-fd fd-entry)))))
 
 (defmethod harvest-events ((mux epoll-multiplexer) timeout)
-  (with-foreign-object (events 'epoll-event *epoll-max-events*)
+  (with-foreign-object (events 'epoll-event +epoll-max-events+)
     (bzero events (* *epoll-max-events* size-of-epoll-event))
     (let (ready-fds)
       (nix:repeat-upon-condition-decreasing-timeout
