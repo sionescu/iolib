@@ -167,25 +167,22 @@
   (babel:string-to-octets buff :start start :end end
                           :encoding (babel:external-format-encoding ef)))
 
-(declaim (inline ensure-number))
 (defun ensure-number (value &key (start 0) end (radix 10) (type t) (errorp t))
-  (check-type value (or string unsigned-byte) "a string or an unsigned-byte")
   (let ((parsed
          (typecase value
            (string
             (ignore-errors (parse-integer value :start start :end end
                                           :radix radix :junk-allowed nil)))
            (t value))))
-    (if (and parsed (typep parsed type))
-        (values parsed)
-        (if errorp
-            (error 'parse-error)
-            nil))))
+    (cond
+      ((typep parsed type) parsed)
+      (errorp (error 'parse-error)))))
 
-(defun ensure-string-or-unsigned-byte (thing &key (type t) (radix 10))
+(defun ensure-string-or-unsigned-byte (thing &key (type t) (radix 10) (errorp t))
   (or (and (symbolp thing) (string-downcase thing))
       (ensure-number thing :type type :radix radix :errorp nil)
-      thing))
+      (and (stringp thing) thing)
+      (if errorp (error 'parse-error) nil)))
 
 (defun lisp->c-bool (val)
   (if val 1 0))
