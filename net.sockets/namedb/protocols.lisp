@@ -99,15 +99,18 @@
                  :update-fn 'purge-protocols-cache
                  :lock *protocols-cache-lock*))
 
+(deftype inet-protocol ()
+  '(usigned-byte 16))
+
 (defun lookup-protocol (protocol)
   "Lookup a protocol by name or number.  Signals an
 UNKNOWN-PROTOCOL error if no protocol is found."
   (check-type protocol (or unsigned-byte string symbol) "non-negative integer, a string or a symbol")
   (update-monitor *protocols-monitor*)
-  (let ((protocol (ensure-string-or-unsigned-byte protocol))
-        (proto (etypecase protocol
-                 (unsigned-byte (lookup-protocol-by-number protocol))
-                 (string        (lookup-protocol-by-name protocol)))))
+  (let* ((parsed (ensure-string-or-unsigned-byte protocol :type 'inet-protocol :errorp t))
+         (proto (typecase parsed
+                  (inet-protocol (lookup-protocol-by-number parsed))
+                  (string        (lookup-protocol-by-name parsed)))))
     (if proto
         (values (protocol-number proto)
                 (protocol-name proto)
