@@ -1,27 +1,13 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- Network interface class and operators.
+;;; --- Network interface lookup.
 ;;;
 
 (in-package :net.sockets)
 
-(defclass interface ()
-  ((name  :initarg :name :reader interface-name)
-   (index :initarg :index :reader interface-index))
-  (:documentation "Class describing a network interface."))
-(unset-method-docstring #'interface-name () '(interface))
-(set-function-docstring 'interface-name "Return the name of an INTERFACE.")
-(unset-method-docstring #'interface-index () '(interface))
-(set-function-docstring 'interface-index "Return the index number of an INTERFACE.")
-
-(defmethod print-object ((interface interface) stream)
-  (print-unreadable-object (interface stream :type nil :identity nil)
-    (with-slots (name index) interface
-      (format stream "Network Interface: ~S Index: ~A" name index))))
-
 (defun make-interface (name index)
   "Constructor for INTERFACE objects."
-  (make-instance 'interface :name name :index index))
+  (cons name index))
 
 (define-condition unknown-interface (system-error)
   ((datum :initarg :datum :initform nil :reader unknown-interface-datum))
@@ -71,11 +57,17 @@
     (:no-error (index)
       (make-interface (copy-seq name) index))))
 
+(defun interface-name (interface)
+  (car interface))
+
+(defun interface-index (interface)
+  (cdr interface))
+
 (defun lookup-interface (interface)
   "Lookup an interface by name or index.  UNKNOWN-INTERFACE is
 signalled if an interface is not found."
   (check-type interface (or unsigned-byte string symbol) "non-negative integer, a string or a symbol")
-  (let ((interface (ensure-string-or-unsigned-byte interface)))
-    (etypecase interface
-      (unsigned-byte (get-interface-by-index interface))
-      (string        (get-interface-by-name interface)))))
+  (let ((parsed (ensure-string-or-unsigned-byte interface :errorp t)))
+    (typecase interface
+      (unsigned-byte (get-interface-by-index parsed))
+      (string        (get-interface-by-name  parsed)))))

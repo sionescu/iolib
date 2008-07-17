@@ -251,8 +251,8 @@
 (test network-interfaces.1
   (is-true
    (flet ((nif-equal (if1 if2)
-            (check-type if1 interface)
-            (check-type if2 interface)
+            (check-type if1 cons)
+            (check-type if2 cons)
             (and (string= (interface-name if1) (interface-name if2))
                  (eql (interface-index if1) (interface-index if2)))))
      (loop for nif in (list-network-interfaces)

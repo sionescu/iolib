@@ -148,7 +148,6 @@
 
    ;; Network Interface Lookup
    #:list-network-interfaces
-   #:interface
    #:interface-index
    #:interface-name
    #:lookup-interface
