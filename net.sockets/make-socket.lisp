@@ -307,7 +307,7 @@ Buffer sizes for the new sockets can also be specified using `INPUT-BUFFER-SIZE'
 (defun call-with-buffers-for-fd-passing (fn)
   (with-foreign-object (msg 'msghdr)
     (bzero msg size-of-msghdr)
-    (with-foreign-pointer (buffer (%cmsg-space size-of-int) buffer-size)
+    (with-foreign-pointer (buffer #.(%cmsg-space size-of-int) buffer-size)
       (bzero buffer buffer-size)
       (with-foreign-slots ((control controllen) msg msghdr)
         (setf control    buffer
