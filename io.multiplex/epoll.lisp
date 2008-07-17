@@ -78,11 +78,11 @@
 
 (defmethod harvest-events ((mux epoll-multiplexer) timeout)
   (with-foreign-object (events 'epoll-event +epoll-max-events+)
-    (bzero events (* *epoll-max-events* size-of-epoll-event))
+    (bzero events (* +epoll-max-events+ size-of-epoll-event))
     (let (ready-fds)
       (nix:repeat-upon-condition-decreasing-timeout
           ((nix:eintr) tmp-timeout timeout)
-        (setf ready-fds (epoll-wait (fd-of mux) events *epoll-max-events*
+        (setf ready-fds (epoll-wait (fd-of mux) events +epoll-max-events+
                                     (timeout->milisec tmp-timeout))))
       (macrolet ((epoll-slot (slot-name)
                    `(foreign-slot-value (mem-aref events 'epoll-event i)
