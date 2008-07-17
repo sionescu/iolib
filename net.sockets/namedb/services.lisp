@@ -18,12 +18,8 @@
 
 (defun make-service (name port protocol)
   "Constructor for SERVICE objects."
-  (let ((port (cond ((numberp port) port)
-                    ((string  port) (parse-integer port))))
-        (protocol (cond ((keywordp protocol) protocol)
-                        ((stringp protocol)  (make-keyword
-                                              (string-upcase protocol))))))
-    (make-instance 'service :name name :port port :protocol protocol)))
+  (make-instance 'service :name name :port (parse-integer port)
+                 :protocol (make-keyword (string-upcase protocol))))
 
 (defmethod print-object ((service service) stream)
   (print-unreadable-object (service stream :type t :identity nil)
@@ -81,25 +77,25 @@
 (setf (documentation 'unknown-service-datum 'function)
       "Return the datum that caused the signalling of an UNKNOWN-SERVICE condition.")
 
-(defvar *tcp-services-cache-by-name*   (make-hash-table :test #'equal))
-(defvar *tcp-services-cache-by-number* (make-hash-table :test #'eql))
-(defvar *udp-services-cache-by-name*   (make-hash-table :test #'equal))
-(defvar *udp-services-cache-by-number* (make-hash-table :test #'eql))
-(defvar *services-cache-lock* (bt:make-lock "/etc/services cache lock"))
+(defvar *tcp-service-cache-by-name*   (make-hash-table :test #'equal))
+(defvar *tcp-service-cache-by-number* (make-hash-table :test #'eql))
+(defvar *udp-service-cache-by-name*   (make-hash-table :test #'equal))
+(defvar *udp-service-cache-by-number* (make-hash-table :test #'eql))
+(defvar *service-cache-lock* (bt:make-lock "/etc/services cache lock"))
 
 (defun find-service-name-in-cache (thing protocol)
   (ecase protocol
-    (:tcp (gethash thing *tcp-services-cache-by-name*))
-    (:udp (gethash thing *udp-services-cache-by-name*))
-    (:any (or (gethash thing *tcp-services-cache-by-name*)
-              (gethash thing *udp-services-cache-by-name*)))))
+    (:tcp (gethash thing *tcp-service-cache-by-name*))
+    (:udp (gethash thing *udp-service-cache-by-name*))
+    (:any (or (gethash thing *tcp-service-cache-by-name*)
+              (gethash thing *udp-service-cache-by-name*)))))
 
 (defun find-service-number-in-cache (thing protocol)
   (ecase protocol
-    (:tcp (gethash thing *tcp-services-cache-by-number*))
-    (:udp (gethash thing *udp-services-cache-by-number*))
-    (:any (or (gethash thing *tcp-services-cache-by-number*)
-              (gethash thing *udp-services-cache-by-number*)))))
+    (:tcp (gethash thing *tcp-service-cache-by-number*))
+    (:udp (gethash thing *udp-service-cache-by-number*))
+    (:any (or (gethash thing *tcp-service-cache-by-number*)
+              (gethash thing *udp-service-cache-by-number*)))))
 
 (defun find-service (thing protocol cache-fn disk-fn)
   (or (funcall cache-fn thing protocol)
@@ -107,11 +103,11 @@
         (flet ((get-cache (type)
                  (ecase type
                    (:name (ecase (service-protocol service)
-                            (:tcp *tcp-services-cache-by-name*)
-                            (:udp *udp-services-cache-by-name*)))
+                            (:tcp *tcp-service-cache-by-name*)
+                            (:udp *udp-service-cache-by-name*)))
                    (:number (ecase (service-protocol service)
-                              (:tcp *tcp-services-cache-by-number*)
-                              (:udp *udp-services-cache-by-number*))))))
+                              (:tcp *tcp-service-cache-by-number*)
+                              (:udp *udp-service-cache-by-number*))))))
           (when service
             (setf (gethash (service-name service) (get-cache :name))
                   service)
@@ -120,29 +116,29 @@
             (values service))))))
 
 (defun lookup-service-by-name (thing protocol)
-  (bt:with-lock-held (*services-cache-lock*)
+  (bt:with-lock-held (*service-cache-lock*)
     (find-service thing protocol
                   #'find-service-name-in-cache
                   #'lookup-service-on-disk-by-name)))
 
 (defun lookup-service-by-number (thing protocol)
-  (bt:with-lock-held (*services-cache-lock*)
+  (bt:with-lock-held (*service-cache-lock*)
     (find-service thing protocol
                   #'find-service-number-in-cache
                   #'lookup-service-on-disk-by-number)))
 
-(defun purge-services-cache (&optional file)
+(defun purge-service-cache (&optional file)
   (declare (ignore file))
-  (map 'nil #'clrhash (list *tcp-services-cache-by-name*
-                            *tcp-services-cache-by-number*
-                            *udp-services-cache-by-name*
-                            *udp-services-cache-by-number*)))
+  (clrhash *tcp-service-cache-by-name*)
+  (clrhash *tcp-service-cache-by-number*)
+  (clrhash *udp-service-cache-by-name*)
+  (clrhash *udp-service-cache-by-number*))
 
 (defvar *services-monitor*
   (make-instance 'file-monitor
                  :file *services-file*
-                 :update-fn 'purge-services-cache
-                 :lock *services-cache-lock*))
+                 :update-fn 'purge-service-cache
+                 :lock *service-cache-lock*))
 
 (deftype tcp-port ()
   '(unsigned-byte 16))
