@@ -268,10 +268,7 @@
             (t
              (with-pointer-to-vector-data (ptr array)
                (%flush-obuf write-fn fd ob)
-               (multiple-value-bind (ok nbytes)
-                   (%write-n-bytes write-fn fd (inc-pointer ptr start)
-                                   octets-needed)
-                 (when ok (incf (iobuf-end ob) nbytes))))))
+               (%write-n-bytes write-fn fd (inc-pointer ptr start) octets-needed))))
       (values array))))
 
 (defun %write-vector-ub8 (stream vector start end)
