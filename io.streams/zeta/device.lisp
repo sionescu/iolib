@@ -127,10 +127,9 @@
 
 (defmethod device-read ((device device) vector start end &optional timeout)
   (when (= start end) (return-from device-read 0))
-  (with-device (device)
-    (if (and timeout (zerop timeout))
-        (read-octets/non-blocking device vector start end)
-        (read-octets/timeout device vector start end timeout))))
+  (if (and timeout (zerop timeout))
+      (read-octets/non-blocking device vector start end)
+      (read-octets/timeout device vector start end timeout)))
 
 (defun read-octets/non-blocking (device vector start end)
   (declare (type device device)
@@ -174,10 +173,9 @@
 
 (defmethod device-write ((device device) vector start end &optional timeout)
   (when (= start end) (return-from device-write 0))
-  (with-device (device)
-    (if (and timeout (zerop timeout))
-        (write-octets/non-blocking device vector start end)
-        (write-octets/timeout device vector start end timeout))))
+  (if (and timeout (zerop timeout))
+      (write-octets/non-blocking device vector start end)
+      (write-octets/timeout device vector start end timeout)))
 
 (defun write-octets/non-blocking (device vector start end)
   (declare (type device device)
