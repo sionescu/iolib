@@ -10,7 +10,7 @@
 ;;;-----------------------------------------------------------------------------
 
 (defclass buffer ()
-  ((synchronized :initarg :synchronized :reader buffer-synchronized-p)
+  ((synchronized :initarg :synchronized :reader synchronizedp)
    (input-iobuf :initarg :input-buffer :accessor input-iobuf-of)
    (output-iobuf :initarg :output-buffer :accessor output-iobuf-of))
   (:default-initargs :synchronized nil))
@@ -53,7 +53,7 @@
 (defmacro with-synchronized-single-channel-buffer ((buffer) &body body)
   (with-gensyms (body-fun)
     `(flet ((,body-fun () ,@body))
-       (if (buffer-synchronized-p ,buffer)
+       (if (synchronizedp ,buffer)
            (bt:with-lock-held ((iobuf-lock (input-iobuf-of ,buffer)))
              (,body-fun))
            (,body-fun)))))
@@ -62,17 +62,17 @@
                                                  &body body)
   (with-gensyms (body-fun)
     (labels ((make-locks (body direction)
-               (case direction
+               (ecase direction
                  (:input
                   `(bt:with-lock-held ((iobuf-lock (input-iobuf-of ,buffer)))
                      ,body))
                  (:output
                   `(bt:with-lock-held ((iobuf-lock (output-iobuf-of ,buffer)))
                      ,body))
-                 (otherwise
+                 ((nil)
                   (make-locks (make-locks body :output) :input)))))
       `(flet ((,body-fun () ,@body))
-         (if (buffer-synchronized-p ,buffer)
+         (if (synchronizedp ,buffer)
              ,(make-locks `(,body-fun) direction)
              (,body-fun))))))
 
