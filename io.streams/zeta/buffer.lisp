@@ -124,7 +124,6 @@
 
 (defmethod device-read ((buffer single-channel-buffer) vector start end
                         &optional timeout)
-  (when (= start end) (return-from device-read 0))
   (with-synchronized-buffer (buffer :input)
     ;; If the previous operation was a write, try to flush the output buffer.
     ;; If the buffer couldn't be flushed entirely, signal an error
@@ -133,7 +132,6 @@
 
 (defmethod device-read ((buffer dual-channel-buffer) vector start end
                         &optional timeout)
-  (when (= start end) (return-from device-read 0))
   (with-synchronized-buffer (buffer :input)
     (buffer-read-octets buffer buffer start end timeout)))
 
@@ -160,7 +158,6 @@
 
 (defmethod device-write ((buffer single-channel-buffer) vector start end
                          &optional timeout)
-  (when (= start end) (return-from device-write 0))
   (with-synchronized-buffer (buffer :input)
     ;; If the previous operation was a read, flush the read buffer
     ;; and reposition the file offset accordingly
@@ -169,7 +166,6 @@
 
 (defmethod device-write ((buffer dual-channel-buffer) vector start end
                          &optional timeout)
-  (when (= start end) (return-from device-write 0))
   (with-synchronized-buffer (buffer :output)
     (buffer-write-octets buffer vector start end timeout)))
 

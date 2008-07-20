@@ -125,8 +125,10 @@
 ;;; Default DEVICE-READ
 ;;;-----------------------------------------------------------------------------
 
+(defmethod device-read :around ((device device) vector start end &optional timeout)
+  (if (= start end) 0 (call-next-method)))
+
 (defmethod device-read ((device device) vector start end &optional timeout)
-  (when (= start end) (return-from device-read 0))
   (if (and timeout (zerop timeout))
       (read-octets/non-blocking device vector start end)
       (read-octets/timeout device vector start end timeout)))
@@ -171,8 +173,10 @@
 ;;; Default DEVICE-WRITE
 ;;;-----------------------------------------------------------------------------
 
+(defmethod device-write :around ((device device) vector start end &optional timeout)
+  (if (= start end) 0 (call-next-method)))
+
 (defmethod device-write ((device device) vector start end &optional timeout)
-  (when (= start end) (return-from device-write 0))
   (if (and timeout (zerop timeout))
       (write-octets/non-blocking device vector start end)
       (write-octets/timeout device vector start end timeout)))
