@@ -50,15 +50,7 @@
 ;;; Helper macros
 ;;;-----------------------------------------------------------------------------
 
-(defmacro with-synchronized-single-channel-buffer ((buffer) &body body)
-  (with-gensyms (body-fun)
-    `(flet ((,body-fun () ,@body))
-       (if (synchronizedp ,buffer)
-           (bt:with-lock-held ((iobuf-lock (input-iobuf-of ,buffer)))
-             (,body-fun))
-           (,body-fun)))))
-
-(defmacro with-synchronized-dual-channel-buffer ((buffer &optional direction)
+(defmacro with-synchronized-buffer ((buffer &optional direction)
                                                  &body body)
   (with-gensyms (body-fun)
     (labels ((make-locks (body direction)
@@ -69,7 +61,7 @@
                  (:output
                   `(bt:with-lock-held ((iobuf-lock (output-iobuf-of ,buffer)))
                      ,body))
-                 ((nil)
+                 (:both
                   (make-locks (make-locks body :output) :input)))))
       `(flet ((,body-fun () ,@body))
          (if (synchronizedp ,buffer)
@@ -109,7 +101,7 @@
 (defmethod device-close ((buffer single-channel-buffer) &optional abort)
   (with-accessors ((handle input-handle-of))
       buffer
-    (with-synchronized-single-channel-buffer (buffer)
+    (with-synchronized-buffer (buffer :input)
       (unless (or abort (eql :read (last-io-op-of buffer)))
         (%buffer-flush-output buffer 0))
       (device-close handle)))
@@ -119,7 +111,7 @@
   (with-accessors ((input-handle input-handle-of buffer)
                    (output-handle output-handle-of buffer))
       buffer
-    (with-synchronized-dual-channel-buffer (buffer)
+    (with-synchronized-buffer (buffer :both)
       (unless abort
         (%buffer-flush-output buffer 0))
       (device-close input-handle)
@@ -133,7 +125,7 @@
 (defmethod device-read ((buffer single-channel-buffer) vector start end
                         &optional timeout)
   (when (= start end) (return-from device-read 0))
-  (with-synchronized-single-channel-buffer (buffer)
+  (with-synchronized-buffer (buffer :input)
     ;; If the previous operation was a write, try to flush the output buffer.
     ;; If the buffer couldn't be flushed entirely, signal an error
     (synchronize-input buffer)
@@ -142,7 +134,7 @@
 (defmethod device-read ((buffer dual-channel-buffer) vector start end
                         &optional timeout)
   (when (= start end) (return-from device-read 0))
-  (with-synchronized-dual-channel-buffer (buffer :input)
+  (with-synchronized-buffer (buffer :input)
     (buffer-read-octets buffer buffer start end timeout)))
 
 (defmethod buffer-read-octets ((buffer buffer) vector start end timeout)
@@ -169,7 +161,7 @@
 (defmethod device-write ((buffer single-channel-buffer) vector start end
                          &optional timeout)
   (when (= start end) (return-from device-write 0))
-  (with-synchronized-single-channel-buffer (buffer)
+  (with-synchronized-buffer (buffer :input)
     ;; If the previous operation was a read, flush the read buffer
     ;; and reposition the file offset accordingly
     (%buffer-clear-input buffer)
@@ -178,7 +170,7 @@
 (defmethod device-write ((buffer dual-channel-buffer) vector start end
                          &optional timeout)
   (when (= start end) (return-from device-write 0))
-  (with-synchronized-dual-channel-buffer (buffer :output)
+  (with-synchronized-buffer (buffer :output)
     (buffer-write-octets buffer vector start end timeout)))
 
 (defmethod buffer-write-octets ((buffer buffer) vector start end timeout)
@@ -197,7 +189,7 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod device-position ((buffer single-channel-buffer))
-  (with-synchronized-single-channel-buffer (buffer)
+  (with-synchronized-buffer (buffer :input)
     (%buffer-position buffer)))
 
 (defun %buffer-position (buffer)
@@ -220,7 +212,7 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod buffer-clear-input ((buffer single-channel-buffer))
-  (with-synchronized-single-channel-buffer (buffer)
+  (with-synchronized-buffer (buffer :input)
     (%buffer-clear-input buffer)))
 
 (defmethod %buffer-clear-input ((buffer single-channel-buffer))
@@ -231,7 +223,7 @@
       (iobuf-reset (input-iobuf-of buffer)))))
 
 (defmethod buffer-clear-input ((buffer buffer))
-  (with-synchronized-dual-channel-buffer (buffer :input)
+  (with-synchronized-buffer (buffer :input)
     (%buffer-clear-input buffer)))
 
 (defmethod %buffer-clear-input ((buffer dual-channel-buffer))
@@ -243,12 +235,12 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod buffer-clear-output ((buffer single-channel-buffer))
-  (with-synchronized-single-channel-buffer (buffer)
+  (with-synchronized-buffer (buffer :input)
     (when (eql :write (last-io-op-of buffer))
       (iobuf-reset (output-iobuf-of buffer)))))
 
 (defmethod buffer-clear-output ((buffer dual-channel-buffer))
-  (with-synchronized-dual-channel-buffer (buffer :output)
+  (with-synchronized-buffer (buffer :output)
     (iobuf-reset (output-iobuf-of buffer))))
 
 
@@ -257,7 +249,7 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod buffer-fill-input ((buffer single-channel-buffer) &optional timeout)
-  (with-synchronized-single-channel-buffer (buffer)
+  (with-synchronized-buffer (buffer :input)
     ;; If the previous operation was a write, try to flush the output buffer.
     ;; If the buffer couldn't be flushed entirely, signal an error
     (synchronize-input buffer)
@@ -271,7 +263,7 @@
   (iobuf-reset (output-iobuf-of buffer)))
 
 (defmethod buffer-fill-input ((buffer dual-channel-buffer) &optional timeout)
-  (with-synchronized-dual-channel-buffer (buffer :input)
+  (with-synchronized-buffer (buffer :input)
     (%buffer-fill-input buffer timeout)))
 
 (defmethod %buffer-fill-input ((buffer buffer) timeout)
@@ -292,12 +284,12 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod buffer-flush-output ((buffer single-channel-buffer) &optional timeout)
-  (with-synchronized-single-channel-buffer (buffer)
+  (with-synchronized-buffer (buffer :input)
     (when (eql :write (last-io-op-of buffer))
       (%buffer-flush-output buffer timeout))))
 
 (defmethod buffer-flush-output ((buffer dual-channel-buffer) &optional timeout)
-  (with-synchronized-dual-channel-buffer (buffer :output)
+  (with-synchronized-buffer (buffer :output)
     (%buffer-flush-output buffer timeout)))
 
 (defmethod %buffer-flush-output ((buffer dual-channel-buffer) timeout)
