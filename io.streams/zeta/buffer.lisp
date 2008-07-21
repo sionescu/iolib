@@ -159,7 +159,7 @@
 
 (defmethod device-write ((buffer single-channel-buffer) vector start end
                          &optional timeout)
-  (with-synchronized-buffer (buffer :input)
+  (with-synchronized-buffer (buffer :output)
     ;; If the previous operation was a read, flush the read buffer
     ;; and reposition the file offset accordingly
     (%buffer-clear-input buffer)
@@ -232,7 +232,7 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod buffer-clear-output ((buffer single-channel-buffer))
-  (with-synchronized-buffer (buffer :input)
+  (with-synchronized-buffer (buffer :output)
     (when (eql :write (last-io-op-of buffer))
       (iobuf-reset (output-iobuf-of buffer)))))
 
@@ -281,7 +281,7 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod buffer-flush-output ((buffer single-channel-buffer) &optional timeout)
-  (with-synchronized-buffer (buffer :input)
+  (with-synchronized-buffer (buffer :output)
     (when (eql :write (last-io-op-of buffer))
       (%buffer-flush-output buffer timeout))))
 
