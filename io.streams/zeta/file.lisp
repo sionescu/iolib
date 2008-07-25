@@ -34,7 +34,7 @@
 (defmethod initialize-instance :after ((device file-device)
                                        &key filename (direction :input)
                                        (if-exists :default) (if-does-not-exist :default)
-                                       truncate append nonblocking (extra-flags 0)
+                                       truncate append (extra-flags 0)
                                        (mode #o666))
   (when (and (eql :error if-exists)
              (eql :error if-does-not-exist))
@@ -44,7 +44,7 @@
           (process-file-direction direction flags if-exists if-does-not-exist))
     (setf (values flags if-exists if-does-not-exist)
           (process-file-flags direction flags if-exists if-does-not-exist
-                              truncate append nonblocking extra-flags))
+                              truncate append extra-flags))
     (setf (filename-of device) (copy-seq filename)
           (direction-of device) direction
           (if-exists-of device) if-exists
@@ -111,7 +111,7 @@
     (values flags if-exists if-does-not-exist)))
 
 (defun process-file-flags (direction flags if-exists if-does-not-exist
-                           truncate append nonblocking extra-flags)
+                           truncate append extra-flags)
   (macrolet ((add-flags (&rest %flags)
                `(setf flags (logior flags ,@%flags))))
     (case if-exists
@@ -126,8 +126,6 @@
        (unless (eql :input direction) (add-flags nix:o-trunc)))
       (append
        (when (eql :output direction) (add-flags nix:o-append)))
-      (nonblocking
-       (add-flags nix:o-nonblock))
       (extra-flags
        (add-flags extra-flags))))
   (values flags if-exists if-does-not-exist))
@@ -183,7 +181,7 @@
 
 (defun open-file (filename &key (direction :input)
                   (if-exists :default) (if-does-not-exist :default)
-                  truncate append nonblocking (extra-flags 0) (mode #o666))
+                  truncate append (extra-flags 0) (mode #o666))
   (when (and (null if-exists)
              (null if-does-not-exist))
     (error 'program-error))
@@ -195,7 +193,6 @@
                      :if-does-not-exist if-does-not-exist
                      :truncate truncate
                      :append append
-                     :nonblocking nonblocking
                      :extra-flags extra-flags
                      :mode mode)
     (posix-file-error (error)

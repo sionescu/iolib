@@ -50,8 +50,7 @@
 ;;; Helper macros
 ;;;-----------------------------------------------------------------------------
 
-(defmacro with-synchronized-buffer ((buffer &optional direction)
-                                                 &body body)
+(defmacro with-synchronized-buffer ((buffer &optional direction) &body body)
   (with-gensyms (body-fun)
     (labels ((make-locks (body direction)
                (ecase direction
