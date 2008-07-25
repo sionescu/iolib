@@ -126,6 +126,7 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod device-read :around ((device device) vector start end &optional timeout)
+  (declare (ignore timeout))
   (if (= start end) 0 (call-next-method)))
 
 (defmethod device-read ((device device) vector start end &optional timeout)
@@ -174,6 +175,7 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod device-write :around ((device device) vector start end &optional timeout)
+  (declare (ignore timeout))
   (if (= start end) 0 (call-next-method)))
 
 (defmethod device-write ((device device) vector start end &optional timeout)
