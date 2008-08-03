@@ -60,7 +60,7 @@
                  (:output
                   `(bt:with-lock-held ((iobuf-lock (output-iobuf-of ,buffer)))
                      ,body))
-                 (:both
+                 (:io
                   (make-locks (make-locks body :output) :input)))))
       `(flet ((,body-fun () ,@body))
          (if (synchronizedp ,buffer)
@@ -110,7 +110,7 @@
   (with-accessors ((input-handle input-handle-of buffer)
                    (output-handle output-handle-of buffer))
       buffer
-    (with-synchronized-buffer (buffer :both)
+    (with-synchronized-buffer (buffer :io)
       (unless abort
         (%buffer-flush-output buffer 0))
       (device-close input-handle)
