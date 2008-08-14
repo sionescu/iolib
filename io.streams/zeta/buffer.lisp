@@ -128,12 +128,12 @@
     ;; If the previous operation was a write, try to flush the output buffer.
     ;; If the buffer couldn't be flushed entirely, signal an error
     (synchronize-input buffer)
-    (buffer-read-octets buffer buffer start end timeout)))
+    (buffer-read-octets buffer vector start end timeout)))
 
 (defmethod device-read ((buffer dual-channel-buffer) vector start end
                         &optional timeout)
   (with-synchronized-buffer (buffer :input)
-    (buffer-read-octets buffer buffer start end timeout)))
+    (buffer-read-octets buffer vector start end timeout)))
 
 (defmethod buffer-read-octets ((buffer buffer) vector start end timeout)
   (with-accessors ((input-handle input-handle-of)
