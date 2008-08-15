@@ -7,5 +7,6 @@
 
 (defpackage :iolib.utils
   (:use #:common-lisp :alexandria)
-  (:export #:return* #:defun* #:defmethod* #:lambda*
-           #:defmacro* #:define-compiler-macro*))
+  (:shadow #:defun #:defmethod #:lambda
+           #:defmacro #:define-compiler-macro)
+  (:export #:return*))

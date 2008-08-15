@@ -5,33 +5,53 @@
 
 (in-package :iolib.utils)
 
-(defun wrap-body-for-return-star (body)
+(cl:defmacro defun (name args &body body)
+  `(,(find-right-symbol :defun :series)
+     ,name ,args ,@(wrap-body-for-return-star body)))
+
+(cl:defmacro defmethod (name args &body body)
+  `(,(find-right-symbol :defmethod)
+     ,name ,args ,@(wrap-body-for-return-star body)))
+
+(cl:defmacro lambda (name args &body body)
+  `(,(find-right-symbol :lambda)
+     ,name ,args ,@(wrap-body-for-return-star body)))
+
+(cl:defmacro defmacro (name args &body body)
+  `(,(find-right-symbol :defmacro)
+     ,name ,args ,@(wrap-body-for-return-star body)))
+
+(cl:defmacro define-compiler-macro (name args &body body)
+  `(,(find-right-symbol :define-compiler-macro)
+     ,name ,args ,@(wrap-body-for-return-star body)))
+
+(cl:defun find-right-symbol (name &rest packages)
+  (multiple-value-bind (symbol foundp)
+      (if (eql (find-symbol (string name) *package*)
+               (find-symbol (string name) :iolib.utils))
+          ;; NAME has been imported from IOLIB.UTILS, so we must
+          ;; find a default somewhere else, defaulting to the CL package
+          (find-symbol (string name) (find-right-package packages))
+          ;; use the symbol named NAME from the *PACKAGE* or CL
+          (find-symbol (string name) (find-right-package (package-name *package*))))
+    (assert foundp (symbol) "Couldn't find any symbol as default for ~S" name)
+    (values symbol)))
+
+(cl:defun find-right-package (packages)
+  (dolist (pkg (ensure-list packages) :common-lisp)
+    (when (member pkg (package-use-list *package*)
+                  :key #'package-name
+                  :test #'string-equal)
+      (return pkg))))
+
+(cl:defun wrap-body-for-return-star (body)
   (multiple-value-bind (body declarations docstring)
       (parse-body body :documentation t)
     (with-gensyms (return-star-block)
-      `(,docstring ,@declarations
+      `(,docstring
+        ,@declarations
         (block ,return-star-block
           (macrolet
               ((return* (value)
                  `(return-from ,',return-star-block ,value)))
             ,@body))))))
-
-(defmacro defun* (name args &body body)
-  `(,(ensure-symbol :defun)
-     ,name ,args ,@(wrap-body-for-return-star body)))
-
-(defmacro defmethod* (name args &body body)
-  `(,(ensure-symbol :defmethod)
-     ,name ,args ,@(wrap-body-for-return-star body)))
-
-(defmacro lambda* (name args &body body)
-  `(,(ensure-symbol :lambda)
-     ,name ,args ,@(wrap-body-for-return-star body)))
-
-(defmacro defmacro* (name args &body body)
-  `(,(ensure-symbol :defmacro)
-     ,name ,args ,@(wrap-body-for-return-star body)))
-
-(defmacro define-compiler-macro* (name args &body body)
-  `(,(ensure-symbol :define-compiler-macro)
-     ,name ,args ,@(wrap-body-for-return-star body)))
