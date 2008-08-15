@@ -10,8 +10,8 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:osicat :babel :bordeaux-threads :series
-               :io.streams :alexandria :split-sequence)
+  :depends-on (:iolib.base :osicat :babel :bordeaux-threads
+               :series :io.streams :split-sequence)
   :pathname (merge-pathnames #p"net.sockets/" *load-truename*)
   :components
   ((:file "pkgdcl")

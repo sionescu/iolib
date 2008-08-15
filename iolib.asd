@@ -8,7 +8,7 @@
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :version "0.5.4"
   :licence "MIT"
-  :depends-on (:io.multiplex :io.streams :net.sockets)
+  :depends-on (:iolib.base :io.multiplex :io.streams :net.sockets)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "iolib"))
                              *load-truename*)
   :components ((:file "pkgdcl")))

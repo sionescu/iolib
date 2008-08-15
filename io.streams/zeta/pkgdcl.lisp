@@ -6,6 +6,6 @@
 (in-package :common-lisp-user)
 
 (defpackage :io.zeta-streams
-  (:use #:common-lisp :cffi :alexandria)
+  (:use :iolib.base :cffi)
   (:export
    ))

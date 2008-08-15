@@ -6,8 +6,8 @@
   :description "Gray streams."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:cffi :osicat :io.multiplex :trivial-gray-streams
-               :alexandria :trivial-garbage)
+  :depends-on (:iolib.base :cffi :osicat :io.multiplex
+               :trivial-gray-streams :trivial-garbage)
   :pathname (merge-pathnames #p"io.streams/gray/" *load-truename*)
   :components
   ((:file "pkgdcl")

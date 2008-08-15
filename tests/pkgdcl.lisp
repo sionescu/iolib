@@ -6,6 +6,5 @@
 (in-package #:cl-user)
 
 (defpackage #:iolib-tests
-  (:use #:common-lisp :5am :net.sockets :io.streams
-        :trivial-gray-streams :alexandria :io.multiplex)
+  (:use :iolib.base :iolib :5am :trivial-gray-streams)
   (:export #:*echo-address* #:*echo-port*))

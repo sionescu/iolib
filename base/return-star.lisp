@@ -9,13 +9,10 @@
   `(,(find-right-symbol :defun :series)
      ,name ,args ,@(wrap-body-for-return-star body)))
 
-(cl:defmacro defmethod (name args &body body)
-  `(,(find-right-symbol :defmethod)
-     ,name ,args ,@(wrap-body-for-return-star body)))
-
-(cl:defmacro lambda (name args &body body)
-  `(,(find-right-symbol :lambda)
-     ,name ,args ,@(wrap-body-for-return-star body)))
+;; must parse defmethod args correctly
+;; (cl:defmacro defmethod (name args &body body)
+;;   `(,(find-right-symbol :defmethod)
+;;      ,name ,args ,@(wrap-body-for-return-star body)))
 
 (cl:defmacro defmacro (name args &body body)
   `(,(find-right-symbol :defmacro)
@@ -28,7 +25,7 @@
 (cl:defun find-right-symbol (name &rest packages)
   (multiple-value-bind (symbol foundp)
       (if (eql (find-symbol (string name) *package*)
-               (find-symbol (string name) :iolib.utils))
+               (find-symbol (string name) :iolib.base))
           ;; NAME has been imported from IOLIB.UTILS, so we must
           ;; find a default somewhere else, defaulting to the CL package
           (find-symbol (string name) (find-right-package packages))
@@ -48,10 +45,12 @@
   (multiple-value-bind (body declarations docstring)
       (parse-body body :documentation t)
     (with-gensyms (return-star-block)
-      `(,docstring
-        ,@declarations
-        (block ,return-star-block
-          (macrolet
-              ((return* (value)
-                 `(return-from ,',return-star-block ,value)))
-            ,@body))))))
+      (remove-if
+       #'null
+       `(,docstring
+         ,@declarations
+         (block ,return-star-block
+           (macrolet
+               ((return* (value)
+                  `(return-from ,',return-star-block ,value)))
+             ,@body)))))))

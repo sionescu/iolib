@@ -7,7 +7,7 @@
 
 (defpackage :io.multiplex
   (:nicknames #:iomux)
-  (:use #:common-lisp :cffi :alexandria :series)
+  (:use :iolib.base :cffi :series)
   (:import-from #:osicat-posix #:defsyscall #:bzero
                 #:file-descriptor-designator
                 #:timeval #:sec #:usec)

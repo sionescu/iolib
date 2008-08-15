@@ -6,7 +6,7 @@
 (in-package :common-lisp-user)
 
 (defpackage net.trivial-sockets
-  (:use :common-lisp)
+  (:use :iolib.base)
   (:export #:open-stream #:socket-error #:socket-nested-error
            #:unsupported #:unsupported-feature
            #:open-server #:close-server #:accept-connection

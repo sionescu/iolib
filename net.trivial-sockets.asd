@@ -7,7 +7,7 @@
   :author "Dan Barlow <dan@telent.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:net.sockets)
+  :depends-on (:iolib.base :net.sockets)
   :pathname (merge-pathnames #p"net.sockets/" *load-truename*)
   :components
   ((:file "trivial-sockets")))

@@ -6,7 +6,7 @@
 (in-package :common-lisp-user)
 
 (defpackage :io.streams
-  (:use #:common-lisp :cffi :alexandria :trivial-gray-streams)
+  (:use :iolib.base :cffi :trivial-gray-streams)
   (:export
    ;; Classes
    #:dual-channel-fd-mixin
