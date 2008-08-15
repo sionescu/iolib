@@ -107,8 +107,8 @@
   (values buffer))
 
 (defmethod device-close ((buffer buffer) &optional abort)
-  (with-accessors ((input-handle input-handle-of buffer)
-                   (output-handle output-handle-of buffer))
+  (with-accessors ((input-handle input-handle-of)
+                   (output-handle output-handle-of))
       buffer
     (with-synchronized-buffer (buffer :io)
       (unless abort
