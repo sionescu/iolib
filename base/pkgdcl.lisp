@@ -9,7 +9,7 @@
   (:use #:common-lisp :alexandria)
   (:shadow #:defun #:defmethod
            #:defmacro #:define-compiler-macro)
-  (:export #:return* #:defun #:defmethod
+  (:export #:return* #:lambda* #:defun #:defmethod
            #:defmacro #:define-compiler-macro))
 
 (flet ((gather-external-symbols (&rest packages)

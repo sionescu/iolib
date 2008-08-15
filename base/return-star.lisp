@@ -7,7 +7,7 @@
 
 (cl:defmacro defun (name args &body body)
   `(,(find-right-symbol :defun :series)
-     ,name ,args ,@(wrap-body-for-return-star body)))
+     ,name ,args ,@(wrap-body-for-return-star body name)))
 
 (cl:defmacro defmethod (name method-qualifier args &body body)
   (cond
@@ -16,18 +16,22 @@
      (setf body (cons args body)
            args method-qualifier)
      `(,(find-right-symbol :defmethod)
-        ,name ,args ,@(wrap-body-for-return-star body)))
+        ,name ,args ,@(wrap-body-for-return-star body name)))
     (t
      `(,(find-right-symbol :defmethod) ,name
-        ,method-qualifier ,args ,@(wrap-body-for-return-star body)))))
+        ,method-qualifier ,args ,@(wrap-body-for-return-star body name)))))
+
+(cl:defmacro lambda* (args &body body)
+  `(,(find-right-symbol :lambda)
+     ,args ,@(wrap-body-for-return-star body)))
 
 (cl:defmacro defmacro (name args &body body)
   `(,(find-right-symbol :defmacro)
-     ,name ,args ,@(wrap-body-for-return-star body)))
+     ,name ,args ,@(wrap-body-for-return-star body name)))
 
 (cl:defmacro define-compiler-macro (name args &body body)
   `(,(find-right-symbol :define-compiler-macro)
-     ,name ,args ,@(wrap-body-for-return-star body)))
+     ,name ,args ,@(wrap-body-for-return-star body name)))
 
 (cl:defun find-right-symbol (name &rest packages)
   (multiple-value-bind (symbol foundp)
@@ -48,16 +52,17 @@
                   :test #'string-equal)
       (return pkg))))
 
-(cl:defun wrap-body-for-return-star (body)
+(cl:defun wrap-body-for-return-star (body &optional block-name)
   (multiple-value-bind (body declarations docstring)
       (parse-body body :documentation t)
-    (with-gensyms (return-star-block)
-      (remove-if
-       #'null
-       `(,docstring
-         ,@declarations
-         (block ,return-star-block
-           (macrolet
-               ((return* (value)
-                  `(return-from ,',return-star-block ,value)))
-             ,@body)))))))
+    (remove-if
+     #'null
+     `(,docstring
+       ,@declarations
+       ,(if block-name
+            `(macrolet ((return* (value) `(return-from ,',block-name ,value)))
+               ,@body)
+            (with-gensyms (block-name)
+              `(block ,block-name
+                 (macrolet ((return* (value) `(return-from ,',block-name ,value)))
+                   ,@body))))))))
