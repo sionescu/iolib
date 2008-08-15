@@ -3,7 +3,7 @@
 ;;; --- RETURN* wrappers.
 ;;;
 
-(in-package :iolib.utils)
+(in-package :iolib.base)
 
 (cl:defmacro defun (name args &body body)
   `(,(find-right-symbol :defun :series)
