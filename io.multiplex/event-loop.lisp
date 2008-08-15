@@ -78,7 +78,7 @@ within the extent of BODY.  Closes VAR."
   (:documentation "")
   (:method ((event-base event-base) &key (delay 0))
     (add-timer event-base
-               #'(lambda () (setf (exit-p event-base) t))
+               (lambda () (setf (exit-p event-base) t))
                delay :one-shot t)))
 
 (defgeneric event-base-empty-p (event-base)
@@ -117,7 +117,7 @@ within the extent of BODY.  Closes VAR."
   (with-accessors ((fd-timers fd-timers-of)) event-base
     (let ((fd (fd-event-fd event)))
       (when timeout
-        (let ((timer (make-timer #'(lambda () (expire-event event-base event))
+        (let ((timer (make-timer (lambda () (expire-event event-base event))
                                  timeout)))
           (setf (fd-event-timer event) timer)
           (%add-fd-timer event-base timer)))

@@ -29,7 +29,7 @@
     (setf ib (allocate-iobuf input-buffer-size)
           ob (allocate-iobuf output-buffer-size)
           ef external-format)
-    (trivial-garbage:finalize stream #'(lambda () (free-stream-buffers ib ob)))))
+    (trivial-garbage:finalize stream (lambda () (free-stream-buffers ib ob)))))
 
 ;;;; Common Methods
 

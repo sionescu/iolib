@@ -301,7 +301,7 @@
         (t (error err))))))
 
 (defmacro with-socket-to-wait-connect ((socket wait timeout) &body body)
-  `(call-with-socket-to-wait-connect ,socket #'(lambda () ,@body) ,wait ,timeout))
+  `(call-with-socket-to-wait-connect ,socket (lambda () ,@body) ,wait ,timeout))
 
 (defmethod connect ((socket internet-socket) (address inet-address)
                     &key (port 0) (wait t) (timeout nil))

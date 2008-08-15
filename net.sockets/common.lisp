@@ -213,11 +213,11 @@
                    (if (member test '(otherwise t))
                        `((t ,@code))
                        `(,(%do-clause c gensyms)))))))
-      (let ((gensyms (mapcar #'(lambda (v) (gensym (string v)))
+      (let ((gensyms (mapcar (lambda (v) (gensym (string v)))
                              values)))
         `(let ,(mapcar #'list gensyms values)
            (declare (ignorable ,@gensyms))
-           (cond ,@(append (mapcar #'(lambda (c) (%do-clause c gensyms))
+           (cond ,@(append (mapcar (lambda (c) (%do-clause c gensyms))
                                    (butlast body))
                            (%do-last-clause (lastcar body) gensyms))))))))
 

@@ -56,10 +56,10 @@
 
 (define-setf-expander socket-option (socket option-name &key (if-does-not-exist :error))
   (flet ((%make-arglist (type-args expanded-args)
-           (mapcar #'(lambda (targ earg)
-                       (if (consp targ)
-                           `(or ,earg ,(cadr targ))
-                           earg))
+           (mapcar (lambda (targ earg)
+                     (if (consp targ)
+                         `(or ,earg ,(cadr targ))
+                         earg))
                    type-args expanded-args)))
     (if-let (data (gethash option-name *set-socket-options*))
             (destructuring-bind (type level optname) data

@@ -320,7 +320,7 @@ Buffer sizes for the new sockets can also be specified using `INPUT-BUFFER-SIZE'
             (funcall fn msg cmsg)))))))
 
 (defmacro with-buffers-for-fd-passing ((msg-var cmsg-var) &body body)
-  `(call-with-buffers-for-fd-passing #'(lambda (,msg-var ,cmsg-var) ,@body)))
+  `(call-with-buffers-for-fd-passing (lambda (,msg-var ,cmsg-var) ,@body)))
 
 (defmethod send-file-descriptor ((socket local-socket) file-descriptor)
   (with-buffers-for-fd-passing (msg cmsg)

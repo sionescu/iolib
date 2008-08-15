@@ -79,13 +79,13 @@
 (defun lookup-protocol-by-name (proto)
   (bt:with-lock-held (*protocol-cache-lock*)
     (find-protocol proto
-                   #'(lambda (p) (gethash p *protocol-cache-by-name*))
+                   (lambda (p) (gethash p *protocol-cache-by-name*))
                    #'lookup-protocol-on-disk-by-name)))
 
 (defun lookup-protocol-by-number (proto)
   (bt:with-lock-held (*protocol-cache-lock*)
     (find-protocol proto
-                   #'(lambda (p) (gethash p *protocol-cache-by-number*))
+                   (lambda (p) (gethash p *protocol-cache-by-number*))
                    #'lookup-protocol-on-disk-by-number)))
 
 (defun purge-protocol-cache (&optional file)

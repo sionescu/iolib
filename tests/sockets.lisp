@@ -52,7 +52,7 @@
 
 (test integer-to-dotted-and-back
   (is-true
-   (every #'(lambda (s) (string= s (integer-to-dotted (dotted-to-integer s))))
+   (every (lambda (s) (string= s (integer-to-dotted (dotted-to-integer s))))
           '("0.0.255.0" "0.255.255.0" "0.255.255.1"))))
 
 (test integer-to-dotted.1
