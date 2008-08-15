@@ -9,7 +9,7 @@
   :description "Zeta streams."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:cffi :osicat :io.multiplex :alexandria :bordeaux-threads)
+  :depends-on (:iolib.base :cffi :osicat :io.multiplex :bordeaux-threads)
   :pathname (merge-pathnames #p"io.streams/zeta/" *load-truename*)
   :components
   ((:file "pkgdcl")
