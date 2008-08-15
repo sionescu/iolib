@@ -17,7 +17,7 @@
            (with-package-iterator (iterator packages :external)
              (loop (multiple-value-bind (morep symbol) (iterator)
                      (unless morep (return))
-                     (setf (gethash symbol symbols) t))))
+                     (setf (gethash (alexandria:ensure-symbol symbol :iolib.base) symbols) t))))
            (alexandria:hash-table-keys symbols))))
   (export (gather-external-symbols :common-lisp :alexandria :iolib.base)
           :iolib.base))
