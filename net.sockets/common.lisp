@@ -229,7 +229,7 @@
           :for val := (cadr cons)
           :for const := (cdr (assoc flag flags))
           :when const :do
-       (when (not (constantp val)) (return-from compute-flags))
+       (when (not (constantp val)) (return* nil))
        (setf flag-combination (logior flag-combination const))
        :finally (return flag-combination))))
 

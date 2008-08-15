@@ -326,5 +326,4 @@
     (dolist (ns (mapcar #'ensure-address nameservers))
       (when-let (response (do-one-dns-query pname type search
                                             ns repeat timeout))
-        (return-from dns-query
-          (if decode (decode-response response) response))))))
+        (return* (if decode (decode-response response) response))))))

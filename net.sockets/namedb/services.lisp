@@ -54,8 +54,7 @@
     (iterate ((tokens (serialize-etc-file file)))
       (ignore-parse-errors
         (let ((proto (find-service-in-parsed-lines tokens #'good-proto-p)))
-          (when proto (return-from lookup-service-on-disk-by-number
-                        proto)))))))
+          (when proto (return* proto)))))))
 
 (defun lookup-service-on-disk-by-name (file service protocol)
   (flet ((good-proto-p (name port proto aliases)
@@ -66,8 +65,7 @@
     (iterate ((tokens (serialize-etc-file file)))
       (ignore-parse-errors
         (let ((proto (find-service-in-parsed-lines tokens #'good-proto-p)))
-          (when proto (return-from lookup-service-on-disk-by-name
-                        proto)))))))
+          (when proto (return* proto)))))))
 
 (define-condition unknown-service ()
   ((datum :initarg :datum :initform nil :reader unknown-service-datum))

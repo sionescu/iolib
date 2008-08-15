@@ -96,7 +96,7 @@
     (when (and (zerop count)
                (null timeout))
       (warn "Non fds to monitor and no timeout set !")
-      (return-from harvest-events nil))
+      (return* nil))
     ;; FIXME: when does poll() return EBADF ?
     (nix:repeat-upon-condition-decreasing-timeout
         ((nix:eintr) tmp-timeout timeout)

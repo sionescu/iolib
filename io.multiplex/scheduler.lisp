@@ -78,7 +78,7 @@
            (%return ()
              (dolist (timer timers-to-reschedule)
                (reschedule-timer schedule timer))
-             (return-from expire-pending-timers expired-p)))
+             (return* expired-p)))
       (loop
          (let ((next-timer (peek-schedule schedule)))
            (unless next-timer (%return))

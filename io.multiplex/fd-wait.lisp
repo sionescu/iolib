@@ -71,7 +71,7 @@ Returns two boolean values indicating readability and writeability of `FILE-DESC
               (when (zerop ret)
                 (if errorp
                     (error 'poll-timeout :fd file-descriptor :event-type event-type)
-                    (return-from wait-until-fd-ready (values nil nil)))))
+                    (return* (values nil nil)))))
           (nix:posix-error (err) (poll-error err)))
         (process-poll-revents revents file-descriptor)))))
 

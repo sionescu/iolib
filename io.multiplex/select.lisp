@@ -34,8 +34,7 @@
 
 (defun find-max-fd (fd-set end)
   (loop :for i :downfrom end :to 0
-     :do (when (fd-isset i fd-set)
-           (return-from find-max-fd i)))
+     :do (when (fd-isset i fd-set) (return* i)))
   ;; this means no fd <= end is set
   -1)
 
@@ -77,7 +76,7 @@
     (when (and (minusp max-fd)
                (null timeout))
       (warn "Non fds to monitor and no timeout set !")
-      (return-from harvest-events nil))
+      (return* nil))
     (with-foreign-objects ((read-fds 'fd-set)
                            (write-fds 'fd-set)
                            (except-fds 'fd-set))
@@ -96,8 +95,7 @@
                       except-fds
                       (if tmp-timeout tv (null-pointer)))))
         (nix:ebadf ()
-          (return-from harvest-events
-            (harvest-select-fd-errors rs ws max-fd))))
+          (return* (harvest-select-fd-errors rs ws max-fd))))
       (harvest-select-events max-fd read-fds write-fds except-fds))))
 
 (defun harvest-select-events (max-fd read-fds write-fds except-fds)

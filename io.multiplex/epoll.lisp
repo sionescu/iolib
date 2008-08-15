@@ -87,12 +87,12 @@
       (macrolet ((epoll-slot (slot-name)
                    `(foreign-slot-value (mem-aref events 'epoll-event i)
                                         'epoll-event ',slot-name)))
-        (return-from harvest-events
-          (loop :for i :below ready-fds
-                :for fd := (foreign-slot-value (epoll-slot data) 'epoll-data 'fd)
-                :for event-mask := (epoll-slot events)
-                :for epoll-event := (make-epoll-event fd event-mask)
-                :when epoll-event :collect epoll-event))))))
+        (return*
+         (loop :for i :below ready-fds
+               :for fd := (foreign-slot-value (epoll-slot data) 'epoll-data 'fd)
+               :for event-mask := (epoll-slot events)
+               :for epoll-event := (make-epoll-event fd event-mask)
+               :when epoll-event :collect epoll-event))))))
 
 (defun make-epoll-event (fd mask)
   (let ((event ()))

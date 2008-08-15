@@ -305,7 +305,7 @@ returned unmodified."
                   (errorp
                    (check-type address inet-address "an INET address"))
                   ((not (typep address 'inet-address))
-                   (return-from ensure-address)))
+                   (return* nil)))
                 address)
        (t (let ((vector (address-to-vector address)))
             (cond
@@ -318,7 +318,7 @@ returned unmodified."
                   (errorp
                    (check-type address local-address "a local address"))
                   ((not (typep address 'local-address))
-                   (return-from ensure-address)))
+                   (return* nil)))
                 address)))))
 
 ;;;; Print Methods

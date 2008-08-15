@@ -72,7 +72,7 @@
   (when timeout
     (let ((readablep (iomux:wait-until-fd-ready fd :input timeout)))
       (unless readablep
-        (return-from %fill-ibuf :timeout))))
+        (return* :timeout))))
   (let ((num (nix:repeat-upon-eintr
                (funcall read-fn fd (iobuf-end-pointer buf)
                         (iobuf-end-space-length buf)))))
@@ -171,16 +171,15 @@
                                     (funcall write-fn fd (inc-pointer buf bytes-written)
                                              nbytes)
                                   (when (and timeout-var (zerop timeout-var))
-                                    (return-from %write-n-bytes
-                                      (values nil :timeout)))))
+                                    (return* (values nil :timeout)))))
                             (nix:epipe ()
-                              (return-from %write-n-bytes (values nil :eof))))))
+                              (return* (values nil :eof))))))
                  (unless (zerop num) (incf bytes-written num))))
              (write-or-return ()
                (unless (write-once)
                  (when (errorp)
                    ;; FIXME signal something better -- maybe analyze the status
-                   (return-from %write-n-bytes (values nil :fail)))))
+                   (return* (values nil :fail)))))
              (buffer-emptyp () (= bytes-written nbytes))
              (errorp () (handler-case (iomux:wait-until-fd-ready fd :output)
                           (iomux:poll-error () t)
@@ -199,10 +198,9 @@
                                     (funcall write-fn fd (iobuf-start-pointer buf)
                                              (iobuf-length buf))
                                   (when (and timeout-var (zerop timeout-var))
-                                    (return-from %flush-obuf
-                                      (values nil :timeout)))))
+                                    (return* (values nil :timeout)))))
                             (nix:epipe ()
-                              (return-from %flush-obuf (values nil :eof))))))
+                              (return* (values nil :eof))))))
                  (unless (zerop num)
                    (incf (iobuf-start buf) num)
                    (incf bytes-written num))))
@@ -210,7 +208,7 @@
                (unless (write-once)
                  (when (errorp)
                    ;; FIXME signal something better -- maybe analyze the status
-                   (return-from %flush-obuf (values nil :fail)))))
+                   (return* (values nil :fail)))))
              (buffer-emptyp ()
                (when (iobuf-empty-p buf)
                  (iobuf-reset buf) t))
@@ -342,7 +340,7 @@
       (flet ((fill-buf-or-eof ()
                (setf ret (%fill-ibuf read-fn fd ib))
                (when (eq ret :eof)
-                 (return-from stream-read-char :eof))))
+                 (return* :eof))))
         (cond ((zerop (iobuf-length ib))
                (iobuf-reset ib)
                (fill-buf-or-eof))
@@ -354,7 +352,7 @@
                (setf unread-index 0)))
         ;; line-end handling
         (when-let (it (maybe-find-line-ending read-fn fd ib ef))
-          (return-from stream-read-char it))
+          (return* it))
         (tagbody :start
            (handler-case
                (setf (values str ret)
@@ -530,7 +528,7 @@
     (flet ((fill-buf-or-eof ()
              (iobuf-reset ib)
              (when (eq :eof (%fill-ibuf read-fn fd ib))
-               (return-from stream-read-byte :eof))))
+               (return* :eof))))
       (when (zerop (iobuf-length ib))
         (fill-buf-or-eof))
       (iobuf-pop-octet ib))))

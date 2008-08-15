@@ -186,7 +186,7 @@
                      direction-out direction-in)
           (unless (file-equal full-path-out full-path-orig)
             (format *error-output* "~&;;   Test failed!!!~%")
-            (return-from compare-files nil)))))))
+            (return* nil)))))))
 
 (test big-stream-comparision-test
   (is-false

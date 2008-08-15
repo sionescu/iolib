@@ -12,7 +12,7 @@
                 #:file-descriptor-designator
                 #:timeval #:sec #:usec)
   (:shadowing-import-from :series #:let #:let* #:multiple-value-bind
-                          #:funcall #:defun #:until #:collect)
+                          #:funcall #:until #:collect)
   (:export
    ;; Classes
    #:event

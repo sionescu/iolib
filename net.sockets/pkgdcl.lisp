@@ -15,7 +15,7 @@
   (:import-from #:osicat-sys #:size-of-int)
   (:import-from #:io.multiplex #:decode-timeout)
   (:shadowing-import-from :series #:let #:let* #:multiple-value-bind
-                          #:funcall #:defun #:until #:collect)
+                          #:funcall #:until #:collect)
   (:export
    ;; Conditions
    #:posix-error

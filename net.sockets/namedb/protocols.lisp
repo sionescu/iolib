@@ -43,7 +43,7 @@
     (iterate ((tokens (serialize-etc-file file)))
       (ignore-parse-errors
         (let ((proto (find-protocol-in-parsed-lines tokens #'good-proto-p)))
-          (when proto (return-from lookup-protocol-on-disk-by-name proto)))))))
+          (when proto (return* proto)))))))
 
 (defun lookup-protocol-on-disk-by-number (file protocol)
   (flet ((good-proto-p (name value aliases)
@@ -52,7 +52,7 @@
     (iterate ((tokens (serialize-etc-file file)))
       (ignore-parse-errors
         (let ((proto (find-protocol-in-parsed-lines tokens #'good-proto-p)))
-          (when proto (return-from lookup-protocol-on-disk-by-number proto)))))))
+          (when proto (return* proto)))))))
 
 (define-condition unknown-protocol ()
   ((datum :initarg :datum :initform nil :reader unknown-protocol-datum))

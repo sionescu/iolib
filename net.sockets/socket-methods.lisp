@@ -399,13 +399,13 @@
       (incf-pointer buff-sap start-offset)
       (loop
          (restart-case
-             (return-from %%send-to
-               (%sendto fd buff-sap bufflen flags
-                        (if got-peer ss (null-pointer))
-                        (if got-peer (sockaddr-size ss) 0)))
+             (return*
+              (%sendto fd buff-sap bufflen flags
+                       (if got-peer ss (null-pointer))
+                       (if got-peer (sockaddr-size ss) 0)))
            (ignore ()
              :report "Ignore this socket condition"
-             (return-from %%send-to 0))
+             (return* 0))
            (continue (&optional (wait 0))
              :report "Try to send data again"
              (when (plusp wait) (sleep wait))))))))
@@ -484,18 +484,18 @@
       (loop
          (restart-case
              (let ((nbytes (%recvfrom fd buff-sap bufflen flags ss size)))
-               (return-from %%receive-from
-                 (if (stringp buffer)
-                     ;; FIXME: convert the octets directly into the buffer
-                     (let ((str (babel:octets-to-string buff :start 0 :end nbytes
-                                                        :encoding (babel:external-format-encoding ef)
-                                                        :errorp nil)))
-                       (replace buffer str :start1 start :end1 end)
-                       (- end start))
-                     nbytes)))
+               (return*
+                (if (stringp buffer)
+                    ;; FIXME: convert the octets directly into the buffer
+                    (let ((str (babel:octets-to-string buff :start 0 :end nbytes
+                                                       :encoding (babel:external-format-encoding ef)
+                                                       :errorp nil)))
+                      (replace buffer str :start1 start :end1 end)
+                      (- end start))
+                    nbytes)))
            (ignore ()
              :report "Ignore this socket condition"
-             (return-from %%receive-from 0))
+             (return* 0))
            (continue (&optional (wait 0))
              :report "Try to receive data again"
              (when (plusp wait) (sleep wait))))))))
