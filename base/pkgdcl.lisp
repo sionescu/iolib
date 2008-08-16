@@ -9,8 +9,17 @@
   (:use #:common-lisp :alexandria)
   (:shadow #:defun #:defmethod
            #:defmacro #:define-compiler-macro)
-  (:export #:return* #:lambda* #:defun #:defmethod
-           #:defmacro #:define-compiler-macro))
+  (:export
+   ;; RETURN*
+   #:return* #:lambda* #:defun #:defmethod
+   #:defmacro #:define-compiler-macro
+   ;; DEFOBSOLETE
+   #:deprecation-warning
+   #:deprecation-warning-function-name
+   #:deprecation-warning-type
+   #:deprecation-warning-reason
+   #:function-name #:function-name-p
+   #:defobsolete))
 
 (flet ((gather-external-symbols (&rest packages)
          (let ((symbols (make-hash-table :test #'eq)))

@@ -10,4 +10,5 @@
   :pathname (merge-pathnames (make-pathname :directory '(:relative "base"))
                              *load-truename*)
   :components ((:file "pkgdcl")
-               (:file "return-star" :depends-on ("pkgdcl"))))
+               (:file "return-star" :depends-on ("pkgdcl"))
+               (:file "defobsolete" :depends-on ("pkgdcl" "return-star"))))
