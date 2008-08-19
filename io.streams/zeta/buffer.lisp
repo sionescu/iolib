@@ -173,7 +173,7 @@
   (with-accessors ((output-handle output-handle-of)
                    (output-iobuf output-iobuf-of))
       buffer
-    (prog1
+    (multiple-value-prog1
         (vector->iobuf output-iobuf vector start end)
       (setf (last-io-op-of buffer) :write)
       (when (iobuf-full-p output-iobuf)
