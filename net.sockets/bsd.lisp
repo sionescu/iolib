@@ -29,7 +29,7 @@
 
 (define-socket-call ("bind" %bind) :int
   "Bind a socket to a particular local address."
-  (fd      fd)
+  (socket  fd)
   (address :pointer)
   (addrlen socklen))
 
@@ -51,7 +51,7 @@
 
 (define-socket-call ("getsockopt" %getsockopt) :int
   "Retrieve socket configuration."
-  (fd      fd)
+  (socket  fd)
   (level   :int)
   (optname :int)
   (optval  :pointer)
@@ -90,7 +90,7 @@
 
 (define-socket-call ("setsockopt" %setsockopt) :int
   "Configure a socket."
-  (fd      fd)
+  (socket  fd)
   (level   :int)
   (optname :int)
   (optval  :pointer)
