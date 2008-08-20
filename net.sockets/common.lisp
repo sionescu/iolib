@@ -153,16 +153,6 @@
 
 ;;;; Misc
 
-(defmacro check-bounds (sequence start end)
-  (with-gensyms (length)
-    `(let ((,length (length ,sequence)))
-       (check-type ,start unsigned-byte "a non-negative integer")
-       (check-type ,end (or unsigned-byte null) "a non-negative integer or NIL")
-       (unless ,end
-         (setq ,end ,length))
-       (unless (<= ,start ,end ,length)
-         (error "Wrong sequence bounds. start: ~S end: ~S" ,start ,end)))))
-
 (defun %to-octets (buff ef start end)
   (babel:string-to-octets buff :start start :end end
                           :encoding (babel:external-format-encoding ef)))
@@ -186,40 +176,6 @@
 
 (defun lisp->c-bool (val)
   (if val 1 0))
-
-(defmacro multiple-value-case ((values &key (test 'eql)) &body body)
-  (setf values (ensure-list values))
-  (when (symbolp test) (setf test `(quote ,test)))
-  (assert values () "Must provide at least one value to test")
-  (let ((test-name (alexandria::extract-function-name test)))
-    (labels ((%do-var (var val)
-               (cond
-                 ((and (symbolp var) (member var '("_" "*") :test #'string=))
-                  t)
-                 ((consp var)
-                  `(member ,val ',var :test ,test))
-                 (t
-                  `(,test-name ,val ',var))))
-             (%do-clause (c gensyms)
-               (destructuring-bind (vals &rest code) c
-                 (let* ((tests (remove t (mapcar #'%do-var (ensure-list vals) gensyms)))
-                        (clause-test (if (> 2 (length tests))
-                                         (first tests)
-                                         `(and ,@tests))))
-                   `(,clause-test ,@code))))
-             (%do-last-clause (c gensyms)
-               (when c
-                 (destructuring-bind (test &rest code) c
-                   (if (member test '(otherwise t))
-                       `((t ,@code))
-                       `(,(%do-clause c gensyms)))))))
-      (let ((gensyms (mapcar (lambda (v) (gensym (string v)))
-                             values)))
-        `(let ,(mapcar #'list gensyms values)
-           (declare (ignorable ,@gensyms))
-           (cond ,@(append (mapcar (lambda (c) (%do-clause c gensyms))
-                                   (butlast body))
-                           (%do-last-clause (lastcar body) gensyms))))))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun compute-flags (flags args)
