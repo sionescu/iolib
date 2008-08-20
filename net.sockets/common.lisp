@@ -177,17 +177,16 @@
 (defun lisp->c-bool (val)
   (if val 1 0))
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defun compute-flags (flags args)
-    (loop :with flag-combination := 0
-          :for cons :on args :by #'cddr
-          :for flag := (car cons)
-          :for val := (cadr cons)
-          :for const := (cdr (assoc flag flags))
-          :when const :do
-       (when (not (constantp val)) (return* nil))
-       (setf flag-combination (logior flag-combination const))
-       :finally (return flag-combination))))
+(defun compute-flags (flags args)
+  (loop :with flag-combination := 0
+        :for cons :on args :by #'cddr
+        :for flag := (car cons)
+        :for val := (cadr cons)
+        :for const := (cdr (assoc flag flags))
+        :when const
+        :do (when (not (constantp val)) (return* nil))
+            (setf flag-combination (logior flag-combination const))
+        :finally (return flag-combination)))
 
 (defun set-function-docstring (function docstring)
   (setf (documentation function 'function) docstring))
