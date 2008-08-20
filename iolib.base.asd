@@ -15,4 +15,4 @@
                (:file "reader" :depends-on ("pkgdcl" "return-star"))
                (:file "sequence" :depends-on ("pkgdcl" "return-star"))
                (:file "matching" :depends-on ("pkgdcl" "return-star"))
-               (:file "split-sequence" :depends-on ("pkgdcl" "return-star"))))
+               (:file "split-sequence" :depends-on ("pkgdcl" "return-star" "sequence"))))
