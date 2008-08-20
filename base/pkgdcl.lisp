@@ -18,6 +18,10 @@
    #:deprecation-warning-function-name
    #:deprecation-warning-type
    #:deprecation-warning-reason
+   ;; Reader utils
+   #:define-syntax
+   #:enable-reader-macro #:enable-reader-macro*
+   #:disable-reader-macro #:disable-reader-macro*
    ;; SPLIT-SEQUENCE
    #:split-sequence #:split-sequence-if #:split-sequence-if-not
    ;; MISC

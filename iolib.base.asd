@@ -12,4 +12,5 @@
   :components ((:file "pkgdcl")
                (:file "return-star" :depends-on ("pkgdcl"))
                (:file "defobsolete" :depends-on ("pkgdcl" "return-star"))
+               (:file "reader" :depends-on ("pkgdcl" "return-star"))
                (:file "split-sequence" :depends-on ("pkgdcl" "return-star"))))

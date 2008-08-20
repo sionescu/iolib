@@ -210,11 +210,6 @@
    #:*dns-search-domain*
 
    ;; Miscellaneous
-   #:enable-reader-macro
-   #:enable-reader-macro*
-   #:disable-reader-macro
-   #:disable-reader-macro*
-   #:define-syntax
    #:ip-address
    ))
 
