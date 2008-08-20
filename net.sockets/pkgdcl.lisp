@@ -7,7 +7,7 @@
 
 (defpackage :net.sockets
   (:nicknames #:sockets)
-  (:use :iolib.base :cffi :split-sequence :io.streams :series)
+  (:use :iolib.base :cffi :io.streams :series)
   (:import-from #:osicat-posix #:system-error #:posix-error
                 #:system-error-message #:errno-wrapper
                 #:pid #:gid #:uid #:size #:ssize #:bzero

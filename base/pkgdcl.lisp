@@ -7,19 +7,21 @@
 
 (defpackage :iolib.base
   (:use #:common-lisp :alexandria)
-  (:shadow #:defun #:defmethod
-           #:defmacro #:define-compiler-macro)
+  (:shadow #:defun #:defmethod #:defmacro #:define-compiler-macro)
   (:export
    ;; RETURN*
    #:return* #:lambda* #:defun #:defmethod
    #:defmacro #:define-compiler-macro
    ;; DEFOBSOLETE
+   #:defobsolete
    #:deprecation-warning
    #:deprecation-warning-function-name
    #:deprecation-warning-type
    #:deprecation-warning-reason
-   #:function-name #:function-name-p
-   #:defobsolete))
+   ;; SPLIT-SEQUENCE
+   #:split-sequence #:split-sequence-if #:split-sequence-if-not
+   ;; MISC
+   #:function-name #:function-name-p))
 
 (flet ((gather-external-symbols (&rest packages)
          (let ((symbols (make-hash-table :test #'eq)))

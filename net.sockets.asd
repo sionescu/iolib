@@ -11,7 +11,7 @@
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
   :depends-on (:iolib.base :osicat :babel :bordeaux-threads
-               :series :io.streams :split-sequence)
+               :series :io.streams)
   :pathname (merge-pathnames #p"net.sockets/" *load-truename*)
   :components
   ((:file "pkgdcl")
