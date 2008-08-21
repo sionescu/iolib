@@ -38,3 +38,15 @@
            (cond ,@(append (mapcar (lambda (c) (%do-clause c gensyms))
                                    (butlast body))
                            (%do-last-clause (lastcar body) gensyms))))))))
+
+(defmacro flags-case (mask &body clauses)
+  (once-only (mask)
+    `(progn ,@(mapcar (lambda (clause)
+                        `(when
+                           (logtest ,(let ((flags (first clause)))
+                                       (if (listp flags)
+                                           `(logior ,@flags)
+                                           flags))
+                                    ,mask)
+                           ,(second clause)))
+                      clauses))))

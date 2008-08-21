@@ -24,16 +24,6 @@
            (truncate usec 1000)))
       -1))
 
-(defmacro flags-case (mask &body clauses)
-  (once-only (mask)
-    `(progn ,@(loop :for clause :in clauses
-                 :collect `(when (logtest ,(let ((flags (first clause)))
-                                                (if (listp flags)
-                                                    `(logior ,@flags)
-                                                    flags))
-                                          ,mask)
-                             ,(second clause))))))
-
 (defmacro ignore-and-print-errors (&body body)
   `(handler-case (locally ,@body)
      (error (error)

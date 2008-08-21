@@ -26,7 +26,7 @@
    #:split-sequence #:split-sequence-if #:split-sequence-if-not
    ;; MISC
    #:function-name #:function-name-p
-   #:check-bounds #:multiple-value-case))
+   #:check-bounds #:multiple-value-case #:flags-case))
 
 (flet ((gather-external-symbols (&rest packages)
          (let ((symbols (make-hash-table :test #'eq)))
