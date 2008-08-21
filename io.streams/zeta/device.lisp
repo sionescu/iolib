@@ -50,9 +50,9 @@
 
 (defgeneric device-length (device))
 
-(defgeneric wait-for-input (device &optional timeout))
+(defgeneric device-poll-input (device &optional timeout))
 
-(defgeneric wait-for-output (device &optional timeout))
+(defgeneric device-poll-output (device &optional timeout))
 
 
 ;;;-----------------------------------------------------------------------------
@@ -114,10 +114,10 @@
 ;;; I/O WAIT
 ;;;-----------------------------------------------------------------------------
 
-(defmethod wait-for-input ((device device) &optional timeout)
+(defmethod device-poll-input ((device device) &optional timeout)
   (iomux:wait-until-fd-ready (input-handle-of device) :input timeout))
 
-(defmethod wait-for-output ((device device) &optional timeout)
+(defmethod device-poll-output ((device device) &optional timeout)
   (iomux:wait-until-fd-ready (output-handle-of device) :output timeout))
 
 
@@ -157,7 +157,7 @@
     (nix:repeat-decreasing-timeout (remaining timeout :rloop)
       (flet ((check-timeout ()
                (if (plusp remaining)
-                   (wait-for-input device remaining)
+                   (device-poll-input device remaining)
                    (return-from :rloop 0))))
         (handler-case
             (nix:read (input-handle-of device) (inc-pointer buf start) (- end start))
@@ -207,7 +207,7 @@
     (nix:repeat-decreasing-timeout (remaining timeout :rloop)
       (flet ((check-timeout ()
                (if (plusp remaining)
-                   (wait-for-output device remaining)
+                   (device-poll-output device remaining)
                    (return-from :rloop 0))))
         (handler-case
             (nix:write (output-handle-of device) (inc-pointer buf start) (- end start))
