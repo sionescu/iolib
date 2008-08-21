@@ -9,6 +9,8 @@
   (:use #:common-lisp :alexandria)
   (:shadow #:defun #:defmethod #:defmacro #:define-compiler-macro)
   (:export
+   ;; Conditions
+   #:bug
    ;; RETURN*
    #:return* #:lambda* #:defun #:defmethod
    #:defmacro #:define-compiler-macro
@@ -24,12 +26,12 @@
    #:disable-reader-macro #:disable-reader-macro*
    ;; SPLIT-SEQUENCE
    #:split-sequence #:split-sequence-if #:split-sequence-if-not
-   ;; MISC
+   ;; Misc
    #:function-name #:function-name-p
    #:check-bounds
-   ;; MATCHING
+   ;; Matching
    #:multiple-value-case #:flags-case
-   ;; TIME
+   ;; Time
    #:decode-timeout #:normalize-timeout))
 
 (flet ((gather-external-symbols (&rest packages)
