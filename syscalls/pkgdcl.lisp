@@ -8,7 +8,6 @@
 (defpackage :iolib.syscalls
   (:nicknames #:isys)
   (:use :iolib.base :cffi)
-  (:shadow #:time)
   (:export
    ;; Conditions
    #:system-error
