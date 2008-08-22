@@ -141,29 +141,29 @@
 
    ;; Primitive type sizes
    #:size-of-char
+   #:size-of-short
    #:size-of-int
    #:size-of-long
    #:size-of-long-long
    #:size-of-pointer
-   #:size-of-short
 
    ;; Types
-   #:size-t
-   #:ssize-t
-   #:pid-t
-   #:gid-t
-   #:uid-t
-   #:off-t
-   #:mode-t
-   #:time-t
-   #:useconds-t
-   #:suseconds-t
-   #:dev-t
-   #:ino-t
-   #:nlink-t
-   #:blksize-t
-   #:blkcnt-t
-   #:nfds-t
+   #:size-t #:size-of-size-t
+   #:ssize-t #:size-of-ssize-t
+   #:pid-t #:size-of-pid-t
+   #:gid-t #:size-of-gid-t
+   #:uid-t #:size-of-uid-t
+   #:off-t #:size-of-off-t
+   #:mode-t #:size-of-mode-t
+   #:time-t #:size-of-time-t
+   #:useconds-t #:size-of-useconds-t
+   #:suseconds-t #:size-of-suseconds-t
+   #:dev-t #:size-of-dev-t
+   #:ino-t #:size-of-ino-t
+   #:nlink-t #:size-of-nlink-t
+   #:blksize-t #:size-of-blksize-t
+   #:blkcnt-t #:size-of-blkcnt-t
+   #:nfds-t #:size-of-nfds-t
 
    ;; OPEN()
    #:o-rdonly
@@ -247,17 +247,17 @@
    ;;; Structs
 
    ;; timespec
-   #:timespec
+   #:timespec #:size-of-timespec
    #:sec
    #:nsec
 
    ;; timeval
-   #:timeval
+   #:timeval #:size-of-timeval
    #:sec
    #:usec
 
    ;; stat
-   #:stat
+   #:stat #:size-of-stat
    #:dev #:stat-dev
    #:ino #:stat-ino
    #:mode #:stat-mode
@@ -273,7 +273,7 @@
    #:ctime #:stat-ctime
 
    ;; pollfd
-   #:pollfd
+   #:pollfd #:size-of-pollfd
    #:fd
    #:events
    #:revents
