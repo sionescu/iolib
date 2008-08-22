@@ -116,6 +116,9 @@
    #:%sys-ioctl
    #:%sys-fd-open-p
 
+   ;; I/O Polling
+   #:%sys-poll
+
    ;; Memory mapping
    #:%sys-mmap
    #:%sys-munmap
