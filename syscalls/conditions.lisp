@@ -67,11 +67,11 @@ of a file descriptor."))
   (with-unique-names (deadline temp-timeout)
     `(let* ((,timeout-var ,timeout)
             (,deadline (when ,timeout-var
-                         (+ ,timeout-var (get-monotonic-time)))))
+                         (+ ,timeout-var (%sys-get-monotonic-time)))))
        (loop :named ,block-name :do
          ,@body
            (when ,deadline
-             (let ((,temp-timeout (- ,deadline (get-monotonic-time))))
+             (let ((,temp-timeout (- ,deadline (%sys-get-monotonic-time))))
                (setf ,timeout-var
                      (if (plusp ,temp-timeout)
                          ,temp-timeout
