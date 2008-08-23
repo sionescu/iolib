@@ -31,5 +31,5 @@
           "The timeout must be non-negative: ~A" timeout)
   (coerce timeout 'timeout))
 
-(defun clamp-timeout (timeout &optional min max)
+(defun clamp-timeout (timeout &optional (min 0) (max most-positive-fixnum))
   (clamp timeout (if min (max min 0) 0) (or max most-positive-fixnum)))
