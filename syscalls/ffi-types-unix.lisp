@@ -16,7 +16,7 @@
 
 (include "stdlib.h" "errno.h" "sys/types.h" "sys/stat.h" "sys/mman.h"
          "fcntl.h" "signal.h" "unistd.h" "limits.h" "time.h" "sys/select.h"
-         "sys/poll.h")
+         "sys/poll.h" "sys/ioctl.h")
 
 (in-package :iolib.syscalls)
 
@@ -304,3 +304,8 @@
 #-darwin (constant (pollrdhup "POLLRDHUP"))
 (constant (pollhup "POLLHUP"))
 (constant (pollnval "POLLNVAL"))
+
+;;; ioctl()
+
+(constant (fionbio "FIONBIO"))
+(constant (fionread "FIONREAD"))

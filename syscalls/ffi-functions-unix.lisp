@@ -258,21 +258,14 @@
   (fildes1 :int)
   (fildes2 :int))
 
-(defsyscall* ("ioctl" %%sys-ioctl-without-arg) :int
+(defsyscall* ("ioctl" %sys-ioctl/2) :int
   (fd      :int)
   (request :int))
 
-(defsyscall* ("ioctl" %%sys-ioctl-with-arg) :int
+(defsyscall* ("ioctl" %sys-ioctl/3) :int
  (fd      :int)
  (request :int)
  (arg     :pointer))
-
-(defentrypoint %sys-ioctl (fd request &optional (arg nil argp))
-  "Control device."
-  (cond
-    ((not argp) (%%sys-ioctl-without-arg fd request))
-    ((pointerp arg) (%%sys-ioctl-with-arg fd request arg))
-    (t (error "Wrong argument to ioctl: ~S" arg))))
 
 (defentrypoint %sys-fd-open-p (fd)
   (not (minusp (%sys-fstat fd))))

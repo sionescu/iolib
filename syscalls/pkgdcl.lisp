@@ -117,7 +117,8 @@
    #:%sys-close
    #:%sys-dup
    #:%sys-dup2
-   #:%sys-ioctl
+   #:%sys-ioctl/2
+   #:%sys-ioctl/3
    #:%sys-fd-open-p
 
    ;; I/O Polling
@@ -250,6 +251,10 @@
    #:pollrdhup
    #:pollhup
    #:pollnval
+
+   ;; IOCTL()
+   #:fionbio
+   #:fionread
 
    ;;; Structs
 
