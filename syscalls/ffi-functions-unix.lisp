@@ -232,7 +232,7 @@
 (defentrypoint %sys-getcwd ()
   "Returns the current working directory as a string."
   (with-foreign-pointer (buf path-max size)
-    (%getcwd buf size)))
+    (%%sys-getcwd buf size)))
 
 (defsyscall ("mkdtemp" %%sys-mkdtemp) :int
   (template filename-designator))

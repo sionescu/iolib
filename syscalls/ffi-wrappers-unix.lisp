@@ -23,23 +23,23 @@
 ;;; FIXME: this is only necessary on Linux right?
 
 (defwrapper ("lseek" %sys-lseek)
-    ("off_t" off-t)
+    ("off_t" (return-wrapper off-t :error-generator signal-posix-error))
   (fildes ("int" :int))
   (offset ("off_t" off-t))
   (whence :int))
 
 (defwrapper ("truncate" %sys-truncate)
-    ("int" (return-wrapper :int :error-generator return-posix-error/restart))
+    ("int" (return-wrapper :int :error-generator signal-posix-error/restart))
   (path ("const char*" filename-designator))
   (length ("off_t" off-t)))
 
 (defwrapper ("ftruncate" %sys-ftruncate)
-    ("int" (return-wrapper :int :error-generator return-posix-error/restart))
+    ("int" (return-wrapper :int :error-generator signal-posix-error/restart))
   (fd ("int" :int))
   (length ("off_t" off-t)))
 
 (defwrapper ("mmap" %sys-mmap)
-    ("void*" :pointer)
+    ("void*" (return-wrapper :pointer :error-generator signal-posix-error))
   (start :pointer)
   (length ("size_t" size-t))
   (prot :int)
@@ -48,29 +48,29 @@
   (offset ("off_t" off-t)))
 
 (defwrapper ("stat" %%sys-stat)
-    ("int" :int)
+    ("int" (return-wrapper :int :error-generator signal-posix-error))
   (file-name ("const char*" filename-designator))
   (buf ("struct stat*" :pointer)))
 
 (defwrapper ("fstat" %%sys-fstat)
-    ("int" :int)
+    ("int" (return-wrapper :int :error-generator signal-posix-error))
   (filedes ("int" :int))
   (buf ("struct stat*" :pointer)))
 
 (defwrapper ("lstat" %%sys-lstat)
-    ("int" :int)
+    ("int" (return-wrapper :int :error-generator signal-posix-error))
   (file-name ("const char*" filename-designator))
   (buf ("struct stat*" :pointer)))
 
 (defwrapper ("pread" %sys-pread)
-    ("ssize_t" (return-wrapper ssize-t :error-generator return-posix-error/restart))
-  (fd ("int" :int))
+    ("ssize_t" (return-wrapper ssize-t :error-generator signal-posix-error/restart))
+  (fd ("int" (return-wrapper :int :error-generator signal-posix-error)))
   (buf :pointer)
   (count ("size_t" size-t))
   (offset ("off_t" off-t)))
 
 (defwrapper ("pwrite" %sys-pwrite)
-    ("ssize_t" (return-wrapper ssize-t :error-generator return-posix-error/restart))
+    ("ssize_t" (return-wrapper ssize-t :error-generator signal-posix-error/restart))
   (fd ("int" :int))
   (buf :pointer)
   (count ("size_t" size-t))
@@ -89,7 +89,7 @@
   "return errno;")
 
 (defwrapper ("strerror_r" %sys-strerror-r)
-    :int
+    ("int" (return-wrapper :int :error-generator signal-posix-error))
   (errnum :int)
   (buf :string)
-  (buflen ("size_t" size-t)))
+  (buflen size-t))
