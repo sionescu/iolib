@@ -9,15 +9,17 @@
 ;;; System Errors
 ;;;-----------------------------------------------------------------------------
 
-(define-condition system-error (error)
+(define-condition condition-info-mixin (condition)
   ((code :initarg :code :reader code-of
          :documentation "Numeric error code, or NIL.")
    (identifier :initarg :identifier :reader identifier-of
                :documentation "Keyword identifier, or NIL.")
    (message :initarg :message :reader message-of
             :documentation "Error description."))
-  (:default-initargs :code nil
-                     :identifier :unknown-error)
+  (:default-initargs :code nil :identifier :unknown))
+
+(define-condition system-error (error condition-info-mixin)
+  ()
   (:documentation
    "Base class for errors signalled by IOlib low-level functions."))
 
@@ -37,19 +39,21 @@
 ;;;-----------------------------------------------------------------------------
 
 (define-condition poll-error (system-error)
-  ()
-  (:report (lambda (condition stream)
-             (format stream "Error caught while polling: ~A"
-                     (message-of condition))))
+  ((event-type :initarg :event-type :reader event-type-of)
+   (os-handle :initarg :os-handle :reader os-handle-of))
+  (:report (lambda (c s)
+             (format s "Poll error(event ~S, handle ~A): ~A"
+                     (event-type-of c) (os-handle-of c) (message-of c))))
   (:documentation
    "Signaled when an error occurs while polling for I/O readiness
 of a file descriptor."))
 
-(define-condition poll-timeout (condition)
-  ((event-type :initarg :event-type :reader event-type-of))
-  (:report (lambda (condition stream)
-             (format stream "Timeout occurred while polling for event ~S"
-                     (event-type-of condition))))
+(define-condition poll-timeout (condition-info-mixin)
+  ((event-type :initarg :event-type :reader event-type-of)
+   (os-handle :initarg :os-handle :reader os-handle-of))
+  (:report (lambda (c s)
+             (format s "Poll timeout(event ~S, handle ~A): ~A"
+                     (event-type-of c) (os-handle-of c) (message-of c))))
   (:documentation
    "Signaled when a timeout occurs while polling for I/O readiness
 of a file descriptor."))

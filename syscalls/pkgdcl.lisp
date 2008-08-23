@@ -10,14 +10,19 @@
   (:use :iolib.base :cffi)
   (:export
    ;; Conditions
+   #:condition-info-mixin
    #:system-error
-   #:code-of
-   #:identifier-of
-   #:message-of
    #:syscall-error
    #:posix-error
    #:poll-error
    #:poll-timeout
+
+   ;; Condition accessors
+   #:code-of
+   #:identifier-of
+   #:message-of
+   #:event-type-of
+   #:os-handle-of
 
    ;; Pathname Functions
    #:native-namestring
