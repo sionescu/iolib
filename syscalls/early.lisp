@@ -70,17 +70,20 @@
   (if (and (eql 'identity (return-filter-of type))
            (eql 'never-fails (error-predicate-of type)))
       value
-      `(tagbody :restart
-          (let ((r (convert-from-foreign ,value ',(base-type-of type))))
-            ,(let ((return-exp
-                    (if (eql 'identity (return-filter-of type))
-                        'r
-                        `(,(return-filter-of type) r))))
-                  (if (eql 'never-fails (error-predicate-of type))
-                      return-exp
-                      `(if (,(error-predicate-of type) r)
-                           (,(error-generator-of type) r)
-                           ,return-exp)))))))
+      (with-gensyms (block)
+        `(block ,block
+           (tagbody :restart
+              (let ((r (convert-from-foreign ,value ',(base-type-of type))))
+                ,(let ((return-exp
+                        (if (eql 'identity (return-filter-of type))
+                            'r
+                            `(,(return-filter-of type) r))))
+                      `(return-from ,block
+                         ,(if (eql 'never-fails (error-predicate-of type))
+                              `return-exp
+                              `(if (,(error-predicate-of type) r)
+                                   (,(error-generator-of type) r)
+                                   ,return-exp))))))))))
 
 
 (defmacro defentrypoint (name (&rest args) &body body)
