@@ -74,16 +74,14 @@ of a file descriptor."))
   (unless blockp (setf block-name (gensym "BLOCK")))
   (with-unique-names (deadline temp-timeout)
     `(let* ((,timeout-var ,timeout)
-            (,deadline (when ,timeout-var
-                         (+ ,timeout-var (%sys-get-monotonic-time)))))
+            (,deadline (+ ,timeout-var (%sys-get-monotonic-time))))
        (loop :named ,block-name :do
          ,@body
-           (when ,deadline
-             (let ((,temp-timeout (- ,deadline (%sys-get-monotonic-time))))
-               (setf ,timeout-var
-                     (if (plusp ,temp-timeout)
-                         ,temp-timeout
-                         0))))))))
+          (let ((,temp-timeout (- ,deadline (%sys-get-monotonic-time))))
+            (setf ,timeout-var
+                  (if (plusp ,temp-timeout)
+                      ,temp-timeout
+                      0)))))))
 
 (defmacro repeat-upon-condition-decreasing-timeout
     (((&rest conditions) timeout-var timeout &optional (block-name nil blockp)) &body body)
