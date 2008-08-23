@@ -27,7 +27,7 @@
    (protocol :initarg :protocol)))
 
 (deftype device-timeout ()
-  `(or null non-negative-real))
+  'non-negative-real)
 
 (deftype stream-position () '(unsigned-byte 64))
 

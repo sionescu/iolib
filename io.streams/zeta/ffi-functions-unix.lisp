@@ -26,11 +26,9 @@
       (values readp writep))))
 
 (defun timeout->milisec (timeout)
-  (if timeout
-      (multiple-value-bind (sec usec)
-          (decode-timeout timeout)
-        (+ (* sec 1000) (truncate usec 1000)))
-      -1))
+  (multiple-value-bind (sec usec)
+      (decode-timeout timeout)
+    (+ (* sec 1000) (truncate usec 1000))))
 
 (defun %poll (fds timeout)
   (repeat-upon-condition-decreasing-timeout
@@ -39,7 +37,7 @@
 
 (defun poll-fd (fd event-type timeout)
   "Poll file descriptor `FD' for I/O readiness. `EVENT-TYPE' must be either :INPUT, :OUTPUT or :IO.
-`TIMEOUT' must be either a non-negative integer measured in seconds, or `NIL' meaning no timeout at all.
+`TIMEOUT' must be a non-negative integer measured in seconds.
 If a timeout occurs `POLL-TIMEOUT' is signaled.
 Returns two boolean values indicating readability and writeability of `FD'."
   (flet ((poll-error (posix-err)
@@ -59,9 +57,6 @@ Returns two boolean values indicating readability and writeability of `FD'."
               (t
                (error 'poll-timeout :os-handle fd :event-type event-type)))
           (posix-error (err) (poll-error err)))))))
-
-(defun poll-file (file-descriptor event-type timeout)
-  (poll-fd file-descriptor event-type timeout))
 
 
 ;;;-----------------------------------------------------------------------------
@@ -116,14 +111,13 @@ Returns two boolean values indicating readability and writeability of `FD'."
            (type device-timeout timeout)
            (special *device*))
   (with-pointer-to-vector-data (buf vector)
-    (repeat-decreasing-timeout (remaining timeout :rloop)
+    (repeat-decreasing-timeout (remaining (clamp-timeout timeout) :rloop)
       (flet ((check-timeout ()
                (if (plusp remaining)
-                   (poll fd :input remaining)
+                   (poll-fd fd :input remaining)
                    (return-from :rloop 0))))
         (handler-case
             (%sys-read fd (inc-pointer buf start) (- end start))
-          (eintr () (check-timeout))
           (ewouldblock () (check-timeout))
           (posix-error (err)
             (posix-file-error err *device* "reading data from"))
@@ -156,14 +150,13 @@ Returns two boolean values indicating readability and writeability of `FD'."
            (type device-timeout timeout)
            (special *device*))
   (with-pointer-to-vector-data (buf vector)
-    (repeat-decreasing-timeout (remaining timeout :rloop)
+    (repeat-decreasing-timeout (remaining (clamp-timeout timeout) :rloop)
       (flet ((check-timeout ()
                (if (plusp remaining)
                    (poll-fd fd :output remaining)
                    (return-from :rloop 0))))
         (handler-case
             (%sys-write fd (inc-pointer buf start) (- end start))
-          (eintr () (check-timeout))
           (ewouldblock () (check-timeout))
           (epipe () (return-from :rloop :eof))
           (posix-error (err)
