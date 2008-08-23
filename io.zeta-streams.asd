@@ -3,22 +3,27 @@
 ;;; --- ASDF system definition.
 ;;;
 
-(in-package :common-lisp-user)
-
 (asdf:defsystem :io.zeta-streams
   :description "Zeta streams."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:iolib.base :cffi :osicat :io.multiplex :bordeaux-threads)
+  :depends-on (:iolib.base :iolib.syscalls :cffi :bordeaux-threads)
   :pathname (merge-pathnames #p"io.streams/zeta/" *load-truename*)
   :components
   ((:file "pkgdcl")
    (:file "types" :depends-on ("pkgdcl"))
    (:file "conditions" :depends-on ("pkgdcl"))
-   (:file "device" :depends-on ("pkgdcl" "types" "conditions"))
+
+   ;; Platform-specific files
+   (:file "ffi-functions"
+     :pathname #+unix "ffi-functions-unix"
+     :depends-on ("pkgdcl" "conditions"))
 
    ;; Devices
-   (:file "file" :depends-on ("pkgdcl" "types" "conditions" "device"))
+   (:file "device" :depends-on ("pkgdcl" "types" "conditions"))
+   (:file "file"
+     :pathname #+unix "file-unix"
+     :depends-on ("pkgdcl" "types" "conditions" "device" "ffi-functions"))
 
    ;; Buffers
    (:file "iobuf" :depends-on ("pkgdcl" "types" "conditions" "device"))

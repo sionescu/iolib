@@ -6,17 +6,17 @@
 (in-package :io.zeta-streams)
 
 (define-condition posix-file-error (file-error)
-  ((action :initarg :action :reader posix-file-error-action)
-   (code :initarg :code :reader posix-file-error-code)
-   (identifier :initarg :identifier :reader posix-file-error-identifier))
+  ((action :initarg :action :reader action-of)
+   (code :initarg :code :reader code-of)
+   (identifier :initarg :identifier :reader identifier-of))
   (:report (lambda (condition stream)
              (format stream "Error while ~A ~S: ~A"
-                     (posix-file-error-action condition)
+                     (action-of condition)
                      (file-error-pathname condition)
-                     (nix:strerror (posix-file-error-code condition))))))
+                     (%sys-strerror (code-of condition))))))
 
 (defun posix-file-error (posix-error filename action)
   (error 'posix-file-error
-         :code (osicat-sys:system-error-code posix-error)
-         :identifier (osicat-sys:system-error-identifier posix-error)
+         :code (code-of posix-error)
+         :identifier (identifier-of posix-error)
          :pathname filename :action action))

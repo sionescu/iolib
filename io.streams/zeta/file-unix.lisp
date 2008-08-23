@@ -75,20 +75,20 @@
              (posix-file-error c filename "opening"))
            (try-unlink ()
              (handler-case
-                 (nix:unlink filename)
-               (nix:posix-error (c) (handle-error c))))
+                 (%sys-unlink filename)
+               (posix-error (c) (handle-error c))))
            (try-open (&optional (retry-on-unlink t))
              (handler-case
-                 (nix:open filename flags mode)
-               (nix:eexist (c)
+                 (%sys-open filename flags mode)
+               (eexist (c)
                  (cond ((and retry-on-unlink (eql :unlink if-exists))
                         (try-unlink) (try-open nil))
                        (t (handle-error c))))
-               (nix:posix-error (c)
+               (posix-error (c)
                  (handle-error c))
                (:no-error (fd) fd))))
     (let ((fd (try-open)))
-      (%set-fd-nonblock-mode fd t)
+      (%set-fd-nonblock fd)
       (setf (input-handle-of device) fd
             (output-handle-of device) fd)))
   (values device))
@@ -99,12 +99,12 @@
     (when (eql :default if-exists) (setf if-exists :overwrite))
     (ecase direction
       (:input
-       (add-flags nix:o-rdonly)
+       (add-flags o-rdonly)
        (check-type if-exists (member :overwrite :error-if-symlink))
        (check-type if-does-not-exist (member :default :error))
        (when (eql :default if-does-not-exist) (setf if-does-not-exist :error)))
       ((:output :io)
-       (add-flags (if (eql :io direction) nix:o-rdwr nix:o-wronly))
+       (add-flags (if (eql :io direction) o-rdwr o-wronly))
        (check-type if-exists file-if-exists)
        (check-type if-does-not-exist file-if-does-not-exist)
        (when (eql :default if-does-not-exist) (setf if-does-not-exist :create))))
@@ -116,16 +116,16 @@
                `(setf flags (logior flags ,@%flags))))
     (case if-exists
       (:error
-       (unless (eql :input direction) (add-flags nix:o-excl)))
+       (unless (eql :input direction) (add-flags o-excl)))
       (:error-if-symlink
-       (add-flags nix:o-nofollow)))
+       (add-flags o-nofollow)))
     (case if-does-not-exist
-      (:create (add-flags nix:o-creat)))
+      (:create (add-flags o-creat)))
     (cond
       (truncate
-       (unless (eql :input direction) (add-flags nix:o-trunc)))
+       (unless (eql :input direction) (add-flags o-trunc)))
       (append
-       (when (eql :output direction) (add-flags nix:o-append)))
+       (when (eql :output direction) (add-flags o-append)))
       (extra-flags
        (add-flags extra-flags))))
   (values flags if-exists if-does-not-exist))
@@ -137,7 +137,7 @@
 
 (defmethod device-close ((device file-device) &optional abort)
   (declare (ignore abort))
-  (ignore-errors (nix:close (input-handle-of device)))
+  (ignore-errors (%sys-close (input-handle-of device)))
   (setf (input-handle-of device) nil
         (output-handle-of device) nil)
   (values device))
@@ -149,18 +149,18 @@
 
 (defmethod device-position ((device file-device))
   (handler-case
-      (nix:lseek (input-handle-of device) 0 nix:seek-cur)
-    (nix:posix-error (err)
+      (%sys-lseek (input-handle-of device) 0 seek-cur)
+    (posix-error (err)
       (posix-file-error err device "seeking on"))))
 
 (defmethod (setf device-position) (position (device file-device) &key (from :start))
   (handler-case
-      (nix:lseek (input-handle-of device) position
-                 (ecase from
-                   (:start nix:seek-set)
-                   (:current nix:seek-cur)
-                   (:end nix:seek-end)))
-    (nix:posix-error (err)
+      (%sys-lseek (input-handle-of device) position
+                  (ecase from
+                    (:start seek-set)
+                    (:current seek-cur)
+                    (:end seek-end)))
+    (posix-error (err)
       (posix-file-error err device "seeking on"))))
 
 
@@ -170,9 +170,46 @@
 
 (defmethod device-length ((device file-device))
   (handler-case
-      (nix:stat-size (nix:fstat (input-handle-of device)))
-    (nix:posix-error (err)
+      (%sys-fstat (input-handle-of device))
+    (posix-error (err)
       (posix-file-error err device "getting status of"))))
+
+
+;;;-----------------------------------------------------------------------------
+;;; I/O WAIT
+;;;-----------------------------------------------------------------------------
+
+(defmethod device-poll-input ((device file-device) &optional timeout)
+  (poll-fd (input-handle-of device) :input timeout))
+
+(defmethod device-poll-output ((device file-device) &optional timeout)
+  (poll-fd (output-handle-of device) :output timeout))
+
+
+;;;-----------------------------------------------------------------------------
+;;; File DEVICE-READ
+;;;-----------------------------------------------------------------------------
+
+(defmethod read-octets/non-blocking ((device file-device) vector start end)
+  (with-device (device)
+    (%read-octets/non-blocking (input-handle-of device) vector start end)))
+
+(defmethod read-octets/timeout ((device file-device) vector start end timeout)
+  (with-device (device)
+    (%read-octets/timeout (input-handle-of device) vector start end timeout)))
+
+
+;;;-----------------------------------------------------------------------------
+;;; File DEVICE-WRITE
+;;;-----------------------------------------------------------------------------
+
+(defmethod write-octets/non-blocking ((device file-device) vector start end)
+  (with-device (device)
+    (%write-octets/non-blocking (output-handle-of device) vector start end)))
+
+(defmethod write-octets/timeout ((device file-device) vector start end timeout)
+  (with-device (device)
+    (%write-octets/timeout (output-handle-of device) vector start end timeout)))
 
 
 ;;;-----------------------------------------------------------------------------

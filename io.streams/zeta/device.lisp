@@ -42,7 +42,15 @@
 
 (defgeneric device-read (device vector start end &optional timeout))
 
+(defgeneric read-octets/non-blocking (device vector start end))
+
+(defgeneric read-octets/timeout (device vector start end timeout))
+
 (defgeneric device-write (device vector start end &optional timeout))
+
+(defgeneric write-octets/non-blocking (device vector start end))
+
+(defgeneric write-octets/timeout (device vector start end timeout))
 
 (defgeneric device-position (device))
 
@@ -81,47 +89,6 @@
 
 
 ;;;-----------------------------------------------------------------------------
-;;; Get and Set O_NONBLOCK
-;;;-----------------------------------------------------------------------------
-
-(defun %get-fd-nonblock-mode (fd)
-  (declare (special *device*))
-  (handler-case
-      (let ((current-flags (nix:fcntl fd nix:f-getfl)))
-        (logtest nix:o-nonblock current-flags))
-    (nix:posix-error (err)
-      (posix-file-error err *device* "getting O_NONBLOCK from"))))
-
-(defun %set-fd-nonblock-mode (fd mode)
-  (declare (special *device*))
-  (let* ((current-flags
-          (handler-case
-              (nix:fcntl fd nix:f-getfl)
-            (nix:posix-error (err)
-              (posix-file-error err *device* "getting O_NONBLOCK from"))))
-         (new-flags (if mode
-                        (logior current-flags nix:o-nonblock)
-                        (logandc2 current-flags nix:o-nonblock))))
-    (when (/= new-flags current-flags)
-      (handler-case
-          (nix:fcntl fd nix:f-setfl new-flags)
-        (nix:posix-error (err)
-          (posix-file-error err *device* "setting O_NONBLOCK on"))))
-    (values mode)))
-
-
-;;;-----------------------------------------------------------------------------
-;;; I/O WAIT
-;;;-----------------------------------------------------------------------------
-
-(defmethod device-poll-input ((device device) &optional timeout)
-  (iomux:wait-until-fd-ready (input-handle-of device) :input timeout))
-
-(defmethod device-poll-output ((device device) &optional timeout)
-  (iomux:wait-until-fd-ready (output-handle-of device) :output timeout))
-
-
-;;;-----------------------------------------------------------------------------
 ;;; Default DEVICE-READ
 ;;;-----------------------------------------------------------------------------
 
@@ -133,41 +100,6 @@
   (if (and timeout (zerop timeout))
       (read-octets/non-blocking device vector start end)
       (read-octets/timeout device vector start end timeout)))
-
-(defun read-octets/non-blocking (device vector start end)
-  (declare (type device device)
-           (type ub8-simple-vector vector)
-           (type iobuf-index start end))
-  (with-pointer-to-vector-data (buf vector)
-    (handler-case
-        (nix:repeat-upon-eintr
-          (nix:read (input-handle-of device) (inc-pointer buf start) (- end start)))
-      (nix:ewouldblock () 0)
-      (nix:posix-error (err)
-        (posix-file-error err device "reading data from"))
-      (:no-error (nbytes)
-        (if (zerop nbytes) :eof nbytes)))))
-
-(defun read-octets/timeout (device vector start end timeout)
-  (declare (type device device)
-           (type ub8-simple-vector vector)
-           (type iobuf-index start end)
-           (type device-timeout timeout))
-  (with-pointer-to-vector-data (buf vector)
-    (nix:repeat-decreasing-timeout (remaining timeout :rloop)
-      (flet ((check-timeout ()
-               (if (plusp remaining)
-                   (device-poll-input device remaining)
-                   (return-from :rloop 0))))
-        (handler-case
-            (nix:read (input-handle-of device) (inc-pointer buf start) (- end start))
-          (nix:eintr () (check-timeout))
-          (nix:ewouldblock () (check-timeout))
-          (nix:posix-error (err)
-            (posix-file-error err device "reading data from"))
-          (:no-error (nbytes)
-            (return-from :rloop
-              (if (zerop nbytes) :eof nbytes))))))))
 
 
 ;;;-----------------------------------------------------------------------------
@@ -182,40 +114,3 @@
   (if (and timeout (zerop timeout))
       (write-octets/non-blocking device vector start end)
       (write-octets/timeout device vector start end timeout)))
-
-(defun write-octets/non-blocking (device vector start end)
-  (declare (type device device)
-           (type ub8-simple-vector vector)
-           (type iobuf-index start end))
-  (with-pointer-to-vector-data (buf vector)
-    (handler-case
-        (osicat-posix:repeat-upon-eintr
-          (nix:write (output-handle-of device) (inc-pointer buf start) (- end start)))
-      (nix:ewouldblock () 0)
-      (nix:epipe () :eof)
-      (nix:posix-error (err)
-        (posix-file-error err device "writing data to"))
-      (:no-error (nbytes)
-        (if (zerop nbytes) :eof nbytes)))))
-
-(defun write-octets/timeout (device vector start end timeout)
-  (declare (type device device)
-           (type ub8-simple-vector vector)
-           (type iobuf-index start end)
-           (type device-timeout timeout))
-  (with-pointer-to-vector-data (buf vector)
-    (nix:repeat-decreasing-timeout (remaining timeout :rloop)
-      (flet ((check-timeout ()
-               (if (plusp remaining)
-                   (device-poll-output device remaining)
-                   (return-from :rloop 0))))
-        (handler-case
-            (nix:write (output-handle-of device) (inc-pointer buf start) (- end start))
-          (nix:eintr () (check-timeout))
-          (nix:ewouldblock () (check-timeout))
-          (nix:epipe () (return-from :rloop :eof))
-          (nix:posix-error (err)
-            (posix-file-error err device "writing data to"))
-          (:no-error (nbytes)
-            (return-from :rloop
-              (if (zerop nbytes) :eof nbytes))))))))
