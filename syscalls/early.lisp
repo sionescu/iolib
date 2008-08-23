@@ -101,13 +101,14 @@
        (go :restart)
        (signal-posix-error ,ret)))
 
-(defmacro return-posix-error/restart (ret)
-  `(if (= eintr (get-errno))
-       (go :restart)
-       ,ret))
-
 (defmacro defsyscall (name-and-opts return-type &body args)
-  `(defcfun* ,name-and-opts ,return-type ,@args))
+  (multiple-value-bind (lisp-name c-name options)
+      (cffi::parse-name-and-options name-and-opts)
+    `(progn
+       (declaim (inline ,lisp-name))
+       (defcfun (,c-name ,lisp-name ,@options)
+           (return-wrapper ,return-type :error-generator signal-posix-error)
+         ,@args))))
 
 (defmacro defsyscall* (name-and-opts return-type &body args)
   (multiple-value-bind (lisp-name c-name options)
@@ -115,5 +116,5 @@
     `(progn
        (declaim (inline ,lisp-name))
        (defcfun (,c-name ,lisp-name ,@options)
-           (return-wrapper ,return-type :error-generator return-posix-error/restart)
+           (return-wrapper ,return-type :error-generator signal-posix-error/restart)
          ,@args))))

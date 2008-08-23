@@ -43,7 +43,6 @@
    #:never-fails
    #:signal-posix-error
    #:signal-posix-error/restart
-   #:return-posix-error/restart
 
    ;; Syscall definition
    #:defentrypoint
