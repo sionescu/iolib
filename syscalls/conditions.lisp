@@ -16,7 +16,7 @@
                :documentation "Keyword identifier, or NIL.")
    (message :initarg :message :reader message-of
             :documentation "Error description."))
-  (:default-initargs :code nil :identifier :unknown))
+  (:default-initargs :code nil :identifier :unknown :message nil))
 
 (define-condition system-error (error condition-info-mixin)
   ()
@@ -42,8 +42,10 @@
   ((event-type :initarg :event-type :reader event-type-of)
    (os-handle :initarg :os-handle :reader os-handle-of))
   (:report (lambda (c s)
-             (format s "Poll error(event ~S, handle ~A): ~A"
-                     (event-type-of c) (os-handle-of c) (message-of c))))
+             (format s "Poll error(event ~S, handle ~A)"
+                     (event-type-of c) (os-handle-of c))
+             (when (message-of c)
+               (format s ": ~A" (message-of c)))))
   (:documentation
    "Signaled when an error occurs while polling for I/O readiness
 of a file descriptor."))
@@ -52,8 +54,10 @@ of a file descriptor."))
   ((event-type :initarg :event-type :reader event-type-of)
    (os-handle :initarg :os-handle :reader os-handle-of))
   (:report (lambda (c s)
-             (format s "Poll timeout(event ~S, handle ~A): ~A"
-                     (event-type-of c) (os-handle-of c) (message-of c))))
+             (format s "Poll timeout(event ~S, handle ~A)"
+                     (event-type-of c) (os-handle-of c))
+             (when (message-of c)
+               (format s ": ~A" (message-of c)))))
   (:documentation
    "Signaled when a timeout occurs while polling for I/O readiness
 of a file descriptor."))
