@@ -32,7 +32,7 @@
    ;; Matching
    #:multiple-value-case #:flags-case
    ;; Time
-   #:decode-timeout #:normalize-timeout))
+   #:decode-timeout #:normalize-timeout #:clamp-timeout))
 
 (flet ((gather-external-symbols (&rest packages)
          (let ((symbols (make-hash-table :test #'eq)))
