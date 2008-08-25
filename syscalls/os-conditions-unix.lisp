@@ -26,13 +26,13 @@
 (macrolet
     ((define-posix-errors (keywords)
        `(progn
-          ,@(loop for kw in keywords collect
-                  (let ((cond-name (intern (symbol-name kw)))
-                        (code (foreign-enum-value 'errno-values kw)))
-                    `(progn
-                       (define-condition ,cond-name (posix-error) ()
-                         (:default-initargs :code ,code :identifier ,kw))
-                       (setf (gethash ,kw *posix-error-map*) ',cond-name)))))))
+          ,@(loop :for kw :in keywords :collect
+               (let ((cond-name (intern (symbol-name kw)))
+                     (code (foreign-enum-value 'errno-values kw)))
+                 `(progn
+                    (define-condition ,cond-name (posix-error) ()
+                      (:default-initargs :code ,code :identifier ,kw))
+                    (setf (gethash ,kw *posix-error-map*) ',cond-name)))))))
   (define-posix-errors
       #.(foreign-enum-keyword-list 'errno-values)))
 
