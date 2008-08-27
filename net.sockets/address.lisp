@@ -96,7 +96,7 @@ ADDRESS-NAME reader."))
 ;;;; Conversion functions
 
 (defun integer-to-dotted (integer)
-  "Convert a 32-bit unsigned integer to a dotted string."
+  "Convert an (UNSIGNED-BYTE 32) IPv4 address to a dotted string."
   (check-type integer ub32 "an '(unsigned-byte 32)")
   (let ((*print-pretty* nil) (*print-base* 10))
     (format nil "~A.~A.~A.~A"
@@ -106,7 +106,7 @@ ADDRESS-NAME reader."))
             (ldb (byte 8 0) integer))))
 
 (defun dotted-to-vector (address)
-  "Convert a dotted IPv4 address to a (simple-array (unsigned-byte 8) 4)."
+  "Convert a dotted IPv4 address to a (SIMPLE-ARRAY (UNSIGNED-BYTE 8) 4)."
   (check-type address string "a string")
   (let ((addr (make-array 4 :element-type 'ub8 :initial-element 0))
         (split (split-sequence #\. address :count 5)))
@@ -123,7 +123,7 @@ ADDRESS-NAME reader."))
     (values addr)))
 
 (defun dotted-to-integer (address)
-  "Convert a dotted IPv4 address to a 32-bit unsigned integer."
+  "Convert a dotted IPv4 address to an (UNSIGNED-BYTE 32)."
   (vector-to-integer (dotted-to-vector address)))
 
 (defun vector-to-dotted (vector)
@@ -139,7 +139,7 @@ ADDRESS-NAME reader."))
 ;;; TODO: add tests against inet_pton().  Optimize if necessary.
 ;;; <http://java.sun.com/javase/6/docs/api/java/net/Inet6Address.html#format>
 (defun colon-separated-to-vector (string)
-  "Convert a colon-separated IPv6 address to a (simple-array ub16 8)."
+  "Convert a colon-separated IPv6 address to a (SIMPLE-ARRAY (UNSIGNED-BYTE 16) 8)."
   (check-type string string "a string")
   (when (< (length string) 2)
     (error 'parse-error))
@@ -216,7 +216,7 @@ ADDRESS-NAME reader."))
     (princ (ldb (byte 8 0) (aref vector 7)) s)))
 
 (defun vector-to-colon-separated (vector &optional (case :downcase))
-  "Convert an 8-element vector to a colon-separated IPv6
+  "Convert an (SIMPLE-ARRAY (UNSIGNED-BYTE 16) 8) to a colon-separated IPv6
 address. CASE may be :DOWNCASE or :UPCASE."
   (coercef vector 'ipv6-array)
   (check-type case (member :upcase :downcase) "either :UPCASE or :DOWNCASE")
