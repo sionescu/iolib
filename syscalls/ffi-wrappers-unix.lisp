@@ -81,11 +81,11 @@
 ;;; ERRNO-related functions
 ;;;-----------------------------------------------------------------------------
 
-(defwrapper* "get_errno" :int
+(defwrapper* ("iolib_get_errno" %sys-errno) :int
   ()
   "return errno;")
 
-(defwrapper* "set_errno" :int
+(defwrapper* ("iolib_set_errno" %%sys-set-errno) :int
   ((value :int))
   "errno = value;"
   "return errno;")

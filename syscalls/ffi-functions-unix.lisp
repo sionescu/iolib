@@ -13,7 +13,10 @@
 ;;; ERRNO-related functions
 ;;;-----------------------------------------------------------------------------
 
-(defentrypoint %sys-strerror (&optional (err (get-errno)))
+(defentrypoint (setf %sys-errno) (value)
+  (%%sys-set-errno value))
+
+(defentrypoint %sys-strerror (&optional (err (%sys-errno)))
   "Look up the error message string for ERRNO. (reentrant)"
   (let ((errno
          (if (keywordp err)

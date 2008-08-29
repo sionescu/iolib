@@ -100,7 +100,7 @@
          ,@args))))
 
 (defmacro signal-posix-error/restart (ret)
-  `(if (= eintr (get-errno))
+  `(if (= eintr (%sys-errno))
        (go :restart)
        (signal-posix-error ,ret)))
 

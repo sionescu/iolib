@@ -65,8 +65,7 @@
 
    ;; Errno-related functions
    #:%sys-strerror
-   #:get-errno
-   #:set-errno
+   #:%sys-errno
 
    ;; Memory manipulation functions
    #:%sys-memset

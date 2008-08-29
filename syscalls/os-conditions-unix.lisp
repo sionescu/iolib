@@ -51,7 +51,7 @@
     (make-condition (get-posix-error-condition error-keyword))))
 
 (declaim (inline posix-error))
-(defun posix-error (&optional (errno (get-errno)))
+(defun posix-error (&optional (errno (%sys-errno)))
   (error (make-posix-error errno)))
 
 ;;; Default ERROR-GENERATOR for ERRNO-WRAPPER.
