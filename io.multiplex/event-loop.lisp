@@ -215,7 +215,7 @@ within the extent of BODY.  Closes VAR."
                  (maybe-remove-timer eev)))
         (cond (entry
                (maybe-remove-all-timers)
-               (unmonitor-fd (mux-of event-base) fd)
+               (unmonitor-fd (mux-of event-base) entry)
                (remove-fd-entry event-base fd))
               (t (warn "Trying to remove an unmonitored FD.")))))))
 
