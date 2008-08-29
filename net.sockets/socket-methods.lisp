@@ -267,6 +267,7 @@
                               (wait t) (timeout nil))
   (flet ((make-client-socket (fd)
            (make-instance (active-class socket)
+                          :address-family (socket-address-family socket)
                           :file-descriptor fd
                           :external-format (or external-format
                                                (external-format-of socket))
