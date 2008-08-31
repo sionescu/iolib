@@ -25,13 +25,12 @@
     (t form)))
 
 (defmacro with-close-on-error ((var value) &body body)
-  "Bind `VAR' to `VALUE', execute `BODY' as implicit PROGN and return `VAR'.
-If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT T on `VAR'."
-  (with-gensyms (errorp)
-    `(let ((,var ,value) (,errorp t))
-       (unwind-protect
-            (multiple-value-prog1 (locally ,@body ,var) (setf ,errorp nil))
-         (when (and ,var ,errorp) (close ,var :abort t))))))
+  "Bind `VAR' to `VALUE' and execute `BODY' as implicit PROGN.
+If a non-local exit occurs during the execution of `BODY',
+call CLOSE with :ABORT T on `VAR'."
+  `(let ((,var ,value))
+     (unwind-protect-case () ,@body
+       (:abort (close ,var :abort t)))))
 
 (defmacro %create-internet-socket (family &rest args)
   `(case ,family
@@ -93,7 +92,8 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
                     :reuse-address reuse-address))
     (when (plusp remote-port)
       (connect socket (ensure-hostname remote-host)
-               :port remote-port))))
+               :port remote-port)))
+  (values socket))
 
 (define-socket-creator (:internet :stream :active)
     (family ef &key keepalive nodelay (reuse-address t)
@@ -117,7 +117,8 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
       (bind-address socket (ensure-hostname local-host)
                     :port local-port
                     :reuse-address reuse-address)
-      (listen-on socket :backlog backlog))))
+      (listen-on socket :backlog backlog)))
+  (values socket))
 
 (define-socket-creator (:internet :stream :passive)
     (family ef &key interface (reuse-address t)
@@ -134,7 +135,8 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
   (when local-filename
     (bind-address socket (ensure-address local-filename :family :local)))
   (when remote-filename
-    (connect socket (ensure-address remote-filename :family :local))))
+    (connect socket (ensure-address remote-filename :family :local)))
+  (values socket))
 
 (define-socket-creator (:local :stream :active)
     (family ef &key local-filename remote-filename
@@ -151,7 +153,8 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
   (when local-filename
     (bind-address socket (ensure-address local-filename :family :local)
                   :reuse-address reuse-address)
-    (listen-on socket :backlog backlog)))
+    (listen-on socket :backlog backlog))
+  (values socket))
 
 (define-socket-creator (:local :stream :passive)
     (family ef &key local-filename (reuse-address t)
@@ -176,7 +179,8 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
         (setf (socket-option socket :bind-to-device) interface)))
     (when (plusp remote-port)
       (connect socket (ensure-hostname remote-host)
-               :port remote-port))))
+               :port remote-port)))
+  (values socket))
 
 (define-socket-creator (:internet :datagram :active)
     (family ef &key broadcast interface (reuse-address t)
@@ -193,7 +197,8 @@ If a non-local exit occurs during the execution of `BODY' call CLOSE with :ABORT
   (when local-filename
     (bind-address socket (ensure-address local-filename :family :local)))
   (when remote-filename
-    (connect socket (ensure-address remote-filename :family :local))))
+    (connect socket (ensure-address remote-filename :family :local)))
+  (values socket))
 
 (define-socket-creator (:local :datagram :active)
     (family ef &key local-filename remote-filename)
