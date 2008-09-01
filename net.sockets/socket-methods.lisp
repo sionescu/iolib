@@ -464,37 +464,41 @@
   (:wait-all    msg-waitall  (:not :windows))
   (:dont-wait   msg-dontwait (:not :windows)))
 
+(defun convert-buffer-to-string (string nbytes buffer start end ef)
+  ;; FIXME: convert the octets directly into the buffer
+  (let ((str (babel:octets-to-string buffer :start 0 :end nbytes
+                                     :encoding (babel:external-format-encoding ef)
+                                     :errorp nil)))
+    (replace string str :start1 start :end1 end)
+    (- end start)))
+
+(defun nbytes-only (string nbytes buffer start end ef)
+  (declare (ignore string buffer start end ef))
+  (values nbytes))
+
 (defun allocate-ub8-buffer-for-string (length ef)
   (let* ((units-per-char (babel-encodings:enc-max-units-per-char
                           (babel:external-format-encoding ef)))
          (length (* units-per-char length)))
     (values (make-array length :element-type 'ub8)
-            0 length)))
+            0 length #'convert-buffer-to-string)))
 
 (defun %normalize-receive-buffer (buffer start end ef)
   (check-bounds buffer start end)
   (etypecase buffer
-    (ub8-sarray (values buffer start (- end start)))
+    (ub8-sarray (values buffer start (- end start) #'nbytes-only))
     (string     (allocate-ub8-buffer-for-string (- end start) ef))))
 
 (defun %%receive-from (fd ss size buffer start end flags ef)
-  (check-bounds buffer start end)
-  (multiple-value-bind (buff start-offset bufflen)
+  (multiple-value-bind (tmpbuff start-offset bufflen filter-fn)
       (%normalize-receive-buffer buffer start end ef)
-    (with-pointer-to-vector-data (buff-sap buff)
+    (declare (type function filter-fn))
+    (with-pointer-to-vector-data (buff-sap tmpbuff)
       (incf-pointer buff-sap start-offset)
       (loop
          (restart-case
              (let ((nbytes (%recvfrom fd buff-sap bufflen flags ss size)))
-               (return*
-                (if (stringp buffer)
-                    ;; FIXME: convert the octets directly into the buffer
-                    (let ((str (babel:octets-to-string buff :start 0 :end nbytes
-                                                       :encoding (babel:external-format-encoding ef)
-                                                       :errorp nil)))
-                      (replace buffer str :start1 start :end1 end)
-                      (- end start))
-                    nbytes)))
+               (return* (funcall filter-fn buffer nbytes tmpbuff start end ef)))
            (ignore ()
              :report "Ignore this socket condition"
              (return* 0))
