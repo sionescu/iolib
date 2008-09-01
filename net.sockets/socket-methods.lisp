@@ -471,9 +471,10 @@
     (values (make-array length :element-type 'ub8)
             0 length)))
 
-(defun %normalize-receive-buffer (buff start end ef)
-  (etypecase buff
-    (ub8-sarray (values buff start (- end start)))
+(defun %normalize-receive-buffer (buffer start end ef)
+  (check-bounds buffer start end)
+  (etypecase buffer
+    (ub8-sarray (values buffer start (- end start)))
     (string     (allocate-ub8-buffer-for-string (- end start) ef))))
 
 (defun %%receive-from (fd ss size buffer start end flags ef)
@@ -516,22 +517,32 @@
       (multiple-value-call #'values buffer nelements
                            (sockaddr-storage->sockaddr ss)))))
 
-(defun %receive-from (socket buffer start end size flags)
-  (unless buffer
-    (check-type size unsigned-byte "a non-negative integer")
-    (setf buffer (make-array size :element-type 'ub8)
-          start 0 end size))
+(defun %receive-from (socket buffer start end flags)
   (etypecase socket
     (stream-socket (%receive-from-stream-socket socket buffer start end flags))
     (datagram-socket (%receive-from-datagram-socket socket buffer start end flags))))
 
 (defmethod receive-from ((socket active-socket) &rest args
                          &key buffer size (start 0) end)
-  (%receive-from socket buffer start end size
-                 (compute-flags *recvfrom-flags* args)))
+  (let ((flags (compute-flags *recvfrom-flags* args)))
+    (cond
+      (buffer
+       (%receive-from socket buffer start end flags))
+      (t
+       (check-type size unsigned-byte "a non-negative integer")
+       (%receive-from socket (make-array size :element-type 'ub8) 0 size flags)))))
 
 (define-compiler-macro receive-from (&whole form socket &rest args
                                      &key buffer size (start 0) end &allow-other-keys)
   (let ((flags (compute-flags *recvfrom-flags* args)))
-    (cond (flags `(%receive-from ,socket ,buffer ,start ,end ,size ,flags))
-          (t form))))
+    (cond
+      (flags
+       (if buffer
+           `(%receive-from ,socket ,buffer ,start ,end ,flags)
+           (with-gensyms (buffer-size)
+             `(let ((,buffer-size ,size))
+                (check-type ,buffer-size unsigned-byte "a non-negative integer")
+                (%receive-from ,socket (make-array ,buffer-size :element-type 'ub8)
+                               0 nil ,flags)))))
+      (t
+       form))))
