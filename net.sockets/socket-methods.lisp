@@ -384,18 +384,18 @@
   (:more          msg-more      :linux)
   (:confirm       msg-confirm   :linux))
 
-(defun %normalize-send-buffer (buff start end ef)
-  (check-bounds buff start end)
-  (etypecase buff
-    (ub8-sarray (values buff start (- end start)))
-    (string     (let ((vector (%to-octets buff ef start end)))
-                  (values vector 0 (length vector))))
-    (vector     (values (coerce buff 'ub8-sarray)
-                        start (- end start)))))
+(defun %normalize-send-buffer (buffer start end)
+  (check-bounds buffer start end)
+  (etypecase buffer
+    (ub8-sarray
+     (values buffer start (- end start)))
+    ((or ub8-vector (vector t))
+     (values (coerce buffer 'ub8-sarray)
+             start (- end start)))))
 
-(defun %%send-to (fd ss got-peer buffer start end flags ef)
+(defun %%send-to (fd ss got-peer buffer start end flags)
   (multiple-value-bind (buff start-offset bufflen)
-      (%normalize-send-buffer buffer start end ef)
+      (%normalize-send-buffer buffer start end)
     (with-pointer-to-vector-data (buff-sap buff)
       (incf-pointer buff-sap start-offset)
       (loop
@@ -416,15 +416,13 @@
     (when remote-host
       (sockaddr->sockaddr-storage ss (ensure-hostname remote-host)
                                   (ensure-numerical-service remote-port)))
-    (%%send-to (fd-of socket) ss (if remote-host t) buffer start end flags
-               (external-format-of socket))))
+    (%%send-to (fd-of socket) ss (if remote-host t) buffer start end flags)))
 
 (defun %local-send-to (socket buffer start end remote-filename flags)
   (with-sockaddr-storage (ss)
     (when remote-filename
       (sockaddr->sockaddr-storage ss (ensure-address remote-filename :family :local) 0))
-    (%%send-to (fd-of socket) ss (if remote-filename t) buffer start end flags
-               (external-format-of socket))))
+    (%%send-to (fd-of socket) ss (if remote-filename t) buffer start end flags)))
 
 (defmethod send-to ((socket internet-socket) buffer &rest args
                     &key (start 0) end remote-host (remote-port 0) (ipv6 *ipv6*))
@@ -464,41 +462,33 @@
   (:wait-all    msg-waitall  (:not :windows))
   (:dont-wait   msg-dontwait (:not :windows)))
 
-(defun convert-buffer-to-string (string nbytes buffer start end ef)
-  ;; FIXME: convert the octets directly into the buffer
-  (let ((str (babel:octets-to-string buffer :start 0 :end nbytes
-                                     :encoding (babel:external-format-encoding ef)
-                                     :errorp nil)))
-    (replace string str :start1 start :end1 end)
-    (- end start)))
-
-(defun nbytes-only (string nbytes buffer start end ef)
-  (declare (ignore string buffer start end ef))
+(defun nbytes-only (buffer nbytes tmpbuff start end)
+  (declare (ignore buffer tmpbuff start end))
   (values nbytes))
 
-(defun allocate-ub8-buffer-for-string (length ef)
-  (let* ((units-per-char (babel-encodings:enc-max-units-per-char
-                          (babel:external-format-encoding ef)))
-         (length (* units-per-char length)))
-    (values (make-array length :element-type 'ub8)
-            0 length #'convert-buffer-to-string)))
+(defun copy-octets-to-vector (buffer nbytes tmpbuff start end)
+  (replace buffer tmpbuff :start1 start :end2 end :start2 0 :end2 nbytes)
+  (values nbytes))
 
-(defun %normalize-receive-buffer (buffer start end ef)
+(defun %normalize-receive-buffer (buffer start end)
   (check-bounds buffer start end)
   (etypecase buffer
-    (ub8-sarray (values buffer start (- end start) #'nbytes-only))
-    (string     (allocate-ub8-buffer-for-string (- end start) ef))))
+    (ub8-sarray
+     (values buffer start (- end start) #'nbytes-only))
+    ((or ub8-vector (vector t))
+     (values (make-array (- end start) :element-type 'ub8)
+             0 (- end start) #'copy-octets-to-vector))))
 
-(defun %%receive-from (fd ss size buffer start end flags ef)
+(defun %%receive-from (fd ss size buffer start end flags)
   (multiple-value-bind (tmpbuff start-offset bufflen filter-fn)
-      (%normalize-receive-buffer buffer start end ef)
+      (%normalize-receive-buffer buffer start end)
     (declare (type function filter-fn))
     (with-pointer-to-vector-data (buff-sap tmpbuff)
       (incf-pointer buff-sap start-offset)
       (loop
          (restart-case
              (let ((nbytes (%recvfrom fd buff-sap bufflen flags ss size)))
-               (return* (funcall filter-fn buffer nbytes tmpbuff start end ef)))
+               (return* (funcall filter-fn buffer nbytes tmpbuff start end)))
            (ignore ()
              :report "Ignore this socket condition"
              (return* 0))
@@ -509,15 +499,13 @@
 (declaim (inline %receive-from-stream-socket))
 (defun %receive-from-stream-socket (socket buffer start end flags)
   (with-sockaddr-storage-and-socklen (ss size)
-    (let ((nelements (%%receive-from (fd-of socket) ss size buffer start end
-                                     flags (external-format-of socket))))
+    (let ((nelements (%%receive-from (fd-of socket) ss size buffer start end flags)))
       (values buffer nelements))))
 
 (declaim (inline %receive-from-datagram-socket))
 (defun %receive-from-datagram-socket (socket buffer start end flags)
   (with-sockaddr-storage-and-socklen (ss size)
-    (let ((nelements (%%receive-from (fd-of socket) ss size buffer start end
-                                     flags (external-format-of socket))))
+    (let ((nelements (%%receive-from (fd-of socket) ss size buffer start end flags)))
       (multiple-value-call #'values buffer nelements
                            (sockaddr-storage->sockaddr ss)))))
 

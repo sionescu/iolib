@@ -120,9 +120,11 @@ disallowed; if `WRITE' is non-NIL, further transmissions are disallowed. CLOSE m
 `SOCKET' in order to release OS resources."))
 
 (defgeneric receive-from (socket &rest args &key &allow-other-keys)
-  (:documentation "Receives data from `SOCKET'. If `BUFFER' is specified - which must be either a
-string or a (simple-array (unsigned-byte 8) *) - then `START' and `END' are used as bounding index,
-otherwise a buffer of size `SIZE' will be allocated.
+  (:documentation "Receives data from `SOCKET'. If `BUFFER' is specified
+`START' and `END' are used as bounding index. In that case `BUFFER' must be
+an array and its ARRAY-ELEMENT-TYPE be either (UNSIGNED-BYTE 8) or T.
+If `BUFFER' is not specified an (UNSIGNED-BYTE 8) buffer of size `SIZE'
+will be allocated.
 
 Some flags can also be passed to recvfrom(2):
 * `OUT-OF-BAND' for receiving out-of-band data - only for stream sockets
@@ -138,7 +140,7 @@ from which the data was received."))
 
 (defgeneric send-to (socket buffer &rest args &key &allow-other-keys)
   (:documentation "Send the contents of `BUFFER' to `SOCKET'.
-`BUFFER' must be either a string or a vector that can be coerced to a (simple-array (unsigned-byte 8) *).
+`BUFFER' must be either a vector that can be coerced to a (SIMPLE-ARRAY (UNSIGNED-BYTE 8) *).
 `START' and `END' are used a bounding index on `BUFFER'.
 For disconnected datagram sockets, `REMOTE-HOST' and `REMOTE-PORT' or `REMOTE-FILENAME' are used
 as destination for the data.

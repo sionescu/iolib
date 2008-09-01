@@ -153,10 +153,6 @@
 
 ;;;; Misc
 
-(defun %to-octets (buff ef start end)
-  (babel:string-to-octets buff :start start :end end
-                          :encoding (babel:external-format-encoding ef)))
-
 (defun ensure-number (value &key (start 0) end (radix 10) (type t) (errorp t))
   (let ((parsed
          (typecase value
