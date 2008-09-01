@@ -117,14 +117,6 @@
      :else :do (setf (aref vector offset) octet)
      :finally (return offset)))
 
-(defmacro check-bounds (sequence start end)
-  (with-gensyms (length)
-    `(let ((,length (length ,sequence)))
-       (unless ,end
-         (setq ,end ,length))
-       (unless (<= ,start ,end ,length)
-         (error "Wrong sequence bounds. start: ~S end: ~S" ,start ,end)))))
-
 (declaim (inline %read-sequence))
 (defun %read-sequence (stream seq start end)
   (check-bounds seq start end)
