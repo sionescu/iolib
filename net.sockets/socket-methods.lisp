@@ -478,7 +478,7 @@
         ((or ub8-vector (vector t))
          (let ((tmpbuff (make-array (- end start) :element-type 'ub8)))
            (setf nbytes (%do-recvfrom tmpbuff 0 (- end start)))
-           (replace buffer tmpbuff :start1 start :end2 end :start2 0 :end2 nbytes))))
+           (replace buffer tmpbuff :start1 start :end1 end :start2 0 :end2 nbytes))))
       (values nbytes))))
 
 (defmethod receive-from :around ((socket active-socket) &rest args
