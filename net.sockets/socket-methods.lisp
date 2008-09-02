@@ -477,47 +477,50 @@
            (when (plusp timeout)
              (iomux:wait-until-fd-ready fd :input timeout nil)))))))
 
-(defun %receive-from (socket buffer start end flags)
+(defun %receive-from (socket buffer start end flags ss size)
   (check-bounds buffer start end)
-  (with-sockaddr-storage-and-socklen (ss size)
-    (flet ((%do-recvfrom (buff start length)
-             (%%receive-from (fd-of socket) ss size buff start length flags)))
-      (let (nbytes)
-        (etypecase buffer
-          (ub8-sarray
-           (setf nbytes (%do-recvfrom buffer start (- end start))))
-          ((or ub8-vector (vector t))
-           (let ((tmpbuff (make-array (- end start) :element-type 'ub8)))
-             (setf nbytes (%do-recvfrom tmpbuff 0 (- end start)))
-             (replace buffer tmpbuff :start1 start :end2 end :start2 0 :end2 nbytes))))
-        (etypecase socket
-          (stream-socket
-           (values buffer nbytes))
-          (datagram-socket
-           (multiple-value-call #'values buffer nbytes
-                                (sockaddr-storage->sockaddr ss))))))))
+  (flet ((%do-recvfrom (buff start length)
+           (%%receive-from (fd-of socket) ss size buff start length flags)))
+    (let (nbytes)
+      (etypecase buffer
+        (ub8-sarray
+         (setf nbytes (%do-recvfrom buffer start (- end start))))
+        ((or ub8-vector (vector t))
+         (let ((tmpbuff (make-array (- end start) :element-type 'ub8)))
+           (setf nbytes (%do-recvfrom tmpbuff 0 (- end start)))
+           (replace buffer tmpbuff :start1 start :end2 end :start2 0 :end2 nbytes))))
+      (values nbytes))))
 
-(defmethod receive-from ((socket active-socket) &rest args
-                         &key buffer size (start 0) end)
-  (let ((flags (compute-flags *recvfrom-flags* args)))
+(defmethod receive-from :around ((socket active-socket) &rest args
+                                 &key buffer size (start 0) end flags &allow-other-keys)
+  (let ((flags-val (or flags (compute-flags *recvfrom-flags* args))))
     (cond
       (buffer
-       (%receive-from socket buffer start end flags))
+       (call-next-method socket :buffer buffer :start start :end end :flags flags-val))
       (t
        (check-type size unsigned-byte "a non-negative integer")
-       (%receive-from socket (make-array size :element-type 'ub8) 0 size flags)))))
+       (call-next-method socket :buffer (make-array size :element-type 'ub8)
+                         :start 0 :end size :flags flags-val)))))
+
+(defmethod receive-from ((socket stream-socket) &key buffer start end flags)
+  (with-sockaddr-storage-and-socklen (ss size)
+    (let ((nbytes (%receive-from socket buffer start end flags ss size)))
+      (values buffer nbytes))))
+
+(defmethod receive-from ((socket datagram-socket) &key buffer start end flags)
+  (with-sockaddr-storage-and-socklen (ss size)
+    (let ((nbytes (%receive-from socket buffer start end flags ss size)))
+      (multiple-value-call #'values buffer nbytes
+                           (sockaddr-storage->sockaddr ss)))))
 
 (define-compiler-macro receive-from (&whole form socket &rest args
-                                     &key buffer size (start 0) end &allow-other-keys)
-  (let ((flags (compute-flags *recvfrom-flags* args)))
+                                     &key buffer size (start 0) end
+                                     (flags nil flags-p) &allow-other-keys)
+  (declare (ignore flags))
+  (let ((flags-val (compute-flags *recvfrom-flags* args)))
     (cond
-      (flags
-       (if buffer
-           `(%receive-from ,socket ,buffer ,start ,end ,flags)
-           (with-gensyms (buffer-size)
-             `(let ((,buffer-size ,size))
-                (check-type ,buffer-size unsigned-byte "a non-negative integer")
-                (%receive-from ,socket (make-array ,buffer-size :element-type 'ub8)
-                               0 nil ,flags)))))
+      ((and (not flags-p) flags-val)
+       `(receive-from ,socket :buffer ,buffer :start ,start :end ,end
+                      :size ,size :flags ,flags-val))
       (t
        form))))
