@@ -462,57 +462,38 @@
   (:wait-all    msg-waitall  (:not :windows))
   (:dont-wait   msg-dontwait (:not :windows)))
 
-(defun nbytes-only (buffer nbytes tmpbuff start end)
-  (declare (ignore buffer tmpbuff start end))
-  (values nbytes))
-
-(defun copy-octets-to-vector (buffer nbytes tmpbuff start end)
-  (replace buffer tmpbuff :start1 start :end2 end :start2 0 :end2 nbytes)
-  (values nbytes))
-
-(defun %normalize-receive-buffer (buffer start end)
-  (check-bounds buffer start end)
-  (etypecase buffer
-    (ub8-sarray
-     (values buffer start (- end start) #'nbytes-only))
-    ((or ub8-vector (vector t))
-     (values (make-array (- end start) :element-type 'ub8)
-             0 (- end start) #'copy-octets-to-vector))))
-
-(defun %%receive-from (fd ss size buffer start end flags)
-  (multiple-value-bind (tmpbuff start-offset bufflen filter-fn)
-      (%normalize-receive-buffer buffer start end)
-    (declare (type function filter-fn))
-    (with-pointer-to-vector-data (buff-sap tmpbuff)
-      (incf-pointer buff-sap start-offset)
-      (loop
-         (restart-case
-             (let ((nbytes (%recvfrom fd buff-sap bufflen flags ss size)))
-               (return* (funcall filter-fn buffer nbytes tmpbuff start end)))
-           (ignore ()
-             :report "Ignore this socket condition"
-             (return* 0))
-           (continue (&optional (wait 0))
-             :report "Try to receive data again"
-             (when (plusp wait) (sleep wait))))))))
-
-(declaim (inline %receive-from-stream-socket))
-(defun %receive-from-stream-socket (socket buffer start end flags)
-  (with-sockaddr-storage-and-socklen (ss size)
-    (let ((nelements (%%receive-from (fd-of socket) ss size buffer start end flags)))
-      (values buffer nelements))))
-
-(declaim (inline %receive-from-datagram-socket))
-(defun %receive-from-datagram-socket (socket buffer start end flags)
-  (with-sockaddr-storage-and-socklen (ss size)
-    (let ((nelements (%%receive-from (fd-of socket) ss size buffer start end flags)))
-      (multiple-value-call #'values buffer nelements
-                           (sockaddr-storage->sockaddr ss)))))
+(defun %%receive-from (fd ss size buffer start length flags)
+  (with-pointer-to-vector-data (buff-sap buffer)
+    (incf-pointer buff-sap start)
+    (loop
+       (restart-case
+           (return* (%recvfrom fd buff-sap length flags ss size))
+         (ignore ()
+           :report "Ignore this socket condition"
+           (return* 0))
+         (continue (&optional (wait 0))
+           :report "Try to receive data again"
+           (when (plusp wait) (sleep wait)))))))
 
 (defun %receive-from (socket buffer start end flags)
-  (etypecase socket
-    (stream-socket (%receive-from-stream-socket socket buffer start end flags))
-    (datagram-socket (%receive-from-datagram-socket socket buffer start end flags))))
+  (check-bounds buffer start end)
+  (with-sockaddr-storage-and-socklen (ss size)
+    (flet ((%do-recvfrom (buff start length)
+             (%%receive-from (fd-of socket) ss size buff start length flags)))
+      (let (nbytes)
+        (etypecase buffer
+          (ub8-sarray
+           (setf nbytes (%do-recvfrom buffer start (- end start))))
+          ((or ub8-vector (vector t))
+           (let ((tmpbuff (make-array (- end start) :element-type 'ub8)))
+             (setf nbytes (%do-recvfrom tmpbuff 0 (- end start)))
+             (replace buffer tmpbuff :start1 start :end2 end :start2 0 :end2 nbytes))))
+        (etypecase socket
+          (stream-socket
+           (values buffer nbytes))
+          (datagram-socket
+           (multiple-value-call #'values buffer nbytes
+                                (sockaddr-storage->sockaddr ss))))))))
 
 (defmethod receive-from ((socket active-socket) &rest args
                          &key buffer size (start 0) end)
