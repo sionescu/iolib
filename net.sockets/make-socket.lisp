@@ -5,6 +5,23 @@
 
 (in-package :net.sockets)
 
+(defvar *socket-type-map*
+  '(((:ipv4  :stream   :active  :default) . socket-stream-internet-active)
+    ((:ipv6  :stream   :active  :default) . socket-stream-internet-active)
+    ((:ipv4  :stream   :passive :default) . socket-stream-internet-passive)
+    ((:ipv6  :stream   :passive :default) . socket-stream-internet-passive)
+    ((:local :stream   :active  :default) . socket-stream-local-active)
+    ((:local :stream   :passive :default) . socket-stream-local-passive)
+    ((:local :datagram :active  :default) . socket-datagram-local-active)
+    ((:ipv4  :datagram :active  :default) . socket-datagram-internet-active)
+    ((:ipv6  :datagram :active  :default) . socket-datagram-internet-active)))
+
+;;; FIXME: should match :default to whatever protocol is the default.
+(defun select-socket-class (address-family type connect protocol)
+  (or (cdr (assoc (list address-family type connect protocol) *socket-type-map*
+                  :test #'equal))
+      (error "No socket class found !!")))
+
 (defun create-socket (family type connect external-format &key
                       fd input-buffer-size output-buffer-size)
   (make-instance (select-socket-class family type connect :default)

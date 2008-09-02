@@ -5,24 +5,9 @@
 
 (in-package :net.sockets)
 
-(defvar *socket-type-map*
-  '(((:ipv4  :stream   :active  :default) . socket-stream-internet-active)
-    ((:ipv6  :stream   :active  :default) . socket-stream-internet-active)
-    ((:ipv4  :stream   :passive :default) . socket-stream-internet-passive)
-    ((:ipv6  :stream   :passive :default) . socket-stream-internet-passive)
-    ((:local :stream   :active  :default) . socket-stream-local-active)
-    ((:local :stream   :passive :default) . socket-stream-local-passive)
-    ((:local :datagram :active  :default) . socket-datagram-local-active)
-    ((:ipv4  :datagram :active  :default) . socket-datagram-internet-active)
-    ((:ipv6  :datagram :active  :default) . socket-datagram-internet-active)))
-
-;;; FIXME: should match :default to whatever protocol is the default.
-(defun select-socket-class (address-family type connect protocol)
-  (or (cdr (assoc (list address-family type connect protocol) *socket-type-map*
-                  :test #'equal))
-      (error "No socket class found !!")))
-
-;;;; Shared Initialization
+;;;-----------------------------------------------------------------------------
+;;; Shared Initialization
+;;;-----------------------------------------------------------------------------
 
 (defun translate-make-socket-keywords-to-constants (address-family type protocol)
   (let ((sf (ecase address-family
@@ -62,6 +47,11 @@
   ;; Makes CREATE-SOCKET simpler
   (declare (ignore input-buffer-size output-buffer-size))
   (setf (external-format-of socket) external-format))
+
+
+;;;-----------------------------------------------------------------------------
+;;; Misc
+;;;-----------------------------------------------------------------------------
 
 (defmethod socket-type ((socket stream-socket))
   :stream)
@@ -72,8 +62,11 @@
 (defun ipv6-socket-p (socket)
   "Return T if SOCKET is an AF_INET6 socket."
   (eq :ipv6 (socket-address-family socket)))
+
 
-;;;; Printing
+;;;-----------------------------------------------------------------------------
+;;; PRINT-OBJECT
+;;;-----------------------------------------------------------------------------
 
 (defun sock-fam (socket)
   (ecase (socket-address-family socket)
@@ -138,8 +131,11 @@
               (format stream " waiting @ ~A/~A"
                       (address-to-string host) port))
             (format stream ", closed" )))))
+
 
-;;;; CLOSE
+;;;-----------------------------------------------------------------------------
+;;; CLOSE
+;;;-----------------------------------------------------------------------------
 
 (defmethod close :around ((socket socket) &key abort)
   (declare (ignore abort))
@@ -167,8 +163,11 @@
         (nix:ebadf () nil)
         (socket-connection-reset-error () nil)
         (:no-error (_) (declare (ignore _)) t)))))
+
 
-;;;; GETSOCKNAME
+;;;-----------------------------------------------------------------------------
+;;; GETSOCKNAME
+;;;-----------------------------------------------------------------------------
 
 (defun %local-name (socket)
   (with-sockaddr-storage-and-socklen (ss size)
@@ -186,8 +185,11 @@
 
 (defmethod local-filename ((socket local-socket))
   (%local-name socket))
+
 
-;;;; GETPEERNAME
+;;;-----------------------------------------------------------------------------
+;;; GETPEERNAME
+;;;-----------------------------------------------------------------------------
 
 (defun %remote-name (socket)
   (with-sockaddr-storage-and-socklen (ss size)
@@ -205,8 +207,11 @@
 
 (defmethod remote-filename ((socket local-socket))
   (%remote-name socket))
+
 
-;;;; BIND
+;;;-----------------------------------------------------------------------------
+;;; BIND
+;;;-----------------------------------------------------------------------------
 
 (defmethod bind-address :before ((socket internet-socket) address
                                  &key (reuse-address t))
@@ -243,8 +248,11 @@
 
 (defmethod bind-address :after ((socket socket) (address address) &key)
   (setf (slot-value socket 'bound) t))
+
 
-;;;; LISTEN
+;;;-----------------------------------------------------------------------------
+;;; LISTEN
+;;;-----------------------------------------------------------------------------
 
 (defmethod listen-on ((socket passive-socket) &key backlog)
   (unless backlog (setf backlog (min *default-backlog-size*
@@ -256,8 +264,11 @@
 
 (defmethod listen-on ((socket active-socket) &key)
   (error "You can't listen on active sockets."))
+
 
-;;;; ACCEPT
+;;;-----------------------------------------------------------------------------
+;;; ACCEPT
+;;;-----------------------------------------------------------------------------
 
 (defmethod accept-connection ((socket active-socket) &key)
   (error "You can't accept connections on active sockets."))
@@ -278,8 +289,11 @@
       (with-sockaddr-storage-and-socklen (ss size)
         (ignore-some-conditions (nix:ewouldblock)
           (make-client-socket (%accept (fd-of socket) ss size)))))))
+
 
-;;;; CONNECT
+;;;-----------------------------------------------------------------------------
+;;; CONNECT
+;;;-----------------------------------------------------------------------------
 
 (defun ipv4-connect (fd address port)
   (with-sockaddr-in (sin address port)
@@ -332,8 +346,11 @@
           (%getpeername (fd-of socket) ss size)
         (socket-not-connected-error () nil)
         (:no-error (_) (declare (ignore _)) t)))))
+
 
-;;;; DISCONNECT
+;;;-----------------------------------------------------------------------------
+;;; DISCONNECT
+;;;-----------------------------------------------------------------------------
 
 (defmethod disconnect :before ((socket socket))
   (unless (typep socket 'datagram-socket)
@@ -345,8 +362,11 @@
     (setf (foreign-slot-value sin 'sockaddr-in 'addr) af-unspec)
     (%connect (fd-of socket) sin size-of-sockaddr-in)
     (values socket)))
+
 
-;;;; SHUTDOWN
+;;;-----------------------------------------------------------------------------
+;;; SHUTDOWN
+;;;-----------------------------------------------------------------------------
 
 (defmethod shutdown ((socket socket) &key read write)
   (assert (or read write) (read write)
@@ -357,8 +377,11 @@
                ((nil *)   shut-wr)
                (t         shut-rdwr)))
   (values socket))
+
 
-;;;; Socket flag definition
+;;;-----------------------------------------------------------------------------
+;;; Socket flag definition
+;;;-----------------------------------------------------------------------------
 
 (defmacro define-socket-flag (place name value platform)
   (let ((val (cond ((or (not platform)
@@ -372,8 +395,11 @@
              `(define-socket-flag ,place ,name ,value ,platform))))
     `(progn
        ,@(mapcar #'dflag definitions))))
+
 
-;;;; SENDTO
+;;;-----------------------------------------------------------------------------
+;;; SENDTO
+;;;-----------------------------------------------------------------------------
 
 (defvar *sendto-flags* ())
 
@@ -442,8 +468,11 @@
         (when file-p `(:remote-filename ,remote-filename))))
       (t
        form))))
+
 
-;;;; RECVFROM
+;;;-----------------------------------------------------------------------------
+;;; RECVFROM
+;;;-----------------------------------------------------------------------------
 
 (defvar *recvfrom-flags* ())
 
