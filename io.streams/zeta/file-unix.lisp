@@ -233,7 +233,7 @@
                      :extra-flags extra-flags
                      :mode mode)
     (posix-file-error (error)
-      (case (posix-file-error-identifier error)
+      (case (identifier-of error)
         (:enoent
          (if (null if-does-not-exist) nil (error error)))
         (:eexist

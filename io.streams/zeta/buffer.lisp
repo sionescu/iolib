@@ -127,7 +127,7 @@
   (with-synchronized-buffer (buffer :input)
     ;; If the previous operation was a write, try to flush the output buffer.
     ;; If the buffer couldn't be flushed entirely, signal an error
-    (synchronize-input buffer)
+    (%synchronize-input buffer)
     (buffer-read-octets buffer vector start end timeout)))
 
 (defmethod device-read ((buffer dual-channel-buffer) vector start end
@@ -186,20 +186,14 @@
 
 (defmethod device-position ((buffer single-channel-buffer))
   (with-synchronized-buffer (buffer :input)
-    (%buffer-position buffer)))
-
-(defun %buffer-position (buffer)
-  (let ((position (device-position (input-handle-of buffer))))
-    (ecase (last-io-op-of buffer)
-      (:read
-       (- position (iobuf-available-octets (input-iobuf-of buffer))))
-      (:write
-       (+ position (iobuf-available-octets (output-iobuf-of buffer)))))))
+    (let ((position (device-position (input-handle-of buffer))))
+      (ecase (last-io-op-of buffer)
+        (:read
+         (- position (iobuf-available-octets (input-iobuf-of buffer))))
+        (:write
+         (+ position (iobuf-available-octets (output-iobuf-of buffer))))))))
 
 (defmethod (setf device-position) (position (buffer single-channel-buffer) &key (from :start))
-  (setf (%buffer-position buffer from) position))
-
-(defun (setf %buffer-position) (position buffer from)
   (setf (device-position (input-handle-of buffer) :from from) position))
 
 
@@ -248,10 +242,10 @@
   (with-synchronized-buffer (buffer :input)
     ;; If the previous operation was a write, try to flush the output buffer.
     ;; If the buffer couldn't be flushed entirely, signal an error
-    (synchronize-input buffer)
+    (%synchronize-input buffer)
     (%buffer-fill-input buffer timeout)))
 
-(defun synchronize-input (buffer)
+(defun %synchronize-input (buffer)
   (when (and (eql :write (last-io-op-of buffer))
              (plusp (%buffer-flush-output buffer 0)))
     ;; FIXME: What do we do now ???
