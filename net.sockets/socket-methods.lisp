@@ -384,74 +384,64 @@
   (:more          msg-more      :linux)
   (:confirm       msg-confirm   :linux))
 
-(defun %normalize-send-buffer (buffer start end)
+(defun %%send-to (fd ss got-peer buffer start length flags)
+  (with-pointer-to-vector-data (buff-sap buffer)
+    (incf-pointer buff-sap start)
+    (loop
+       (restart-case
+           (return*
+            (%sendto fd buff-sap length flags
+                     (if got-peer ss (null-pointer))
+                     (if got-peer (sockaddr-size ss) 0)))
+         (ignore ()
+           :report "Ignore this socket condition"
+           (return* 0))
+         (retry (&optional (timeout 15.0d0))
+           :report "Try to send data again"
+           (when (plusp timeout)
+             (iomux:wait-until-fd-ready fd :output timeout nil)))))))
+
+(defun %send-to (fd ss got-peer buffer start end flags)
   (check-bounds buffer start end)
   (etypecase buffer
     (ub8-sarray
-     (values buffer start (- end start)))
+     (%%send-to fd ss got-peer buffer start (- end start) flags))
     ((or ub8-vector (vector t))
-     (values (coerce buffer 'ub8-sarray)
-             start (- end start)))))
+     (%%send-to fd ss got-peer (coerce buffer 'ub8-sarray)
+                start (- end start) flags))))
 
-(defun %%send-to (fd ss got-peer buffer start end flags)
-  (multiple-value-bind (buff start-offset bufflen)
-      (%normalize-send-buffer buffer start end)
-    (with-pointer-to-vector-data (buff-sap buff)
-      (incf-pointer buff-sap start-offset)
-      (loop
-         (restart-case
-             (return*
-              (%sendto fd buff-sap bufflen flags
-                       (if got-peer ss (null-pointer))
-                       (if got-peer (sockaddr-size ss) 0)))
-           (ignore ()
-             :report "Ignore this socket condition"
-             (return* 0))
-           (retry (&optional (timeout 15.0d0))
-             :report "Try to send data again"
-             (when (plusp timeout)
-               (iomux:wait-until-fd-ready fd :output timeout nil))))))))
+(defmethod send-to ((socket internet-socket) buffer &rest args
+                    &key (start 0) end remote-host (remote-port 0) flags (ipv6 *ipv6*))
+  (let ((*ipv6* ipv6))
+    (with-sockaddr-storage (ss)
+      (when remote-host
+        (sockaddr->sockaddr-storage ss (ensure-hostname remote-host)
+                                    (ensure-numerical-service remote-port)))
+      (%send-to (fd-of socket) ss (if remote-host t) buffer start end
+                (or flags (compute-flags *sendto-flags* args))))))
 
-(defun %inet-send-to (socket buffer start end remote-host remote-port flags)
-  (with-sockaddr-storage (ss)
-    (when remote-host
-      (sockaddr->sockaddr-storage ss (ensure-hostname remote-host)
-                                  (ensure-numerical-service remote-port)))
-    (%%send-to (fd-of socket) ss (if remote-host t) buffer start end flags)))
-
-(defun %local-send-to (socket buffer start end remote-filename flags)
+(defmethod send-to ((socket local-socket) buffer &rest args
+                    &key (start 0) end remote-filename flags)
   (with-sockaddr-storage (ss)
     (when remote-filename
       (sockaddr->sockaddr-storage ss (ensure-address remote-filename :family :local) 0))
-    (%%send-to (fd-of socket) ss (if remote-filename t) buffer start end flags)))
-
-(defmethod send-to ((socket internet-socket) buffer &rest args
-                    &key (start 0) end remote-host (remote-port 0) (ipv6 *ipv6*))
-  (let ((*ipv6* ipv6))
-    (%inet-send-to socket buffer start end remote-host remote-port
-                   (compute-flags *sendto-flags* args))))
-
-(defmethod send-to ((socket local-socket) buffer &rest args
-                    &key (start 0) end remote-filename)
-  (%local-send-to socket buffer start end remote-filename
-                  (compute-flags *sendto-flags* args)))
+    (%send-to (fd-of socket) ss (if remote-filename t) buffer start end
+              (or flags (compute-flags *sendto-flags* args)))))
 
 (define-compiler-macro send-to (&whole form socket buffer &rest args
-                                &key (start 0) end remote-host (remote-port 0)
-                                remote-filename (ipv6 '*ipv6*) &allow-other-keys)
-  (let ((flags (compute-flags *sendto-flags* args)))
-    (cond (flags
-           (once-only (socket buffer start end remote-host
-                       remote-port remote-filename flags)
-             `(etypecase ,socket
-                (internet-socket
-                 (let ((*ipv6* ,ipv6))
-                   (%inet-send-to ,socket ,buffer ,start ,end
-                                  ,remote-host ,remote-port ,flags)))
-                (local-socket
-                 (%local-send-to ,socket ,buffer ,start ,end
-                                 ,remote-filename ,flags)))))
-          (t form))))
+                                &key (start 0) end (remote-host nil host-p) (remote-port 0 port-p)
+                                (remote-filename nil file-p) flags (ipv6 '*ipv6* ipv6-p) &allow-other-keys)
+  (let ((flags-val (compute-flags *sendto-flags* args)))
+    (cond
+      ((and (not flags) flags-val)
+       (append
+        `(send-to ,socket ,buffer :start ,start :end ,end :flags ,flags-val)
+        (when host-p `(:remote-host ,remote-host))
+        (when port-p `(:remote-port ,remote-port))
+        (when ipv6-p `(:ipv6 ,ipv6))
+        (when file-p `(:remote-filename ,remote-filename))))
+      (t
+       form))))
 
 ;;;; RECVFROM
 
