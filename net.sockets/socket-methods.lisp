@@ -477,10 +477,10 @@
            (when (plusp timeout)
              (iomux:wait-until-fd-ready fd :input timeout nil)))))))
 
-(defun %receive-from (socket buffer start end flags ss size)
+(defun %receive-from (fd ss size buffer start end flags)
   (check-bounds buffer start end)
   (flet ((%do-recvfrom (buff start length)
-           (%%receive-from (fd-of socket) ss size buff start length flags)))
+           (%%receive-from fd ss size buff start length flags)))
     (let (nbytes)
       (etypecase buffer
         (ub8-sarray
@@ -504,22 +504,20 @@
 
 (defmethod receive-from ((socket stream-socket) &key buffer start end flags)
   (with-sockaddr-storage-and-socklen (ss size)
-    (let ((nbytes (%receive-from socket buffer start end flags ss size)))
+    (let ((nbytes (%receive-from (fd-of socket) ss size buffer start end flags)))
       (values buffer nbytes))))
 
 (defmethod receive-from ((socket datagram-socket) &key buffer start end flags)
   (with-sockaddr-storage-and-socklen (ss size)
-    (let ((nbytes (%receive-from socket buffer start end flags ss size)))
+    (let ((nbytes (%receive-from (fd-of socket) ss size buffer start end flags)))
       (multiple-value-call #'values buffer nbytes
                            (sockaddr-storage->sockaddr ss)))))
 
 (define-compiler-macro receive-from (&whole form socket &rest args
-                                     &key buffer size (start 0) end
-                                     (flags nil flags-p) &allow-other-keys)
-  (declare (ignore flags))
+                                     &key buffer size (start 0) end flags &allow-other-keys)
   (let ((flags-val (compute-flags *recvfrom-flags* args)))
     (cond
-      ((and (not flags-p) flags-val)
+      ((and (not flags) flags-val)
        `(receive-from ,socket :buffer ,buffer :start ,start :end ,end
                       :size ,size :flags ,flags-val))
       (t
