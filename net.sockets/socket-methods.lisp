@@ -140,10 +140,7 @@
 (defmethod close :around ((socket socket) &key abort)
   (declare (ignore abort))
   (call-next-method)
-  (when (fd-of socket)
-    (nix:close (fd-of socket)))
-  (setf (fd-of socket) nil
-        (slot-value socket 'bound) nil)
+  (setf (slot-value socket 'bound) nil)
   (values socket))
 
 (defmethod close :around ((socket passive-socket) &key abort)

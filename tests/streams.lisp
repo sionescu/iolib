@@ -36,13 +36,6 @@
 (defclass my-file-stream (dual-channel-single-fd-gray-stream)
   ((path :initarg :path :reader file-stream-path)))
 
-(defmethod close :around ((file my-file-stream) &key abort)
-  (declare (ignore abort))
-  (call-next-method)
-  (when (fd-of file)
-    (nix:close (fd-of file)))
-  (setf (fd-of file) nil))
-
 ;;; Very ad-hoc: doesn't do :DIRECTION :PROBE, or handle errors,
 ;;; :IF-DOES-NOT-EXIST, among many other things.  This kind of thing
 ;;; should be moved into OSICAT, btw.

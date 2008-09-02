@@ -5,6 +5,15 @@
 
 (in-package :io.streams)
 
+;;;; CLOSE
+
+(defmethod close :around ((fd-mixin dual-channel-single-fd-mixin)
+                          &key abort)
+  (declare (ignore abort))
+  (when (fd-of fd-mixin)
+    (nix:close (fd-of fd-mixin)))
+  (setf (fd-of fd-mixin) nil))
+
 ;;;; Get and Set O_NONBLOCK
 
 (defun %get-fd-nonblock-mode (fd)
