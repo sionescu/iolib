@@ -407,9 +407,10 @@
            (ignore ()
              :report "Ignore this socket condition"
              (return* 0))
-           (continue (&optional (wait 0))
+           (retry (&optional (timeout 15.0d0))
              :report "Try to send data again"
-             (when (plusp wait) (sleep wait))))))))
+             (when (plusp timeout)
+               (iomux:wait-until-fd-ready fd :output timeout nil))))))))
 
 (defun %inet-send-to (socket buffer start end remote-host remote-port flags)
   (with-sockaddr-storage (ss)
@@ -471,9 +472,10 @@
          (ignore ()
            :report "Ignore this socket condition"
            (return* 0))
-         (continue (&optional (wait 0))
+         (retry (&optional (timeout 15.0d0))
            :report "Try to receive data again"
-           (when (plusp wait) (sleep wait)))))))
+           (when (plusp timeout)
+             (iomux:wait-until-fd-ready fd :input timeout nil)))))))
 
 (defun %receive-from (socket buffer start end flags)
   (check-bounds buffer start end)
