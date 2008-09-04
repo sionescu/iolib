@@ -94,7 +94,6 @@ Returns two boolean values indicating readability and writeability of `FD'."
 
 (defun %read-octets/non-blocking (fd vector start end)
   (declare (type ub8-simple-vector vector)
-           (type iobuf-index start end)
            (special *device*))
   (with-pointer-to-vector-data (buf vector)
     (handler-case
@@ -107,8 +106,6 @@ Returns two boolean values indicating readability and writeability of `FD'."
 
 (defun %read-octets/timeout (fd vector start end timeout)
   (declare (type ub8-simple-vector vector)
-           (type iobuf-index start end)
-           (type device-timeout timeout)
            (special *device*))
   (with-pointer-to-vector-data (buf vector)
     (repeat-decreasing-timeout (remaining (clamp-timeout timeout) :rloop)
@@ -132,7 +129,6 @@ Returns two boolean values indicating readability and writeability of `FD'."
 
 (defun %write-octets/non-blocking (fd vector start end)
   (declare (type ub8-simple-vector vector)
-           (type iobuf-index start end)
            (special *device*))
   (with-pointer-to-vector-data (buf vector)
     (handler-case
@@ -146,8 +142,6 @@ Returns two boolean values indicating readability and writeability of `FD'."
 
 (defun %write-octets/timeout (fd vector start end timeout)
   (declare (type ub8-simple-vector vector)
-           (type iobuf-index start end)
-           (type device-timeout timeout)
            (special *device*))
   (with-pointer-to-vector-data (buf vector)
     (repeat-decreasing-timeout (remaining (clamp-timeout timeout) :rloop)

@@ -28,6 +28,15 @@
 
 
 ;;;-----------------------------------------------------------------------------
+;;; File PRINT-OBJECT
+;;;-----------------------------------------------------------------------------
+
+(defmethod print-object ((file file-device) stream)
+  (print-unreadable-object (file stream :identity t :type nil)
+    (format stream "File device for ~S" (filename-of file))))
+
+
+;;;-----------------------------------------------------------------------------
 ;;; File Constructors
 ;;;-----------------------------------------------------------------------------
 
@@ -56,15 +65,6 @@
 
 
 ;;;-----------------------------------------------------------------------------
-;;; File PRINT-OBJECT
-;;;-----------------------------------------------------------------------------
-
-(defmethod print-object ((file file-device) stream)
-  (print-unreadable-object (file stream :identity t :type nil)
-    (format stream "File device for ~S" (filename-of file))))
-
-
-;;;-----------------------------------------------------------------------------
 ;;; File DEVICE-OPEN
 ;;;-----------------------------------------------------------------------------
 
@@ -89,8 +89,7 @@
                (:no-error (fd) fd))))
     (let ((fd (try-open)))
       (%set-fd-nonblock fd)
-      (setf (input-handle-of device) fd
-            (output-handle-of device) fd)))
+      (setf (handle-of device) fd)))
   (values device))
 
 (defun process-file-direction (direction flags if-exists if-does-not-exist)
@@ -135,11 +134,10 @@
 ;;; File DEVICE-CLOSE
 ;;;-----------------------------------------------------------------------------
 
-(defmethod device-close ((device file-device) &optional abort)
+(defmethod relinquish ((device file-device) &key abort)
   (declare (ignore abort))
-  (ignore-errors (%sys-close (input-handle-of device)))
-  (setf (input-handle-of device) nil
-        (output-handle-of device) nil)
+  (%sys-close (handle-of device))
+  (setf (handle-of device) nil)
   (values device))
 
 
@@ -149,13 +147,13 @@
 
 (defmethod device-position ((device file-device))
   (handler-case
-      (%sys-lseek (input-handle-of device) 0 seek-cur)
+      (%sys-lseek (handle-of device) 0 seek-cur)
     (posix-error (err)
       (posix-file-error err device "seeking on"))))
 
-(defmethod (setf device-position) (position (device file-device) &key (from :start))
+(defmethod (setf device-position) (position (device file-device) &optional (from :start))
   (handler-case
-      (%sys-lseek (input-handle-of device) position
+      (%sys-lseek (handle-of device) position
                   (ecase from
                     (:start seek-set)
                     (:current seek-cur)
@@ -170,7 +168,7 @@
 
 (defmethod device-length ((device file-device))
   (handler-case
-      (%sys-fstat (input-handle-of device))
+      (%sys-fstat (handle-of device))
     (posix-error (err)
       (posix-file-error err device "getting status of"))))
 
@@ -180,36 +178,36 @@
 ;;;-----------------------------------------------------------------------------
 
 (defmethod device-poll-input ((device file-device) &optional timeout)
-  (poll-fd (input-handle-of device) :input timeout))
+  (poll-fd (handle-of device) :input timeout))
 
 (defmethod device-poll-output ((device file-device) &optional timeout)
-  (poll-fd (output-handle-of device) :output timeout))
+  (poll-fd (handle-of device) :output timeout))
 
 
 ;;;-----------------------------------------------------------------------------
 ;;; File DEVICE-READ
 ;;;-----------------------------------------------------------------------------
 
-(defmethod read-octets/non-blocking ((device file-device) vector start end)
+(defmethod device-read/non-blocking ((device file-device) vector start end)
   (with-device (device)
-    (%read-octets/non-blocking (input-handle-of device) vector start end)))
+    (%read-octets/non-blocking (handle-of device) vector start end)))
 
-(defmethod read-octets/timeout ((device file-device) vector start end timeout)
+(defmethod device-read/timeout ((device file-device) vector start end timeout)
   (with-device (device)
-    (%read-octets/timeout (input-handle-of device) vector start end timeout)))
+    (%read-octets/timeout (handle-of device) vector start end timeout)))
 
 
 ;;;-----------------------------------------------------------------------------
 ;;; File DEVICE-WRITE
 ;;;-----------------------------------------------------------------------------
 
-(defmethod write-octets/non-blocking ((device file-device) vector start end)
+(defmethod device-write/non-blocking ((device file-device) vector start end)
   (with-device (device)
-    (%write-octets/non-blocking (output-handle-of device) vector start end)))
+    (%write-octets/non-blocking (handle-of device) vector start end)))
 
-(defmethod write-octets/timeout ((device file-device) vector start end timeout)
+(defmethod device-write/timeout ((device file-device) vector start end timeout)
   (with-device (device)
-    (%write-octets/timeout (output-handle-of device) vector start end timeout)))
+    (%write-octets/timeout (handle-of device) vector start end timeout)))
 
 
 ;;;-----------------------------------------------------------------------------

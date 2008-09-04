@@ -10,57 +10,52 @@
 ;;;-----------------------------------------------------------------------------
 
 (defclass device ()
-  ((input-handle :initarg :input-handle :accessor input-handle-of)
-   (output-handle :initarg :output-handle :accessor output-handle-of)))
+  ((handle :initarg :handle :accessor handle-of)
+   (readable :initarg :readable :accessor device-readablep)
+   (writeable :initarg :writeable :accessor device-writeablep)
+   (seekable :initarg :seekable :accessor device-seekablep)))
 
-(defclass single-channel-device (device) ())
-
-(defclass dual-channel-device (device) ())
-
-(defclass direct-device (single-channel-device) ())
+(defclass direct-device (device) ())
 
 (defclass memory-buffer-device (direct-device) ())
+
 
-(defclass socket-device (dual-channel-device)
-  ((domain :initarg :domain)
-   (type :initarg :type)
-   (protocol :initarg :protocol)))
+;;;-----------------------------------------------------------------------------
+;;; Relinquish I/O resources
+;;;-----------------------------------------------------------------------------
 
-(deftype device-timeout ()
-  'non-negative-real)
-
-(deftype stream-position () '(unsigned-byte 64))
+(defgeneric relinquish (device &key abort &allow-other-keys))
 
 
 ;;;-----------------------------------------------------------------------------
 ;;; Generic functions
 ;;;-----------------------------------------------------------------------------
 
-(defgeneric device-open (device &rest initargs))
-
-(defgeneric device-close (device &optional abort))
-
 (defgeneric device-read (device vector start end &optional timeout))
-
-(defgeneric read-octets/non-blocking (device vector start end))
-
-(defgeneric read-octets/timeout (device vector start end timeout))
 
 (defgeneric device-write (device vector start end &optional timeout))
 
-(defgeneric write-octets/non-blocking (device vector start end))
-
-(defgeneric write-octets/timeout (device vector start end timeout))
-
 (defgeneric device-position (device))
 
-(defgeneric (setf device-position) (position device &rest args))
+(defgeneric (setf device-position) (position device &optional from))
 
 (defgeneric device-length (device))
 
 (defgeneric device-poll-input (device &optional timeout))
 
 (defgeneric device-poll-output (device &optional timeout))
+
+;;; Internal functions
+
+(defgeneric device-open (device &rest initargs))
+
+(defgeneric device-read/non-blocking (device vector start end))
+
+(defgeneric device-read/timeout (device vector start end timeout))
+
+(defgeneric device-write/non-blocking (device vector start end))
+
+(defgeneric device-write/timeout (device vector start end timeout))
 
 
 ;;;-----------------------------------------------------------------------------
@@ -80,8 +75,8 @@
 (defmethod device-position ((device device))
   (values nil))
 
-(defmethod (setf device-position) (position (device device) &rest args)
-  (declare (ignore position args))
+(defmethod (setf device-position) (position (device device) &optional from)
+  (declare (ignore position from))
   (values nil))
 
 (defmethod device-length ((device device))
@@ -98,8 +93,8 @@
 
 (defmethod device-read ((device device) vector start end &optional timeout)
   (if (and timeout (zerop timeout))
-      (read-octets/non-blocking device vector start end)
-      (read-octets/timeout device vector start end timeout)))
+      (device-read/non-blocking device vector start end)
+      (device-read/timeout device vector start end timeout)))
 
 
 ;;;-----------------------------------------------------------------------------
@@ -112,5 +107,5 @@
 
 (defmethod device-write ((device device) vector start end &optional timeout)
   (if (and timeout (zerop timeout))
-      (write-octets/non-blocking device vector start end)
-      (write-octets/timeout device vector start end timeout)))
+      (device-write/non-blocking device vector start end)
+      (device-write/timeout device vector start end timeout)))
