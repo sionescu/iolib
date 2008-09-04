@@ -177,10 +177,10 @@
 ;;; I/O WAIT
 ;;;-----------------------------------------------------------------------------
 
-(defmethod device-poll-input ((device file-device) &optional timeout)
+(defmethod device-poll-input ((device file-device) &key timeout)
   (poll-fd (handle-of device) :input timeout))
 
-(defmethod device-poll-output ((device file-device) &optional timeout)
+(defmethod device-poll-output ((device file-device) &key timeout)
   (poll-fd (handle-of device) :output timeout))
 
 

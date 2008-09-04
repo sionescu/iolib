@@ -30,11 +30,11 @@
 
 (defgeneric buffer-clear-output (buffer))
 
-(defgeneric buffer-fill-input (buffer &optional timeout))
+(defgeneric buffer-fill-input (buffer &key timeout))
 
-(defgeneric buffer-flush-output (buffer &optional timeout))
+(defgeneric buffer-flush-output (buffer &key timeout))
 
-(defgeneric buffer-wait-until-flushable (buffer &optional timeout))
+(defgeneric buffer-wait-until-flushable (buffer &key timeout))
 
 ;;; Internal functions
 
@@ -125,13 +125,19 @@
 ;;; Buffer DEVICE-READ
 ;;;-----------------------------------------------------------------------------
 
-(defmethod device-read ((buffer single-channel-buffer) vector start end
-                        &optional timeout)
+(defmethod device-read :around ((buffer buffer) vector &key (start 0) end timeout)
+  (check-bounds vector start end)
+  (if (= start end)
+      0
+      (call-next-method buffer vector :start start :end end :timeout timeout)))
+
+(defmethod device-read ((buffer single-channel-buffer) vector
+                        &key start end timeout)
   (with-synchronized-buffer (buffer :input)
     (%buffer-read-vector buffer vector start end timeout)))
 
-(defmethod device-read ((buffer dual-channel-buffer) vector start end
-                        &optional timeout)
+(defmethod device-read ((buffer dual-channel-buffer) vector
+                        &key start end timeout)
   (with-synchronized-buffer (buffer :input)
     (%buffer-read-vector buffer vector start end timeout)))
 
@@ -141,8 +147,7 @@
       buffer
     (cond
       ((iobuf-empty-p input-iobuf)
-       (let ((nbytes
-              (%buffer-fill-input buffer timeout)))
+       (let ((nbytes (%buffer-fill-input buffer timeout)))
          (if (iobuf-empty-p input-iobuf)
              (if (eql :eof nbytes) :eof 0)
              (iobuf->vector input-iobuf vector start end))))
@@ -154,16 +159,22 @@
 ;;; Buffer DEVICE-WRITE
 ;;;-----------------------------------------------------------------------------
 
-(defmethod device-write ((buffer single-channel-buffer) vector start end
-                         &optional timeout)
+(defmethod device-write :around ((buffer buffer) vector &key (start 0) end timeout)
+  (check-bounds vector start end)
+  (if (= start end)
+      0
+      (call-next-method buffer vector :start start :end end :timeout timeout)))
+
+(defmethod device-write ((buffer single-channel-buffer) vector
+                         &key start end timeout)
   (with-synchronized-buffer (buffer :output)
     ;; If the previous operation was a read, flush the read buffer
     ;; and reposition the file offset accordingly
     (%buffer-clear-input buffer)
     (%buffer-write-vector buffer vector start end timeout)))
 
-(defmethod device-write ((buffer dual-channel-buffer) vector start end
-                         &optional timeout)
+(defmethod device-write ((buffer dual-channel-buffer) vector
+                         &key start end timeout)
   (with-synchronized-buffer (buffer :output)
     (%buffer-write-vector buffer vector start end timeout)))
 
@@ -245,12 +256,12 @@
 ;;; Buffer FILL-INPUT
 ;;;-----------------------------------------------------------------------------
 
-(defmethod buffer-fill-input ((buffer single-channel-buffer) &optional timeout)
+(defmethod buffer-fill-input ((buffer single-channel-buffer) &key timeout)
   (with-synchronized-buffer (buffer :input)
     (%buffer-clear-output buffer)
     (%buffer-fill-input buffer timeout)))
 
-(defmethod buffer-fill-input ((buffer dual-channel-buffer) &optional timeout)
+(defmethod buffer-fill-input ((buffer dual-channel-buffer) &key timeout)
   (with-synchronized-buffer (buffer :input)
     (%buffer-fill-input buffer timeout)))
 
@@ -261,7 +272,7 @@
     (multiple-value-bind (data start end)
         (iobuf-next-empty-zone input-iobuf)
       (let ((nbytes
-             (device-read device data start end timeout)))
+             (device-read device data :start start :end end :timeout timeout)))
         (setf (iobuf-end input-iobuf) (+ start nbytes))
         (setf (last-io-op-of buffer) :read)
         (values nbytes)))))
@@ -271,12 +282,12 @@
 ;;; Buffer FLUSH-OUTPUT
 ;;;-----------------------------------------------------------------------------
 
-(defmethod buffer-flush-output ((buffer single-channel-buffer) &optional timeout)
+(defmethod buffer-flush-output ((buffer single-channel-buffer) &key timeout)
   (with-synchronized-buffer (buffer :output)
     (when (eql :write (last-io-op-of buffer))
       (%buffer-flush-output buffer timeout))))
 
-(defmethod buffer-flush-output ((buffer dual-channel-buffer) &optional timeout)
+(defmethod buffer-flush-output ((buffer dual-channel-buffer) &key timeout)
   (with-synchronized-buffer (buffer :output)
     (%buffer-flush-output buffer timeout)))
 
@@ -287,7 +298,7 @@
     (multiple-value-bind (data start end)
         (iobuf-next-data-zone output-iobuf)
       (let ((nbytes
-             (device-write device data start end timeout)))
+             (device-write device data :start start :end end :timeout timeout)))
         (setf (iobuf-start output-iobuf) (+ start nbytes))
         (setf (last-io-op-of buffer) :write)
         (iobuf-available-octets output-iobuf)))))
@@ -297,5 +308,5 @@
 ;;; I/O WAIT
 ;;;-----------------------------------------------------------------------------
 
-(defmethod buffer-wait-until-flushable ((buffer buffer) &optional timeout)
-  (device-poll-output (device-of buffer) timeout))
+(defmethod buffer-wait-until-flushable ((buffer buffer) &key timeout)
+  (device-poll-output (device-of buffer) :timeout timeout))

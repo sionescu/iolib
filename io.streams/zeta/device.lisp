@@ -31,9 +31,9 @@
 ;;; Generic functions
 ;;;-----------------------------------------------------------------------------
 
-(defgeneric device-read (device vector start end &optional timeout))
+(defgeneric device-read (device vector &key start end timeout))
 
-(defgeneric device-write (device vector start end &optional timeout))
+(defgeneric device-write (device vector &key start end timeout))
 
 (defgeneric device-position (device))
 
@@ -41,9 +41,9 @@
 
 (defgeneric device-length (device))
 
-(defgeneric device-poll-input (device &optional timeout))
+(defgeneric device-poll-input (device &key timeout))
 
-(defgeneric device-poll-output (device &optional timeout))
+(defgeneric device-poll-output (device &key timeout))
 
 ;;; Internal functions
 
@@ -87,11 +87,13 @@
 ;;; Default DEVICE-READ
 ;;;-----------------------------------------------------------------------------
 
-(defmethod device-read :around ((device device) vector start end &optional timeout)
-  (declare (ignore timeout))
-  (if (= start end) 0 (call-next-method)))
+(defmethod device-read :around ((device device) vector &key (start 0) end timeout)
+  (check-bounds vector start end)
+  (if (= start end)
+      0
+      (call-next-method device vector :start start :end end :timeout timeout)))
 
-(defmethod device-read ((device device) vector start end &optional timeout)
+(defmethod device-read ((device device) vector &key start end timeout)
   (if (and timeout (zerop timeout))
       (device-read/non-blocking device vector start end)
       (device-read/timeout device vector start end timeout)))
@@ -101,11 +103,13 @@
 ;;; Default DEVICE-WRITE
 ;;;-----------------------------------------------------------------------------
 
-(defmethod device-write :around ((device device) vector start end &optional timeout)
-  (declare (ignore timeout))
-  (if (= start end) 0 (call-next-method)))
+(defmethod device-write :around ((device device) vector &key start end timeout)
+  (check-bounds vector start end)
+  (if (= start end)
+      0
+      (call-next-method device vector :start start :end end :timeout timeout)))
 
-(defmethod device-write ((device device) vector start end &optional timeout)
+(defmethod device-write ((device device) vector &key start end timeout)
   (if (and timeout (zerop timeout))
       (device-write/non-blocking device vector start end)
       (device-write/timeout device vector start end timeout)))
