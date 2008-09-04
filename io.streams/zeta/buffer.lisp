@@ -5,9 +5,9 @@
 
 (in-package :io.zeta-streams)
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Buffer Classes and Types
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defclass buffer ()
   ((synchronized :initarg :synchronized :reader synchronizedp)
@@ -22,9 +22,9 @@
 (defclass dual-channel-buffer (buffer) ())
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Buffer Generic Functions
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defgeneric buffer-clear-input (buffer))
 
@@ -51,19 +51,21 @@
 (defgeneric %buffer-flush-output (buffer timeout))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Helper macros
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defmacro with-synchronized-buffer ((buffer &optional direction) &body body)
   (with-gensyms (body-fun)
     (labels ((make-locks (body direction)
                (ecase direction
                  (:input
-                  `(bt:with-lock-held ((iobuf-lock (input-iobuf-of ,buffer)))
+                  `(bt:with-lock-held
+                       ((iobuf-lock (input-iobuf-of ,buffer)))
                      ,body))
                  (:output
-                  `(bt:with-lock-held ((iobuf-lock (output-iobuf-of ,buffer)))
+                  `(bt:with-lock-held
+                       ((iobuf-lock (output-iobuf-of ,buffer)))
                      ,body))
                  (:io
                   (make-locks (make-locks body :output) :input)))))
@@ -73,9 +75,9 @@
              (,body-fun))))))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Buffer Constructors
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defmethod initialize-instance :after
     ((buffer single-channel-buffer) &key data size)
@@ -98,9 +100,9 @@
     (setf output-iobuf (or output-data (make-iobuf output-size)))))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Buffer DEVICE-CLOSE
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defmethod relinquish ((buffer single-channel-buffer) &key abort)
   (with-accessors ((device device-of))
@@ -121,15 +123,17 @@
   (values buffer))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Buffer DEVICE-READ
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
-(defmethod device-read :around ((buffer buffer) vector &key (start 0) end timeout)
+(defmethod device-read :around ((buffer buffer) vector &key
+                                (start 0) end timeout)
   (check-bounds vector start end)
   (if (= start end)
       0
-      (call-next-method buffer vector :start start :end end :timeout timeout)))
+      (call-next-method buffer vector :start start
+                        :end end :timeout timeout)))
 
 (defmethod device-read ((buffer single-channel-buffer) vector
                         &key start end timeout)
@@ -155,15 +159,17 @@
        (iobuf->vector input-iobuf vector start end)))))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Buffer DEVICE-WRITE
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
-(defmethod device-write :around ((buffer buffer) vector &key (start 0) end timeout)
+(defmethod device-write :around ((buffer buffer) vector
+                                 &key (start 0) end timeout)
   (check-bounds vector start end)
   (if (= start end)
       0
-      (call-next-method buffer vector :start start :end end :timeout timeout)))
+      (call-next-method buffer vector :start start
+                        :end end :timeout timeout)))
 
 (defmethod device-write ((buffer single-channel-buffer) vector
                          &key start end timeout)
@@ -188,9 +194,9 @@
         (%buffer-flush-output buffer timeout)))))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Buffer DEVICE-POSITION
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defmethod device-position ((buffer single-channel-buffer))
   (with-synchronized-buffer (buffer :input)
@@ -204,16 +210,17 @@
       (:write
        (+ position (iobuf-available-octets (output-iobuf-of buffer)))))))
 
-(defmethod (setf device-position) (position (buffer single-channel-buffer) &optional (from :start))
+(defmethod (setf device-position)
+    (position (buffer single-channel-buffer) &optional (from :start))
   (setf (%buffer-position buffer from) position))
 
 (defun (setf %buffer-position) (position buffer from)
   (setf (device-position (device-of buffer) from) position))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Buffer CLEAR-INPUT
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defmethod buffer-clear-input ((buffer single-channel-buffer))
   (with-synchronized-buffer (buffer :input)
@@ -234,9 +241,9 @@
   (iobuf-reset (input-iobuf-of buffer)))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Buffer CLEAR-OUTPUT
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defmethod buffer-clear-output ((buffer single-channel-buffer))
   (with-synchronized-buffer (buffer :output)
@@ -252,9 +259,9 @@
     (iobuf-reset (output-iobuf-of buffer))))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Buffer FILL-INPUT
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defmethod buffer-fill-input ((buffer single-channel-buffer) &key timeout)
   (with-synchronized-buffer (buffer :input)
@@ -272,15 +279,16 @@
     (multiple-value-bind (data start end)
         (iobuf-next-empty-zone input-iobuf)
       (let ((nbytes
-             (device-read device data :start start :end end :timeout timeout)))
+             (device-read device data :start start
+                          :end end :timeout timeout)))
         (setf (iobuf-end input-iobuf) (+ start nbytes))
         (setf (last-io-op-of buffer) :read)
         (values nbytes)))))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Buffer FLUSH-OUTPUT
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defmethod buffer-flush-output ((buffer single-channel-buffer) &key timeout)
   (with-synchronized-buffer (buffer :output)
@@ -298,15 +306,16 @@
     (multiple-value-bind (data start end)
         (iobuf-next-data-zone output-iobuf)
       (let ((nbytes
-             (device-write device data :start start :end end :timeout timeout)))
+             (device-write device data :start start
+                           :end end :timeout timeout)))
         (setf (iobuf-start output-iobuf) (+ start nbytes))
         (setf (last-io-op-of buffer) :write)
         (iobuf-available-octets output-iobuf)))))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; I/O WAIT
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defmethod buffer-wait-until-flushable ((buffer buffer) &key timeout)
   (device-poll-output (device-of buffer) :timeout timeout))

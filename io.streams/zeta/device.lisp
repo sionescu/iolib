@@ -5,9 +5,9 @@
 
 (in-package :io.zeta-streams)
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Device Classes and Types
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defclass device ()
   ((handle :initarg :handle :accessor handle-of)
@@ -20,16 +20,16 @@
 (defclass memory-buffer-device (direct-device) ())
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Relinquish I/O resources
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defgeneric relinquish (device &key abort &allow-other-keys))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Generic functions
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defgeneric device-read (device vector &key start end timeout))
 
@@ -58,9 +58,9 @@
 (defgeneric device-write/timeout (device vector start end timeout))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Helper macros
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defmacro with-device ((name) &body body)
   `(let ((*device* ,name))
@@ -68,9 +68,9 @@
      ,@body))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Default no-op methods
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defmethod device-position ((device device))
   (values nil))
@@ -83,15 +83,17 @@
   (values nil))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Default DEVICE-READ
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
-(defmethod device-read :around ((device device) vector &key (start 0) end timeout)
+(defmethod device-read :around ((device device) vector &key
+                                (start 0) end timeout)
   (check-bounds vector start end)
   (if (= start end)
       0
-      (call-next-method device vector :start start :end end :timeout timeout)))
+      (call-next-method device vector :start start
+                        :end end :timeout timeout)))
 
 (defmethod device-read ((device device) vector &key start end timeout)
   (if (and timeout (zerop timeout))
@@ -99,15 +101,17 @@
       (device-read/timeout device vector start end timeout)))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Default DEVICE-WRITE
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
-(defmethod device-write :around ((device device) vector &key start end timeout)
+(defmethod device-write :around ((device device) vector &key
+                                 (start 0) end timeout)
   (check-bounds vector start end)
   (if (= start end)
       0
-      (call-next-method device vector :start start :end end :timeout timeout)))
+      (call-next-method device vector :start start
+                        :end end :timeout timeout)))
 
 (defmethod device-write ((device device) vector &key start end timeout)
   (if (and timeout (zerop timeout))

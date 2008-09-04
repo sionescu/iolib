@@ -5,6 +5,10 @@
 
 (in-package :io.zeta-streams)
 
+;;;-------------------------------------------------------------------------
+;;; FD polling
+;;;-------------------------------------------------------------------------
+
 (defun compute-poll-flags (type)
   (ecase type
     (:input  (logior pollin pollrdhup pollpri))
@@ -36,15 +40,17 @@
     (%sys-poll fds 1 (timeout->milisec remaining-time))))
 
 (defun poll-fd (fd event-type timeout)
-  "Poll file descriptor `FD' for I/O readiness. `EVENT-TYPE' must be either :INPUT, :OUTPUT or :IO.
-`TIMEOUT' must be a non-negative integer measured in seconds.
-If a timeout occurs `POLL-TIMEOUT' is signaled.
+  "Poll file descriptor `FD' for I/O readiness. `EVENT-TYPE' must be either
+:INPUT, :OUTPUT or :IO. `TIMEOUT' must be a non-negative integer measured
+in seconds. If a timeout occurs `POLL-TIMEOUT' is signaled.
 Returns two boolean values indicating readability and writeability of `FD'."
   (flet ((poll-error (posix-err)
            (error 'poll-error
-                  :code (code-of posix-err) :identifier (identifier-of posix-err)
+                  :code (code-of posix-err)
+                  :identifier (identifier-of posix-err)
                   :event-type event-type :os-handle fd
-                  :message (format nil "OS error ~A" (identifier-of posix-err)))))
+                  :message (format nil "OS error ~A"
+                                   (identifier-of posix-err)))))
     (with-foreign-object (pollfd 'pollfd)
       (%sys-bzero pollfd size-of-pollfd)
       (with-foreign-slots ((fd events revents) pollfd pollfd)
@@ -55,13 +61,14 @@ Returns two boolean values indicating readability and writeability of `FD'."
               ((plusp (%poll pollfd timeout))
                (process-poll-revents fd event-type revents))
               (t
-               (error 'poll-timeout :os-handle fd :event-type event-type)))
+               (error 'poll-timeout :os-handle fd
+                      :event-type event-type)))
           (posix-error (err) (poll-error err)))))))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Set FD nonblocking
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defun %set-fd-nonblock (fd)
   (declare (special *device*))
@@ -74,9 +81,9 @@ Returns two boolean values indicating readability and writeability of `FD'."
   (values))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; Get number of bytes availabe on FD
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defun %get-fd-nbytes (fd)
   (declare (special *device*))
@@ -88,9 +95,9 @@ Returns two boolean values indicating readability and writeability of `FD'."
       (posix-file-error err *device* "issuing FIONREAD IOCTL on"))))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; File Descriptor reading
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defun %read-octets/non-blocking (fd vector start end)
   (declare (type ub8-simple-vector vector)
@@ -123,9 +130,9 @@ Returns two boolean values indicating readability and writeability of `FD'."
               (if (zerop nbytes) :eof nbytes))))))))
 
 
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 ;;; File Descriptor writing
-;;;-----------------------------------------------------------------------------
+;;;-------------------------------------------------------------------------
 
 (defun %write-octets/non-blocking (fd vector start end)
   (declare (type ub8-simple-vector vector)

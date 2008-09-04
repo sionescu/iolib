@@ -7,12 +7,14 @@
 
 (declaim (optimize speed))
 
-;;;; Foreign Buffers
+;;;-------------------------------------------------------------------------
+;;; Foreign Buffers
+;;;-------------------------------------------------------------------------
 
-(define-constant +default-iobuf-size+ 4096)
+(define-constant +default-iobuf-size+ (* 8 1024))
 
-;;; almost 128 MB: large enough for a stream buffer,
-;;; but small enough to fit into a fixnum
+;; almost 128 MB: large enough for a stream buffer,
+;; but small enough to fit into a fixnum
 (deftype iobuf-index () '(unsigned-byte 27))
 (deftype iobuf-length () '(integer 0 #.(expt 2 27)))
 
@@ -68,10 +70,10 @@
           (iobuf-size iobuf)))
 
 
-;;;
+;;;-------------------------------------------------------------------------
 ;;; UNSAFE functions which *DO NOT* check boundaries
 ;;; that must be done by their callers
-;;;
+;;;-------------------------------------------------------------------------
 
 (defun bref (iobuf index)
   (declare (type iobuf iobuf)
