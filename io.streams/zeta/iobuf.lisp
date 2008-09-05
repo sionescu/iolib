@@ -31,7 +31,7 @@
   (make-array size :element-type 'ub8 :initial-element 0))
 
 (defun make-iobuf (&optional size)
-  (declare (type (or null iobuf-index) size))
+  (check-type size (or null iobuf-index))
   (%make-iobuf (make-iobuf-data-vector (or size +default-iobuf-size+))))
 
 (defun iobuf-size (iobuf)
