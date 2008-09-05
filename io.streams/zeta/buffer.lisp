@@ -20,6 +20,9 @@
   ((last-io-op :initform nil :accessor last-io-op-of)))
 
 (defclass dual-channel-buffer (buffer) ())
+
+(deftype io-buffering ()
+  '(member nil :line :full))
 
 
 ;;;-------------------------------------------------------------------------

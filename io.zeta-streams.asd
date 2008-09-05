@@ -19,12 +19,12 @@
      :pathname #+unix "ffi-functions-unix"
      :depends-on ("pkgdcl" "conditions"))
 
+   ;; Buffers
+   (:file "iobuf" :depends-on ("pkgdcl" "types" "conditions" "device"))
+   (:file "buffer" :depends-on ("pkgdcl" "types" "conditions" "device" "iobuf"))
+
    ;; Devices
    (:file "device" :depends-on ("pkgdcl" "types" "conditions"))
    (:file "file"
      :pathname #+unix "file-unix"
-     :depends-on ("pkgdcl" "types" "conditions" "device" "ffi-functions"))
-
-   ;; Buffers
-   (:file "iobuf" :depends-on ("pkgdcl" "types" "conditions" "device"))
-   (:file "buffer" :depends-on ("pkgdcl" "types" "conditions" "device" "iobuf"))))
+     :depends-on ("pkgdcl" "types" "conditions" "device" "ffi-functions"))))

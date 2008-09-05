@@ -6,18 +6,18 @@
 (in-package :io.zeta-streams)
 
 ;;;-------------------------------------------------------------------------
-;;; File Classes and Types
+;;; Classes and Types
 ;;;-------------------------------------------------------------------------
 
-(defclass file-device (single-channel-device)
+(defclass file-device (device)
   ((filename :initarg :filename
              :accessor filename-of)
-   (direction :initarg :direction
-              :accessor direction-of)
-   (if-exists :initarg :if-exists
-              :accessor if-exists-of)
-   (if-does-not-exist :initarg :if-does-not-exist
-                      :accessor if-does-not-exist-of)))
+   (flags :initarg flags
+          :accessor flags-of)
+   (mode :initarg mode
+         :accessor mode-of)
+   (delete-if-exists :initarg :delete-if-exists
+                     :accessor delete-if-exists-p)))
 
 (defclass memory-mapped-file-device (file-device direct-device) ())
 
@@ -25,14 +25,22 @@
   '(member :input :output :io))
 
 (deftype file-if-exists ()
-  '(member :default :error :error-if-symlink :unlink :overwrite))
+  '(member :default :error :error-if-symlink :delete :overwrite))
 
 (deftype file-if-does-not-exist ()
   '(member :default :error :create))
+
+(deftype file-flags ()
+  '(unsigned-byte 32))
+
+(deftype file-mode ()
+  '(unsigned-byte 32))
+
+(defvar *default-open-mode* #o666)
 
 
 ;;;-------------------------------------------------------------------------
-;;; File PRINT-OBJECT
+;;; PRINT-OBJECT
 ;;;-------------------------------------------------------------------------
 
 (defmethod print-object ((file file-device) stream)
@@ -41,54 +49,45 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; File Constructors
+;;; Generic functions
 ;;;-------------------------------------------------------------------------
 
-(defmethod initialize-instance :after
-    ((device file-device)
-     &key filename (direction :input)
-     (if-exists :default) (if-does-not-exist :default)
-     truncate append (extra-flags 0)
-     (mode #o666))
-  (when (and (eql :error if-exists)
-             (eql :error if-does-not-exist))
-    (error 'program-error))
-  (let ((flags 0))
-    (setf (values flags if-exists if-does-not-exist)
-          (process-file-direction direction flags
-                                  if-exists if-does-not-exist))
-    (setf (values flags if-exists if-does-not-exist)
-          (process-file-flags direction flags if-exists if-does-not-exist
-                              truncate append extra-flags))
-    (setf (filename-of device) (copy-seq filename)
-          (direction-of device) direction
-          (if-exists-of device) if-exists
-          (if-does-not-exist-of device) if-does-not-exist)
-    (with-device (device)
-      (device-open device :filename filename :flags flags
-                   :mode mode :if-exists if-exists
-                   :if-does-not-exist if-does-not-exist))))
+(defgeneric open-file (filename &key direction if-exists if-does-not-exist
+                      truncate append extra-flags mode synchronized
+                      buffering buffer-size external-format))
 
 
 ;;;-------------------------------------------------------------------------
-;;; File DEVICE-OPEN
+;;; Constructors
 ;;;-------------------------------------------------------------------------
 
-(defmethod device-open ((device file-device) &key filename flags mode
-                        if-exists if-does-not-exist)
-  (declare (ignore if-does-not-exist))
+(defmethod initialize-instance :after
+    ((device file-device) &key filename flags
+     (mode *default-open-mode*) delete-if-exists)
+  (setf (filename-of device) (copy-seq filename))
+  (with-device (device)
+    (device-open device :filename filename :flags flags
+                 :mode mode :delete-if-exists delete-if-exists)))
+
+
+;;;-------------------------------------------------------------------------
+;;; DEVICE-OPEN
+;;;-------------------------------------------------------------------------
+
+(defmethod device-open ((device file-device)
+                        &key filename flags mode delete-if-exists)
   (labels ((handle-error (c)
              (posix-file-error c filename "opening"))
-           (try-unlink ()
+           (try-delete ()
              (handler-case
                  (%sys-unlink filename)
                (posix-error (c) (handle-error c))))
-           (try-open (&optional (retry-on-unlink t))
+           (try-open (&optional (retry-on-delete t))
              (handler-case
                  (%sys-open filename flags mode)
                (eexist (c)
-                 (cond ((and retry-on-unlink (eql :unlink if-exists))
-                        (try-unlink) (try-open nil))
+                 (cond ((and retry-on-delete delete-if-exists)
+                        (try-delete) (try-open nil))
                        (t (handle-error c))))
                (posix-error (c)
                  (handle-error c))
@@ -97,6 +96,159 @@
       (%set-fd-nonblock fd)
       (setf (handle-of device) fd)))
   (values device))
+
+
+;;;-------------------------------------------------------------------------
+;;; DEVICE-CLOSE
+;;;-------------------------------------------------------------------------
+
+(defmethod relinquish ((device file-device) &key abort)
+  (declare (ignore abort))
+  (%sys-close (handle-of device))
+  (setf (handle-of device) nil)
+  (values device))
+
+
+;;;-------------------------------------------------------------------------
+;;; DEVICE-POSITION
+;;;-------------------------------------------------------------------------
+
+(defmethod device-position ((device file-device))
+  (handler-case
+      (%sys-lseek (handle-of device) 0 seek-cur)
+    (posix-error (err)
+      (posix-file-error err device "seeking on"))))
+
+(defmethod (setf device-position)
+    (position (device file-device) &optional (from :start))
+  (handler-case
+      (%sys-lseek (handle-of device) position
+                  (ecase from
+                    (:start seek-set)
+                    (:current seek-cur)
+                    (:end seek-end)))
+    (posix-error (err)
+      (posix-file-error err device "seeking on"))))
+
+
+;;;-------------------------------------------------------------------------
+;;; DEVICE-LENGTH
+;;;-------------------------------------------------------------------------
+
+(defmethod device-length ((device file-device))
+  (handler-case
+      (%sys-fstat (handle-of device))
+    (posix-error (err)
+      (posix-file-error err device "getting status of"))))
+
+
+;;;-------------------------------------------------------------------------
+;;; I/O WAIT
+;;;-------------------------------------------------------------------------
+
+(defmethod device-poll-input ((device file-device) &key timeout)
+  (poll-fd (handle-of device) :input timeout))
+
+(defmethod device-poll-output ((device file-device) &key timeout)
+  (poll-fd (handle-of device) :output timeout))
+
+
+;;;-------------------------------------------------------------------------
+;;; DEVICE-READ
+;;;-------------------------------------------------------------------------
+
+(defmethod device-read/non-blocking ((device file-device) vector start end)
+  (with-device (device)
+    (%read-octets/non-blocking (handle-of device) vector start end)))
+
+(defmethod device-read/timeout ((device file-device) vector
+                                start end timeout)
+  (with-device (device)
+    (%read-octets/timeout (handle-of device) vector start end timeout)))
+
+
+;;;-------------------------------------------------------------------------
+;;; DEVICE-WRITE
+;;;-------------------------------------------------------------------------
+
+(defmethod device-write/non-blocking ((device file-device) vector start end)
+  (with-device (device)
+    (%write-octets/non-blocking (handle-of device) vector start end)))
+
+(defmethod device-write/timeout ((device file-device) vector
+                                 start end timeout)
+  (with-device (device)
+    (%write-octets/timeout (handle-of device) vector start end timeout)))
+
+
+;;;-------------------------------------------------------------------------
+;;; OPEN-FILE
+;;;-------------------------------------------------------------------------
+
+(defmethod open-file :around
+    (filename &key (direction :input) (if-exists :default)
+     (if-does-not-exist :default) truncate append (extra-flags 0)
+     (mode *default-open-mode*) synchronized (buffering :full) buffer-size
+     (external-format :default))
+  (check-type direction file-direction)
+  (check-type extra-flags file-flags)
+  (check-type mode file-mode)
+  (check-type buffering io-buffering)
+  (when (or (and (null if-exists)
+                 (null if-does-not-exist))
+            (and (eql :error if-exists)
+                 (eql :error if-does-not-exist)))
+    (error 'program-error))
+  (call-next-method filename :direction direction :if-exists if-exists
+                    :if-does-not-exist if-does-not-exist
+                    :truncate truncate :append append
+                    :extra-flags extra-flags :mode mode
+                    :synchronized synchronized
+                    :buffering buffering :buffer-size buffer-size
+                    :external-format external-format))
+
+(defmethod open-file (filename &key direction if-exists if-does-not-exist
+                      truncate append extra-flags mode synchronized
+                      buffering buffer-size external-format)
+  ;; FIXME: check for file type TTY and adjust buffering
+  (let ((file-device
+         (%open-file filename direction if-exists if-does-not-exist
+                     truncate append extra-flags mode)))
+    (if (null buffering)
+        (values file-device)
+        (let ((buffer
+               (make-instance 'single-channel-buffer
+                              :device file-device
+                              :synchronized synchronized
+                              :size buffer-size)))
+          (if (null external-format)
+              (values buffer)
+              ;; FIXME: make a stream
+              (error "Streams are unavailable ATM."))))))
+
+(defun %open-file (filename direction if-exists if-does-not-exist
+                   truncate append extra-flags mode)
+  (let ((flags 0))
+    (setf (values flags if-exists if-does-not-exist)
+          (process-file-direction direction flags
+                                  if-exists if-does-not-exist))
+    (setf (values flags if-exists if-does-not-exist)
+          (process-file-flags direction flags if-exists if-does-not-exist
+                              truncate append extra-flags))
+    (handler-case
+        (make-instance 'file-device
+                       :filename (namestring filename)
+                       :flags (logior flags extra-flags)
+                       :mode mode
+                       :delete-if-exists (eql :delete if-exists))
+      (posix-file-error (error)
+        (case (identifier-of error)
+          (:enoent
+           (if (null if-does-not-exist) nil (error error)))
+          (:eexist
+           (if (null if-exists) nil (error error)))
+          (t (error error))))
+      (:no-error (file) file))))
 
 (defun process-file-direction (direction flags if-exists if-does-not-exist)
   (macrolet ((add-flags (&rest %flags)
@@ -124,6 +276,8 @@
     (case if-exists
       (:error
        (unless (eql :input direction) (add-flags o-excl)))
+      (:delete
+       (add-flags o-excl o-creat))
       (:error-if-symlink
        (add-flags o-nofollow)))
     (case if-does-not-exist
@@ -136,116 +290,3 @@
       (extra-flags
        (add-flags extra-flags))))
   (values flags if-exists if-does-not-exist))
-
-
-;;;-------------------------------------------------------------------------
-;;; File DEVICE-CLOSE
-;;;-------------------------------------------------------------------------
-
-(defmethod relinquish ((device file-device) &key abort)
-  (declare (ignore abort))
-  (%sys-close (handle-of device))
-  (setf (handle-of device) nil)
-  (values device))
-
-
-;;;-------------------------------------------------------------------------
-;;; File DEVICE-POSITION
-;;;-------------------------------------------------------------------------
-
-(defmethod device-position ((device file-device))
-  (handler-case
-      (%sys-lseek (handle-of device) 0 seek-cur)
-    (posix-error (err)
-      (posix-file-error err device "seeking on"))))
-
-(defmethod (setf device-position)
-    (position (device file-device) &optional (from :start))
-  (handler-case
-      (%sys-lseek (handle-of device) position
-                  (ecase from
-                    (:start seek-set)
-                    (:current seek-cur)
-                    (:end seek-end)))
-    (posix-error (err)
-      (posix-file-error err device "seeking on"))))
-
-
-;;;-------------------------------------------------------------------------
-;;; File DEVICE-LENGTH
-;;;-------------------------------------------------------------------------
-
-(defmethod device-length ((device file-device))
-  (handler-case
-      (%sys-fstat (handle-of device))
-    (posix-error (err)
-      (posix-file-error err device "getting status of"))))
-
-
-;;;-------------------------------------------------------------------------
-;;; I/O WAIT
-;;;-------------------------------------------------------------------------
-
-(defmethod device-poll-input ((device file-device) &key timeout)
-  (poll-fd (handle-of device) :input timeout))
-
-(defmethod device-poll-output ((device file-device) &key timeout)
-  (poll-fd (handle-of device) :output timeout))
-
-
-;;;-------------------------------------------------------------------------
-;;; File DEVICE-READ
-;;;-------------------------------------------------------------------------
-
-(defmethod device-read/non-blocking ((device file-device) vector start end)
-  (with-device (device)
-    (%read-octets/non-blocking (handle-of device) vector start end)))
-
-(defmethod device-read/timeout ((device file-device) vector
-                                start end timeout)
-  (with-device (device)
-    (%read-octets/timeout (handle-of device) vector start end timeout)))
-
-
-;;;-------------------------------------------------------------------------
-;;; File DEVICE-WRITE
-;;;-------------------------------------------------------------------------
-
-(defmethod device-write/non-blocking ((device file-device) vector start end)
-  (with-device (device)
-    (%write-octets/non-blocking (handle-of device) vector start end)))
-
-(defmethod device-write/timeout ((device file-device) vector
-                                 start end timeout)
-  (with-device (device)
-    (%write-octets/timeout (handle-of device) vector start end timeout)))
-
-
-;;;-------------------------------------------------------------------------
-;;; OPEN-FILE
-;;;-------------------------------------------------------------------------
-
-(defun open-file (filename &key (direction :input)
-                  (if-exists :default) (if-does-not-exist :default)
-                  truncate append (extra-flags 0) (mode #o666))
-  (when (and (null if-exists)
-             (null if-does-not-exist))
-    (error 'program-error))
-  (handler-case
-      (make-instance 'file-device
-                     :filename (namestring filename)
-                     :direction direction
-                     :if-exists if-exists
-                     :if-does-not-exist if-does-not-exist
-                     :truncate truncate
-                     :append append
-                     :extra-flags extra-flags
-                     :mode mode)
-    (posix-file-error (error)
-      (case (identifier-of error)
-        (:enoent
-         (if (null if-does-not-exist) nil (error error)))
-        (:eexist
-         (if (null if-exists) nil (error error)))
-        (t (error error))))
-    (:no-error (file) file)))
