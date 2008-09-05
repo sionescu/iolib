@@ -26,15 +26,15 @@
 ;;; Buffer Generic Functions
 ;;;-------------------------------------------------------------------------
 
+(defgeneric buffer-fill (buffer &key timeout))
+
+(defgeneric buffer-flush (buffer &key timeout))
+
+(defgeneric buffer-wait-until-flushable (buffer &key timeout))
+
 (defgeneric buffer-clear-input (buffer))
 
 (defgeneric buffer-clear-output (buffer))
-
-(defgeneric buffer-fill-input (buffer &key timeout))
-
-(defgeneric buffer-flush-output (buffer &key timeout))
-
-(defgeneric buffer-wait-until-flushable (buffer &key timeout))
 
 ;;; Internal functions
 
@@ -42,13 +42,13 @@
 
 (defgeneric %buffer-write-vector (buffer vector start end timeout))
 
+(defgeneric %buffer-fill (buffer timeout))
+
+(defgeneric %buffer-flush (buffer timeout))
+
 (defgeneric %buffer-clear-input (buffer))
 
 (defgeneric %buffer-clear-output (buffer))
-
-(defgeneric %buffer-fill-input (buffer timeout))
-
-(defgeneric %buffer-flush-output (buffer timeout))
 
 
 ;;;-------------------------------------------------------------------------
@@ -109,16 +109,16 @@
       buffer
     (with-synchronized-buffer (buffer :input)
       (unless (or abort (eql :read (last-io-op-of buffer)))
-        (%buffer-flush-output buffer 0))
+        (%buffer-flush buffer 0))
       (relinquish device)))
   (values buffer))
 
-(defmethod relinquish ((buffer buffer) &key abort)
+(defmethod relinquish ((buffer dual-channel-buffer) &key abort)
   (with-accessors ((device device-of))
       buffer
     (with-synchronized-buffer (buffer :io)
       (unless abort
-        (%buffer-flush-output buffer 0))
+        (%buffer-flush buffer 0))
       (relinquish device)))
   (values buffer))
 
@@ -151,7 +151,7 @@
       buffer
     (cond
       ((iobuf-empty-p input-iobuf)
-       (let ((nbytes (%buffer-fill-input buffer timeout)))
+       (let ((nbytes (%buffer-fill buffer timeout)))
          (if (iobuf-empty-p input-iobuf)
              (if (eql :eof nbytes) :eof 0)
              (iobuf->vector input-iobuf vector start end))))
@@ -191,7 +191,7 @@
         (vector->iobuf output-iobuf vector start end)
       (setf (last-io-op-of buffer) :write)
       (when (iobuf-full-p output-iobuf)
-        (%buffer-flush-output buffer timeout)))))
+        (%buffer-flush buffer timeout)))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -247,8 +247,7 @@
 
 (defmethod buffer-clear-output ((buffer single-channel-buffer))
   (with-synchronized-buffer (buffer :output)
-    (when (eql :write (last-io-op-of buffer))
-      (iobuf-reset (output-iobuf-of buffer)))))
+    (%buffer-clear-output buffer)))
 
 (defmethod %buffer-clear-output ((buffer single-channel-buffer))
   (when (eql :write (last-io-op-of buffer))
@@ -263,16 +262,16 @@
 ;;; Buffer FILL-INPUT
 ;;;-------------------------------------------------------------------------
 
-(defmethod buffer-fill-input ((buffer single-channel-buffer) &key timeout)
+(defmethod buffer-fill ((buffer single-channel-buffer) &key timeout)
   (with-synchronized-buffer (buffer :input)
     (%buffer-clear-output buffer)
-    (%buffer-fill-input buffer timeout)))
+    (%buffer-fill buffer timeout)))
 
-(defmethod buffer-fill-input ((buffer dual-channel-buffer) &key timeout)
+(defmethod buffer-fill ((buffer dual-channel-buffer) &key timeout)
   (with-synchronized-buffer (buffer :input)
-    (%buffer-fill-input buffer timeout)))
+    (%buffer-fill buffer timeout)))
 
-(defmethod %buffer-fill-input ((buffer buffer) timeout)
+(defmethod %buffer-fill ((buffer buffer) timeout)
   (with-accessors ((device device-of)
                    (input-iobuf input-iobuf-of))
       buffer
@@ -290,16 +289,16 @@
 ;;; Buffer FLUSH-OUTPUT
 ;;;-------------------------------------------------------------------------
 
-(defmethod buffer-flush-output ((buffer single-channel-buffer) &key timeout)
+(defmethod buffer-flush ((buffer single-channel-buffer) &key timeout)
   (with-synchronized-buffer (buffer :output)
     (when (eql :write (last-io-op-of buffer))
-      (%buffer-flush-output buffer timeout))))
+      (%buffer-flush buffer timeout))))
 
-(defmethod buffer-flush-output ((buffer dual-channel-buffer) &key timeout)
+(defmethod buffer-flush ((buffer dual-channel-buffer) &key timeout)
   (with-synchronized-buffer (buffer :output)
-    (%buffer-flush-output buffer timeout)))
+    (%buffer-flush buffer timeout)))
 
-(defmethod %buffer-flush-output ((buffer dual-channel-buffer) timeout)
+(defmethod %buffer-flush ((buffer buffer) timeout)
   (with-accessors ((device device-of)
                    (output-iobuf output-iobuf-of))
       buffer
