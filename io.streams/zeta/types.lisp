@@ -6,7 +6,7 @@
 (in-package :io.zeta-streams)
 
 ;;;-------------------------------------------------------------------------
-;;; Types
+;;; Data Types
 ;;;-------------------------------------------------------------------------
 
 (deftype ub8  () '(unsigned-byte  8))
@@ -29,3 +29,26 @@
 
 (deftype ub16-simple-vector (&optional (size '*))
   `(simple-array ub16 (,size)))
+
+
+;;;-------------------------------------------------------------------------
+;;; Argument Types
+;;;-------------------------------------------------------------------------
+
+(deftype io-buffering ()
+  '(member nil :line :full))
+
+(deftype file-direction ()
+  '(member :input :output :io))
+
+(deftype file-if-exists ()
+  '(member :default :error :error-if-symlink :delete :overwrite))
+
+(deftype file-if-does-not-exist ()
+  '(member :default :error :create))
+
+(deftype file-flags ()
+  '(unsigned-byte 32))
+
+(deftype file-mode ()
+  '(unsigned-byte 32))

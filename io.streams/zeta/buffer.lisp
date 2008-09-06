@@ -6,7 +6,7 @@
 (in-package :io.zeta-streams)
 
 ;;;-------------------------------------------------------------------------
-;;; Buffer Classes and Types
+;;; Classes and Types
 ;;;-------------------------------------------------------------------------
 
 (defclass buffer ()
@@ -20,13 +20,10 @@
   ((last-io-op :initform nil :accessor last-io-op-of)))
 
 (defclass dual-channel-buffer (buffer) ())
-
-(deftype io-buffering ()
-  '(member nil :line :full))
 
 
 ;;;-------------------------------------------------------------------------
-;;; Buffer Generic Functions
+;;; Generic Functions
 ;;;-------------------------------------------------------------------------
 
 (defgeneric buffer-fill (buffer &key timeout))
@@ -79,7 +76,7 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; Buffer Constructors
+;;; Constructors
 ;;;-------------------------------------------------------------------------
 
 (defmethod initialize-instance :after
@@ -104,7 +101,7 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; Buffer DEVICE-CLOSE
+;;; DEVICE-CLOSE
 ;;;-------------------------------------------------------------------------
 
 (defmethod relinquish ((buffer single-channel-buffer) &key abort)
@@ -127,7 +124,7 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; Buffer DEVICE-READ
+;;; DEVICE-READ
 ;;;-------------------------------------------------------------------------
 
 (defmethod device-read :around ((buffer buffer) vector &key
@@ -163,7 +160,7 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; Buffer DEVICE-WRITE
+;;; DEVICE-WRITE
 ;;;-------------------------------------------------------------------------
 
 (defmethod device-write :around ((buffer buffer) vector
@@ -198,7 +195,7 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; Buffer DEVICE-POSITION
+;;; DEVICE-POSITION
 ;;;-------------------------------------------------------------------------
 
 (defmethod device-position ((buffer single-channel-buffer))
@@ -222,7 +219,7 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; Buffer CLEAR-INPUT
+;;; CLEAR-INPUT
 ;;;-------------------------------------------------------------------------
 
 (defmethod buffer-clear-input ((buffer single-channel-buffer))
@@ -245,7 +242,7 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; Buffer CLEAR-OUTPUT
+;;; CLEAR-OUTPUT
 ;;;-------------------------------------------------------------------------
 
 (defmethod buffer-clear-output ((buffer single-channel-buffer))
@@ -262,7 +259,7 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; Buffer FILL-INPUT
+;;; FILL-INPUT
 ;;;-------------------------------------------------------------------------
 
 (defmethod buffer-fill ((buffer single-channel-buffer) &key timeout)
@@ -289,7 +286,7 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; Buffer FLUSH-OUTPUT
+;;; FLUSH-OUTPUT
 ;;;-------------------------------------------------------------------------
 
 (defmethod buffer-flush ((buffer single-channel-buffer) &key timeout)

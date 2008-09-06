@@ -21,21 +21,6 @@
 
 (defclass memory-mapped-file-device (file-device direct-device) ())
 
-(deftype file-direction ()
-  '(member :input :output :io))
-
-(deftype file-if-exists ()
-  '(member :default :error :error-if-symlink :delete :overwrite))
-
-(deftype file-if-does-not-exist ()
-  '(member :default :error :create))
-
-(deftype file-flags ()
-  '(unsigned-byte 32))
-
-(deftype file-mode ()
-  '(unsigned-byte 32))
-
 (defvar *default-open-mode* #o666)
 
 
