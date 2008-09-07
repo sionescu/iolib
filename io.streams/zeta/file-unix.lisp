@@ -47,11 +47,11 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod initialize-instance :after
-    ((device file-device) &key filename flags
+    ((device file-device) &key handle filename flags
      (mode *default-open-mode*) delete-if-exists)
   (setf (filename-of device) (copy-seq filename))
   (with-device (device)
-    (device-open device :filename filename :flags flags
+    (device-open device :handle handle :filename filename :flags flags
                  :mode mode :delete-if-exists delete-if-exists)))
 
 
@@ -60,7 +60,7 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod device-open ((device file-device)
-                        &key filename flags mode delete-if-exists)
+                        &key handle filename flags mode delete-if-exists)
   (labels ((handle-error (c)
              (posix-file-error c filename "opening"))
            (try-delete ()
@@ -77,7 +77,7 @@
                (posix-error (c)
                  (handle-error c))
                (:no-error (fd) fd))))
-    (let ((fd (try-open)))
+    (let ((fd (or handle (try-open))))
       (%set-fd-nonblock fd)
       (setf (handle-of device) fd)))
   (values device))
