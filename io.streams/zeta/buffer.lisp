@@ -10,10 +10,15 @@
 ;;;-------------------------------------------------------------------------
 
 (defclass buffer ()
-  ((synchronized :initarg :synchronized :reader synchronizedp)
-   (device :initarg :device :accessor device-of)
-   (input-iobuf :initarg :input-buffer :accessor input-iobuf-of)
-   (output-iobuf :initarg :output-buffer :accessor output-iobuf-of))
+  ((synchronized :initarg :synchronized
+                 :reader synchronizedp)
+   (device :initform nil
+           :initarg :device
+           :accessor device-of)
+   (input-iobuf :initarg :input-buffer
+                :accessor input-iobuf-of)
+   (output-iobuf :initarg :output-buffer
+                 :accessor output-iobuf-of))
   (:default-initargs :synchronized nil))
 
 (defclass single-channel-buffer (buffer)
@@ -81,9 +86,11 @@
 
 (defmethod initialize-instance :after
     ((buffer single-channel-buffer) &key data size)
-  (with-accessors ((input-iobuf input-iobuf-of)
+  (with-accessors ((device device-of)
+                   (input-iobuf input-iobuf-of)
                    (output-iobuf output-iobuf-of))
       buffer
+    (check-type device device)
     (check-type data (or null iobuf))
     (setf input-iobuf (or data (make-iobuf size))
           output-iobuf input-iobuf)))
@@ -91,9 +98,11 @@
 (defmethod initialize-instance :after
     ((buffer dual-channel-buffer)
      &key input-data output-data input-size output-size)
-  (with-accessors ((input-iobuf input-iobuf-of)
+  (with-accessors ((device device-of)
+                   (input-iobuf input-iobuf-of)
                    (output-iobuf output-iobuf-of))
       buffer
+    (check-type device device)
     (check-type input-data (or null iobuf))
     (check-type output-data (or null iobuf))
     (setf input-iobuf (or input-data (make-iobuf input-size)))
