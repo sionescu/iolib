@@ -6,5 +6,5 @@
 (in-package #:cl-user)
 
 (defpackage #:iolib-tests
-  (:use :iolib.base :iolib :5am :trivial-gray-streams)
+  (:use :iolib.base :iolib :5am)
   (:export #:*echo-address* #:*echo-port*))
