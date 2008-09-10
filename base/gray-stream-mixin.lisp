@@ -3,7 +3,7 @@
 ;;; --- GRAY stream mixin.
 ;;;
 
-(in-package :io.streams)
+(in-package :iolib.base)
 
 (defclass trivial-gray-stream-mixin () ())
 

@@ -6,15 +6,12 @@
   :description "Gray streams."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:iolib.base :cffi :osicat :io.multiplex
-               :trivial-gray-streams :trivial-garbage)
+  :depends-on (:iolib.base :cffi :osicat :io.multiplex :trivial-garbage)
   :pathname (merge-pathnames #p"io.streams/gray/" *load-truename*)
   :components
   ((:file "pkgdcl")
    (:file "classes" :depends-on ("pkgdcl"))
    (:file "buffer" :depends-on ("pkgdcl" "classes"))
    (:file "fd-mixin" :depends-on ("pkgdcl" "classes"))
-   (:file "gray-stream-mixin" :depends-on ("pkgdcl"))
    (:file "gray-stream-methods"
-          :depends-on ("pkgdcl" "classes" "buffer"
-                       "fd-mixin" "gray-stream-mixin"))))
+          :depends-on ("pkgdcl" "classes" "buffer" "fd-mixin"))))
