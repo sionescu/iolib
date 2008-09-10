@@ -52,31 +52,32 @@
   (unless (fboundp 'stream:stream-write-string)
     (require "streamc.fasl")))
 
-(defvar *gray-stream-symbols*
-  '(#:fundamental-stream #:fundamental-input-stream
-    #:fundamental-output-stream #:fundamental-character-stream
-    #:fundamental-binary-stream #:fundamental-character-input-stream
-    #:fundamental-character-output-stream
-    #:fundamental-binary-input-stream
-    #:fundamental-binary-output-stream #:stream-read-char
-    #:stream-unread-char #:stream-read-char-no-hang
-    #:stream-peek-char #:stream-listen #:stream-read-line
-    #:stream-clear-input #:stream-write-char #:stream-line-column
-    #:stream-start-line-p #:stream-write-string #:stream-terpri
-    #:stream-fresh-line #:stream-finish-output #:stream-force-output
-    #:stream-clear-output #:stream-advance-to-column
-    #:stream-read-byte #:stream-write-byte))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *gray-stream-symbols*
+    '(#:fundamental-stream #:fundamental-input-stream
+      #:fundamental-output-stream #:fundamental-character-stream
+      #:fundamental-binary-stream #:fundamental-character-input-stream
+      #:fundamental-character-output-stream
+      #:fundamental-binary-input-stream
+      #:fundamental-binary-output-stream #:stream-read-char
+      #:stream-unread-char #:stream-read-char-no-hang
+      #:stream-peek-char #:stream-listen #:stream-read-line
+      #:stream-clear-input #:stream-write-char #:stream-line-column
+      #:stream-start-line-p #:stream-write-string #:stream-terpri
+      #:stream-fresh-line #:stream-finish-output #:stream-force-output
+      #:stream-clear-output #:stream-advance-to-column
+      #:stream-read-byte #:stream-write-byte))
 
-(defparameter *gray-stream-package*
-  #+allegro :excl
-  #+cmu :ext
-  #+clisp :gray
-  #+ecl :gray
-  #+(or ccl openmcl) :ccl
-  #+lispworks :stream
-  #+sbcl :sb-gray
-  #-(or allegro cmu clisp ecl ccl openmcl lispworks sbcl)
-  (error "Your CL implementation isn't supported."))
+  (defparameter *gray-stream-package*
+    #+allegro :excl
+    #+cmu :ext
+    #+clisp :gray
+    #+ecl :gray
+    #+(or ccl openmcl) :ccl
+    #+lispworks :stream
+    #+sbcl :sb-gray
+    #-(or allegro cmu clisp ecl ccl openmcl lispworks sbcl)
+    (error "Your CL implementation isn't supported.")))
 
 (import (mapcar #'(lambda (s) (find-symbol (string s) *gray-stream-package*))
                 *gray-stream-symbols*)
