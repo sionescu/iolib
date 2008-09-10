@@ -4,7 +4,7 @@
   :description "IOLib test suite."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:io.multiplex :io.streams :net.sockets :fiveam)
+  :depends-on (:iolib :fiveam)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "tests"))
                              *load-truename*)
   :components
