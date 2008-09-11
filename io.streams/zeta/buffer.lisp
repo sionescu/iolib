@@ -119,7 +119,7 @@
     (with-synchronized-buffer (buffer :input)
       (unless (or abort (eql :read (last-io-op-of buffer)))
         (%buffer-flush buffer 0))
-      (relinquish device)))
+      (relinquish device :abort abort)))
   (values buffer))
 
 (defmethod relinquish ((buffer dual-channel-buffer) &key abort)
@@ -128,7 +128,7 @@
     (with-synchronized-buffer (buffer :io)
       (unless abort
         (%buffer-flush buffer 0))
-      (relinquish device)))
+      (relinquish device :abort abort)))
   (values buffer))
 
 

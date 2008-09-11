@@ -24,7 +24,7 @@
 ;;; Relinquish I/O resources
 ;;;-------------------------------------------------------------------------
 
-(defgeneric relinquish (device &key abort &allow-other-keys))
+(defgeneric relinquish (device &rest args &key abort))
 
 
 ;;;-------------------------------------------------------------------------
