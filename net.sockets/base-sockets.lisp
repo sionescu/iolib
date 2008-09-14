@@ -140,7 +140,7 @@ from which the data was received."))
 
 (defgeneric send-to (socket buffer &rest args &key &allow-other-keys)
   (:documentation "Send the contents of `BUFFER' to `SOCKET'.
-`BUFFER' must be either a vector that can be coerced to a (SIMPLE-ARRAY (UNSIGNED-BYTE 8) *).
+`BUFFER' must be a vector that can be coerced to a (SIMPLE-ARRAY (UNSIGNED-BYTE 8) *).
 `START' and `END' are used a bounding index on `BUFFER'.
 For disconnected datagram sockets, `REMOTE-HOST' and `REMOTE-PORT' or `REMOTE-FILENAME' are used
 as destination for the data.
