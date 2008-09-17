@@ -21,8 +21,10 @@
    ;; Foreign definitions
    (cffi-grovel:grovel-file "grovel" :depends-on ("pkgdcl"))
    (:file "foreign-unix" :depends-on ("pkgdcl" "grovel"))
-   #+linux (:file "foreign-linux" :depends-on ("pkgdcl" "grovel"))
-   #+bsd (:file "foreign-bsd" :depends-on ("pkgdcl" "grovel"))
+   #+linux
+   (:file "foreign-linux" :depends-on ("pkgdcl" "grovel"))
+   #+bsd
+   (:file "foreign-bsd" :depends-on ("pkgdcl" "grovel"))
 
    ;; Scheduler
    (:file "time" :depends-on ("pkgdcl"))
@@ -41,11 +43,17 @@
    (:file "fd-wait" :depends-on ("pkgdcl" "grovel" "foreign-unix" "utils"))
 
    ;; Event sources
-   (:file "select" :depends-on ("pkgdcl" "utils" "grovel" "foreign-unix"
+   (:file "backend-select"
+          :depends-on ("pkgdcl" "utils" "grovel" "foreign-unix"
                                 "fd-entry" "multiplexer"))
-   #+linux (:file "epoll" :depends-on ("pkgdcl" "grovel" "foreign-linux"
-                                       "utils" "fd-entry" "multiplexer"))
-   #+bsd (:file "kqueue" :depends-on ("pkgdcl" "grovel" "foreign-bsd"
-                                      "utils" "fd-entry" "multiplexer"))
-   (:file "detect" :depends-on ("pkgdcl" "multiplexer" "select"
-                                #+linux "epoll" #+bsd "kqueue"))))
+   #+linux
+   (:file "backend-epoll"
+          :depends-on ("pkgdcl" "grovel" "foreign-linux"
+                                "utils" "fd-entry" "multiplexer"))
+   #+bsd
+   (:file "backend-kqueue"
+          :depends-on ("pkgdcl" "grovel" "foreign-bsd"
+                                "utils" "fd-entry" "multiplexer"))
+   (:file "detect"
+          :depends-on ("pkgdcl" "multiplexer" "backend-select"
+                       #+linux "backend-epoll" #+bsd "backend-kqueue"))))
