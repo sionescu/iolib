@@ -39,7 +39,7 @@
            (with-package-iterator (iterator packages :external)
              (loop (multiple-value-bind (morep symbol) (iterator)
                      (unless morep (return))
-                     (pushnew (alexandria:ensure-symbol symbol :iolib.base)
+                     (pushnew (intern (string symbol) :iolib.base)
                               symbols))))
            symbols)))
   (export (gather-external-symbols :common-lisp :alexandria :iolib.base)
@@ -90,7 +90,7 @@
                 *gray-stream-symbols*)
         :iolib.base)
 
-(export (mapcar (lambda (s) (alexandria:ensure-symbol s :iolib.base))
+(export (mapcar (lambda (s) (intern (string s) :iolib.base))
                 (list* '#:trivial-gray-stream-mixin
                        '#:stream-read-sequence
                        '#:stream-write-sequence
