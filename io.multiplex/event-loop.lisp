@@ -52,7 +52,8 @@
 
 (defgeneric remove-fd (event-base fd))
 
-(defgeneric event-dispatch (event-base &key one-shot timeout &allow-other-keys))
+(defgeneric event-dispatch (event-base
+                            &key one-shot timeout min-timeout max-timeout))
 
 (defgeneric exit-event-loop (event-base &key delay))
 
@@ -182,6 +183,7 @@ within the extent of BODY.  Closes VAR."
 
 (defmethod add-timer :before
     ((event-base event-base) function timeout &key one-shot)
+  (declare (ignore timeout))
   (check-type function (or symbol function))
   ;; FIXME: check the type of the timeout
   (check-type one-shot boolean))
@@ -240,8 +242,9 @@ within the extent of BODY.  Closes VAR."
 (defvar *maximum-event-loop-timeout* 1.0d0)
 
 (defmethod event-dispatch :around ((event-base event-base)
-                                   &key timeout one-shot)
-  (declare (ignore one-shot))
+                                   &key timeout one-shot
+                                   min-timeout max-timeout)
+  (declare (ignore one-shot min-timeout max-timeout))
   (setf (exit-p event-base) nil)
   (when timeout
     (exit-event-loop event-base :delay timeout))
@@ -252,6 +255,7 @@ within the extent of BODY.  Closes VAR."
     (remove-event event-base ev)))
 
 (defmethod event-dispatch ((event-base event-base) &key one-shot timeout
+                           (min-timeout *minimum-event-loop-timeout*)
                            (max-timeout *maximum-event-loop-timeout*))
   (declare (ignore timeout))
   (with-accessors ((mux mux-of) (fds fds-of) (exit-p exit-p)
@@ -262,8 +266,7 @@ within the extent of BODY.  Closes VAR."
     (flet ((poll-timeout ()
              (clamp-timeout (min-timeout (time-to-next-timer timers)
                                          (time-to-next-timer fd-timers))
-                            *minimum-event-loop-timeout*
-                            *maximum-event-loop-timeout*)))
+                            min-timeout max-timeout)))
       (do ((deletion-list () ())
            (eventsp nil nil)
            (poll-timeout (poll-timeout) (poll-timeout))
@@ -283,13 +286,13 @@ within the extent of BODY.  Closes VAR."
 ;;; have been received, NIL otherwise.
 (defun dispatch-fd-events-once (event-base timeout now)
   (loop
-     :with dlist := nil
      :with fd-events := (harvest-events (mux-of event-base) timeout)
      :for ev :in fd-events
-     :do (setf dlist (%handle-one-fd event-base ev now dlist))
+     :for dlist :=    (%handle-one-fd event-base ev now nil)
+                :then (%handle-one-fd event-base ev now dlist)
      :finally
-     (priority-queue-reorder (fd-timers-of event-base))
-     (return (values (consp fd-events) dlist))))
+        (priority-queue-reorder (fd-timers-of event-base))
+      (return (values (consp fd-events) dlist))))
 
 (defun %handle-one-fd (event-base event now deletion-list)
   (destructuring-bind (fd ev-types) event
