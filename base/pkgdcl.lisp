@@ -11,6 +11,8 @@
   (:export
    ;; Conditions
    #:bug
+   ;; Types
+   #:function-designator
    ;; RETURN*
    #:return* #:lambda* #:defun #:defmethod
    #:defmacro #:define-compiler-macro
