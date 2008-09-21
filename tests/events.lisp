@@ -52,11 +52,12 @@
   (error "timeout"))
 
 (defmacro waiting-for-event ((base fd event-type) &body body)
-  (with-gensyms (fd-arg event-arg)
+  (with-gensyms (fd-arg event-arg error-arg)
     (once-only (base)
       `(progn
          (add-fd ,base ,fd ,event-type
-                 (lambda (,fd-arg ,event-arg)
+                 (lambda (,fd-arg ,event-arg ,error-arg)
+                   (declare (ignore ,error-arg))
                    (when (eq ,event-arg :error)
                      (error "error with ~A" ,fd-arg))
                    ,@body)
@@ -76,7 +77,7 @@
          (add-timer base #'timeout-cb 5)
          (let (peer)
            (waiting-for-event (base (fd-of passive) :read)
-                              (setq peer (accept-connection passive)))
+             (setq peer (accept-connection passive)))
            (assert (socket-open-p peer)))
          ;; TODO: send and receive some stuff
          ))

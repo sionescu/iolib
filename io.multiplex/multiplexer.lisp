@@ -61,24 +61,12 @@ Returns a list of fd/result pairs which have one of these forms:
     (setf (slot-value mux 'fd) nil))
   (values mux))
 
-(defmethod monitor-fd :around ((mux multiplexer) fd-entry)
-  (if (ignore-and-print-errors (call-next-method))
-      t
-      (warn "FD monitoring failed for FD ~A."
-            (fd-entry-fd fd-entry))))
-
-(defmethod update-fd :around ((mux multiplexer) fd-entry event-type edge-change)
-  (declare (ignore event-type edge-change))
-  (if (ignore-and-print-errors (call-next-method))
-      t
-      (warn "FD status update failed for FD ~A."
-            (fd-entry-fd fd-entry))))
-
-(defmethod unmonitor-fd :around ((mux multiplexer) fd-entry)
-  (if (ignore-and-print-errors (call-next-method))
-      t
-      (warn "FD unmonitoring failed for FD ~A."
-            (fd-entry-fd fd-entry))))
+(defmethod monitor-fd :before ((mux multiplexer) fd-entry)
+  (with-accessors ((fd-limit fd-limit-of))
+      mux
+    (let ((fd (fd-entry-fd fd-entry)))
+      (when (and fd-limit (> fd fd-limit))
+        (error "Cannot add such a large FD: ~A" fd)))))
 
 (defmacro define-multiplexer (name priority superclasses slots &rest options)
   `(progn
