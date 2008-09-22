@@ -55,13 +55,13 @@
   (with-gensyms (fd-arg event-arg error-arg)
     (once-only (base)
       `(progn
-         (add-fd ,base ,fd ,event-type
-                 (lambda (,fd-arg ,event-arg ,error-arg)
-                   (declare (ignore ,error-arg))
-                   (when (eq ,event-arg :error)
-                     (error "error with ~A" ,fd-arg))
-                   ,@body)
-                 :one-shot t)
+         (set-io-handler ,base ,fd ,event-type
+                         (lambda (,fd-arg ,event-arg ,error-arg)
+                           (declare (ignore ,error-arg))
+                           (when (eq ,event-arg :error)
+                             (error "error with ~A" ,fd-arg))
+                           ,@body)
+                         :one-shot t)
          (event-dispatch ,base :one-shot t)))))
 
 ;;; FIXME: doesn't work with SELECT.

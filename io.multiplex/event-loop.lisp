@@ -44,16 +44,17 @@
 ;;; Generic functions
 ;;;-------------------------------------------------------------------------
 
-(defgeneric add-fd (base fd event-type function &key timeout one-shot))
+(defgeneric set-io-handler (event-base fd event-type function &key timeout one-shot))
+
+(defgeneric set-error-handler (event-base fd function))
 
 (defgeneric add-timer (event-base function timeout &key one-shot))
 
-(defgeneric remove-event (event-base event))
+(defgeneric remove-fd-handlers (event-base fd &key read write error))
 
-(defgeneric remove-fd (event-base fd))
+(defgeneric remove-timer (event-base timer))
 
-(defgeneric event-dispatch (event-base
-                            &key one-shot timeout min-timeout max-timeout))
+(defgeneric event-dispatch (event-base &key one-shot timeout min-step max-step))
 
 (defgeneric exit-event-loop (event-base &key delay))
 
@@ -108,17 +109,10 @@ within the extent of BODY.  Closes VAR."
 (defun (setf fd-entry-of) (fd-entry event-base fd)
   (setf (gethash fd (fds-of event-base)) fd-entry))
 
-(defun remove-fd-entry (event-base fd)
-  (remhash fd (fds-of event-base)))
-
 (defmethod exit-event-loop ((event-base event-base) &key (delay 0))
   (add-timer event-base
              (lambda () (setf (exit-p event-base) t))
              delay :one-shot t))
-
-(defun fd-monitored-p (event-base fd event-type)
-  (let ((entry (fd-entry-of event-base fd)))
-    (and entry (fd-entry-event entry event-type))))
 
 (defmethod event-base-empty-p ((event-base event-base))
   (and (zerop (hash-table-count (fds-of event-base)))
@@ -126,137 +120,162 @@ within the extent of BODY.  Closes VAR."
 
 
 ;;;-------------------------------------------------------------------------
-;;; ADD-FD
+;;; SET-IO-HANDLER
 ;;;-------------------------------------------------------------------------
 
-(defun expire-event (event-base event)
-  (push event (expired-events-of event-base)))
-
-(defun %add-fd-timer (event-base event timeout)
-  (let ((timer (make-timer (lambda () (expire-event event-base event))
-                           timeout)))
-    (setf (fd-event-timer event) timer)
-    (schedule-timer (fd-timers-of event-base) timer)))
-
-(defun %add-fd (event-base fd event fd-entry timeout)
-  (when timeout
-    (%add-fd-timer event-base event timeout))
-  (setf (fd-entry-event fd-entry (fd-event-type event)) event)
-  (setf (fd-entry-of event-base fd) fd-entry)
-  (values event))
-
-(defmethod add-fd :before
+(defmethod set-io-handler :before
     ((event-base event-base) fd event-type function &key timeout one-shot)
   (declare (ignore timeout))
   (check-type fd unsigned-byte)
   (check-type event-type fd-event-type)
-  (check-type function (or symbol function))
+  (check-type function function-designator)
   ;; FIXME: check the type of the timeout
   (check-type one-shot boolean)
   (when (fd-monitored-p event-base fd event-type)
     (error "FD ~A is already monitored for event ~A" fd event-type)))
 
-(defmethod add-fd
+(defun fd-monitored-p (event-base fd event-type)
+  (let ((entry (fd-entry-of event-base fd)))
+    (and entry (fd-entry-handler entry event-type))))
+
+(defmethod set-io-handler
     ((event-base event-base) fd event-type function &key timeout one-shot)
-  ;; error events are forever
-  (when (eql :error event-type)
-    (setf timeout nil one-shot nil))
   (let ((current-fd-entry (fd-entry-of event-base fd))
-        (event (make-event fd event-type function one-shot)))
+        (event (make-fd-handler fd event-type function one-shot)))
     (cond
       (current-fd-entry
-       (%add-fd event-base fd event current-fd-entry timeout)
+       (%set-io-handler event-base fd event current-fd-entry timeout)
        (update-fd (mux-of event-base) current-fd-entry event-type :add))
       (t
        (let ((new-fd-entry (make-fd-entry fd)))
-         (%add-fd event-base fd event new-fd-entry timeout)
+         (%set-io-handler event-base fd event new-fd-entry timeout)
          (monitor-fd (mux-of event-base) new-fd-entry))))
     (values event)))
+
+(defun %set-io-handler (event-base fd event fd-entry timeout)
+  (when timeout
+    (%set-io-handler-timer event-base event timeout))
+  (setf (fd-entry-handler fd-entry (fd-handler-type event)) event)
+  (setf (fd-entry-of event-base fd) fd-entry)
+  (values event))
+
+(defun %set-io-handler-timer (event-base event timeout)
+  (let ((timer (make-timer (lambda () (expire-event event-base event))
+                           timeout)))
+    (setf (fd-handler-timer event) timer)
+    (schedule-timer (fd-timers-of event-base) timer)))
+
+(defun expire-event (event-base event)
+  (push event (expired-events-of event-base)))
+
+
+;;;-------------------------------------------------------------------------
+;;; SET-ERROR-HANDLER
+;;;-------------------------------------------------------------------------
+
+(defmethod set-error-handler :before
+    ((event-base event-base) fd function)
+  (check-type fd unsigned-byte)
+  (check-type function function-designator)
+  (unless (fd-entry-of event-base fd)
+    (error "FD ~A is not being monitored" fd))
+  (when (fd-has-error-handler-p event-base fd)
+    (error "FD ~A already has an error handler" fd)))
+
+(defun fd-has-error-handler-p (event-base fd)
+  (let ((entry (fd-entry-of event-base fd)))
+    (and entry (fd-entry-error-callback entry))))
+
+(defmethod set-error-handler
+    ((event-base event-base) fd function)
+  (let ((fd-entry (fd-entry-of event-base fd)))
+    (setf (fd-entry-error-callback fd-entry) function)))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; ADD-TIMER
 ;;;-------------------------------------------------------------------------
 
-(defun %add-timer (event-base timer)
-  (schedule-timer (timers-of event-base) timer))
-
 (defmethod add-timer :before
     ((event-base event-base) function timeout &key one-shot)
   (declare (ignore timeout))
-  (check-type function (or symbol function))
+  (check-type function function-designator)
   ;; FIXME: check the type of the timeout
   (check-type one-shot boolean))
 
 (defmethod add-timer
     ((event-base event-base) function timeout &key one-shot)
-  (%add-timer event-base (make-timer function timeout :one-shot one-shot)))
+  (schedule-timer (timers-of event-base)
+                  (make-timer function timeout :one-shot one-shot)))
 
 
 ;;;-------------------------------------------------------------------------
-;;; REMOVE-FD and REMOVE-EVENT
+;;; REMOVE-FD-HANDLERS and REMOVE-TIMER
 ;;;-------------------------------------------------------------------------
 
-(defun %remove-fd-event (event-base event)
-  (let* ((fd (fd-event-fd event))
-         (current-entry (fd-entry-of event-base fd)))
-    (when current-entry
-      (setf (fd-entry-event current-entry (fd-event-type event)) nil)
-      (when-let (timer (fd-event-timer event))
-        (unschedule-timer (fd-timers-of event-base) timer))
-      (when (fd-entry-empty-p current-entry)
-        (remove-fd-entry event-base fd))
-      (if (fd-entry-empty-p current-entry)
-          (unmonitor-fd (mux-of event-base) current-entry)
-          (update-fd (mux-of event-base) current-entry
-                     (fd-event-type event) :del)))))
-
-(defun %remove-timer (event-base timer)
-  (unschedule-timer (timers-of event-base) timer))
-
-(defmethod remove-event ((event-base event-base) event)
-  (etypecase event
-    (fd-event (%remove-fd-event event-base event))
-    (timer    (%remove-timer event-base event)))
-  (values event-base))
-
-(defmethod remove-fd ((event-base event-base) fd)
+(defmethod remove-fd-handlers
+    ((event-base event-base) fd &key read write error)
+  (unless (or read write error)
+    (setf read t write t error t))
   (let ((entry (fd-entry-of event-base fd)))
     (cond
       (entry
-       (when-let (rev (fd-entry-read-event entry))
-         (%remove-fd-event event-base rev))
-       (when-let (wev (fd-entry-write-event entry))
-         (%remove-fd-event event-base wev))
-       (assert (null (fd-entry-of event-base fd)))
-       (unmonitor-fd (mux-of event-base) entry))
+       (%remove-fd-handlers event-base fd entry read write error)
+       (assert (null (fd-entry-of event-base fd))))
       (t
        (error "Trying to remove a non-monitored FD.")))))
+
+(defun %remove-fd-handlers (event-base fd entry read write error)
+  (let ((rev (fd-entry-read-handler entry))
+        (wev (fd-entry-write-handler entry)))
+    (when (and rev read)
+      (%remove-io-handler event-base fd entry rev))
+    (when (and wev write)
+      (%remove-io-handler event-base fd entry wev))
+    (when error
+      (setf (fd-entry-error-callback entry) nil))))
+
+(defun %remove-io-handler (event-base fd fd-entry event)
+  (let ((event-type (fd-handler-type event)))
+    (setf (fd-entry-handler fd-entry event-type) nil)
+    (when-let (timer (fd-handler-timer event))
+      (unschedule-timer (fd-timers-of event-base) timer))
+    (cond
+      ((fd-entry-empty-p fd-entry)
+       (%remove-fd-entry event-base fd)
+       (unmonitor-fd (mux-of event-base) fd-entry))
+      (t
+       (update-fd (mux-of event-base) fd-entry event-type :del)))))
+
+(defun %remove-fd-entry (event-base fd)
+  (remhash fd (fds-of event-base)))
+
+(defmethod remove-timer :before
+    ((event-base event-base) timer)
+  (check-type timer timer))
+
+(defmethod remove-timer ((event-base event-base) timer)
+  (unschedule-timer (timers-of event-base) timer)
+  (values event-base))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; EVENT-DISPATCH
 ;;;-------------------------------------------------------------------------
 
-(defvar *minimum-event-loop-timeout* 0.5d0)
-(defvar *maximum-event-loop-timeout* 1.0d0)
+(defvar *minimum-event-loop-step* 0.5d0)
+(defvar *maximum-event-loop-step* 1.0d0)
 
-(defmethod event-dispatch :around ((event-base event-base)
-                                   &key timeout one-shot
-                                   min-timeout max-timeout)
-  (declare (ignore one-shot min-timeout max-timeout))
+(defmethod event-dispatch :before
+    ((event-base event-base) &key timeout one-shot min-step max-step)
+  (declare (ignore one-shot min-step max-step))
   (setf (exit-p event-base) nil)
   (when timeout
-    (exit-event-loop event-base :delay timeout))
-  (call-next-method))
-
-(defun remove-events (event-base event-list)
-  (dolist (ev event-list)
-    (remove-event event-base ev)))
+    (exit-event-loop event-base :delay timeout)))
 
 (defmethod event-dispatch ((event-base event-base) &key one-shot timeout
-                           (min-timeout *minimum-event-loop-timeout*)
-                           (max-timeout *maximum-event-loop-timeout*))
+                           (min-step *minimum-event-loop-step*)
+                           (max-step *maximum-event-loop-step*))
   (declare (ignore timeout))
   (with-accessors ((mux mux-of) (fds fds-of) (exit-p exit-p)
                    (exit-when-empty exit-when-empty-p)
@@ -266,7 +285,7 @@ within the extent of BODY.  Closes VAR."
     (flet ((poll-timeout ()
              (clamp-timeout (min-timeout (time-to-next-timer timers)
                                          (time-to-next-timer fd-timers))
-                            min-timeout max-timeout)))
+                            min-step max-step)))
       (do ((deletion-list () ())
            (eventsp nil nil)
            (poll-timeout (poll-timeout) (poll-timeout))
@@ -276,11 +295,17 @@ within the extent of BODY.  Closes VAR."
         (setf expired-events nil)
         (setf (values eventsp deletion-list)
               (dispatch-fd-events-once event-base poll-timeout now))
-        (remove-events event-base deletion-list)
+        (%remove-handlers event-base deletion-list)
         (when (expire-pending-timers fd-timers now) (setf eventsp t))
         (dispatch-fd-timeouts expired-events)
         (when (expire-pending-timers timers now) (setf eventsp t))
         (when (and eventsp one-shot) (setf exit-p t))))))
+
+(defun %remove-handlers (event-base event-list)
+  (loop :for ev :in event-list
+        :for fd := (fd-handler-fd ev)
+        :for fd-entry := (fd-entry-of event-base fd)
+     :do (%remove-io-handler event-base fd fd-entry ev)))
 
 ;;; Waits for events and dispatches them.  Returns T if some events
 ;;; have been received, NIL otherwise.
@@ -310,25 +335,25 @@ within the extent of BODY.  Closes VAR."
          (when errorp
            (%dispatch-event fd-entry :error :error now)
            (setf readp t writep t))
-         (when readp (push (fd-entry-read-event fd-entry) deletion-list))
-         (when writep (push (fd-entry-write-event fd-entry) deletion-list)))
+         (when readp (push (fd-entry-read-handler fd-entry) deletion-list))
+         (when writep (push (fd-entry-write-handler fd-entry) deletion-list)))
         (t
          (error "Got spurious event for non-monitored FD: ~A" fd)))
       (values deletion-list))))
 
 (defun %dispatch-event (fd-entry event-type errorp now)
-  (let ((ev (fd-entry-event fd-entry event-type)))
-    (funcall (fd-event-handler ev)
+  (let ((ev (fd-entry-handler fd-entry event-type)))
+    (funcall (fd-handler-callback ev)
              (fd-entry-fd fd-entry)
              event-type
              (if errorp :error nil))
-    (when-let (timer (fd-event-timer ev))
+    (when-let (timer (fd-handler-timer ev))
       (reschedule-timer-relative-to-now timer now))
-    (fd-event-one-shot-p ev)))
+    (fd-handler-one-shot-p ev)))
 
 (defun dispatch-fd-timeouts (events)
   (dolist (ev events)
-    (funcall (fd-event-handler ev)
-             (fd-event-fd ev)
-             (fd-event-type ev)
+    (funcall (fd-handler-callback ev)
+             (fd-handler-fd ev)
+             (fd-handler-type ev)
              :timeout)))

@@ -30,7 +30,7 @@
               (null-pointer)))))
 
 (defun calc-kqueue-monitor-filter (fd-entry)
-  (if (null (fd-entry-read-event fd-entry))
+  (if (null (fd-entry-read-handler fd-entry))
       evfilt-write
       evfilt-read))
 
@@ -67,7 +67,7 @@
             (fd-entry-fd fd-entry)))))
 
 (defun calc-kqueue-unmonitor-filter (fd-entry)
-  (if (null (fd-entry-read-event fd-entry))
+  (if (null (fd-entry-read-handler fd-entry))
       evfilt-read
       evfilt-write))
 

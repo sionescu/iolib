@@ -56,14 +56,14 @@
 
 (defmethod monitor-fd ((mux select-multiplexer) fd-entry)
   (recalc-fd-masks mux (fd-entry-fd fd-entry)
-                   (fd-entry-read-event fd-entry)
-                   (fd-entry-write-event fd-entry)))
+                   (fd-entry-read-handler fd-entry)
+                   (fd-entry-write-handler fd-entry)))
 
 (defmethod update-fd ((mux select-multiplexer) fd-entry event-type edge-change)
   (declare (ignore event-type edge-change))
   (recalc-fd-masks mux (fd-entry-fd fd-entry)
-                   (fd-entry-read-event fd-entry)
-                   (fd-entry-write-event fd-entry)))
+                   (fd-entry-read-handler fd-entry)
+                   (fd-entry-write-handler fd-entry)))
 
 (defmethod unmonitor-fd ((mux select-multiplexer) fd-entry)
   (recalc-fd-masks mux (fd-entry-fd fd-entry) nil nil))

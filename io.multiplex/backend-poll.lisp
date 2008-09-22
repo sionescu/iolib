@@ -50,8 +50,8 @@
 
 (defmethod monitor-fd ((mux poll-multiplexer) fd-entry)
   (let ((fd (fd-entry-fd fd-entry))
-        (readp (fd-entry-read-event fd-entry))
-        (writep (fd-entry-write-event fd-entry)))
+        (readp (fd-entry-read-handler fd-entry))
+        (writep (fd-entry-write-handler fd-entry)))
     (with-accessors ((fd-set fd-set-of) (size fd-set-size-of)
                      (count fd-count-of)) mux
       (when (= count size)
@@ -64,8 +64,8 @@
   (declare (ignore event-type edge-change))
   (let* ((fd (fd-entry-fd fd-entry))
          (pos (gethash fd *pollfd-table*))
-         (readp (fd-entry-read-event fd-entry))
-         (writep (fd-entry-write-event fd-entry)))
+         (readp (fd-entry-read-handler fd-entry))
+         (writep (fd-entry-write-handler fd-entry)))
     (with-accessors ((fd-set fd-set-of)) mux
       (set-pollfd-entry fd-set pos fd readp writep))))
 

@@ -22,9 +22,9 @@
   (setf (slot-value mux 'fd) (epoll-create size)))
 
 (defun calc-epoll-flags (fd-entry)
-  (logior (if (fd-entry-read-event fd-entry)
+  (logior (if (fd-entry-read-handler fd-entry)
               epollin 0)
-          (if (fd-entry-write-event fd-entry)
+          (if (fd-entry-write-handler fd-entry)
               epollout 0)
           epollpri))
 

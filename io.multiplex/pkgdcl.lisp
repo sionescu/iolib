@@ -15,27 +15,25 @@
                           #:funcall #:until #:collect)
   (:export
    ;; Classes
-   #:event
    #:event-base
    #:multiplexer
    #:select-multiplexer
    #:poll-multiplexer
    #+bsd #:kqueue-multiplexer
    #+linux #:epoll-multiplexer
-   #:fd-event
-   #:priority-queue
 
    ;; Event-base Operations
    #:*available-multiplexers*
    #:*default-multiplexer*
    #:*default-event-loop-timeout*
-   #:add-fd
    #:add-timer
    #:event-base-empty-p
    #:event-dispatch
    #:exit-event-loop
-   #:remove-event
-   #:remove-fd
+   #:remove-timer
+   #:remove-fd-handlers
+   #:set-error-handler
+   #:set-io-handler
    #:with-event-base
 
    ;; Operations on FDs

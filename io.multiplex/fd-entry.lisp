@@ -8,43 +8,39 @@
 ;;;; EVENT
 
 (deftype fd-event-type ()
-  '(member :read :write :error))
+  '(member :read :write))
 
-(defstruct (fd-event (:constructor make-event (fd type handler one-shot-p))
-                     (:copier nil))
+(defstruct (fd-handler
+             (:constructor make-fd-handler
+                           (fd type callback one-shot-p &optional timer))
+             (:copier nil))
   (fd nil :type unsigned-byte)
   (type nil :type fd-event-type)
-  (handler nil :type function)
+  (callback nil :type function-designator)
   (timer nil :type (or null timer))
-  ;; if an event is not persistent it is removed
-  ;; after it is triggered or if it times out
+  ;; one-shot events are removed after being triggered
   (one-shot-p nil :type boolean))
 
 ;;;; FD-ENTRY
 
-(defstruct (fd-entry (:constructor make-fd-entry (fd))
-                     (:copier nil))
+(defstruct (fd-entry
+             (:constructor make-fd-entry (fd))
+             (:copier nil))
   (fd 0 :type unsigned-byte)
-  (read-event  nil :type (or null fd-event))
-  (write-event nil :type (or null fd-event))
-  (error-event nil :type (or null fd-event)))
+  (read-handler  nil :type (or null fd-handler))
+  (write-handler nil :type (or null fd-handler))
+  (error-callback nil :type (or null function-designator)))
 
-(defun fd-entry-event (fd-entry event-type)
-  (check-type fd-entry fd-entry)
-  (check-type event-type fd-event-type)
+(defun fd-entry-handler (fd-entry event-type)
   (case event-type
-    (:read  (fd-entry-read-event  fd-entry))
-    (:write (fd-entry-write-event fd-entry))
-    (:error (fd-entry-error-event fd-entry))))
+    (:read  (fd-entry-read-handler  fd-entry))
+    (:write (fd-entry-write-handler fd-entry))))
 
-(defun (setf fd-entry-event) (event fd-entry event-type)
-  (check-type fd-entry fd-entry)
-  (check-type event-type fd-event-type)
+(defun (setf fd-entry-handler) (event fd-entry event-type)
   (case event-type
-    (:read  (setf (fd-entry-read-event  fd-entry) event))
-    (:write (setf (fd-entry-write-event fd-entry) event))
-    (:error (setf (fd-entry-error-event fd-entry) event))))
+    (:read  (setf (fd-entry-read-handler  fd-entry) event))
+    (:write (setf (fd-entry-write-handler fd-entry) event))))
 
 (defun fd-entry-empty-p (fd-entry)
-  (or (null (fd-entry-read-event  fd-entry))
-      (null (fd-entry-write-event fd-entry))))
+  (and (null (fd-entry-read-handler  fd-entry))
+       (null (fd-entry-write-handler fd-entry))))
