@@ -9,17 +9,16 @@
   `(,(find-right-symbol :defun :series)
      ,name ,args ,@(wrap-body-for-return-star body name)))
 
-(cl:defmacro defmethod (name method-qualifier args &body body)
+(cl:defmacro defmethod (name args &body body)
   (cond
     ;; no method qualifier, this is actually the lambda-list
-    ((listp method-qualifier)
-     (setf body (cons args body)
-           args method-qualifier)
+    ((listp args)
      `(,(find-right-symbol :defmethod)
         ,name ,args ,@(wrap-body-for-return-star body name)))
+    ;; args is the method qualifier
     (t
      `(,(find-right-symbol :defmethod) ,name
-        ,method-qualifier ,args ,@(wrap-body-for-return-star body name)))))
+        ,args ,(car body) ,@(wrap-body-for-return-star (cdr body) name)))))
 
 (cl:defmacro lambda* (args &body body)
   `(,(find-right-symbol :lambda)
