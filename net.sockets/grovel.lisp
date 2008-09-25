@@ -247,14 +247,14 @@
 (constant (scm-rights "SCM_RIGHTS"))
 (constant (scm-credentials "SCM_CREDENTIALS") :optional t)
 
-#+linux
+#+(and nil linux)
 (cstruct ucred "struct ucred"
   "Socket credential messages."
   (pid "pid" :type pid)
   (uid "uid" :type uid)
   (gid "gid" :type gid))
 
-#+freebsd
+#+(and nil freebsd)
 (cstruct sockcred "struct sockcred"
   (uid     "sc_uid"     :type uid)
   (euid    "sc_euid"    :type uid)
