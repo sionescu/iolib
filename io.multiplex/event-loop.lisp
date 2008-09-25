@@ -221,7 +221,8 @@ within the extent of BODY.  Closes VAR."
     (cond
       (entry
        (%remove-fd-handlers event-base fd entry read write error)
-       (assert (null (fd-entry-of event-base fd))))
+       (when (and read write)
+         (assert (null (fd-entry-of event-base fd)))))
       (t
        (error "Trying to remove a non-monitored FD.")))))
 
@@ -333,7 +334,9 @@ within the extent of BODY.  Closes VAR."
            (setf writep (%dispatch-event fd-entry :write
                                          (if errorp :error nil) now)))
          (when errorp
-           (%dispatch-event fd-entry :error :error now)
+           (funcall (fd-entry-error-callback fd-entry)
+                    (fd-entry-fd fd-entry)
+                    :error)
            (setf readp t writep t))
          (when readp (push (fd-entry-read-handler fd-entry) deletion-list))
          (when writep (push (fd-entry-write-handler fd-entry) deletion-list)))
