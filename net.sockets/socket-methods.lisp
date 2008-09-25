@@ -301,16 +301,19 @@
     (%connect fd sin6 size-of-sockaddr-in6)))
 
 (defun call-with-socket-to-wait-connect (socket thunk wait timeout)
-  (handler-case
-      (funcall thunk)
-    (nix:ewouldblock (err)
-      (cond
-        (wait
-         (iomux:wait-until-fd-ready (fd-of socket) :output timeout t)
-         (let ((errcode (socket-option socket :error)))
-           (unless (zerop errcode)
-             (signal-socket-error errcode))))
-        (t (error err))))))
+  (flet
+      ((wait-connect (err)
+         (cond
+           (wait
+            (iomux:wait-until-fd-ready (fd-of socket) :output timeout t)
+            (let ((errcode (socket-option socket :error)))
+              (unless (zerop errcode)
+                (signal-socket-error errcode))))
+           (t (error err)))))
+    (handler-case
+        (funcall thunk)
+      (nix:ewouldblock (err) (wait-connect err))
+      (nix:einprogress (err) (wait-connect err)))))
 
 (defmacro with-socket-to-wait-connect ((socket wait timeout) &body body)
   `(call-with-socket-to-wait-connect ,socket (lambda () ,@body) ,wait ,timeout))
