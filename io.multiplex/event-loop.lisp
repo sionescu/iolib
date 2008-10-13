@@ -325,23 +325,20 @@ within the extent of BODY.  Closes VAR."
     (let* ((readp nil) (writep nil)
            (fd-entry (fd-entry-of event-base fd))
            (errorp (and fd-entry (member :error ev-types))))
-      (cond
-        (fd-entry
-         (when (member :read ev-types)
-           (setf readp (%dispatch-event fd-entry :read
+      (when fd-entry
+        (when (member :read ev-types)
+          (setf readp (%dispatch-event fd-entry :read
+                                       (if errorp :error nil) now)))
+        (when (member :write ev-types)
+          (setf writep (%dispatch-event fd-entry :write
                                         (if errorp :error nil) now)))
-         (when (member :write ev-types)
-           (setf writep (%dispatch-event fd-entry :write
-                                         (if errorp :error nil) now)))
-         (when errorp
-           (funcall (fd-entry-error-callback fd-entry)
-                    (fd-entry-fd fd-entry)
-                    :error)
-           (setf readp t writep t))
-         (when readp (push (fd-entry-read-handler fd-entry) deletion-list))
-         (when writep (push (fd-entry-write-handler fd-entry) deletion-list)))
-        (t
-         (error "Got spurious event for non-monitored FD: ~A" fd)))
+        (when errorp
+          (funcall (fd-entry-error-callback fd-entry)
+                   (fd-entry-fd fd-entry)
+                   :error)
+          (setf readp t writep t))
+        (when readp (push (fd-entry-read-handler fd-entry) deletion-list))
+        (when writep (push (fd-entry-write-handler fd-entry) deletion-list)))
       (values deletion-list))))
 
 (defun %dispatch-event (fd-entry event-type errorp now)
