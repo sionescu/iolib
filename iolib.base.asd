@@ -19,4 +19,6 @@
                (:file "matching" :depends-on ("pkgdcl" "return-star"))
                (:file "time" :depends-on ("pkgdcl" "return-star"))
                (:file "split-sequence" :depends-on ("pkgdcl" "return-star" "sequence"))
-               (:file "gray-stream-mixin" :depends-on ("pkgdcl" "return-star"))))
+               #+scl (:file "scl-gray-streams")
+               (:file "gray-stream-mixin"
+                      :depends-on ("pkgdcl" "return-star" #+scl "scl-gray-streams"))))

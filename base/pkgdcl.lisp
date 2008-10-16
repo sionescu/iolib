@@ -80,12 +80,13 @@
   (defparameter *gray-stream-package*
     #+allegro :excl
     #+cmu :ext
+    #+scl :ext
     #+clisp :gray
     #+ecl :gray
     #+(or ccl openmcl) :ccl
     #+lispworks :stream
     #+sbcl :sb-gray
-    #-(or allegro cmu clisp ecl ccl openmcl lispworks sbcl)
+    #-(or allegro cmu clisp ecl ccl openmcl lispworks sbcl scl)
     (error "Your CL implementation isn't supported.")))
 
 (import (mapcar #'(lambda (s) (find-symbol (string s) *gray-stream-package*))
