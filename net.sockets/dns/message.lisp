@@ -20,7 +20,7 @@
   (:default-initargs :qdcount 1 :ancount 0 :nscount 0 :arcount 0))
 
 (defmacro define-flags-bitfield (name offset length &optional (type :integer))
-  (let ((method-name (format-symbol t "~A-FIELD" name)))
+  (let ((method-name (format-symbol t "~A-~A" name '#:field)))
     `(progn
        (defgeneric ,method-name (message)
          (:method ((message dns-message))
