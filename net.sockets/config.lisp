@@ -5,7 +5,10 @@
 
 (in-package :net.sockets)
 
-(defvar *ipv6* t
+(defvar *ipv6*
+  (handler-case (%socket af-inet6 sock-stream ipproto-ip)
+    (nix:eafnosupport () nil)
+    (:no-error () t))
   "Specifies the default behaviour with respect to IPv6:
 - nil   : Only IPv4 addresses are used.
 - :ipv6 : Only IPv6 addresses are used.
