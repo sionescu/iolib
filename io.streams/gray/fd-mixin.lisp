@@ -10,9 +10,10 @@
 (defmethod close :around ((fd-mixin dual-channel-single-fd-mixin)
                           &key abort)
   (declare (ignore abort))
+  (call-next-method)
   (when (fd-of fd-mixin)
-    (nix:close (fd-of fd-mixin)))
-  (setf (fd-of fd-mixin) nil))
+    (nix:close (fd-of fd-mixin))
+    (setf (fd-of fd-mixin) nil)))
 
 ;;;; Get and Set O_NONBLOCK
 
