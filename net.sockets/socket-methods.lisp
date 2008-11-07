@@ -226,16 +226,19 @@
 
 (defmethod bind-address ((socket internet-socket) (address ipv4-address)
                          &key (port 0))
-  (if (ipv6-socket-p socket)
-      (bind-ipv6-address (fd-of socket)
-                         (map-ipv4-vector-to-ipv6 (address-name address))
-                         port)
-      (bind-ipv4-address (fd-of socket) (address-name address) port))
+  (let ((port (ensure-numerical-service port)))
+    (if (ipv6-socket-p socket)
+        (bind-ipv6-address (fd-of socket)
+                           (map-ipv4-vector-to-ipv6 (address-name address))
+                           port)
+        (bind-ipv4-address (fd-of socket) (address-name address) port)))
   (values socket))
 
 (defmethod bind-address ((socket internet-socket) (address ipv6-address)
                          &key (port 0))
-  (bind-ipv6-address (fd-of socket) (address-name address) port)
+  (bind-ipv6-address (fd-of socket)
+                     (address-name address)
+                     (ensure-numerical-service port))
   (values socket))
 
 (defmethod bind-address ((socket local-socket) (address local-address) &key)
@@ -320,7 +323,8 @@
 
 (defmethod connect ((socket internet-socket) (address inet-address)
                     &key (port 0) (wait t) (timeout nil))
-  (let ((name (address-name address)))
+  (let ((name (address-name address))
+        (port (ensure-numerical-service port)))
     (with-socket-to-wait-connect (socket wait timeout)
       (cond
         ((ipv6-socket-p socket)

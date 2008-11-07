@@ -99,18 +99,16 @@ call CLOSE with :ABORT T on `VAR'."
 
 (defun %%init-internet-stream-active-socket (socket keepalive nodelay reuse-address
                                              local-host local-port remote-host remote-port)
-  (let ((local-port  (ensure-numerical-service local-port))
-        (remote-port (ensure-numerical-service remote-port)))
-    (setf (socket-option socket :no-sigpipe :if-does-not-exist nil) t)
-    (when keepalive (setf (socket-option socket :keep-alive) t))
-    (when nodelay (setf (socket-option socket :tcp-nodelay) t))
-    (when local-host
-      (bind-address socket (ensure-hostname local-host)
-                    :port local-port
-                    :reuse-address reuse-address))
-    (when (plusp remote-port)
-      (connect socket (ensure-hostname remote-host)
-               :port remote-port)))
+  (setf (socket-option socket :no-sigpipe :if-does-not-exist nil) t)
+  (when keepalive (setf (socket-option socket :keep-alive) t))
+  (when nodelay (setf (socket-option socket :tcp-nodelay) t))
+  (when local-host
+    (bind-address socket (ensure-hostname local-host)
+                  :port local-port
+                  :reuse-address reuse-address))
+  (when (plusp remote-port)
+    (connect socket (ensure-hostname remote-host)
+             :port remote-port))
   (values socket))
 
 (define-socket-creator (:internet :stream :active)
@@ -128,14 +126,13 @@ call CLOSE with :ABORT T on `VAR'."
 
 (defun %%init-internet-stream-passive-socket (socket interface reuse-address
                                               local-host local-port backlog)
-  (let ((local-port  (ensure-numerical-service local-port)))
-    (when local-host
-      (when interface
-        (setf (socket-option socket :bind-to-device) interface))
-      (bind-address socket (ensure-hostname local-host)
-                    :port local-port
-                    :reuse-address reuse-address)
-      (listen-on socket :backlog backlog)))
+  (when local-host
+    (when interface
+      (setf (socket-option socket :bind-to-device) interface))
+    (bind-address socket (ensure-hostname local-host)
+                  :port local-port
+                  :reuse-address reuse-address)
+    (listen-on socket :backlog backlog))
   (values socket))
 
 (define-socket-creator (:internet :stream :passive)
@@ -186,18 +183,16 @@ call CLOSE with :ABORT T on `VAR'."
 (defun %%init-internet-datagram-active-socket (socket broadcast interface reuse-address
                                                local-host local-port remote-host remote-port)
   (setf (socket-option socket :no-sigpipe :if-does-not-exist nil) t)
-  (let ((local-port  (ensure-numerical-service local-port))
-        (remote-port (ensure-numerical-service remote-port)))
-    (when broadcast (setf (socket-option socket :broadcast) t))
-    (when local-host
-      (bind-address socket (ensure-hostname local-host)
-                    :port local-port
-                    :reuse-address reuse-address)
-      (when interface
-        (setf (socket-option socket :bind-to-device) interface)))
-    (when (plusp remote-port)
-      (connect socket (ensure-hostname remote-host)
-               :port remote-port)))
+  (when broadcast (setf (socket-option socket :broadcast) t))
+  (when local-host
+    (bind-address socket (ensure-hostname local-host)
+                  :port local-port
+                  :reuse-address reuse-address)
+    (when interface
+      (setf (socket-option socket :bind-to-device) interface)))
+  (when (plusp remote-port)
+    (connect socket (ensure-hostname remote-host)
+             :port remote-port))
   (values socket))
 
 (define-socket-creator (:internet :datagram :active)
