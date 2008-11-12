@@ -51,10 +51,11 @@
            (let ((pnum (parse-integer port)))
              (and (protocol-compatible-p protocol proto)
                   (= pnum service)))))
-    (iterate ((tokens (serialize-etc-file file)))
-      (ignore-parse-errors
-        (let ((proto (find-service-in-parsed-lines tokens #'good-proto-p)))
-          (when proto (return* proto)))))))
+    (map-etc-file (lambda (tokens)
+                    (ignore-errors
+                      (let ((proto (find-service-in-parsed-lines tokens #'good-proto-p)))
+                        (when proto (return* proto)))))
+                  file)))
 
 (defun lookup-service-on-disk-by-name (file service protocol)
   (flet ((good-proto-p (name port proto aliases)
@@ -62,10 +63,11 @@
            (and (protocol-compatible-p protocol proto)
                 (or (string= service name)
                     (member service aliases :test #'string=)))))
-    (iterate ((tokens (serialize-etc-file file)))
-      (ignore-parse-errors
-        (let ((proto (find-service-in-parsed-lines tokens #'good-proto-p)))
-          (when proto (return* proto)))))))
+    (map-etc-file (lambda (tokens)
+                    (ignore-errors
+                      (let ((proto (find-service-in-parsed-lines tokens #'good-proto-p)))
+                        (when proto (return* proto)))))
+                  file)))
 
 (define-condition unknown-service ()
   ((datum :initarg :datum :initform nil :reader unknown-service-datum))

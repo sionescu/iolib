@@ -270,10 +270,12 @@
       ;; the most significant 2 bits are either 01 or 10
       (t (error 'dns-message-error)))))
 
-(defun join (delimiter strings)
-  (collect-append 'string (spread (catenate #Z(0) (series 1))
-                                  (scan strings)
-                                  (string delimiter))))
+(defun join (connector strings)
+  (concatenate 'string (car strings)
+               (reduce (lambda (str1 str2)
+                         (concatenate 'string str1 connector str2))
+                       (cdr strings)
+                       :initial-value "")))
 
 (defgeneric dns-domain-name-to-string (buffer)
   (:method ((buffer dynamic-buffer))

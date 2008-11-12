@@ -7,12 +7,10 @@
 
 (defpackage :io.multiplex
   (:nicknames #:iomux)
-  (:use :iolib.base :cffi :series)
+  (:use :iolib.base :cffi)
   (:import-from #:osicat-posix #:defsyscall #:bzero
                 #:file-descriptor-designator
                 #:timeval #:sec #:usec)
-  (:shadowing-import-from :series #:let #:let* #:multiple-value-bind
-                          #:funcall #:until #:collect)
   (:export
    ;; Classes
    #:event-base

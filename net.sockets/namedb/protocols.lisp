@@ -40,19 +40,21 @@
            (declare (ignore value))
            (or (string= protocol name)
                (member protocol aliases :test #'string=))))
-    (iterate ((tokens (serialize-etc-file file)))
-      (ignore-parse-errors
-        (let ((proto (find-protocol-in-parsed-lines tokens #'good-proto-p)))
-          (when proto (return* proto)))))))
+    (map-etc-file (lambda (tokens)
+                    (ignore-errors
+                      (let ((proto (find-protocol-in-parsed-lines tokens #'good-proto-p)))
+                        (when proto (return* proto)))))
+                  file)))
 
 (defun lookup-protocol-on-disk-by-number (file protocol)
   (flet ((good-proto-p (name value aliases)
            (declare (ignore name aliases))
            (= protocol value)))
-    (iterate ((tokens (serialize-etc-file file)))
-      (ignore-parse-errors
-        (let ((proto (find-protocol-in-parsed-lines tokens #'good-proto-p)))
-          (when proto (return* proto)))))))
+    (map-etc-file (lambda (tokens)
+                    (ignore-errors
+                      (let ((proto (find-protocol-in-parsed-lines tokens #'good-proto-p)))
+                        (when proto (return* proto)))))
+                  file)))
 
 (define-condition unknown-protocol ()
   ((datum :initarg :datum :initform nil :reader unknown-protocol-datum))

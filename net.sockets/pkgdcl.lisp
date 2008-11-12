@@ -7,15 +7,13 @@
 
 (defpackage :net.sockets
   (:nicknames #:sockets)
-  (:use :iolib.base :cffi :io.streams :series)
+  (:use :iolib.base :cffi :io.streams)
   (:import-from #:osicat-posix #:system-error #:posix-error
                 #:system-error-message #:errno-wrapper
                 #:pid #:gid #:uid #:size #:ssize #:bzero
                 #:timeval #:size-of-timeval #:sec #:usec)
   (:import-from #:osicat-sys #:size-of-int)
   (:import-from #:io.multiplex #:decode-timeout)
-  (:shadowing-import-from :series #:let #:let* #:multiple-value-bind
-                          #:funcall #:until #:collect)
   (:export
    ;; Conditions
    #:posix-error
@@ -212,5 +210,3 @@
    ;; Miscellaneous
    #:ip-address
    ))
-
-(setf series:*suppress-series-warnings* t)

@@ -13,7 +13,7 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:iolib.base :osicat :series)
+  :depends-on (:iolib.base :osicat)
   :pathname (merge-pathnames #p"io.multiplex/" *load-truename*)
   :components
   ((:file "pkgdcl")

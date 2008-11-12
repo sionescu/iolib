@@ -11,4 +11,9 @@
   (+ (osicat:get-monotonic-time) (normalize-timeout timeout)))
 
 (defun min-timeout (&rest timeouts)
-  (collect-min (choose-if #'identity (scan timeouts))))
+  (let* ((good-timeout-start (member-if-not #'null timeouts))
+         (min (car good-timeout-start)))
+    (loop :for timeout :in (cdr good-timeout-start)
+          :if timeout :do
+          (setf min (if min (min min timeout) timeout))
+       :finally (return min))))

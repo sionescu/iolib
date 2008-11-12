@@ -5,9 +5,6 @@
 
 (in-package :net.sockets)
 
-(eval-when (:compile-toplevel)
-  (series::install :macro t :shadow nil :shadow-extensions t))
-
 (defun space-char-p (char)
   (declare (type character char))
   (or (char= char #\Space)
@@ -20,5 +17,7 @@
                        :remove-empty-subseqs t
                        :start 0 :end comment-start)))
 
-(defmacro serialize-etc-file (file)
-  `(#msplit-etc-tokens (scan-file ,file #'read-line)))
+(defun map-etc-file (thunk file)
+  (with-open-file (fin file)
+    (loop :for line := (read-line fin nil nil)
+       :while line :do (funcall thunk (split-etc-tokens line)))))
