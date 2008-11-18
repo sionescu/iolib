@@ -38,6 +38,12 @@
     (setf fam address-family
           proto protocol)))
 
+(defun socket-read-fn (fd buffer nbytes)
+  (%recvfrom fd buffer nbytes 0 (null-pointer) (null-pointer)))
+
+(defun socket-write-fn (fd buffer nbytes)
+  (%sendto fd buffer nbytes 0 (null-pointer) 0))
+
 (defmethod (setf external-format-of) (external-format (socket passive-socket))
   (setf (slot-value socket 'external-format)
         (babel:ensure-external-format external-format)))
