@@ -77,7 +77,7 @@ subnet specified by NETWORK and MASK.")
            (address= address2-network subnet)))))
 
 (defgeneric inet-address-network-class (address)
-  (:documentation "Return the network class of ADDRESS: one of :A, :B, :C, :D OR :E .")
+  (:documentation "Return the network class of ADDRESS: one of :A, :B, :C, :D or :E .")
   (:method ((address ipv4-address))
     (let ((octet (aref (address-name address) 0)))
       (cond
