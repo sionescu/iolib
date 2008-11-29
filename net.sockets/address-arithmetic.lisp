@@ -105,3 +105,32 @@ See http://en.wikipedia.org/wiki/Private_network for details.")
               (inet-address-network-class address))))
   (:method ((address address))
     nil))
+
+
+(defclass ipv4-network ()
+  ((address :initarg :address :accessor address-of)
+   (netmask :initarg :netmask :accessor netmask-of)
+   (cidr :accessor cidr-of))
+  (:documentation "IPv4 network: an address plus a netmask."))
+
+(defun compute-cidr-prefix-from-netmask (netmask)
+  (let ((ub32-address (vector-to-integer (address-name netmask))))
+    (loop :with count := 0
+       :for i :below 32
+       :do (if (logbitp i ub32-address)
+               (loop-finish)
+               (incf count))
+       :finally (return count))))
+
+(defmethod initialize-instance :after ((network ipv4-network)
+                                       &key address netmask)
+  (check-type address ipv4-address "an Ipv4 address")
+  (check-type netmask ipv4-address "an Ipv4 netmask")
+  (setf (cidr-of network) (compute-cidr-prefix-from-netmask netmask))
+  (setf (address-of network)
+        (inet-address-network-portion address netmask)))
+
+(defmethod print-object ((network ipv4-network) stream)
+  (format stream "@~A/~A"
+          (address-to-string (address-of network))
+          (cidr-of network)))

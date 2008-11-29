@@ -118,6 +118,7 @@
    ;; Network masks and subnets
    #:make-netmask
    #:ensure-netmask
+   #:ipv4-network
    #:inet-address-private-p
    #:inet-address-network-portion
    #:inet-address-host-portion
