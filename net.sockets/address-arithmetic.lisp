@@ -21,13 +21,15 @@ a CIDR suffix(a number between 0 and 32)."
 
 (defobsolete make-subnet-mask make-netmask)
 
-(defun ensure-subnet-mask (thing)
+(defun ensure-netmask (thing)
   "If THING is of type IPV4-ADDRESS it is returned as is; if keyword it must be one of
 :A, :B or :C otherwise it's treated as a CIDR suffix."
   (etypecase thing
     (ipv4-address  thing)
     (unsigned-byte (make-netmask :cidr thing))
     (keyword       (make-netmask :class thing))))
+
+(defobsolete ensure-subnet-mask ensure-netmask)
 
 (defgeneric inet-address-network-portion (address mask)
   (:documentation "Apply network mask MASK to ADDRESS in order to calculate the

@@ -116,8 +116,8 @@
    #:local-address-p
 
    ;; Network masks and subnets
-   #:make-subnet-mask
-   #:ensure-subnet-mask
+   #:make-netmask
+   #:ensure-netmask
    #:inet-address-private-p
    #:inet-address-network-portion
    #:inet-address-host-portion
