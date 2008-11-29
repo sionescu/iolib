@@ -87,6 +87,13 @@ host part of ADDRESS.")
           (address-to-string (address-of network))
           (cidr-of network)))
 
+(defgeneric ipv4-network= (net1 net2)
+  (:documentation "Returns T if the addresses and the netmasks of the
+two arguments are respectively ADDRESS=.")
+  (:method ((net1 ipv4-network) (net2 ipv4-network))
+    (and (address= (address-of net1) (address-of net2))
+         (address= (netmask-of net1) (netmask-of net2)))))
+
 (defgeneric inet-address-in-network-p (address network)
   (:documentation "Return T if ADDRESS is part of the subnet specified by NETWORK.")
   (:method ((address ipv4-address) (network ipv4-network))
