@@ -31,52 +31,76 @@ a CIDR suffix(a number between 0 and 32)."
 
 (defobsolete ensure-subnet-mask ensure-netmask)
 
-(defgeneric inet-address-network-portion (address mask)
-  (:documentation "Apply network mask MASK to ADDRESS in order to calculate the
+(defgeneric inet-address-network-portion (address netmask)
+  (:documentation "Apply network netmask NETMASK to ADDRESS in order to calculate the
 network part of ADDRESS.")
-  (:method ((address ipv4-address) mask)
-    (setf mask (ensure-subnet-mask mask))
+  (:method ((address ipv4-address) netmask)
+    (setf netmask (ensure-subnet-mask netmask))
     (let ((v (make-array 4 :element-type 'ub8))
           (av (address-name address))
-          (mv (address-name mask)))
+          (mv (address-name netmask)))
       (dotimes (i 4)
         (setf (aref v i)
               (logand (aref av i)
                       (aref mv i))))
       (make-instance 'ipv4-address :name v))))
 
-(defgeneric inet-address-host-portion (address mask)
-  (:documentation "Apply network mask MASK to ADDRESS in order to calculate the
+(defgeneric inet-address-host-portion (address netmask)
+  (:documentation "Apply network netmask NETMASK to ADDRESS in order to calculate the
 host part of ADDRESS.")
-  (:method ((address ipv4-address) mask)
-    (setf mask (ensure-subnet-mask mask))
+  (:method ((address ipv4-address) netmask)
+    (setf netmask (ensure-subnet-mask netmask))
     (let ((v (make-array 4 :element-type 'ub8))
           (av (address-name address))
-          (mv (address-name mask)))
+          (mv (address-name netmask)))
       (dotimes (i 4)
         (setf (aref v i)
               (logand (aref av i)
                       (logxor (aref mv i) 255))))
       (make-instance 'ipv4-address :name v))))
 
-(defgeneric inet-address-in-network-p (address network mask)
-  (:documentation "Return T if ADDRESS is part of the subnet specified by
-NETWORK and MASK.")
-  (:method ((address ipv4-address) (network ipv4-address) mask)
-    (setf mask (ensure-subnet-mask mask))
-    (address= (inet-address-network-portion address mask)
-              (inet-address-network-portion network mask))))
+(defclass ipv4-network ()
+  ((address :accessor address-of)
+   (netmask :accessor netmask-of)
+   (cidr :accessor cidr-of))
+  (:documentation "IPv4 network: an address plus a netmask."))
 
-(defgeneric inet-addresses-in-same-network-p (address1 address2 network mask)
+(defun compute-cidr-prefix-from-netmask (netmask)
+  (let ((ub32-address (vector-to-integer (address-name netmask))))
+    (loop :with count := 0
+       :for i :below 32
+       :do (if (logbitp i ub32-address)
+               (loop-finish)
+               (incf count))
+       :finally (return count))))
+
+(defmethod initialize-instance :after ((network ipv4-network)
+                                       &key address netmask)
+  (check-type address ipv4-address "an Ipv4 address")
+  (check-type netmask ipv4-address "an Ipv4 netmask")
+  (setf (cidr-of network) (compute-cidr-prefix-from-netmask netmask))
+  (setf (address-of network)
+        (inet-address-network-portion address netmask)))
+
+(defmethod print-object ((network ipv4-network) stream)
+  (format stream "@~A/~A"
+          (address-to-string (address-of network))
+          (cidr-of network)))
+
+(defgeneric inet-address-in-network-p (address network)
+  (:documentation "Return T if ADDRESS is part of the subnet specified by NETWORK.")
+  (:method ((address ipv4-address) (network ipv4-network))
+    (address= (inet-address-network-portion address (netmask-of network))
+              (address-of network))))
+
+(defgeneric inet-addresses-in-same-network-p (address1 address2 network)
   (:documentation "Return T if ADDRESS1 and ADDRESS2 are both part part of the
-subnet specified by NETWORK and MASK.")
-  (:method ((address1 ipv4-address) (address2 ipv4-address) (network ipv4-address) mask)
-    (setf mask (ensure-subnet-mask mask))
-    (let ((address1-network (inet-address-network-portion address1 mask))
-          (address2-network (inet-address-network-portion address2 mask))
-          (subnet (inet-address-network-portion network mask)))
-      (and (address= address1-network subnet)
-           (address= address2-network subnet)))))
+subnet specified by NETWORK.")
+  (:method ((address1 ipv4-address) (address2 ipv4-address) (network ipv4-network))
+    (let ((address1-network (inet-address-network-portion address1 (netmask-of network)))
+          (address2-network (inet-address-network-portion address2 (netmask-of network))))
+      (and (address= address1-network (address-of network))
+           (address= address2-network (address-of network))))))
 
 (defgeneric inet-address-network-class (address)
   (:documentation "Return the network class of ADDRESS: one of :A, :B, :C, :D or :E .")
@@ -105,32 +129,3 @@ See http://en.wikipedia.org/wiki/Private_network for details.")
               (inet-address-network-class address))))
   (:method ((address address))
     nil))
-
-
-(defclass ipv4-network ()
-  ((address :initarg :address :accessor address-of)
-   (netmask :initarg :netmask :accessor netmask-of)
-   (cidr :accessor cidr-of))
-  (:documentation "IPv4 network: an address plus a netmask."))
-
-(defun compute-cidr-prefix-from-netmask (netmask)
-  (let ((ub32-address (vector-to-integer (address-name netmask))))
-    (loop :with count := 0
-       :for i :below 32
-       :do (if (logbitp i ub32-address)
-               (loop-finish)
-               (incf count))
-       :finally (return count))))
-
-(defmethod initialize-instance :after ((network ipv4-network)
-                                       &key address netmask)
-  (check-type address ipv4-address "an Ipv4 address")
-  (check-type netmask ipv4-address "an Ipv4 netmask")
-  (setf (cidr-of network) (compute-cidr-prefix-from-netmask netmask))
-  (setf (address-of network)
-        (inet-address-network-portion address netmask)))
-
-(defmethod print-object ((network ipv4-network) stream)
-  (format stream "@~A/~A"
-          (address-to-string (address-of network))
-          (cidr-of network)))
