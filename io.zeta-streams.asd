@@ -26,7 +26,11 @@
    (:file "iobuf" :depends-on ("pkgdcl" "types"))
    (:file "buffer" :depends-on ("pkgdcl" "types" "conditions" "device" "iobuf"))
 
+   ;; Streams
+   (:file "stream" :depends-on ("pkgdcl" "types" "conditions" "device" "buffer"))
+
    ;; Devices
    (:file "file"
      :pathname #+unix "file-unix"
-     :depends-on ("pkgdcl" "types" "conditions" "ffi-functions" "device" "buffer"))))
+     :depends-on ("pkgdcl" "types" "conditions" "ffi-functions" "device" "buffer"
+                  "stream"))))
