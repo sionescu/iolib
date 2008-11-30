@@ -35,7 +35,7 @@ a CIDR suffix(a number between 0 and 32)."
   (:documentation "Apply network netmask NETMASK to ADDRESS in order to calculate the
 network part of ADDRESS.")
   (:method ((address ipv4-address) netmask)
-    (setf netmask (ensure-subnet-mask netmask))
+    (setf netmask (ensure-netmask netmask))
     (let ((v (make-array 4 :element-type 'ub8))
           (av (address-name address))
           (mv (address-name netmask)))
@@ -49,7 +49,7 @@ network part of ADDRESS.")
   (:documentation "Apply network netmask NETMASK to ADDRESS in order to calculate the
 host part of ADDRESS.")
   (:method ((address ipv4-address) netmask)
-    (setf netmask (ensure-subnet-mask netmask))
+    (setf netmask (ensure-netmask netmask))
     (let ((v (make-array 4 :element-type 'ub8))
           (av (address-name address))
           (mv (address-name netmask)))
