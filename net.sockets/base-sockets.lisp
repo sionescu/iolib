@@ -105,8 +105,10 @@ which usually means letting the OS choose a random port to connect to.
 For `INTERNET' sockets, if `WAIT' is true and a connection cannot be established within
 `TIMEOUT' seconds signal `IOMUX:POLL-TIMEOUT', but it works only with non-blocking sockets."))
 
-(defgeneric socket-connected-p (socket)
-  (:documentation "Returns a boolean specifying whether or not `SOCKET' is connected."))
+(defgeneric socket-connected-p (socket &optional direction)
+  (:documentation "Returns a boolean indicating whether or not `SOCKET' is connected in the direction `DIRECTION'
+which can be either :INPUT or :OUTPUT.
+If `SOCKET' is a connectionless socket(such as a :DATAGRAM socket), `SOCKET-OPERATION-NOT-SUPPORTED-ERROR' is signaled."))
 
 (defgeneric shutdown (socket &key read write)
   (:documentation "Shut down all or part of a connection. If `READ' it non-NIL, further receptions are

@@ -355,7 +355,7 @@
   (declare (ignore address))
   (error "You cannot connect passive sockets."))
 
-(defmethod socket-connected-p ((socket socket))
+(defmethod socket-connected-p ((socket socket) &optional direction)
   (when (fd-of socket)
     (with-sockaddr-storage-and-socklen (ss size)
       (handler-case
