@@ -19,8 +19,6 @@ a CIDR suffix(a number between 0 and 32)."
     (setf (ldb (byte (- 32 cidr) 0) mask) 0)
     (make-instance 'ipv4-address :name (integer-to-vector mask))))
 
-(defobsolete make-subnet-mask make-netmask)
-
 (defun ensure-netmask (thing)
   "If THING is of type IPV4-ADDRESS it is returned as is; if keyword it must be one of
 :A, :B or :C otherwise it's treated as a CIDR suffix."
@@ -28,8 +26,6 @@ a CIDR suffix(a number between 0 and 32)."
     (ipv4-address  thing)
     (unsigned-byte (make-netmask :cidr thing))
     (keyword       (make-netmask :class thing))))
-
-(defobsolete ensure-subnet-mask ensure-netmask)
 
 (defgeneric inet-address-network-portion (address netmask)
   (:documentation "Apply network netmask NETMASK to ADDRESS in order to calculate the
