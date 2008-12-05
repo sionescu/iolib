@@ -11,6 +11,10 @@
   (:export
    ;; Conditions
    #:bug
+   ;; Debugging
+   #:*debug*
+   #:debug-only #:debug-only*
+   #:production-only #:production-only*
    ;; Types
    #:function-designator
    ;; RETURN*

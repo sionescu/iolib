@@ -12,6 +12,7 @@
   :components ((:file "pkgdcl")
                (:file "return-star" :depends-on ("pkgdcl"))
                (:file "types" :depends-on ("pkgdcl"))
+               (:file "debug" :depends-on ("pkgdcl" "return-star"))
                (:file "conditions" :depends-on ("pkgdcl" "return-star"))
                (:file "defobsolete" :depends-on ("pkgdcl" "return-star"))
                (:file "reader" :depends-on ("pkgdcl" "return-star"))
