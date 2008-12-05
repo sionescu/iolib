@@ -39,9 +39,15 @@
           proto protocol)))
 
 (defun socket-read-fn (fd buffer nbytes)
+  (debug-only
+    (assert buffer)
+    (assert fd))
   (%recvfrom fd buffer nbytes 0 (null-pointer) (null-pointer)))
 
 (defun socket-write-fn (fd buffer nbytes)
+  (debug-only
+    (assert buffer)
+    (assert fd))
   (%sendto fd buffer nbytes 0 (null-pointer) 0))
 
 (defmethod (setf external-format-of) (external-format (socket passive-socket))

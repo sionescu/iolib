@@ -15,14 +15,6 @@
 (deftype compatible-lisp-array ()
   '(simple-array * (*)))
 
-(declaim (inline allocate-iobuf free-iobuf
-                 iobuf-length iobuf-start-pointer
-                 iobuf-end-pointer iobuf-end-space-length
-                 iobuf-empty-p iobuf-full-p
-                 iobuf-reset iobuf-copy-data-to-start
-                 bref (setf bref) iobuf-copy
-                 iobuf-pop-octet iobuf-push-octet))
-
 (defun allocate-iobuf (&optional (size +bytes-per-iobuf+))
   (let ((b (%make-iobuf)))
     (setf (iobuf-data b) (foreign-alloc :uint8 :count size)
@@ -78,18 +70,26 @@
 (defun bref (iobuf index)
   (declare (type iobuf iobuf)
            (type buffer-index index))
+  (debug-only (assert (not (minusp index))))
   (mem-aref (iobuf-data iobuf) :uint8 index))
 
 (defun (setf bref) (octet iobuf index)
   (declare (type (unsigned-byte 8) octet)
            (type iobuf iobuf)
            (type buffer-index index))
+  (debug-only
+    (assert (>= index 0))
+    (assert (< index (iobuf-size iobuf))))
   (setf (mem-aref (iobuf-data iobuf) :uint8 index) octet))
 
 (defun iobuf-copy-from-lisp-array (src soff dst doff length)
   (declare (type compatible-lisp-array src)
            (type iobuf dst)
            (type buffer-index soff doff length))
+  (debug-only
+    (assert (>= doff 0))
+    (assert (>= soff 0))
+    (assert (<= (+ doff length) (iobuf-size dst))))
   (let ((dst-ptr (iobuf-data dst)))
     (with-pointer-to-vector-data (src-ptr src)
       (nix:memcpy
@@ -101,6 +101,10 @@
   (declare (type iobuf src)
            (type compatible-lisp-array dst)
            (type buffer-index soff doff length))
+  (debug-only
+    (assert (>= doff 0))
+    (assert (>= soff 0))
+    (assert (<= (+ doff length) (length dst))))
   (let ((src-ptr (iobuf-data src)))
     (with-pointer-to-vector-data (dst-ptr dst)
       (nix:memcpy
@@ -110,6 +114,7 @@
 
 (defun iobuf-pop-octet (iobuf)
   (declare (type iobuf iobuf))
+  (debug-only (assert (> (iobuf-length iobuf) 0)))
   (let ((start (iobuf-start iobuf)))
     (prog1 (bref iobuf start)
       (incf (iobuf-start iobuf)))))
@@ -117,6 +122,7 @@
 (defun iobuf-push-octet (iobuf octet)
   (declare (type iobuf iobuf)
            (type (unsigned-byte 8) octet))
+  (debug-only (assert (not (iobuf-full-p iobuf))))
   (let ((end (iobuf-end iobuf)))
     (prog1 (setf (bref iobuf end) octet)
       (incf (iobuf-end iobuf)))))
