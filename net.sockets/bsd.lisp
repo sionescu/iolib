@@ -17,13 +17,10 @@
      ,@args))
 
 (defmacro define-socket-call (name return-type &body args)
-  (multiple-value-bind (forms declarations docstring)
-      (alexandria:parse-body args :documentation t)
-    (declare (ignore declarations))
+  (let ((forms (alexandria:parse-body args)))
     `(deforeign ,name (errno-wrapper ,return-type
                                      :object ,(caar forms) ; the socket FD
                                      :error-generator signal-socket-error)
-       ,docstring
        ,@forms)))
 
 (defctype fd :int)
@@ -32,19 +29,16 @@
 ;;;; sys/socket.h
 
 (define-socket-call ("accept" %accept) :int
-  "Accept an incoming connection, returning the file descriptor."
   (socket  fd)
   (address :pointer) ; sockaddr-foo
   (addrlen :pointer))
 
 (define-socket-call ("bind" %bind) :int
-  "Bind a socket to a particular local address."
   (socket  fd)
   (address :pointer)
   (addrlen socklen))
 
 (define-socket-call ("connect" %connect) :int
-  "Create an outgoing connection on a given socket."
   (socket  fd)
   (address :pointer) ; sockaddr-foo
   (addrlen socklen))
@@ -60,7 +54,6 @@
   (addrlen :pointer))
 
 (define-socket-call ("getsockopt" %getsockopt) :int
-  "Retrieve socket configuration."
   (socket  fd)
   (level   :int)
   (optname :int)
@@ -68,7 +61,6 @@
   (optlen  :pointer))
 
 (define-socket-call ("listen" %listen) :int
-  "Mark a bound socket as listening for incoming connections."
   (socket  fd)
   (backlog :int))
 
@@ -99,7 +91,6 @@
   (flags   :int))
 
 (define-socket-call ("setsockopt" %setsockopt) :int
-  "Configure a socket."
   (socket  fd)
   (level   :int)
   (optname :int)
@@ -112,7 +103,6 @@
 
 ;;; SOCKET is emulated in winsock.lisp.
 (define-socket-creation-call ("socket" %socket) :int
-  "Create a BSD socket."
   (domain   :int)  ; af-*
   (type     :int)  ; sock-*
   (protocol :int))
@@ -142,8 +132,8 @@
 
 (defcfun ("if_nametoindex" %if-nametoindex)
     (errno-wrapper :unsigned-int :error-predicate zerop
-                   :error-generator (lambda (r)
-                                      (declare (ignore r))
+                   :error-generator (lambda (r o)
+                                      (declare (ignore r o))
                                       (nix::posix-error :enxio)))
   (ifname :string))
 
@@ -153,8 +143,7 @@
   (ifname  :pointer))
 
 (defcfun ("if_nameindex" %if-nameindex)
-    (errno-wrapper :pointer)
-  "Return all network interface names and indexes")
+    (errno-wrapper :pointer))
 
 (defcfun ("if_freenameindex" %if-freenameindex) :void
   (ptr :pointer))
