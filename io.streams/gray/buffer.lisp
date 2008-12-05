@@ -30,7 +30,8 @@
     (values b)))
 
 (defun free-iobuf (iobuf)
-  (foreign-free (iobuf-data iobuf))
+  (unless (null-pointer-p (iobuf-data iobuf))
+    (foreign-free (iobuf-data iobuf)))
   (setf (iobuf-data iobuf) (null-pointer))
   (values iobuf))
 
