@@ -26,11 +26,14 @@
     (format stream "select(2) multiplexer")))
 
 (defmethod close-multiplexer progn ((mux select-multiplexer))
-  (foreign-free (read-fd-set-of mux))
-  (foreign-free (write-fd-set-of mux))
-  (foreign-free (except-fd-set-of mux))
-  (dolist (slot '(max-fd read-fd-set write-fd-set except-fd-set))
-    (setf (slot-value mux slot) nil)))
+  (with-slots ((rs read-fd-set)
+               (ws write-fd-set)
+               (es except-fd-set))
+      mux
+    (unless (null-pointer-p rs) (foreign-free rs))
+    (unless (null-pointer-p ws) (foreign-free ws))
+    (unless (null-pointer-p es) (foreign-free es))
+    (setf rs nil ws nil es nil)))
 
 (defun find-max-fd (fd-set end)
   (loop :for i :downfrom end :to 0
