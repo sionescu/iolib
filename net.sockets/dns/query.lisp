@@ -216,7 +216,7 @@
 (defun wait-until-socket-connected (socket timeout)
   (if (nth-value 1 (iomux:wait-until-fd-ready (fd-of socket) :output timeout))
       (let ((errcode (socket-option socket :error)))
-        (when (minusp errcode) (signal-socket-error)))
+        (when (minusp errcode) (signal-socket-error errcode (fd-of socket))))
       (error 'socket-connection-timeout-error)))
 
 (defun send-tcp-dns-query (socket buffer length)

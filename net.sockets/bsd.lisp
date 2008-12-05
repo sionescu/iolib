@@ -11,10 +11,20 @@
     `(defcfun (,c-name ,lisp-name ,@options) ,return-type
        ,@args)))
 
-(defmacro define-socket-call (name return-type &body args)
+(defmacro define-socket-creation-call (name return-type &body args)
   `(deforeign ,name (errno-wrapper ,return-type
                                    :error-generator signal-socket-error)
      ,@args))
+
+(defmacro define-socket-call (name return-type &body args)
+  (multiple-value-bind (forms declarations docstring)
+      (alexandria:parse-body args :documentation t)
+    (declare (ignore declarations))
+    `(deforeign ,name (errno-wrapper ,return-type
+                                     :object ,(caar forms) ; the socket FD
+                                     :error-generator signal-socket-error)
+       ,docstring
+       ,@forms)))
 
 (defctype fd :int)
 
@@ -101,7 +111,7 @@
   (how    :int))
 
 ;;; SOCKET is emulated in winsock.lisp.
-(define-socket-call ("socket" %socket) :int
+(define-socket-creation-call ("socket" %socket) :int
   "Create a BSD socket."
   (domain   :int)  ; af-*
   (type     :int)  ; sock-*
@@ -111,7 +121,7 @@
 (define-socket-call ("sockatmark" %sockatmark) :int
   (socket fd))
 
-(define-socket-call ("socketpair" %%socketpair) :int
+(define-socket-creation-call ("socketpair" %%socketpair) :int
   (domain   :int)  ; af-*
   (type     :int)  ; sock-*
   (protocol :int)  ; usually 0 - "default protocol", whatever that is

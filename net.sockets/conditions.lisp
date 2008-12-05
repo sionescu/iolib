@@ -24,10 +24,11 @@
 (defmethod print-object ((socket-error socket-error) stream)
   (print-unreadable-object (socket-error stream :type t :identity nil)
     (let ((code (osicat-sys:system-error-code socket-error)))
-      (format stream "~S ~S ~S"
+      (format stream "~S ~S ~S, FD: ~S"
               (or code "[Unknown code]")
               (error-identifier socket-error)
-              (if code (nix:strerror code) "[Can't get error string.]")))))
+              (if code (nix:strerror code) "[Can't get error string.]")
+              (nix:posix-error-object socket-error)))))
 
 (defvar *socket-error-map* (make-hash-table :test 'eq))
 
@@ -68,15 +69,15 @@
 (define-socket-error socket-option-not-supported-error    :enoprotoopt)
 (define-socket-error socket-operation-not-supported-error :eopnotsupp)
 
-(defun %socket-error (id code)
+(defun %socket-error (id code socket)
   (when-let (err (lookup-socket-error id))
-    (error err :identifier id :code code)))
+    (error err :identifier id :code code :object socket)))
 
 ;;; Used in the ERRNO-WRAPPER foreign type.
-(defun signal-socket-error (&optional return-value)
+(defun signal-socket-error (&optional return-value socket)
   (declare (ignore return-value))
   (let* ((errno (nix:get-errno))
          (kw (foreign-enum-keyword 'socket-error-values
                                    errno :errorp nil)))
-    (or (%socket-error kw errno)
-        (error (nix::make-posix-error errno)))))
+    (or (%socket-error kw errno socket)
+        (error (nix::make-posix-error errno socket)))))

@@ -317,7 +317,7 @@
             (iomux:wait-until-fd-ready (fd-of socket) :output timeout t)
             (let ((errcode (socket-option socket :error)))
               (unless (zerop errcode)
-                (signal-socket-error errcode))))
+                (signal-socket-error errcode (fd-of socket)))))
            (t (error err)))))
     (handler-case
         (funcall thunk)
