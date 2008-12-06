@@ -5,26 +5,22 @@
 
 (in-package :iolib.base)
 
-(defparameter *debug* t)
+(defparameter *safety-checks* t
+  "Enables safety checks throught the IOLib codebase.
+ACHTUNG!!! Don't disable this unless you're very confident about the quality of the code in IOLib.")
 
 (defmacro debug-only (&body body)
-  (if *debug*
-      `(progn
-         ,@body)
-      (values)))
+  (when *safety-checks*
+    `(progn ,@body)))
 
 (defmacro debug-only* (&body body)
-  `(if *debug*
-       (progn
-         ,@body)
-       (values)))
+  `(when *safety-checks*
+     (progn ,@body)))
 
 (defmacro production-only (&body body)
-  (if *debug*
-      (values)
-      `(progn
-         ,@body)))
+  (unless *safety-checks*
+    `(progn ,@body)))
 
 (defmacro production-only* (&body body)
-  `(unless *debug*
+  `(unless *safety-checks*
      ,@body))

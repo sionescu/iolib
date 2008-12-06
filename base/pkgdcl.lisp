@@ -12,7 +12,7 @@
    ;; Conditions
    #:bug
    ;; Debugging
-   #:*debug*
+   #:*safety-checks*
    #:debug-only #:debug-only*
    #:production-only #:production-only*
    ;; Types
