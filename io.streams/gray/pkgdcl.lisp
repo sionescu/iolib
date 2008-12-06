@@ -14,6 +14,9 @@
    #:dual-channel-single-fd-mixin
    #:dual-channel-single-fd-gray-stream
 
+   ;; Conditions
+   #:hangup
+
    ;; Types
    #:sb16
    #:sb32

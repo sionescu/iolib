@@ -11,7 +11,8 @@
   :components
   ((:file "pkgdcl")
    (:file "classes" :depends-on ("pkgdcl"))
+   (:file "conditions" :depends-on ("pkgdcl"))
    (:file "buffer" :depends-on ("pkgdcl" "classes"))
    (:file "fd-mixin" :depends-on ("pkgdcl" "classes"))
    (:file "gray-stream-methods"
-          :depends-on ("pkgdcl" "classes" "buffer" "fd-mixin"))))
+          :depends-on ("pkgdcl" "classes" "conditions" "buffer" "fd-mixin"))))

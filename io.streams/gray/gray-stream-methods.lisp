@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- Implementation using gray streams.
+;;; --- Implementation using Gray streams.
 ;;;
 
 (in-package :io.streams)
@@ -186,8 +186,19 @@
                    (dirtyp dirtyp))
       stream
     (when (or dirtyp (iobuf-full-p ob))
-      (%write-octets-from-iobuf write-fn fd ob)
-      (setf dirtyp nil))))
+      (multiple-value-bind (bytes-written hangup-p)
+          (%write-octets-from-iobuf write-fn fd ob)
+        (setf dirtyp nil)
+        (return* (values bytes-written hangup-p))))
+    (values 0)))
+
+(defmacro with-hangup-guard (stream &body body)
+  (with-gensyms (bytes-written hangup-p)
+    `(multiple-value-bind (,bytes-written ,hangup-p)
+         (progn ,@body)
+       (declare (ignore ,bytes-written))
+       (when (eq :hangup ,hangup-p)
+         (error 'hangup :stream ,stream)))))
 
 (defmethod stream-clear-output ((stream dual-channel-gray-stream))
   (with-accessors ((ob output-buffer-of)
@@ -203,7 +214,8 @@
                    (ob output-buffer-of)
                    (dirtyp dirtyp))
       stream
-    (%write-octets-from-iobuf write-fn fd ob)
+    (with-hangup-guard stream
+      (%write-octets-from-iobuf write-fn fd ob))
     (setf dirtyp nil)))
 
 (defmethod stream-force-output ((stream dual-channel-gray-stream))
@@ -220,11 +232,15 @@
              (iobuf-copy-from-lisp-array array start ob
                                          (iobuf-end ob) octets-needed)
              (incf (iobuf-end ob) octets-needed)
-             (flush-obuf-if-needed stream))
+             (with-hangup-guard stream
+               (flush-obuf-if-needed stream)))
             (t
              (with-pointer-to-vector-data (ptr array)
-               (%write-octets-from-iobuf write-fn fd ob)
-               (%write-octets-from-foreign-memory write-fn fd (inc-pointer ptr start) octets-needed))))
+               (with-hangup-guard stream
+                 (%write-octets-from-iobuf write-fn fd ob))
+               (with-hangup-guard stream
+                 (%write-octets-from-foreign-memory
+                  write-fn fd (inc-pointer ptr start) octets-needed)))))
       (values array))))
 
 (defun %write-vector-ub8 (stream vector start end)
@@ -497,7 +513,8 @@
   (check-type integer ub8 "an unsigned 8-bit value")
   (with-accessors ((ob output-buffer-of))
       stream
-    (flush-obuf-if-needed stream)
+    (with-hangup-guard stream
+      (flush-obuf-if-needed stream))
     (iobuf-push-octet ob integer)))
 
 ;;;; Buffer-related stuff
