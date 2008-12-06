@@ -152,66 +152,33 @@
 
 ;;;; Output Methods
 
-(defun %write-n-bytes (write-fn fd buf nbytes &optional timeout)
+(defun %write-octets-from-foreign-memory (write-fn fd buf nbytes)
   (declare (type stream-buffer buf))
   (let ((bytes-written 0))
     (labels ((write-once ()
-               (let ((num (handler-case
-                              (nix:repeat-upon-condition-decreasing-timeout
-                                  ((nix:eintr) timeout-var timeout)
-                                (prog1
-                                    (funcall write-fn fd (inc-pointer buf bytes-written)
-                                             nbytes)
-                                  (when (and timeout-var (zerop timeout-var))
-                                    (return* (values nil :timeout)))))
-                            (nix:epipe ()
-                              (return* (values nil :eof))))))
-                 (unless (zerop num) (incf bytes-written num))))
-             (write-or-return ()
-               (unless (write-once)
-                 (when (errorp)
-                   ;; FIXME signal something better -- maybe analyze the status
-                   (return* (values nil :fail)))))
-             (buffer-emptyp () (= bytes-written nbytes))
-             (errorp () (handler-case (iomux:wait-until-fd-ready fd :output)
-                          (iomux:poll-error () t)
-                          (:no-error (r w) (declare (ignore r w)) nil))))
-      (loop :until (buffer-emptyp) :do (write-or-return)
-         :finally (return (values t bytes-written))))))
+               (let ((num
+                      (handler-case
+                          (funcall write-fn fd (inc-pointer buf bytes-written)
+                                   (- nbytes bytes-written))
+                        (nix:epipe ()
+                          (return* (values bytes-written :hangup)))
+                        (nix:ewouldblock ()
+                          (iomux:wait-until-fd-ready fd :output)))))
+                 (incf bytes-written num)))
+             (buffer-emptyp () (= bytes-written nbytes)))
+      (loop :until (buffer-emptyp) :do (write-once)
+         :finally (return* bytes-written)))))
 
-(defun %flush-obuf (write-fn fd buf &optional timeout)
+(defun %write-octets-from-iobuf (write-fn fd buf)
   (declare (type iobuf buf))
-  (let ((bytes-written 0))
-    (labels ((write-once ()
-               (let ((num (handler-case
-                              (nix:repeat-upon-condition-decreasing-timeout
-                                  ((nix:eintr) timeout-var timeout)
-                                (prog1
-                                    (funcall write-fn fd (iobuf-start-pointer buf)
-                                             (iobuf-length buf))
-                                  (when (and timeout-var (zerop timeout-var))
-                                    (return* (values nil :timeout)))))
-                            (nix:epipe ()
-                              (return* (values nil :eof))))))
-                 (unless (zerop num)
-                   (incf (iobuf-start buf) num)
-                   (incf bytes-written num))))
-             (write-or-return ()
-               (unless (write-once)
-                 (when (errorp)
-                   ;; FIXME signal something better -- maybe analyze the status
-                   (return* (values nil :fail)))))
-             (buffer-emptyp ()
-               (when (iobuf-empty-p buf)
-                 (iobuf-reset buf) t))
-             (errorp () (handler-case (iomux:wait-until-fd-ready fd :output)
-                          (iomux:poll-error () t)
-                          (:no-error (r w) (declare (ignore r w)) nil))))
-      (loop :until (buffer-emptyp) :do (write-or-return)
-         :finally (return (values t bytes-written))))))
+  (multiple-value-bind (bytes-written hangup-p)
+      (%write-octets-from-foreign-memory
+       write-fn fd (iobuf-start-pointer buf) (iobuf-length buf))
+    (incf (iobuf-start buf) bytes-written)
+    (when (iobuf-empty-p buf) (iobuf-reset buf))
+    (values bytes-written hangup-p)))
 
-;;; TODO: add timeout support
-(defun %flush-obuf-if-needed (stream)
+(defun flush-obuf-if-needed (stream)
   (declare (type dual-channel-gray-stream stream))
   (with-accessors ((fd output-fd-of)
                    (write-fn write-fn-of)
@@ -219,7 +186,7 @@
                    (dirtyp dirtyp))
       stream
     (when (or dirtyp (iobuf-full-p ob))
-      (%flush-obuf write-fn fd ob)
+      (%write-octets-from-iobuf write-fn fd ob)
       (setf dirtyp nil))))
 
 (defmethod stream-clear-output ((stream dual-channel-gray-stream))
@@ -236,9 +203,8 @@
                    (ob output-buffer-of)
                    (dirtyp dirtyp))
       stream
-    (%flush-obuf write-fn fd ob)
-    (setf dirtyp nil)
-    nil))
+    (%write-octets-from-iobuf write-fn fd ob)
+    (setf dirtyp nil)))
 
 (defmethod stream-force-output ((stream dual-channel-gray-stream))
   (setf (dirtyp stream) t))
@@ -254,11 +220,11 @@
              (iobuf-copy-from-lisp-array array start ob
                                          (iobuf-end ob) octets-needed)
              (incf (iobuf-end ob) octets-needed)
-             (%flush-obuf-if-needed stream))
+             (flush-obuf-if-needed stream))
             (t
              (with-pointer-to-vector-data (ptr array)
-               (%flush-obuf write-fn fd ob)
-               (%write-n-bytes write-fn fd (inc-pointer ptr start) octets-needed))))
+               (%write-octets-from-iobuf write-fn fd ob)
+               (%write-octets-from-foreign-memory write-fn fd (inc-pointer ptr start) octets-needed))))
       (values array))))
 
 (defun %write-vector-ub8 (stream vector start end)
@@ -455,7 +421,7 @@
 
 (defmethod stream-write-char ((stream dual-channel-gray-stream)
                               (character character))
-  (%flush-obuf-if-needed stream)
+  (flush-obuf-if-needed stream)
   (if (char= character #\Newline)
       (%write-line-terminator
        stream (babel:external-format-eol-style (external-format-of stream)))
@@ -531,7 +497,7 @@
   (check-type integer ub8 "an unsigned 8-bit value")
   (with-accessors ((ob output-buffer-of))
       stream
-    (%flush-obuf-if-needed stream)
+    (flush-obuf-if-needed stream)
     (iobuf-push-octet ob integer)))
 
 ;;;; Buffer-related stuff
