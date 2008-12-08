@@ -369,9 +369,6 @@
            (encoding (babel:external-format-encoding ef))
            (max-octets-per-char
             (babel-encodings:enc-max-units-per-char encoding)))
-      ;; BUG: this comparision is probably buggy, FIXME.  A similar
-      ;; bug was fixed in STREAM-READ-CHAR.  Must write a test for
-      ;; this one first.
       (when (< (- (iobuf-size ib)
                   (iobuf-start ib))
                max-octets-per-char)
