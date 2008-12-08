@@ -68,11 +68,7 @@
     (iobuf-reset ib)
     nil))
 
-(defun %fill-ibuf (read-fn fd buf &optional timeout)
-  (when timeout
-    (let ((readablep (iomux:wait-until-fd-ready fd :input timeout)))
-      (unless readablep
-        (return* :timeout))))
+(defun %fill-ibuf (read-fn fd buf)
   (let ((num (nix:repeat-upon-eintr
                (funcall read-fn fd (iobuf-end-pointer buf)
                         (iobuf-end-space-length buf)))))
@@ -277,25 +273,22 @@
 (defun maybe-find-line-ending (read-fn fd ib ef)
   (let* ((start-off (iobuf-start ib))
          (char-code (bref ib start-off)))
-    (block nil
-      (ecase (babel:external-format-eol-style ef)
-        (:lf (when (= char-code (char-code #\Linefeed))
-               (incf (iobuf-start ib))
-               (return #\Newline)))
-        (:cr (when (= char-code (char-code #\Return))
-               (incf (iobuf-start ib))
-               (return #\Newline)))
-        (:crlf (when (= char-code (char-code #\Return))
-                 (when (and (= (iobuf-length ib) 1)
-                            (eq :eof (%fill-ibuf read-fn fd ib)))
-                   (incf (iobuf-start ib))
-                   (return #\Return))
-                 (when (= (bref ib (1+ start-off))
-                          (char-code #\Linefeed))
-                   (incf (iobuf-start ib) 2)
-                   (return #\Newline))))))))
-
-(defconstant +max-octets-per-char+ 6)
+    (ecase (babel:external-format-eol-style ef)
+      (:lf (when (= char-code (char-code #\Linefeed))
+             (incf (iobuf-start ib))
+             (return* #\Newline)))
+      (:cr (when (= char-code (char-code #\Return))
+             (incf (iobuf-start ib))
+             (return* #\Newline)))
+      (:crlf (when (= char-code (char-code #\Return))
+               (when (and (= 1 (iobuf-length ib))
+                          (eq :eof (%fill-ibuf read-fn fd ib)))
+                 (incf (iobuf-start ib))
+                 (return* #\Return))
+               (when (= (bref ib (1+ start-off))
+                        (char-code #\Linefeed))
+                 (incf (iobuf-start ib) 2)
+                 (return* #\Newline)))))))
 
 ;;; FIXME: currently we return :EOF when read(2) returns 0
 ;;;        we should distinguish hard end-of-files (EOF and buffer empty)
@@ -309,8 +302,10 @@
                    (ef external-format-of))
       stream
     (setf unread-index (iobuf-start ib))
-    (let ((str nil)
-          (ret nil))
+    (let* ((str nil) (ret nil)
+           (encoding (babel:external-format-encoding ef))
+           (max-octets-per-char
+            (babel-encodings:enc-max-units-per-char encoding)))
       (flet ((fill-buf-or-eof ()
                (setf ret (%fill-ibuf read-fn fd ib))
                (when (eq ret :eof)
@@ -321,7 +316,9 @@
               ;; Some encodings such as CESU or Java's modified UTF-8 take
               ;; as much as 6 bytes per character. Make sure we have enough
               ;; space to collect read-ahead bytes if required.
-              ((< (iobuf-length ib) +max-octets-per-char+)
+              ((< (- (iobuf-size ib)
+                     (iobuf-start ib))
+                  max-octets-per-char)
                (iobuf-copy-data-to-start ib)
                (setf unread-index 0)))
         ;; line-end handling
@@ -334,7 +331,7 @@
                       (iobuf-data ib)
                       :offset (iobuf-start ib)
                       :count (iobuf-length ib)
-                      :encoding (babel:external-format-encoding ef)
+                      :encoding encoding
                       :max-chars 1))
              (babel:end-of-input-in-character ()
                (fill-buf-or-eof)
@@ -346,22 +343,21 @@
   (declare (ignore fd))
   (let* ((start-off (iobuf-start ib))
          (char-code (bref ib start-off)))
-    (block nil
-      (ecase (babel:external-format-eol-style ef)
-        (:lf (when (= char-code (char-code #\Linefeed))
-               (incf (iobuf-start ib))
-               (return #\Newline)))
-        (:cr (when (= char-code (char-code #\Return))
-               (incf (iobuf-start ib))
-               (return #\Newline)))
-        (:crlf (when (= char-code (char-code #\Return))
-                 (when (= (iobuf-length ib) 1)
-                   (incf (iobuf-start ib))
-                   (return :starvation))
-                 (when (= (bref ib (1+ start-off))
-                          (char-code #\Linefeed))
-                   (incf (iobuf-start ib) 2)
-                   (return #\Newline))))))))
+    (ecase (babel:external-format-eol-style ef)
+      (:lf (when (= char-code (char-code #\Linefeed))
+             (incf (iobuf-start ib))
+             (return* #\Newline)))
+      (:cr (when (= char-code (char-code #\Return))
+             (incf (iobuf-start ib))
+             (return* #\Newline)))
+      (:crlf (when (= char-code (char-code #\Return))
+               (when (= (iobuf-length ib) 1)
+                 (incf (iobuf-start ib))
+                 (return* :starvation))
+               (when (= (bref ib (1+ start-off))
+                        (char-code #\Linefeed))
+                 (incf (iobuf-start ib) 2)
+                 (return* #\Newline)))))))
 
 (defmethod stream-read-char-no-hang ((stream dual-channel-gray-stream))
   (with-accessors ((fd input-fd-of)
@@ -369,39 +365,41 @@
                    (ib input-buffer-of)
                    (ef external-format-of))
       stream
-    (let ((str nil)
-          (ret nil)
-          (eof nil))
-      (block nil
-        ;; BUG: this comparision is probably buggy, FIXME.  A similar
-        ;; bug was fixed in STREAM-READ-CHAR.  Must write a test for
-        ;; this one first.
-        (when (< 0 (iobuf-end-space-length ib) 4)
-          (iobuf-copy-data-to-start ib))
-        (when (and (iomux:fd-ready-p fd :input)
-                   (eq :eof (%fill-ibuf read-fn fd ib)))
-          (setf eof t))
-        (when (zerop (iobuf-length ib))
-          (return (if eof :eof nil)))
-        ;; line-end handling
-        (let ((line-end (maybe-find-line-ending-no-hang fd ib ef)))
-          (cond ((eq line-end :starvation)
-                 (return (if eof #\Return nil)))
-                ((characterp line-end)
-                 (return line-end))))
-        ;; octet decoding
-        (handler-case
-            (setf (values str ret)
-                  (foreign-string-to-lisp
-                   (iobuf-data ib)
-                   :offset (iobuf-start ib)
-                   :count (iobuf-length ib)
-                   :encoding (babel:external-format-encoding ef)
-                   :max-chars 1))
-          (babel:end-of-input-in-character ()
-            (return nil)))
-        (incf (iobuf-start ib) ret)
-        (char str 0)))))
+    (let* ((str nil) (ret nil) (eof nil)
+           (encoding (babel:external-format-encoding ef))
+           (max-octets-per-char
+            (babel-encodings:enc-max-units-per-char encoding)))
+      ;; BUG: this comparision is probably buggy, FIXME.  A similar
+      ;; bug was fixed in STREAM-READ-CHAR.  Must write a test for
+      ;; this one first.
+      (when (< (- (iobuf-size ib)
+                  (iobuf-start ib))
+               max-octets-per-char)
+        (iobuf-copy-data-to-start ib))
+      (when (and (iomux:fd-ready-p fd :input)
+                 (eq :eof (%fill-ibuf read-fn fd ib)))
+        (setf eof t))
+      (when (zerop (iobuf-length ib))
+        (return* (if eof :eof nil)))
+      ;; line-end handling
+      (let ((line-end (maybe-find-line-ending-no-hang fd ib ef)))
+        (cond ((eq :starvation line-end)
+               (return* (if eof #\Return nil)))
+              ((characterp line-end)
+               (return* line-end))))
+      ;; octet decoding
+      (handler-case
+          (setf (values str ret)
+                (foreign-string-to-lisp
+                 (iobuf-data ib)
+                 :offset (iobuf-start ib)
+                 :count (iobuf-length ib)
+                 :encoding encoding
+                 :max-chars 1))
+        (babel:end-of-input-in-character ()
+          (return* nil)))
+      (incf (iobuf-start ib) ret)
+      (char str 0))))
 
 (defun %stream-unread-char (stream)
   (declare (type dual-channel-gray-stream stream))
