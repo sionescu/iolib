@@ -83,24 +83,22 @@
 
   (defparameter *gray-stream-package*
     #+allegro :excl
-    #+cmu :ext
-    #+scl :ext
-    #+clisp :gray
-    #+ecl :gray
+    #+(or cmu scl) :ext
+    #+(or clisp ecl) :gray
     #+(or ccl openmcl) :ccl
     #+lispworks :stream
     #+sbcl :sb-gray
-    #-(or allegro cmu clisp ecl ccl openmcl lispworks sbcl scl)
+    #-(or allegro cmu scl clisp ecl ccl openmcl lispworks sbcl)
     (error "Your CL implementation isn't supported.")))
 
-(import (mapcar #'(lambda (s) (find-symbol (string s) *gray-stream-package*))
-                *gray-stream-symbols*)
-        :iolib.base)
-
-(export (mapcar (lambda (s) (intern (string s) :iolib.base))
-                (list* '#:trivial-gray-stream-mixin
-                       '#:stream-read-sequence
-                       '#:stream-write-sequence
-                       '#:stream-file-position
-                       *gray-stream-symbols*))
-        :iolib.base)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (import (mapcar #'(lambda (s) (intern (string s) *gray-stream-package*))
+                  *gray-stream-symbols*)
+          :iolib.base)
+  (export (mapcar (lambda (s) (intern (string s) :iolib.base))
+                  (list* '#:trivial-gray-stream-mixin
+                         '#:stream-read-sequence
+                         '#:stream-write-sequence
+                         '#:stream-file-position
+                         *gray-stream-symbols*))
+          :iolib.base))
