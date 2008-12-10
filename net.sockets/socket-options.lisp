@@ -203,7 +203,6 @@
 ;;; Linux-specific Options
 
 (define-socket-options :set sol-socket :linux
-  (bsd-compatible so-bsdcompat    :bool)
   (bind-to-device so-bindtodevice :ifreq-name))
 
 (define-socket-option priority :get-and-set

@@ -151,7 +151,6 @@
 (constant (so-bindtodevice "SO_BINDTODEVICE") :optional t)    ; linux
 (constant (so-bintime "SO_BINTIME") :optional t)              ; freebsd
 (constant (so-broadcast "SO_BROADCAST"))
-(constant (so-bsdcompat "SO_BSDCOMPAT") :optional t)       ; linux
 (constant (so-debug "SO_DEBUG"))
 (constant (so-dontroute "SO_DONTROUTE"))
 (constant (so-error "SO_ERROR"))
