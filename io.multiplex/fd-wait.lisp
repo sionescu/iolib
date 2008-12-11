@@ -6,8 +6,9 @@
 (in-package :io.multiplex)
 
 ;;; FIXME: Until a way to autodetect platform features is implemented
-#+(or darwin freebsd)
-(define-constant pollrdhup 0)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (unless (boundp 'pollrdhup)
+    (define-constant pollrdhup 0)))
 
 (define-condition poll-error (error)
   ((fd :initarg :fd :reader poll-error-fd)
