@@ -134,7 +134,7 @@
     (errno-wrapper :unsigned-int :error-predicate zerop
                    :error-generator (lambda (r o)
                                       (declare (ignore r o))
-                                      (nix::posix-error :enxio)))
+                                      (nix:posix-error :enxio)))
   (ifname :string))
 
 (defcfun ("if_indextoname" %if-indextoname)
