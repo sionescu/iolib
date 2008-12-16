@@ -15,18 +15,18 @@
 (include "stdlib.h")
 (include "sys/socket.h")
 
-(defwrapper* ("cmsg_space" %cmsg-space) ("unsigned" :unsigned-int)
-  ((data-size ("unsigned" :unsigned-int)))
+(defwrapper* ("cmsg_space" %cmsg-space) :unsigned-int
+  ((data-size :unsigned-int))
   "return CMSG_SPACE(data_size);")
 
-(defwrapper* ("cmsg_len" %cmsg-len) ("unsigned" :unsigned-int)
-  ((data-size ("unsigned" :unsigned-int)))
+(defwrapper* ("cmsg_len" %cmsg-len) :unsigned-int
+  ((data-size :unsigned-int))
   "return CMSG_LEN(data_size);")
 
-(defwrapper* ("cmsg_firsthdr" %cmsg-firsthdr) ("void*" :pointer)
+(defwrapper* ("cmsg_firsthdr" %cmsg-firsthdr) :pointer
   ((msg ("struct msghdr*" :pointer)))
   "return CMSG_FIRSTHDR(msg);")
 
-(defwrapper* ("cmsg_data" %cmsg-data) ("void*" :pointer)
+(defwrapper* ("cmsg_data" %cmsg-data) :pointer
   ((cmsg ("struct cmsghdr*" :pointer)))
   "return CMSG_DATA(cmsg);")
