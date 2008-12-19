@@ -19,38 +19,44 @@
    (additional :accessor dns-message-additional))
   (:default-initargs :qdcount 1 :ancount 0 :nscount 0 :arcount 0))
 
-(defmacro define-flags-bitfield (name offset length &optional (type :integer))
+(defmacro %define-dns-field-reader (name offset type length)
+  `(defgeneric ,name (message)
+     (:method ((message dns-message))
+       ,(ecase type
+               (:boolean `(logbitp ,offset (dns-message-flags message)))
+               (:integer `(ldb (byte ,length ,offset)
+                               (dns-message-flags message)))
+               (:rcode `(rcode-id
+                         (ldb (byte ,length ,offset)
+                              (dns-message-flags message))))))))
+
+(defmacro %define-dns-field-writer (name offset type length)
+  `(defgeneric (setf ,name) (value message)
+     (:method (value (message dns-message))
+       ,(ecase type
+               (:boolean `(setf (ldb (byte 1 ,offset)
+                                     (dns-message-flags message))
+                                (lisp->c-bool value)))
+               (:integer `(setf (ldb (byte ,length ,offset)
+                                     (dns-message-flags message))
+                                value))
+               (:rcode `(setf (ldb (byte ,length ,offset)
+                                   (dns-message-flags message))
+                              (rcode-number value)))))))
+
+(defmacro define-dns-field (name offset type &key length)
   (let ((method-name (format-symbol t "~A-~A" name '#:field)))
     `(progn
-       (defgeneric ,method-name (message)
-         (:method ((message dns-message))
-           ,(ecase type
-                   (:integer `(ldb (byte ,length ,offset)
-                                   (dns-message-flags message)))
-                   (:boolean `(logbitp ,offset (dns-message-flags message)))
-                   (:rcode `(rcode-id
-                             (ldb (byte ,length ,offset)
-                                  (dns-message-flags message)))))))
-       (defgeneric (setf ,method-name) (value message)
-         (:method (value (message dns-message))
-           ,(ecase type
-                   (:integer `(setf (ldb (byte ,length ,offset)
-                                         (dns-message-flags message))
-                                    value))
-                   (:boolean `(setf (ldb (byte ,length ,offset)
-                                         (dns-message-flags message))
-                                    (lisp->c-bool value)))
-                   (:rcode `(setf (ldb (byte ,length ,offset)
-                                       (dns-message-flags message))
-                                  (rcode-number value)))))))))
+       (%define-dns-field-reader ,method-name ,offset ,type ,length)
+       (%define-dns-field-writer ,method-name ,offset ,type ,length))))
 
-(define-flags-bitfield response 15 1 :boolean)
-(define-flags-bitfield opcode 11 4 :integer)
-(define-flags-bitfield authoritative 10 1 :boolean)
-(define-flags-bitfield truncated 9 1 :boolean)
-(define-flags-bitfield recursion-desired 8 1 :boolean)
-(define-flags-bitfield recursion-available 7 1 :boolean)
-(define-flags-bitfield rcode 0 4 :rcode)
+(define-dns-field response            15 :boolean)
+(define-dns-field opcode              11 :integer :length 4)
+(define-dns-field authoritative       10 :boolean)
+(define-dns-field truncated            9 :boolean)
+(define-dns-field recursion-desired    8 :boolean)
+(define-dns-field recursion-available  7 :boolean)
+(define-dns-field rcode                0 :rcode :length 4)
 
 (defgeneric decode-flags (message)
   (:method ((msg dns-message))
@@ -90,7 +96,7 @@
                      (qdcount dns-message-question-count) (ancount dns-message-answer-count)
                      (nscount dns-message-authority-count) (arcount dns-message-additional-count))
         msg
-      (format stream "DNS ~A Id: ~A, Question: ~A Flags: ~S, Sections: QD(~A) AN(~A) NS(~A) AD(~A)"
+      (format stream "DNS ~A Id: ~A, Question: ~A Flags:~{ ~S~}, Sections: QD(~A) AN(~A) NS(~A) AD(~A)"
               (if (response-field msg) :response :query)
               id question decoded-flags
               qdcount ancount nscount arcount))))
@@ -145,7 +151,7 @@
 (defgeneric write-dns-string (buffer string)
   (:method ((buffer dynamic-buffer) (string string))
     (write-ub8 buffer (length string))
-    ;; Probably want to use punnycode here.
+    ;; Probably want to use punycode here.
     (write-vector buffer (babel:string-to-octets string :encoding :ascii))))
 
 (defun domain-name-to-dns-format (domain-name)
@@ -194,9 +200,10 @@
 (defgeneric write-dns-message (message)
   (:method ((message dns-message))
     (with-accessors ((question dns-message-question)) message
-      (with-dynamic-buffer (buffer)
+      (let ((buffer (make-instance 'dynamic-buffer)))
         (write-message-header buffer message)
-        (write-record buffer (aref question 0))))))
+        (write-record buffer (aref question 0))
+        (values buffer)))))
 
 ;;;; Resource Record Encoding
 
@@ -287,7 +294,7 @@
                           (setf offset (+ (read-cursor-of buffer) 2)))
                          (t
                           (setf offset (+ (read-cursor-of buffer) 1)))))
-                 (dynamic-buffer-seek-read-cursor buffer :offset pointer)
+                 (seek-read-cursor buffer :offset pointer)
                  (setf string (read-dns-string buffer)))
                (%read-tags ()
                  (loop :for (pointer . rec) := (read-dns-pointer-recursively
@@ -302,7 +309,7 @@
   (:method ((buffer dynamic-buffer))
     (multiple-value-bind (string offset)
         (dns-domain-name-to-string buffer)
-      (dynamic-buffer-seek-read-cursor buffer :offset offset)
+      (seek-read-cursor buffer :offset offset)
       (values string))))
 
 (defgeneric read-question (buffer)
