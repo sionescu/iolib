@@ -16,7 +16,7 @@
 (defmethod initialize-instance :after ((buffer dynamic-buffer) &key (start 0))
   (with-accessors ((seq sequence-of) (size size-of)
                    (wcursor write-cursor-of)) buffer
-    (check-type seq (or null ub8-vector) "either NIL or a (VECTOR UNSIGNED-BYTE)")
+    (check-type seq (or null ub8-vector) "either NIL or a UB8-VECTOR")
     (cond
       ((null seq) (setf seq (make-array size :element-type 'ub8)))
       (t (setf size (- (length seq) start)
