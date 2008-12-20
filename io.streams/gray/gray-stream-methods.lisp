@@ -152,15 +152,14 @@
   (declare (type stream-buffer buf))
   (let ((bytes-written 0))
     (labels ((write-once ()
-               (let ((num
-                      (handler-case
-                          (funcall write-fn fd (inc-pointer buf bytes-written)
-                                   (- nbytes bytes-written))
-                        (nix:epipe ()
-                          (return* (values bytes-written :hangup)))
-                        (nix:ewouldblock ()
-                          (iomux:wait-until-fd-ready fd :output)))))
-                 (incf bytes-written num)))
+               (handler-case
+                   (funcall write-fn fd (inc-pointer buf bytes-written)
+                            (- nbytes bytes-written))
+                 (nix:epipe ()
+                   (return* (values bytes-written :hangup)))
+                 (nix:ewouldblock ()
+                   (iomux:wait-until-fd-ready fd :output nil t))
+                 (:no-error (nbytes) (incf bytes-written nbytes))))
              (buffer-emptyp () (= bytes-written nbytes)))
       (loop :until (buffer-emptyp) :do (write-once)
          :finally (return* bytes-written)))))
