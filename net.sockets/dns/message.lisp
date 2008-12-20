@@ -294,7 +294,7 @@
                           (setf offset (+ (read-cursor-of buffer) 2)))
                          (t
                           (setf offset (+ (read-cursor-of buffer) 1)))))
-                 (seek-read-cursor buffer :offset pointer)
+                 (seek-read-cursor buffer pointer)
                  (setf string (read-dns-string buffer)))
                (%read-tags ()
                  (loop :for (pointer . rec) := (read-dns-pointer-recursively
@@ -309,7 +309,7 @@
   (:method ((buffer dynamic-buffer))
     (multiple-value-bind (string offset)
         (dns-domain-name-to-string buffer)
-      (seek-read-cursor buffer :offset offset)
+      (seek-read-cursor buffer offset)
       (values string))))
 
 (defgeneric read-question (buffer)

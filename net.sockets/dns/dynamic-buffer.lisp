@@ -99,19 +99,12 @@
    "Signals that DYNAMIC-BUFFER-SEEK-READ-CURSOR on an INPUT-BUFFER was passed an
 invalid offset."))
 
-(defun seek-read-cursor (buffer place &optional offset)
-  (with-accessors ((seq sequence-of)
-                   (size size-of)
-                   (rcursor read-cursor-of))
-      buffer
-    (ecase place
-      (:start (setf rcursor 0))
-      (:end   (setf rcursor size))
-      (:offset
-       (check-type offset unsigned-byte "an unsigned-byte")
-       (if (>= offset size)
-           (error 'input-buffer-index-out-of-bounds :buffer buffer)
-           (setf rcursor offset))))))
+(declaim (inline seek-read-cursor))
+(defun seek-read-cursor (buffer offset)
+  (check-type offset unsigned-byte "an unsigned-byte")
+  (if (>= offset (size-of buffer))
+      (error 'input-buffer-index-out-of-bounds :buffer buffer)
+      (setf (read-cursor-of buffer) offset)))
 
 (declaim (inline unread-bytes))
 (defun unread-bytes (buffer)
