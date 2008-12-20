@@ -84,27 +84,31 @@
   ((buffer :initform (error "Must supply buffer")
            :initarg :buffer :reader buffer-of)))
 
-(define-condition input-buffer-eof (dynamic-buffer-input-error)
-  ((octets-requested :initarg :requested :reader octets-requested)
-   (octets-remaining :initarg :remaining :reader octets-remaining))
+(define-condition dynamic-buffer-eof (dynamic-buffer-input-error)
+  ((octets-requested :initarg :requested :reader octets-requested-of)
+   (octets-remaining :initarg :remaining :reader octets-remaining-of))
   (:report (lambda (condition stream)
-             (format stream "You requested ~a octets but only ~A are left in the buffer"
-                     (octets-requested condition)
-                     (octets-remaining condition))))
+             (format stream "You requested ~A octets but only ~A are left in the buffer"
+                     (octets-requested-of condition)
+                     (octets-remaining-of condition))))
   (:documentation
    "Signals that an INPUT-BUFFER contains less unread bytes than requested."))
 
-(define-condition input-buffer-index-out-of-bounds (dynamic-buffer-input-error) ()
+(define-condition dynamic-buffer-index-out-of-bounds (dynamic-buffer-input-error)
+  ((index :initarg :index :reader index-of))
+  (:report (lambda (condition stream)
+             (format stream "Trying to access ~A at invalid index ~A"
+                     (buffer-of condition)
+                     (index-of condition))))
   (:documentation
-   "Signals that DYNAMIC-BUFFER-SEEK-READ-CURSOR on an INPUT-BUFFER was passed an
-invalid offset."))
+   "Signals that SEEK-READ-CURSOR on an INPUT-BUFFER was passed an invalid index."))
 
 (declaim (inline seek-read-cursor))
-(defun seek-read-cursor (buffer offset)
-  (check-type offset unsigned-byte "an unsigned-byte")
-  (if (>= offset (size-of buffer))
-      (error 'input-buffer-index-out-of-bounds :buffer buffer)
-      (setf (read-cursor-of buffer) offset)))
+(defun seek-read-cursor (buffer index)
+  (check-type index unsigned-byte "an unsigned-byte")
+  (if (>= index (size-of buffer))
+      (error 'dynamic-buffer-index-out-of-bounds :buffer buffer :index index)
+      (setf (read-cursor-of buffer) index)))
 
 (declaim (inline unread-bytes))
 (defun unread-bytes (buffer)
@@ -137,7 +141,7 @@ invalid offset."))
 (defun check-if-enough-bytes (buffer length)
   (let ((remaining-bytes (unread-bytes buffer)))
     (when (< remaining-bytes length)
-      (error 'input-buffer-eof
+      (error 'dynamic-buffer-eof
              :buffer buffer
              :requested length
              :remaining remaining-bytes))))
