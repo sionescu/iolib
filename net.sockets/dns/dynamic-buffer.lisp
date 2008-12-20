@@ -32,8 +32,9 @@
               (write-cursor-of buffer)
               (sequence-of buffer)))))
 
-(defmethod size-of ((buffer dynamic-buffer))
-  (length (sequence-of buffer)))
+(defgeneric size-of (buffer)
+  (:method ((buffer dynamic-buffer))
+    (length (sequence-of buffer))))
 
 (declaim (inline ub16-to-vector))
 (defun ub16-to-vector (value)
