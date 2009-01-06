@@ -54,14 +54,15 @@
 (cl:defun wrap-body-for-return-star (body &optional block-name)
   (multiple-value-bind (body declarations docstring)
       (parse-body body :documentation t)
-    (remove-if
-     #'null
-     `(,docstring
-       ,@declarations
-       ,(if block-name
-            `(macrolet ((return* (value) `(return-from ,',block-name ,value)))
-               ,@body)
-            (with-gensyms (block-name)
-              `(block ,block-name
-                 (macrolet ((return* (value) `(return-from ,',block-name ,value)))
-                   ,@body))))))))
+    (with-gensyms (value)
+      (remove-if
+       #'null
+       `(,docstring
+         ,@declarations
+         ,(if block-name
+              `(macrolet ((return* (,value) `(return-from ,',block-name ,,value)))
+                 ,@body)
+              (with-gensyms (block-name)
+                `(block ,block-name
+                   (macrolet ((return* (value) `(return-from ,',block-name ,value)))
+                     ,@body)))))))))
