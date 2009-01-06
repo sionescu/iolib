@@ -75,7 +75,7 @@ For a complete list of supported options see net.sockets/socket-options.lisp .")
 Works only on DATAGRAM sockets."))
 
 (define-symbol-macro +default-inet-address-family+
-    (if *ipv6* :ipv6 :ipv4))
+  (if *ipv6* :ipv6 :ipv4))
 
 (defclass internet-socket (socket) ()
   (:default-initargs :address-family +default-inet-address-family+)
