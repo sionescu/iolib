@@ -24,11 +24,19 @@
 (deftype ub8-simple-vector (&optional (size '*))
   `(simple-array ub8 (,size)))
 
+(deftype ub8-complex-vector (&optional (size '*))
+  `(and (ub8-vector ,size)
+        (not (ub8-simple-vector ,size))))
+
 (deftype ub16-vector (&optional (size '*))
   `(array ub16 (,size)))
 
 (deftype ub16-simple-vector (&optional (size '*))
   `(simple-array ub16 (,size)))
+
+(deftype ub16-complex-vector (&optional (size '*))
+  `(and (ub16-vector ,size)
+        (not (ub16-simple-vector ,size))))
 
 
 ;;;-------------------------------------------------------------------------
