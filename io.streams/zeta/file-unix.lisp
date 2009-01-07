@@ -193,15 +193,12 @@
                      truncate append extra-flags mode)))
     (if (null buffering)
         (values file-device)
-        (let ((buffer
-               (make-instance 'single-channel-buffer
-                              :device file-device
-                              :synchronized synchronized
-                              :size buffer-size)))
-          (if (null external-format)
-              (values buffer)
-              ;; FIXME: make a stream
-              (error "Streams are unavailable ATM."))))))
+        (make-instance 'file-zeta-stream
+                       :device file-device
+                       :synchronized synchronized
+                       :buffering buffering
+                       :size buffer-size
+                       :external-format external-format))))
 
 (defun %open-file (filename direction if-exists if-does-not-exist
                    truncate append extra-flags mode)
