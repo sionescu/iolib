@@ -20,14 +20,15 @@
            (error 'poll-error :code ebadfd :identifier :ebadfd
                   :event-type event-type :os-handle fd
                   :message "invalid OS handle")))
-    (let ((readp nil) (writep nil))
+    (let ((readp  nil) (rhupp nil)
+          (writep nil) (whupp nil))
       (flags-case revents
-        ((pollin pollrdhup pollpri)
-         (setf readp t))
-        ((pollout pollhup) (setf writep t))
-        ((pollerr) (poll-error))
-        ((pollnval) (poll-error)))
-      (values readp writep))))
+        ((pollin pollpri)   (setf readp t))
+        ((pollrdhup)        (setf rhupp t))
+        ((pollout)          (setf writep t))
+        ((pollhup)          (setf whupp t))
+        ((pollerr pollnval) (poll-error)))
+      (values readp rhupp writep whupp))))
 
 (defun timeout->milisec (timeout)
   (multiple-value-bind (sec usec)
@@ -39,29 +40,31 @@
       ((eintr) remaining-time timeout)
     (%sys-poll fds 1 (timeout->milisec remaining-time))))
 
-(defun poll-fd (fd event-type timeout)
+(defun poll-fd (file-descriptor event-type timeout)
   "Poll file descriptor `FD' for I/O readiness. `EVENT-TYPE' must be either
-:INPUT, :OUTPUT or :IO. `TIMEOUT' must be a non-negative integer measured
+:INPUT, :OUTPUT or :IO. `TIMEOUT' must be a non-negative real measured
 in seconds. If a timeout occurs `POLL-TIMEOUT' is signaled.
 Returns two boolean values indicating readability and writeability of `FD'."
   (flet ((poll-error (posix-err)
            (error 'poll-error
                   :code (code-of posix-err)
                   :identifier (identifier-of posix-err)
-                  :event-type event-type :os-handle fd
+                  :event-type event-type
+                  :os-handle file-descriptor
                   :message (format nil "OS error ~A"
                                    (identifier-of posix-err)))))
     (with-foreign-object (pollfd 'pollfd)
       (%sys-bzero pollfd size-of-pollfd)
       (with-foreign-slots ((fd events revents) pollfd pollfd)
-        (setf fd fd
+        (setf fd file-descriptor
               events (compute-poll-flags event-type))
         (handler-case
             (cond
               ((plusp (%poll pollfd timeout))
                (process-poll-revents fd event-type revents))
               (t
-               (error 'poll-timeout :os-handle fd
+               (error 'poll-timeout
+                      :os-handle file-descriptor
                       :event-type event-type)))
           (posix-error (err) (poll-error err)))))))
 
