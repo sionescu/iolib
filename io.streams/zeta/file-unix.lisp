@@ -22,6 +22,8 @@
 (defclass memory-mapped-file-device (file-device direct-device) ())
 
 (defvar *default-open-mode* #o666)
+
+(defclass file-zeta-stream (single-channel-zeta-stream) ())
 
 
 ;;;-------------------------------------------------------------------------
