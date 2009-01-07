@@ -42,14 +42,18 @@
   (- (iobuf-end iobuf)
      (iobuf-start iobuf)))
 
+(defun iobuf-available-space (iobuf)
+  (declare (type iobuf iobuf))
+  (- (iobuf-size iobuf)
+     (iobuf-end iobuf)))
+
 (defun iobuf-empty-p (iobuf)
   (declare (type iobuf iobuf))
   (zerop (iobuf-available-octets iobuf)))
 
 (defun iobuf-full-p (iobuf)
   (declare (type iobuf iobuf))
-  (= (iobuf-end iobuf)
-     (iobuf-size iobuf)))
+  (zerop (iobuf-available-space iobuf)))
 
 (defun iobuf-reset (iobuf)
   (declare (type iobuf iobuf))
