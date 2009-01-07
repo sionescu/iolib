@@ -173,31 +173,20 @@
 ;;; OPEN-FILE
 ;;;-------------------------------------------------------------------------
 
-(defmethod open-file :around
+(defun open-file
     (filename &key (direction :input) (if-exists :default)
      (if-does-not-exist :default) truncate append (extra-flags 0)
-     (mode *default-open-mode*) synchronized (buffering :full) buffer-size
-     (external-format :default))
+     (mode *default-open-mode*) synchronized (buffering :full)
+     (buffer-size +default-iobuf-size+) (external-format :default))
   (check-type direction file-direction)
   (check-type extra-flags file-flags)
   (check-type mode file-mode)
-  (check-type buffering io-buffering)
+  (check-type buffering (or null stream-buffering))
   (when (or (and (null if-exists)
                  (null if-does-not-exist))
             (and (eql :error if-exists)
                  (eql :error if-does-not-exist)))
     (error 'program-error))
-  (call-next-method filename :direction direction :if-exists if-exists
-                    :if-does-not-exist if-does-not-exist
-                    :truncate truncate :append append
-                    :extra-flags extra-flags :mode mode
-                    :synchronized synchronized
-                    :buffering buffering :buffer-size buffer-size
-                    :external-format external-format))
-
-(defmethod open-file (filename &key direction if-exists if-does-not-exist
-                      truncate append extra-flags mode synchronized
-                      buffering buffer-size external-format)
   ;; FIXME: check for file type TTY and adjust buffering
   (let ((file-device
          (%open-file filename direction if-exists if-does-not-exist
