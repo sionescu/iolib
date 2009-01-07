@@ -18,7 +18,9 @@
    (input-iobuf :initarg :input-buffer
                 :accessor input-iobuf-of)
    (output-iobuf :initarg :output-buffer
-                 :accessor output-iobuf-of))
+                 :accessor output-iobuf-of)
+   (buffering :initarg :buffering
+              :accessor buffering-of))
   (:default-initargs :synchronized nil))
 
 (defclass single-channel-buffer (buffer)
