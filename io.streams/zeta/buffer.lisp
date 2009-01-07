@@ -220,6 +220,8 @@
 
 (defun %buffer-position (buffer)
   (let ((position (device-position (device-of buffer))))
+    (assert (not (null position)) (position)
+            "A single-channel-buffer's device must not return a NULL device-position.")
     (ecase (last-io-op-of buffer)
       (:read
        (- position (iobuf-available-octets (input-iobuf-of buffer))))
