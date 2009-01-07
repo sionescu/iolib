@@ -86,8 +86,10 @@
 ;;; Constructors
 ;;;-------------------------------------------------------------------------
 
-(defmethod initialize-instance :after
-    ((buffer single-channel-buffer) &key data size)
+(defmethod shared-initialize :after
+    ((buffer single-channel-buffer) slot-names
+     &key data size buffering)
+  (declare (ignore slot-names))
   (with-accessors ((device device-of)
                    (input-iobuf input-iobuf-of)
                    (output-iobuf output-iobuf-of))
@@ -98,9 +100,10 @@
     (setf input-iobuf (or data (make-iobuf size))
           output-iobuf input-iobuf)))
 
-(defmethod initialize-instance :after
-    ((buffer dual-channel-buffer)
-     &key input-data output-data input-size output-size)
+(defmethod shared-initialize :after
+    ((buffer dual-channel-buffer) slot-names
+     &key input-data output-data input-size output-size buffering)
+  (declare (ignore slot-names))
   (with-accessors ((device device-of)
                    (input-iobuf input-iobuf-of)
                    (output-iobuf output-iobuf-of))
