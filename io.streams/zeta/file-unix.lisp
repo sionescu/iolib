@@ -46,9 +46,10 @@
 ;;; Constructors
 ;;;-------------------------------------------------------------------------
 
-(defmethod initialize-instance :after
-    ((device file-device) &key handle filename flags
+(defmethod shared-initialize :after
+    ((device file-device) slot-names &key handle filename flags
      (mode *default-open-mode*) delete-if-exists)
+  (declare (ignore slot-names))
   (setf (filename-of device) (copy-seq filename))
   (with-device (device)
     (device-open device :handle handle :filename filename :flags flags
