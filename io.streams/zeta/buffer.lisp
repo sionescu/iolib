@@ -329,9 +329,13 @@
       (let ((nbytes
              (device-write device data :start start
                            :end end :timeout timeout)))
-        (setf (iobuf-start output-iobuf) (+ start nbytes))
-        (setf (last-io-op-of buffer) :write)
-        (iobuf-available-octets output-iobuf)))))
+        (etypecase nbytes
+          ((eql :hangup)
+           (error 'hangup :stream buffer))
+          (unsigned-byte
+           (setf (iobuf-start output-iobuf) (+ start nbytes))
+           (setf (last-io-op-of buffer) :write)
+           (values nbytes (iobuf-available-octets output-iobuf))))))))
 
 
 ;;;-------------------------------------------------------------------------
