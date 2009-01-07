@@ -90,10 +90,9 @@
 (defmethod device-read :around ((device device) vector &key
                                 (start 0) end timeout)
   (check-bounds vector start end)
-  (if (= start end)
-      0
-      (call-next-method device vector :start start
-                        :end end :timeout timeout)))
+  (when (= start end) (return* 0))
+  (call-next-method device vector :start start
+                    :end end :timeout timeout))
 
 (defmethod device-read ((device device) vector &key start end timeout)
   (if (and timeout (zerop timeout))
@@ -108,10 +107,9 @@
 (defmethod device-write :around ((device device) vector &key
                                  (start 0) end timeout)
   (check-bounds vector start end)
-  (if (= start end)
-      0
-      (call-next-method device vector :start start
-                        :end end :timeout timeout)))
+  (when (= start end) (return* 0))
+  (call-next-method device vector :start start
+                    :end end :timeout timeout))
 
 (defmethod device-write ((device device) vector &key start end timeout)
   (if (and timeout (zerop timeout))
