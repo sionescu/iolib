@@ -173,7 +173,7 @@
 ;;; OPEN-FILE
 ;;;-------------------------------------------------------------------------
 
-(defun open-file
+(defmethod open-file
     (filename &key (direction :input) (if-exists :default)
      (if-does-not-exist :default) truncate append (extra-flags 0)
      (mode *default-open-mode*) synchronized (buffering :full)
