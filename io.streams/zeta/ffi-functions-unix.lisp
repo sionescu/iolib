@@ -144,11 +144,11 @@ Returns two boolean values indicating readability and writeability of `FD'."
     (handler-case
         (%sys-write fd (inc-pointer buf start) (- end start))
       (ewouldblock () 0)
-      (epipe () :eof)
+      (epipe () :hangup)
       (posix-error (err)
         (posix-file-error err *device* "writing data to"))
       (:no-error (nbytes)
-        (if (zerop nbytes) :eof nbytes)))))
+        (if (zerop nbytes) :hangup nbytes)))))
 
 (defun %write-octets/timeout (fd vector start end timeout)
   (declare (type ub8-simple-vector vector)
@@ -162,9 +162,9 @@ Returns two boolean values indicating readability and writeability of `FD'."
         (handler-case
             (%sys-write fd (inc-pointer buf start) (- end start))
           (ewouldblock () (check-timeout))
-          (epipe () (return-from :rloop :eof))
+          (epipe () (return-from :rloop :hangup))
           (posix-error (err)
             (posix-file-error err *device* "writing data to"))
           (:no-error (nbytes)
             (return-from :rloop
-              (if (zerop nbytes) :eof nbytes))))))))
+              (if (zerop nbytes) :hangup nbytes))))))))
