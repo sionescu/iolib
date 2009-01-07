@@ -94,6 +94,7 @@
       buffer
     (check-type device device)
     (check-type data (or null iobuf))
+    (check-type buffering stream-buffering)
     (setf input-iobuf (or data (make-iobuf size))
           output-iobuf input-iobuf)))
 
@@ -107,6 +108,7 @@
     (check-type device device)
     (check-type input-data (or null iobuf))
     (check-type output-data (or null iobuf))
+    (check-type buffering stream-buffering)
     (setf input-iobuf (or input-data (make-iobuf input-size)))
     (setf output-iobuf (or output-data (make-iobuf output-size)))))
 
