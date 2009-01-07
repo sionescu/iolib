@@ -9,12 +9,13 @@
 ;;; Classes and Types
 ;;;-------------------------------------------------------------------------
 
-(defclass zeta-stream () ())
+(defclass zeta-stream ()
+  ((external-format :reader external-format-of)))
 
-(defclass single-channel-zeta-stream (single-channel-buffer)
+(defclass single-channel-zeta-stream (single-channel-buffer zeta-stream)
   ())
 
-(defclass dual-channel-zeta-stream (dual-channel-buffer)
+(defclass dual-channel-zeta-stream (dual-channel-buffer zeta-stream)
   ())
 
 
