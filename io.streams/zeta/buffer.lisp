@@ -298,9 +298,13 @@
       (let ((nbytes
              (device-read device data :start start
                           :end end :timeout timeout)))
-        (setf (iobuf-end input-iobuf) (+ start nbytes))
-        (setf (last-io-op-of buffer) :read)
-        (values nbytes)))))
+        (etypecase nbytes
+          ((eql :eof)
+           (error 'end-of-file :stream buffer))
+          (unsigned-byte
+           (setf (iobuf-end input-iobuf) (+ start nbytes))
+           (setf (last-io-op-of buffer) :read)
+           (values nbytes (iobuf-available-space input-iobuf))))))))
 
 
 ;;;-------------------------------------------------------------------------
