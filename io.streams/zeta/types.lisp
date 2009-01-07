@@ -43,8 +43,8 @@
 ;;; Argument Types
 ;;;-------------------------------------------------------------------------
 
-(deftype io-buffering ()
-  '(member nil :line :full))
+(deftype stream-buffering ()
+  '(member :line :full))
 
 (deftype file-direction ()
   '(member :input :output :io))
