@@ -14,7 +14,7 @@
   (:default-initargs :timestamp 0))
 
 (defmethod initialize-instance :after ((monitor file-monitor) &key file)
-  (unless (lock-of monitor)
+  (unless (slot-boundp monitor 'lock)
     (setf (lock-of monitor)
           (bt:make-lock (format nil "Lock for monitor of ~S" file)))))
 
