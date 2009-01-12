@@ -11,8 +11,12 @@
    (timestamp :initarg :timestamp :accessor timestamp-of)
    (update-fn :initarg :update-fn :accessor update-fn-of)
    (lock      :initarg :lock      :accessor lock-of))
-  (:default-initargs :timestamp 0
-                     :lock (bt:make-lock)))
+  (:default-initargs :timestamp 0))
+
+(defmethod initialize-instance :after ((monitor file-monitor) &key file)
+  (unless (lock-of monitor)
+    (setf (lock-of monitor)
+          (bt:make-lock (format nil "Lock for monitor of ~S" file)))))
 
 (defmethod print-object ((monitor file-monitor) stream)
   (print-unreadable-object (monitor stream :type nil :identity nil)
