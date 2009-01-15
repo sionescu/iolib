@@ -47,12 +47,12 @@ in seconds. If a timeout occurs `POLL-TIMEOUT' is signaled.
 Returns two boolean values indicating readability and writeability of `FD'."
   (flet ((poll-error (posix-err)
            (error 'poll-error
-                  :code (code-of posix-err)
-                  :identifier (identifier-of posix-err)
+                  :code (posix-file-error-code posix-err)
+                  :identifier (posix-file-error-identifier posix-err)
                   :event-type event-type
                   :os-handle file-descriptor
                   :message (format nil "OS error ~A"
-                                   (identifier-of posix-err)))))
+                                   (posix-file-error-identifier posix-err)))))
     (with-foreign-object (pollfd 'pollfd)
       (%sys-bzero pollfd size-of-pollfd)
       (with-foreign-slots ((fd events revents) pollfd pollfd)

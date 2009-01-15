@@ -11,13 +11,13 @@
 
 (defclass file-device (device)
   ((filename :initarg :filename
-             :accessor filename-of)
+             :accessor file-device-filename)
    (flags :initarg flags
-          :accessor flags-of)
+          :accessor file-device-flags)
    (mode :initarg mode
-         :accessor mode-of)
+         :accessor file-device-mode)
    (delete-if-exists :initarg :delete-if-exists
-                     :accessor delete-if-exists-p)))
+                     :accessor file-device-delete-if-exists-p)))
 
 (defclass memory-mapped-file-device (file-device direct-device) ())
 
@@ -32,7 +32,11 @@
 
 (defmethod print-object ((file file-device) stream)
   (print-unreadable-object (file stream :identity t :type nil)
-    (format stream "File device for ~S" (filename-of file))))
+    (format stream "File device for ~S" (file-device-filename file))))
+
+(defmethod print-object ((file file-zeta-stream) stream)
+  (print-unreadable-object (file stream :identity t :type t)
+    (format stream "wrapping ~S" (zstream-device file))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -52,7 +56,7 @@
     ((device file-device) slot-names &key handle filename flags
      (mode *default-open-mode*) delete-if-exists)
   (declare (ignore slot-names))
-  (setf (filename-of device) (copy-seq filename))
+  (setf (file-device-filename device) (copy-seq filename))
   (with-device (device)
     (device-open device :handle handle :filename filename :flags flags
                  :mode mode :delete-if-exists delete-if-exists)))
@@ -82,7 +86,7 @@
                (:no-error (fd) fd))))
     (let ((fd (or handle (try-open))))
       (%set-fd-nonblock fd)
-      (setf (handle-of device) fd)))
+      (setf (device-handle device) fd)))
   (values device))
 
 
@@ -92,8 +96,8 @@
 
 (defmethod relinquish ((device file-device) &key abort)
   (declare (ignore abort))
-  (%sys-close (handle-of device))
-  (setf (handle-of device) nil)
+  (%sys-close (device-handle device))
+  (setf (device-handle device) nil)
   (values device))
 
 
@@ -103,14 +107,14 @@
 
 (defmethod device-position ((device file-device))
   (handler-case
-      (%sys-lseek (handle-of device) 0 seek-cur)
+      (%sys-lseek (device-handle device) 0 seek-cur)
     (posix-error (err)
       (posix-file-error err device "seeking on"))))
 
 (defmethod (setf device-position)
     (position (device file-device) &optional (from :start))
   (handler-case
-      (%sys-lseek (handle-of device) position
+      (%sys-lseek (device-handle device) position
                   (ecase from
                     (:start seek-set)
                     (:current seek-cur)
@@ -125,20 +129,23 @@
 
 (defmethod device-length ((device file-device))
   (handler-case
-      (%sys-fstat (handle-of device))
+      (%sys-fstat (device-handle device))
     (posix-error (err)
       (posix-file-error err device "getting status of"))))
+
+(defmethod (setf device-length) (length (device file-device))
+  (handler-case
+      (%sys-ftruncate (device-handle device) length)
+    (posix-error (err)
+      (posix-file-error err device "truncating"))))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; I/O WAIT
 ;;;-------------------------------------------------------------------------
 
-(defmethod device-poll-input ((device file-device) &key timeout)
-  (poll-fd (handle-of device) :input timeout))
-
-(defmethod device-poll-output ((device file-device) &key timeout)
-  (poll-fd (handle-of device) :output timeout))
+(defmethod device-poll ((device file-device) direction &optional timeout)
+  (poll-fd (device-handle device) direction timeout))
 
 
 ;;;-------------------------------------------------------------------------
@@ -147,12 +154,12 @@
 
 (defmethod device-read/non-blocking ((device file-device) vector start end)
   (with-device (device)
-    (%read-octets/non-blocking (handle-of device) vector start end)))
+    (%read-octets/non-blocking (device-handle device) vector start end)))
 
 (defmethod device-read/timeout ((device file-device) vector
                                 start end timeout)
   (with-device (device)
-    (%read-octets/timeout (handle-of device) vector start end timeout)))
+    (%read-octets/timeout (device-handle device) vector start end timeout)))
 
 
 ;;;-------------------------------------------------------------------------
@@ -161,12 +168,12 @@
 
 (defmethod device-write/non-blocking ((device file-device) vector start end)
   (with-device (device)
-    (%write-octets/non-blocking (handle-of device) vector start end)))
+    (%write-octets/non-blocking (device-handle device) vector start end)))
 
 (defmethod device-write/timeout ((device file-device) vector
                                  start end timeout)
   (with-device (device)
-    (%write-octets/timeout (handle-of device) vector start end timeout)))
+    (%write-octets/timeout (device-handle device) vector start end timeout)))
 
 
 ;;;-------------------------------------------------------------------------
@@ -216,7 +223,7 @@
                        :mode mode
                        :delete-if-exists (eql :delete if-exists))
       (posix-file-error (error)
-        (case (identifier-of error)
+        (case (posix-file-error-identifier error)
           (:enoent
            (if (null if-does-not-exist) nil (error error)))
           (:eexist

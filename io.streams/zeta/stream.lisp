@@ -9,13 +9,19 @@
 ;;; Classes and Types
 ;;;-------------------------------------------------------------------------
 
-(defclass zeta-stream ()
-  ((external-format :reader external-format-of)))
+(defclass zstream ()
+  ((external-format :reader zstream-external-format)))
 
-(defclass single-channel-zeta-stream (single-channel-buffer zeta-stream)
+(defclass device-zstream (device-buffer zstream)
   ())
 
-(defclass dual-channel-zeta-stream (dual-channel-buffer zeta-stream)
+(defclass single-channel-zstream (single-channel-buffer device-zstream)
+  ())
+
+(defclass dual-channel-zstream (dual-channel-buffer device-zstream)
+  ())
+
+(defclass memory-zstream (memory-buffer zstream)
   ())
 
 
@@ -23,19 +29,29 @@
 ;;; Generic Functions
 ;;;-------------------------------------------------------------------------
 
-(defgeneric (setf external-format-of) (external-format stream))
+(defgeneric (setf zstream-external-format) (external-format stream))
 
-(defgeneric zstream-read-vector (stream sequence &key start end))
 
-(defgeneric zstream-write-vector (stream sequence &key start end))
+(defgeneric zstream-read-char (stream &key eof-error-p eof-value))
+
+(defgeneric zstream-write-char (stream char &key hangup-error-p hangup-value))
+
+(defgeneric zstream-read-string (stream string &key start end eof-error-p eof-value))
+
+(defgeneric zstream-write-string (stream string &key start end hangup-error-p hangup-value))
+
+
+(defgeneric zstream-read-line (stream &key eof-error-p eof-value))
+
+(defgeneric zstream-write-line (stream line &key start end hangup-error-p hangup-value))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; Accessors
 ;;;-------------------------------------------------------------------------
 
-(defmethod (setf external-format-of)
-    (external-format (stream zeta-stream))
+(defmethod (setf zstream-external-format)
+    (external-format (stream zstream))
   (setf (slot-value stream 'external-format)
         (babel:ensure-external-format external-format)))
 
@@ -44,47 +60,42 @@
 ;;; Constructors
 ;;;-------------------------------------------------------------------------
 
-(defmethod shared-initialize :after ((stream zeta-stream) slot-names
+(defmethod shared-initialize :after ((stream zstream) slot-names
                                      &key (external-format :default))
   (declare (ignore slot-names))
-  (setf (external-format-of stream) external-format))
+  (setf (zstream-external-format stream) external-format))
 
 
 ;;;-------------------------------------------------------------------------
-;;; READ-VECTOR
+;;; READ-STRING
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-read-vector ((stream zeta-stream) (vector vector)
-                                &key (start 0) end timeout)
-  (check-type vector (or ub8-simple-vector ub8-vector))
-  (check-bounds vector start end)
-  (when (= start end) (return* 0))
-  (device-read stream vector :start start :end end :timeout timeout))
-
-(defmethod zstream-read-vector ((stream zeta-stream) (vector string)
-                                &key (start 0) end timeout)
-  (check-type vector (or ub8-simple-vector ub8-vector))
-  (check-bounds vector start end)
+(defmethod zstream-read-string ((stream zstream) (string string)
+                                &key (start 0) end eof-error-p eof-value)
+  (check-bounds string start end)
   (when (= start end) (return* 0))
   ;; TODO: write it
   )
 
 
 ;;;-------------------------------------------------------------------------
-;;; WRITE-VECTOR
+;;; WRITE-OCTETS
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-write-vector ((stream zeta-stream) (vector vector)
+(defmethod zstream-write-octets ((stream zstream) (octets vector)
                                  &key (start 0) end timeout)
-  (check-type vector (or ub8-simple-vector ub8-vector))
-  (check-bounds vector start end)
+  (check-bounds octets start end)
   (when (= start end) (return* 0))
-  (device-write stream vector :start start :end end :timeout timeout))
+  (device-write stream octets :start start :end end :timeout timeout))
+
 
-(defmethod zstream-write-vector ((stream zeta-stream) (vector string)
-                                 &key (start 0) end timeout)
-  (check-type vector (or ub8-simple-vector ub8-vector))
-  (check-bounds vector start end)
+;;;-------------------------------------------------------------------------
+;;; WRITE-STRING
+;;;-------------------------------------------------------------------------
+
+(defmethod zstream-write-string ((stream zstream) (string string)
+                                 &key (start 0) end hangup-error-p hangup-value)
+  (check-bounds string start end)
   (when (= start end) (return* 0))
   ;; TODO: write it
   )

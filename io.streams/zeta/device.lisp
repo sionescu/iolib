@@ -10,10 +10,14 @@
 ;;;-------------------------------------------------------------------------
 
 (defclass device ()
-  ((handle :initarg :handle :accessor handle-of)
-   (readable :initarg :readable :accessor device-readablep)
-   (writeable :initarg :writeable :accessor device-writeablep)
-   (seekable :initarg :seekable :accessor device-seekablep)))
+  ((handle :initarg :handle
+           :accessor device-handle)
+   (readable :initarg :readable
+             :accessor device-readablep)
+   (writeable :initarg :writeable
+              :accessor device-writeablep)
+   (seekable :initarg :seekable
+             :accessor device-seekablep)))
 
 (defclass direct-device (device) ())
 
@@ -41,9 +45,9 @@
 
 (defgeneric device-length (device))
 
-(defgeneric device-poll-input (device &key timeout))
+(defgeneric (setf device-length) (length device))
 
-(defgeneric device-poll-output (device &key timeout))
+(defgeneric device-poll (device direction &optional timeout))
 
 ;;; Internal functions
 
@@ -73,14 +77,24 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod device-position ((device device))
-  (values nil))
+  (declare (ignore device))
+  ;; FIXME: signal proper condition
+  (error "Device not seekable: ~S" device))
 
 (defmethod (setf device-position) (position (device device) &optional from)
   (declare (ignore position from))
-  (values nil))
+  ;; FIXME: signal proper condition
+  (error "Device not seekable: ~S" device))
 
 (defmethod device-length ((device device))
-  (values nil))
+  (declare (ignore device))
+  ;; FIXME: signal proper condition
+  (error "Device not seekable: ~S" device))
+
+(defmethod (setf device-length) (length (device device))
+  (declare (ignore length))
+  ;; FIXME: signal proper condition
+  (error "Device not seekable: ~S" device))
 
 
 ;;;-------------------------------------------------------------------------
@@ -91,8 +105,7 @@
                                 (start 0) end timeout)
   (check-bounds vector start end)
   (when (= start end) (return* 0))
-  (call-next-method device vector :start start
-                    :end end :timeout timeout))
+  (call-next-method device vector :start start :end end :timeout timeout))
 
 (defmethod device-read ((device device) vector &key start end timeout)
   (if (and timeout (zerop timeout))
@@ -108,8 +121,7 @@
                                  (start 0) end timeout)
   (check-bounds vector start end)
   (when (= start end) (return* 0))
-  (call-next-method device vector :start start
-                    :end end :timeout timeout))
+  (call-next-method device vector :start start :end end :timeout timeout))
 
 (defmethod device-write ((device device) vector &key start end timeout)
   (if (and timeout (zerop timeout))
