@@ -9,8 +9,8 @@
   (with-gensyms (length)
     `(let ((,length (length ,sequence)))
        (check-type ,start unsigned-byte "a non-negative integer")
-       (check-type ,end (or unsigned-byte null) "a non-negative integer or NIL")
+       (when ,end (check-type ,end unsigned-byte "a non-negative integer or NIL"))
        (unless ,end
-         (setq ,end ,length))
+         (setf ,end ,length))
        (unless (<= ,start ,end ,length)
          (error "Wrong sequence bounds. start: ~S end: ~S" ,start ,end)))))
