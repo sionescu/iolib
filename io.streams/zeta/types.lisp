@@ -5,18 +5,15 @@
 
 (in-package :io.zeta-streams)
 
-;;;-------------------------------------------------------------------------
-;;; Data Types
-;;;-------------------------------------------------------------------------
-
-(deftype ub8  () '(unsigned-byte  8))
-(deftype ub16 () '(unsigned-byte 16))
-(deftype ub32 () '(unsigned-byte 32))
-(deftype ub64 () '(unsigned-byte 64))
-(deftype sb8  () '(signed-byte  8))
-(deftype sb16 () '(signed-byte 16))
-(deftype sb32 () '(signed-byte 32))
-(deftype sb64 () '(signed-byte 64))
+(deftype octet () '(unsigned-byte  8))
+(deftype ub8   () '(unsigned-byte  8))
+(deftype ub16  () '(unsigned-byte 16))
+(deftype ub32  () '(unsigned-byte 32))
+(deftype ub64  () '(unsigned-byte 64))
+(deftype sb8   () '(signed-byte  8))
+(deftype sb16  () '(signed-byte 16))
+(deftype sb32  () '(signed-byte 32))
+(deftype sb64  () '(signed-byte 64))
 
 (deftype ub8-vector (&optional (size '*))
   `(array ub8 (,size)))
