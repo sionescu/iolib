@@ -34,7 +34,26 @@
 (deftype ub16-complex-vector (&optional (size '*))
   `(and (ub16-vector ,size)
         (not (ub16-simple-vector ,size))))
-
+
+(deftype ub32-vector (&optional (size '*))
+  `(array ub32 (,size)))
+
+(deftype ub32-simple-vector (&optional (size '*))
+  `(simple-array ub32 (,size)))
+
+(deftype ub32-complex-vector (&optional (size '*))
+  `(and (ub32-vector ,size)
+        (not (ub32-simple-vector ,size))))
+
+(deftype ub64-vector (&optional (size '*))
+  `(array ub64 (,size)))
+
+(deftype ub64-simple-vector (&optional (size '*))
+  `(simple-array ub64 (,size)))
+
+(deftype ub64-complex-vector (&optional (size '*))
+  `(and (ub64-vector ,size)
+        (not (ub64-simple-vector ,size))))
 
 ;;;-------------------------------------------------------------------------
 ;;; Argument Types
