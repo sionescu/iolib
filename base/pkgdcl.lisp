@@ -11,6 +11,7 @@
   (:export
    ;; Conditions
    #:bug #:iolib-bug
+   #:subtype-error #:subtype-error-datum #:subtype-error-expected-supertype
    ;; Debugging
    #:*safety-checks*
    #:debug-only #:debug-only*

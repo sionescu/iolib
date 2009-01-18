@@ -5,6 +5,17 @@
 
 (in-package :iolib.base)
 
+(define-condition subtype-error (error)
+  ((datum :initarg :type :reader subtype-error-datum)
+   (expected-supertype :initarg :expected-supertype
+                       :reader subtype-error-expected-supertype))
+  (:report
+   (lambda (condition stream)
+     (format stream "~S is not a recognizable subtype of ~S"
+             (subtype-error-datum condition)
+             (subtype-error-expected-supertype condition)))))
+
+
 ;;;-------------------------------------------------------------------------
 ;;; Bugs
 ;;;-------------------------------------------------------------------------
