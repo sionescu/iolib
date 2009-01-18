@@ -10,7 +10,7 @@
   (:shadow #:defun #:defmethod #:defmacro #:define-compiler-macro)
   (:export
    ;; Conditions
-   #:bug
+   #:bug #:iolib-bug
    ;; Debugging
    #:*safety-checks*
    #:debug-only #:debug-only*
