@@ -22,12 +22,11 @@
    ;; Device interface definition
    (:file "device" :depends-on ("pkgdcl" "types"))
 
-   ;; Buffers
+   ;; Low-level buffers
    (:file "iobuf" :depends-on ("pkgdcl" "types"))
-   (:file "buffer" :depends-on ("pkgdcl" "types" "conditions" "device" "iobuf"))
 
    ;; Streams
-   (:file "stream" :depends-on ("pkgdcl" "types" "conditions" "device" "buffer"))
+   (:file "stream" :depends-on ("pkgdcl" "types" "conditions" "device" "iobuf"))
 
    ;; Devices
    (:file "file"
