@@ -154,6 +154,7 @@
                  (:io
                   (make-locks (make-locks body :output) :input)))))
       `(flet ((,body-fun () ,@body))
+         (declare (dynamic-extent #',body-fun))
          (if (zstream-synchronized-p ,buffer)
              ,(make-locks `(,body-fun) direction)
              (,body-fun))))))
