@@ -31,5 +31,4 @@
    ;; Devices
    (:file "file"
      :pathname #+unix "file-unix"
-     :depends-on ("pkgdcl" "types" "conditions" "ffi-functions" "device" "buffer"
-                  "stream"))))
+     :depends-on ("pkgdcl" "types" "conditions" "ffi-functions" "device" "stream"))))

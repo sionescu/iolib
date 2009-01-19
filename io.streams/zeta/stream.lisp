@@ -25,13 +25,6 @@
               :accessor %db-buffering))
   (:default-initargs :synchronized nil))
 
-(defclass single-channel-buffer (device-buffer)
-  ((dirtyp :initform nil
-           :accessor %scb-dirtyp)))
-
-(defclass dual-channel-buffer (device-buffer)
-  ())
-
 (defclass memory-buffer (buffer)
   ((data-vector :accessor %mb-data-vector)
    (element-type :accessor %mb-element-type)
@@ -42,34 +35,29 @@
    (adjust-size :accessor %mb-adjust-size)
    (adjust-threshold :accessor %mb-adjust-threshold)))
 
-(defclass octet-memory-buffer (memory-buffer)
-  ()
-  (:default-initargs :element-type 'octet))
-
-(defclass character-memory-buffer (memory-buffer)
-  ()
-  (:default-initargs :element-type 'character))
-
 (defclass zstream ()
   ((external-format :accessor %zs-external-format)))
 
 (defclass device-zstream (device-buffer zstream)
   ())
 
-(defclass single-channel-zstream (single-channel-buffer device-zstream)
-  ())
+(defclass single-channel-zstream (device-zstream)
+  ((dirtyp :initform nil
+           :accessor %sczs-dirtyp)))
 
-(defclass dual-channel-zstream (dual-channel-buffer device-zstream)
+(defclass dual-channel-zstream (device-zstream)
   ())
 
 (defclass memory-zstream (memory-buffer zstream)
   ())
 
-(defclass octet-memory-zstream (octet-memory-buffer memory-zstream)
-  ())
+(defclass octet-memory-zstream (memory-zstream)
+  ()
+  (:default-initargs :element-type 'octet))
 
-(defclass character-memory-zstream (character-memory-buffer memory-zstream)
-  ())
+(defclass character-memory-zstream (memory-zstream)
+  ()
+  (:default-initargs :element-type 'character))
 
 
 ;;;-------------------------------------------------------------------------
@@ -78,11 +66,11 @@
 
 ;;; Accessors
 
-(defgeneric zstream-synchronized-p (buffer))
+(defgeneric zstream-synchronized-p (stream))
 
-(defgeneric zstream-device (buffer))
+(defgeneric zstream-device (stream))
 
-(defgeneric (setf zstream-device) (new-device buffer))
+(defgeneric (setf zstream-device) (new-device stream))
 
 (defgeneric zstream-external-format (stream))
 
@@ -90,13 +78,13 @@
 
 ;;; I/O functions
 
-(defgeneric zstream-read-element (buffer &key timeout))
+(defgeneric zstream-read-element (stream &key timeout))
 
-(defgeneric zstream-write-element (buffer element &key timeout))
+(defgeneric zstream-write-element (stream element &key timeout))
 
-(defgeneric zstream-read-vector (buffer vector &key start end timeout))
+(defgeneric zstream-read-vector (stream vector &key start end timeout))
 
-(defgeneric zstream-write-vector (buffer vector &key start end timeout))
+(defgeneric zstream-write-vector (stream vector &key start end timeout))
 
 (defgeneric zstream-read-byte (stream &key width signed))
 
@@ -110,66 +98,66 @@
 
 (defgeneric zstream-write-line (stream line &key start end hangup-error-p hangup-value))
 
-;;; Device buffer functions
+;;; Device zstream functions
 
-(defgeneric zstream-position (buffer &key direction))
+(defgeneric zstream-position (stream &key direction))
 
-(defgeneric (setf zstream-position) (position buffer &key direction from))
+(defgeneric (setf zstream-position) (position stream &key direction from))
 
-(defgeneric zstream-poll (buffer &key direction timeout))
+(defgeneric zstream-poll (stream &key direction timeout))
 
-(defgeneric zstream-fill (buffer &key timeout))
+(defgeneric zstream-fill (stream &key timeout))
 
-(defgeneric zstream-flush (buffer &key timeout))
+(defgeneric zstream-flush (stream &key timeout))
 
-(defgeneric zstream-clear-input (buffer))
+(defgeneric zstream-clear-input (stream))
 
-(defgeneric zstream-clear-output (buffer))
+(defgeneric zstream-clear-output (stream))
 
 ;;; Internal functions
 
-(defgeneric %zstream-read-vector (buffer vector start end timeout))
+(defgeneric %zstream-read-vector (stream vector start end timeout))
 
-(defgeneric %zstream-write-vector (buffer vector start end timeout))
+(defgeneric %zstream-write-vector (stream vector start end timeout))
 
-(defgeneric %zstream-fill (buffer timeout))
+(defgeneric %zstream-fill (stream timeout))
 
-(defgeneric %zstream-flush (buffer timeout))
+(defgeneric %zstream-flush (stream timeout))
 
-(defgeneric %zstream-clear-input (buffer))
+(defgeneric %zstream-clear-input (stream))
 
-(defgeneric %zstream-clear-output (buffer))
-
-;; FIXME: choose better name
-(defgeneric %ensure-memory-buffer-capacity (buffer &optional amount))
+(defgeneric %zstream-clear-output (stream))
 
 ;; FIXME: choose better name
-(defgeneric %check-memory-buffer-available-data (buffer &optional amount))
+(defgeneric %ensure-buffer-capacity (stream &optional amount))
+
+;; FIXME: choose better name
+(defgeneric %check-buffer-available-data (stream &optional amount))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; Accessors
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-synchronized-p ((buffer device-buffer))
-  (%db-synchronized-p buffer))
+(defmethod zstream-synchronized-p ((stream device-zstream))
+  (%db-synchronized-p stream))
 
-(defmethod zstream-synchronized-p ((buffer memory-buffer))
-  (declare (ignore buffer))
+(defmethod zstream-synchronized-p ((stream memory-zstream))
+  (declare (ignore stream))
   (values nil))
 
-(defmethod zstream-device ((buffer device-buffer))
-  (%db-device buffer))
+(defmethod zstream-device ((stream device-zstream))
+  (%db-device stream))
 
-(defmethod zstream-device ((buffer memory-buffer))
-  (declare (ignore buffer))
+(defmethod zstream-device ((stream memory-zstream))
+  (declare (ignore stream))
   (values nil))
 
-(defmethod (setf zstream-device) (new-device (buffer device-buffer))
-  (setf (%db-device buffer) new-device))
+(defmethod (setf zstream-device) (new-device (stream device-zstream))
+  (setf (%db-device stream) new-device))
 
-(defmethod (setf zstream-device) (new-device (buffer memory-buffer))
-  (declare (ignore new-device buffer))
+(defmethod (setf zstream-device) (new-device (stream memory-zstream))
+  (declare (ignore new-device stream))
   (values nil))
 
 (defmethod zstream-external-format ((stream zstream))
@@ -186,13 +174,13 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod shared-initialize :after
-    ((buffer single-channel-buffer) slot-names
+    ((stream single-channel-zstream) slot-names
      &key data size buffering)
   (declare (ignore slot-names))
   (with-accessors ((device zstream-device)
                    (input-iobuf %db-input-iobuf)
                    (output-iobuf %db-output-iobuf))
-      buffer
+      stream
     (check-type device device)
     (check-type data (or null iobuf))
     (check-type buffering stream-buffering)
@@ -200,13 +188,13 @@
           output-iobuf input-iobuf)))
 
 (defmethod shared-initialize :after
-    ((buffer dual-channel-buffer) slot-names
+    ((stream dual-channel-zstream) slot-names
      &key input-data output-data input-size output-size buffering)
   (declare (ignore slot-names))
   (with-accessors ((device zstream-device)
                    (input-iobuf %db-input-iobuf)
                    (output-iobuf %db-output-iobuf))
-      buffer
+      stream
     (check-type device device)
     (check-type input-data (or null iobuf))
     (check-type output-data (or null iobuf))
@@ -215,15 +203,15 @@
     (setf output-iobuf (or output-data (make-iobuf output-size)))))
 
 (defmethod shared-initialize :after
-    ((buffer memory-buffer) slot-names
+    ((stream memory-zstream) slot-names
      &key data (start 0) end (element-type t)
      (adjust-size 1.5) (adjust-threshold 1))
   (declare (ignore slot-names))
   (check-type adjust-size (real 1.001))
   (check-type adjust-threshold (real 0.1 1))
-  (setf (%mb-adjust-size      buffer) adjust-size
-        (%mb-adjust-threshold buffer) adjust-threshold
-        (%mb-element-type     buffer) (upgraded-array-element-type
+  (setf (%mb-adjust-size      stream) adjust-size
+        (%mb-adjust-threshold stream) adjust-threshold
+        (%mb-element-type     stream) (upgraded-array-element-type
                                        element-type))
   (cond
     (data
@@ -231,14 +219,14 @@
      (when element-type
        ;; FIXME: signal proper condition
        (assert (subtypep element-type (array-element-type data))))
-     (setf (%mb-data-vector buffer)
+     (setf (%mb-data-vector stream)
            (make-array (truncate (* adjust-size (length data)))
                        :element-type (or element-type
                                          (array-element-type data))))
-     (setf (%mb-output-position buffer) (- end start))
-     (replace (%mb-data-vector buffer) data :start2 start :end2 end))
+     (setf (%mb-output-position stream) (- end start))
+     (replace (%mb-data-vector stream) data :start2 start :end2 end))
     (t
-     (setf (%mb-data-vector buffer)
+     (setf (%mb-data-vector stream)
            (make-array 128 :element-type element-type)))))
 
 (defmethod shared-initialize :after ((stream zstream) slot-names
@@ -275,24 +263,25 @@
 ;;; Helper macros
 ;;;-------------------------------------------------------------------------
 
-;; FIXME: synchronize memory buffers too ?
-(defmacro with-synchronized-buffer ((buffer &optional direction) &body body)
+;; FIXME: synchronize memory streams too ?
+(defmacro with-synchronized-device-zstream
+    ((stream &optional direction) &body body)
   (with-gensyms (body-fun)
     (labels ((make-locks (body direction)
                (ecase direction
                  (:input
                   `(bt:with-lock-held
-                       ((iobuf-lock (%db-input-iobuf ,buffer)))
+                       ((iobuf-lock (%db-input-iobuf ,stream)))
                      ,body))
                  (:output
                   `(bt:with-lock-held
-                       ((iobuf-lock (%db-output-iobuf ,buffer)))
+                       ((iobuf-lock (%db-output-iobuf ,stream)))
                      ,body))
                  (:io
                   (make-locks (make-locks body :output) :input)))))
       `(flet ((,body-fun () ,@body))
          (declare (dynamic-extent #',body-fun))
-         (if (zstream-synchronized-p ,buffer)
+         (if (zstream-synchronized-p ,stream)
              ,(make-locks `(,body-fun) direction)
              (,body-fun))))))
 
@@ -301,36 +290,36 @@
 ;;; RELINQUISH
 ;;;-------------------------------------------------------------------------
 
-(defmethod relinquish :after ((buffer single-channel-buffer) &key abort)
-  (with-synchronized-buffer (buffer :input)
+(defmethod relinquish :after ((stream single-channel-zstream) &key abort)
+  (with-synchronized-device-zstream (stream :input)
     (unless abort
-      (%zstream-flush buffer 0))
-    (relinquish (zstream-device buffer) :abort abort))
-  (values buffer))
+      (%zstream-flush stream 0))
+    (relinquish (zstream-device stream) :abort abort))
+  (values stream))
 
-(defmethod relinquish :after ((buffer dual-channel-buffer) &key abort)
-  (with-synchronized-buffer (buffer :io)
+(defmethod relinquish :after ((stream dual-channel-zstream) &key abort)
+  (with-synchronized-device-zstream (stream :io)
     (unless abort
-      (%zstream-flush buffer 0))
-    (relinquish (zstream-device buffer) :abort abort))
-  (values buffer))
+      (%zstream-flush stream 0))
+    (relinquish (zstream-device stream) :abort abort))
+  (values stream))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; READ-ELEMENT
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-read-element ((buffer device-buffer) &key timeout)
+(defmethod zstream-read-element ((stream device-zstream) &key timeout)
   (let ((v (make-array 1 :element-type 'octet)))
     (declare (dynamic-extent v))
-    (zstream-read-vector buffer v :timeout timeout)
+    (zstream-read-vector stream v :timeout timeout)
     (aref v 0)))
 
-(defmethod zstream-read-element ((buffer memory-buffer) &key timeout)
+(defmethod zstream-read-element ((stream memory-zstream) &key timeout)
   (declare (ignore timeout))
-  (let ((v (make-array 1 :element-type (%mb-element-type buffer))))
+  (let ((v (make-array 1 :element-type (%mb-element-type stream))))
     (declare (dynamic-extent v))
-    (zstream-read-vector buffer v)
+    (zstream-read-vector stream v)
     (aref v 0)))
 
 
@@ -338,43 +327,43 @@
 ;;; READ-VECTOR
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-read-vector :around ((buffer buffer) vector &key
+(defmethod zstream-read-vector :around ((stream zstream) vector &key
                                         (start 0) end timeout)
   (check-bounds vector start end)
   (when (= start end) (return* 0))
-  (call-next-method buffer vector :start start :end end :timeout timeout))
+  (call-next-method stream vector :start start :end end :timeout timeout))
 
-(defmethod zstream-read-vector ((buffer single-channel-buffer) vector
+(defmethod zstream-read-vector ((stream single-channel-zstream) vector
                                 &key start end timeout)
-  (with-synchronized-buffer (buffer :input)
-    (%zstream-read-vector buffer vector start end timeout)))
+  (with-synchronized-device-zstream (stream :input)
+    (%zstream-read-vector stream vector start end timeout)))
 
-(defmethod zstream-read-vector ((buffer dual-channel-buffer) vector
+(defmethod zstream-read-vector ((stream dual-channel-zstream) vector
                                 &key start end timeout)
-  (with-synchronized-buffer (buffer :input)
-    (%zstream-read-vector buffer vector start end timeout)))
+  (with-synchronized-device-zstream (stream :input)
+    (%zstream-read-vector stream vector start end timeout)))
 
-(defmethod %zstream-read-vector ((buffer device-buffer) vector
+(defmethod %zstream-read-vector ((stream device-zstream) vector
                                  start end timeout)
   (with-accessors ((input-iobuf %db-input-iobuf))
-      buffer
+      stream
     (cond
       ((iobuf-empty-p input-iobuf)
-       (let ((nbytes (%zstream-fill buffer timeout)))
+       (let ((nbytes (%zstream-fill stream timeout)))
          (if (iobuf-empty-p input-iobuf)
              (if (eql :eof nbytes) :eof 0)
              (iobuf->vector input-iobuf vector start end))))
       (t
        (iobuf->vector input-iobuf vector start end)))))
 
-(defmethod zstream-read-vector ((buffer memory-buffer) vector
+(defmethod zstream-read-vector ((stream memory-zstream) vector
                                 &key start end timeout)
   (declare (ignore timeout))
   (with-accessors ((data-vector %mb-data-vector)
                    (input-position %mb-input-position)
                    (output-position %mb-output-position))
-      buffer
-    (%check-memory-buffer-available-data buffer 1)
+      stream
+    (%check-buffer-available-data stream 1)
     (replace vector data-vector
              :start1 input-position :end1 output-position
              :start2 start :end2 end)
@@ -386,63 +375,63 @@
 ;;; WRITE-ELEMENT
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-write-element ((buffer device-buffer) octet &key timeout)
+(defmethod zstream-write-element ((stream device-zstream) octet &key timeout)
   (check-type octet octet)
   (let ((v (make-array 1 :element-type 'octet :initial-contents octet)))
     (declare (dynamic-extent v))
-    (zstream-write-vector buffer v :timeout timeout)))
+    (zstream-write-vector stream v :timeout timeout)))
 
-(defmethod zstream-write-element ((buffer memory-buffer) element &key timeout)
+(defmethod zstream-write-element ((stream memory-zstream) element &key timeout)
   (declare (ignore timeout))
-  (let ((v (make-array 1 :element-type (%mb-element-type buffer)
+  (let ((v (make-array 1 :element-type (%mb-element-type stream)
                        :initial-contents element)))
     (declare (dynamic-extent v))
-    (zstream-write-vector buffer v)))
+    (zstream-write-vector stream v)))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; WRITE-VECTOR
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-write-vector :around ((buffer buffer) vector
+(defmethod zstream-write-vector :around ((stream zstream) vector
                                          &key (start 0) end timeout)
   (check-bounds vector start end)
   (when (= start end) (return* 0))
-  (call-next-method buffer vector :start start :end end :timeout timeout))
+  (call-next-method stream vector :start start :end end :timeout timeout))
 
-(defmethod zstream-write-vector ((buffer single-channel-buffer) vector
+(defmethod zstream-write-vector ((stream single-channel-zstream) vector
                                  &key start end timeout)
-  (with-synchronized-buffer (buffer :output)
+  (with-synchronized-device-zstream (stream :output)
     ;; If the previous operation was a read, flush the read buffer
     ;; and reposition the file offset accordingly
-    (%zstream-clear-input buffer)
-    (%zstream-write-vector buffer vector start end timeout)))
+    (%zstream-clear-input stream)
+    (%zstream-write-vector stream vector start end timeout)))
 
-(defmethod zstream-write-vector ((buffer dual-channel-buffer) vector
+(defmethod zstream-write-vector ((stream dual-channel-zstream) vector
                                  &key start end timeout)
-  (with-synchronized-buffer (buffer :output)
-    (%zstream-write-vector buffer vector start end timeout)))
+  (with-synchronized-device-zstream (stream :output)
+    (%zstream-write-vector stream vector start end timeout)))
 
-(defmethod %zstream-write-vector ((buffer device-buffer) vector start end timeout)
+(defmethod %zstream-write-vector ((stream device-zstream) vector start end timeout)
   (with-accessors ((output-iobuf %db-output-iobuf))
-      buffer
+      stream
     (multiple-value-prog1
         (vector->iobuf output-iobuf vector start end)
       (when (iobuf-full-p output-iobuf)
-        (%zstream-flush buffer timeout)))))
+        (%zstream-flush stream timeout)))))
 
-(defmethod %zstream-write-vector :after ((buffer single-channel-buffer)
+(defmethod %zstream-write-vector :after ((stream single-channel-zstream)
                                          vector start end timeout)
   (declare (ignore vector start end timeout))
-  (setf (%scb-dirtyp buffer) t))
+  (setf (%sczs-dirtyp stream) t))
 
-(defmethod zstream-write-vector ((buffer memory-buffer) vector
+(defmethod zstream-write-vector ((stream memory-zstream) vector
                                  &key (start 0) end timeout)
   (declare (ignore timeout))
   (with-accessors ((data-vector %mb-data-vector)
                    (output-position %mb-output-position))
-      buffer
-    (%ensure-memory-buffer-capacity buffer (length vector))
+      stream
+    (%ensure-buffer-capacity stream (length vector))
     (replace data-vector vector :start1 output-position
              :start2 start :end2 end)
     (incf output-position (length vector))))
@@ -452,26 +441,26 @@
 ;;; POSITION
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-position ((buffer single-channel-buffer) &key direction)
+(defmethod zstream-position ((stream single-channel-zstream) &key direction)
   (declare (ignore direction))
-  (with-synchronized-buffer (buffer :input)
-    (let ((position (device-position (zstream-device buffer))))
+  (with-synchronized-device-zstream (stream :input)
+    (let ((position (device-position (zstream-device stream))))
       ;; FIXME: signal proper condition
       (assert (not (null position)) (position)
-              "A single-channel-buffer's device must not return a NULL device-position.")
-      (if (%scb-dirtyp buffer)
-          (+ position (iobuf-available-octets (%db-output-iobuf buffer)))
-          (- position (iobuf-available-octets (%db-input-iobuf buffer)))))))
+              "A single-channel-zstream's device must not return a NULL device-position.")
+      (if (%sczs-dirtyp stream)
+          (+ position (iobuf-available-octets (%db-output-iobuf stream)))
+          (- position (iobuf-available-octets (%db-input-iobuf  stream)))))))
 
-(defmethod zstream-position ((buffer dual-channel-buffer) &key direction)
+(defmethod zstream-position ((stream dual-channel-zstream) &key direction)
   (declare (ignore direction))
-  (with-synchronized-buffer (buffer :io)
-    (device-position (zstream-device buffer))))
+  (with-synchronized-device-zstream (stream :io)
+    (device-position (zstream-device stream))))
 
-(defmethod zstream-position ((buffer memory-buffer) &key direction)
+(defmethod zstream-position ((stream memory-zstream) &key direction)
   (ecase direction
-    (:input  (%mb-input-position  buffer))
-    (:output (%mb-output-position buffer))))
+    (:input  (%mb-input-position  stream))
+    (:output (%mb-output-position stream))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -479,20 +468,20 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod (setf zstream-position)
-    (position (buffer device-buffer) &key direction (from :start))
+    (position (stream device-zstream) &key direction (from :start))
   (declare (ignore direction))
-  (with-synchronized-buffer (buffer :input)
-    (setf (%db-position buffer from) position)))
+  (with-synchronized-device-zstream (stream :input)
+    (setf (%db-position stream from) position)))
 
-(defun (setf %db-position) (position buffer from)
-  (setf (device-position (zstream-device buffer) from) position))
+(defun (setf %db-position) (position stream from)
+  (setf (device-position (zstream-device stream) from) position))
 
 (defmethod (setf zstream-position)
-    (offset (buffer memory-buffer) &key direction (from :start))
+    (offset (stream memory-zstream) &key direction (from :start))
   (with-accessors ((data-vector %mb-data-vector)
                    (input-position %mb-input-position)
                    (output-position %mb-output-position))
-      buffer
+      stream
     (ecase direction
       (:input
        (let ((newpos
@@ -508,7 +497,7 @@
                 (:start   offset)
                 (:current (+ output-position offset))
                 (:input   (+ input-position offset)))))
-         (%ensure-memory-buffer-capacity buffer (- newpos output-position))
+         (%ensure-buffer-capacity stream (- newpos output-position))
          (setf output-position newpos))))))
 
 
@@ -516,60 +505,60 @@
 ;;; CLEAR-INPUT
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-clear-input ((buffer device-buffer))
-  (with-synchronized-buffer (buffer :input)
-    (%zstream-clear-input buffer)))
+(defmethod zstream-clear-input ((stream device-zstream))
+  (with-synchronized-device-zstream (stream :input)
+    (%zstream-clear-input stream)))
 
-(defmethod %zstream-clear-input ((buffer single-channel-buffer))
-  (unless (%scb-dirtyp buffer)
-    (let ((nbytes (iobuf-available-octets (%db-input-iobuf buffer))))
+(defmethod %zstream-clear-input ((stream single-channel-zstream))
+  (unless (%sczs-dirtyp stream)
+    (let ((nbytes (iobuf-available-octets (%db-input-iobuf stream))))
       (unless (zerop nbytes)
-        (setf (%db-position buffer :current) (- nbytes)))
-      (iobuf-reset (%db-input-iobuf buffer)))))
+        (setf (%db-position stream :current) (- nbytes)))
+      (iobuf-reset (%db-input-iobuf stream)))))
 
-(defmethod %zstream-clear-input ((buffer dual-channel-buffer))
-  (iobuf-reset (%db-input-iobuf buffer)))
+(defmethod %zstream-clear-input ((stream dual-channel-zstream))
+  (iobuf-reset (%db-input-iobuf stream)))
 
-(defmethod zstream-clear-input ((buffer memory-buffer))
-  (setf (%mb-input-position buffer) (%mb-output-position buffer)))
+(defmethod zstream-clear-input ((stream memory-zstream))
+  (setf (%mb-input-position stream) (%mb-output-position stream)))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; CLEAR-OUTPUT
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-clear-output ((buffer device-buffer))
-  (with-synchronized-buffer (buffer :output)
-    (%zstream-clear-output buffer)))
+(defmethod zstream-clear-output ((stream device-zstream))
+  (with-synchronized-device-zstream (stream :output)
+    (%zstream-clear-output stream)))
 
-(defmethod %zstream-clear-output ((buffer single-channel-buffer))
-  (when (%scb-dirtyp buffer)
-    (iobuf-reset (%db-output-iobuf buffer))))
+(defmethod %zstream-clear-output ((stream single-channel-zstream))
+  (when (%sczs-dirtyp stream)
+    (iobuf-reset (%db-output-iobuf stream))))
 
-(defmethod %zstream-clear-output ((buffer dual-channel-buffer))
-  (iobuf-reset (%db-output-iobuf buffer)))
+(defmethod %zstream-clear-output ((stream dual-channel-zstream))
+  (iobuf-reset (%db-output-iobuf stream)))
 
-(defmethod zstream-clear-output ((buffer memory-buffer))
-  (setf (%mb-output-position buffer) (%mb-input-position buffer)))
+(defmethod zstream-clear-output ((stream memory-zstream))
+  (setf (%mb-output-position stream) (%mb-input-position stream)))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; FILL-INPUT
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-fill ((buffer single-channel-buffer) &key timeout)
-  (with-synchronized-buffer (buffer :input)
-    (%zstream-flush buffer timeout)
-    (%zstream-fill buffer timeout)))
+(defmethod zstream-fill ((stream single-channel-zstream) &key timeout)
+  (with-synchronized-device-zstream (stream :input)
+    (%zstream-flush stream timeout)
+    (%zstream-fill stream timeout)))
 
-(defmethod zstream-fill ((buffer dual-channel-buffer) &key timeout)
-  (with-synchronized-buffer (buffer :input)
-    (%zstream-fill buffer timeout)))
+(defmethod zstream-fill ((stream dual-channel-zstream) &key timeout)
+  (with-synchronized-device-zstream (stream :input)
+    (%zstream-fill stream timeout)))
 
-(defmethod %zstream-fill ((buffer device-buffer) timeout)
+(defmethod %zstream-fill ((stream device-zstream) timeout)
   (with-accessors ((device zstream-device)
                    (input-iobuf %db-input-iobuf))
-      buffer
+      stream
     (multiple-value-bind (data start end)
         (iobuf-next-empty-zone input-iobuf)
       (let ((nbytes
@@ -577,13 +566,13 @@
                           :end end :timeout timeout)))
         (etypecase nbytes
           ((eql :eof)
-           (error 'end-of-file :stream buffer))
+           (error 'end-of-file :stream stream))
           (unsigned-byte
            (setf (iobuf-end input-iobuf) (+ start nbytes))
            (values nbytes (iobuf-available-space input-iobuf))))))))
 
-(defmethod zstream-fill ((buffer memory-buffer) &key timeout)
-  (declare (ignore buffer timeout))
+(defmethod zstream-fill ((stream memory-zstream) &key timeout)
+  (declare (ignore stream timeout))
   (values nil))
 
 
@@ -591,15 +580,15 @@
 ;;; FLUSH-OUTPUT
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-flush ((buffer device-buffer) &key timeout)
-  (with-synchronized-buffer (buffer :output)
-    (%zstream-flush buffer timeout)))
+(defmethod zstream-flush ((stream device-zstream) &key timeout)
+  (with-synchronized-device-zstream (stream :output)
+    (%zstream-flush stream timeout)))
 
-(defmethod %zstream-flush ((buffer device-buffer) timeout)
+(defmethod %zstream-flush ((stream device-zstream) timeout)
   (with-accessors ((device zstream-device)
                    (output-iobuf %db-output-iobuf))
-      buffer
-    (when (%scb-dirtyp buffer)
+      stream
+    (when (%sczs-dirtyp stream)
       (multiple-value-bind (data start end)
           (iobuf-next-data-zone output-iobuf)
         (let ((nbytes
@@ -607,32 +596,33 @@
                              :end end :timeout timeout)))
           (etypecase nbytes
             ((eql :hangup)
-             (error 'hangup :stream buffer))
+             (error 'hangup :stream stream))
             (unsigned-byte
              (setf (iobuf-start output-iobuf) (+ start nbytes))
              (values nbytes (iobuf-available-octets output-iobuf)))))))))
 
-(defmethod %zstream-flush :after ((buffer single-channel-buffer) timeout)
+(defmethod %zstream-flush :after ((stream single-channel-zstream) timeout)
   (declare (ignore timeout))
-  (when (iobuf-empty-p (%db-output-iobuf buffer))
-    (setf (%scb-dirtyp buffer) nil)))
+  (when (iobuf-empty-p (%db-output-iobuf stream))
+    (setf (%sczs-dirtyp stream) nil)))
 
-(defmethod zstream-flush ((buffer memory-buffer) &key timeout)
-  (declare (ignore buffer timeout))
+(defmethod zstream-flush ((stream memory-zstream) &key timeout)
+  (declare (ignore stream timeout))
   (values nil))
 
 
 ;;;-------------------------------------------------------------------------
-;;; MEMORY-BUFFER GROW
+;;; MEMORY-ZSTREAM GROW
 ;;;-------------------------------------------------------------------------
 
-(defmethod %ensure-memory-buffer-capacity ((buffer memory-buffer) &optional (amount 1))
+(defmethod %ensure-buffer-capacity
+    ((stream memory-zstream) &optional (amount 1))
   (check-type amount unsigned-byte)
   (with-accessors ((data-vector %mb-data-vector)
                    (output-position %mb-output-position)
                    (adjust-size %mb-adjust-size)
                    (adjust-threshold %mb-adjust-threshold))
-      buffer
+      stream
     (let* ((size-needed (+ output-position amount))
            (threshold (ceiling (* adjust-threshold size-needed))))
       (when (> threshold (length data-vector))
@@ -640,16 +630,17 @@
               (adjust-array data-vector
                             (truncate (* adjust-size size-needed))))))))
 
-(defmethod %check-memory-buffer-available-data ((buffer memory-buffer) &optional (amount 1))
+(defmethod %check-buffer-available-data
+    ((stream memory-zstream) &optional (amount 1))
   (check-type amount positive-integer)
   (with-accessors ((input-position %mb-input-position)
                    (output-position %mb-output-position))
-      buffer
+      stream
     (let ((available-data (- output-position input-position)))
       (check-type available-data unsigned-byte)
       (cond
         ((zerop available-data)
-         (error 'end-of-file :stream buffer))
+         (error 'end-of-file :stream stream))
         ((< available-data amount)
          ;; FIXME: signal proper condition, soft EOF
          (error "~S elements requested, only ~S available"
@@ -660,12 +651,12 @@
 ;;; I/O WAIT
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-poll ((buffer device-buffer) &key direction timeout)
-  (device-poll (zstream-device buffer) direction timeout))
+(defmethod zstream-poll ((stream device-zstream) &key direction timeout)
+  (device-poll (zstream-device stream) direction timeout))
 
-(defmethod zstream-poll ((buffer memory-buffer) &key direction timeout)
+(defmethod zstream-poll ((stream memory-zstream) &key direction timeout)
   (declare (ignore timeout))
   (ecase direction
-    (:input (< (%mb-input-position  buffer)
-               (%mb-output-position buffer)))
+    (:input (< (%mb-input-position  stream)
+               (%mb-output-position stream)))
     (:output t)))
