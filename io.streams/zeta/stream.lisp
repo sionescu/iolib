@@ -76,6 +76,8 @@
 
 (defgeneric (setf zstream-external-format) (external-format stream))
 
+(defgeneric zstream-element-type (stream))
+
 ;;; I/O functions
 
 (defgeneric zstream-read-element (stream &key timeout))
@@ -167,6 +169,12 @@
     (external-format (stream zstream))
   (setf (%zs-external-format stream)
         (babel:ensure-external-format external-format)))
+
+(defmethod zstream-element-type ((stream device-zstream))
+  '(unsigned-byte 8))
+
+(defmethod zstream-element-type ((stream memory-zstream))
+  (%mb-element-type stream))
 
 
 ;;;-------------------------------------------------------------------------
