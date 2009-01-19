@@ -23,7 +23,7 @@
 
 (defvar *default-open-mode* #o666)
 
-(defclass file-zeta-stream (single-channel-zeta-stream) ())
+(defclass file-zstream (single-channel-zstream) ())
 
 
 ;;;-------------------------------------------------------------------------
@@ -34,7 +34,7 @@
   (print-unreadable-object (file stream :identity t :type nil)
     (format stream "File device for ~S" (file-device-filename file))))
 
-(defmethod print-object ((file file-zeta-stream) stream)
+(defmethod print-object ((file file-zstream) stream)
   (print-unreadable-object (file stream :identity t :type t)
     (format stream "wrapping ~S" (zstream-device file))))
 
