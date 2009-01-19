@@ -8,7 +8,7 @@
 ;;; FIXME: Until a way to autodetect platform features is implemented
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unless (boundp 'pollrdhup)
-    (define-constant pollrdhup 0)))
+    (defconstant pollrdhup 0)))
 
 (define-condition poll-error (error)
   ((fd :initarg :fd :reader poll-error-fd)

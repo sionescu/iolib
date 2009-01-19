@@ -450,17 +450,14 @@
 (defmethod stream-fresh-line ((stream dual-channel-gray-stream))
   (write-char #\Newline stream) t)
 
-(define-constant +unix-line-terminator+
-    (make-array 1 :element-type 'ub8 :initial-contents '(10))
-  :test 'equalp)
+(defconstant (+unix-line-terminator+ :test 'equalp)
+  (make-array 1 :element-type 'ub8 :initial-contents '(10)))
 
-(define-constant +dos-line-terminator+
-    (make-array 2 :element-type 'ub8 :initial-contents '(13 10))
-  :test 'equalp)
+(defconstant (+dos-line-terminator+ :test 'equalp)
+  (make-array 2 :element-type 'ub8 :initial-contents '(13 10)))
 
-(define-constant +mac-line-terminator+
-    (make-array 1 :element-type 'ub8 :initial-contents '(13))
-  :test 'equalp)
+(defconstant (+mac-line-terminator+ :test 'equalp)
+  (make-array 1 :element-type 'ub8 :initial-contents '(13)))
 
 (defun %write-line-terminator (stream line-terminator)
   (case line-terminator

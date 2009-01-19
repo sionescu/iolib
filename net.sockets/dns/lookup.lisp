@@ -5,8 +5,8 @@
 
 (in-package :net.sockets)
 
-(define-constant +max-ipv4-value+ (1- (expt 2 32))
-  :documentation "Integer denoting 255.255.255.255")
+(defconstant +max-ipv4-value+ (1- (expt 2 32))
+  "Integer denoting 255.255.255.255")
 
 ;;;; High-level Interface
 

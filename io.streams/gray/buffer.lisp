@@ -7,7 +7,7 @@
 
 ;;;; Foreign Buffers
 
-(define-constant +bytes-per-iobuf+ (* 4 1024))
+(defconstant +bytes-per-iobuf+ (* 4 1024))
 
 ;;; FIXME: make this right
 ;;; probably not all SIMPLE-ARRAYs are admissible

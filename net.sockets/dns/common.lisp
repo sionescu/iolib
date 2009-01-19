@@ -11,11 +11,10 @@
 
 ;;; Query types
 
-(define-constant +query-type-map+
-    '((:a . 1) (:ns . 2) (:cname . 5) (:soa . 6)
-      (:wks . 11) (:ptr . 12) (:hinfo . 13) (:mx . 15)
-      (:txt . 16) (:aaaa . 28) (:any . 255))
-    :test #'equal)
+(defconstant (+query-type-map+ :test 'equal)
+  '((:a . 1) (:ns . 2) (:cname . 5) (:soa . 6)
+    (:wks . 11) (:ptr . 12) (:hinfo . 13) (:mx . 15)
+    (:txt . 16) (:aaaa . 28) (:any . 255)))
 
 (defun query-type-number (id)
   (cdr (assoc id +query-type-map+)))
@@ -28,9 +27,8 @@
 
 ;;; Query classes
 
-(define-constant +query-class-map+
-    '((:in . 1) (:any . 255))
-    :test #'equal)
+(defconstant (+query-class-map+ :test 'equal)
+  '((:in . 1) (:any . 255)))
 
 (defun query-class-number (id)
   (cdr (assoc id +query-class-map+)))
@@ -40,11 +38,10 @@
 
 ;;; Error codes
 
-(define-constant +rcode-map+
-    '((:no-error . 0) (:format-error . 1)
-      (:server-failure . 2) (:name-error . 3)
-      (:not-implemented . 4) (:refused . 5))
-    :test #'equal)
+(defconstant (+rcode-map+ :test 'equal)
+  '((:no-error . 0) (:format-error . 1)
+    (:server-failure . 2) (:name-error . 3)
+    (:not-implemented . 4) (:refused . 5)))
 
 (defun rcode-number (id)
   (cdr (assoc id +rcode-map+)))

@@ -280,7 +280,7 @@
 
 ;;; FIXME: Until a way to autodetect platform features is implemented
 #+(or darwin freebsd)
-(define-constant pollrdhup 0)
+(defconstant pollrdhup 0)
 
 (defsyscall ("poll" %sys-poll) :int
   "Scan for I/O activity on multiple file descriptors."

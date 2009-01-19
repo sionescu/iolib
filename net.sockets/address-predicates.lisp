@@ -11,9 +11,8 @@
 ;;; time which is why these functions are in a separate file from
 ;;; address.lisp.
 (defmacro define-address (name address-string docstring)
-  `(define-constant ,name (ensure-address ,address-string)
-     :documentation ,(format nil "~A (~A)" docstring address-string)
-     :test 'address=))
+  `(defconstant (,name :test 'address=) (ensure-address ,address-string)
+     ,(format nil "~A (~A)" docstring address-string)))
 
 (define-address +ipv4-unspecified+ "0.0.0.0"   "Unspecified IPv4 address.")
 (define-address +ipv4-loopback+    "127.0.0.1" "Loopback IPv4 address.")

@@ -11,7 +11,7 @@
 ;;; Foreign Buffers
 ;;;-------------------------------------------------------------------------
 
-(define-constant +default-iobuf-size+ (* 8 1024))
+(defconstant +default-iobuf-size+ (* 8 1024))
 
 ;; almost 128 MB: large enough for a stream buffer,
 ;; but small enough to fit into a fixnum

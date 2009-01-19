@@ -14,7 +14,7 @@
 (defvar *dns-timeout* 10
   "Timeout for DNS queries in seconds.")
 
-(define-constant +max-16-bits+ (1- (expt 2 16)))
+(defconstant +max-16-bits+ (1- (expt 2 16)))
 
 (defun prepare-query (name type)
   (let* ((question (make-question name type :in))
