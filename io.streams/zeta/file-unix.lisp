@@ -131,7 +131,7 @@
 
 (defmethod device-length ((device file-device))
   (handler-case
-      (%sys-fstat (device-handle device))
+      (stat-size (%sys-fstat (device-handle device)))
     (posix-error (err)
       (posix-file-error err device "getting status of"))))
 
