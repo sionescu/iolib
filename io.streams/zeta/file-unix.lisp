@@ -53,40 +53,42 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod shared-initialize :after
-    ((device file-device) slot-names &key handle filename flags
-     (mode *default-open-mode*) delete-if-exists)
+    ((device file-device) slot-names &rest initargs
+     &key handle filename flags (mode *default-open-mode*) delete-if-exists)
   (declare (ignore slot-names))
+  ;; FIXME: use new pathnames
+  (check-type filename string)
   (setf (file-device-filename device) (copy-seq filename))
   (with-device (device)
-    (device-open device :handle handle :filename filename :flags flags
-                 :mode mode :delete-if-exists delete-if-exists)))
+    (device-open device slot-names initargs)))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; DEVICE-OPEN
 ;;;-------------------------------------------------------------------------
 
-(defmethod device-open ((device file-device)
-                        &key handle filename flags mode delete-if-exists)
-  (labels ((handle-error (c)
-             (posix-file-error c filename "opening"))
-           (try-delete ()
-             (handler-case
-                 (%sys-unlink filename)
-               (posix-error (c) (handle-error c))))
-           (try-open (&optional (retry-on-delete t))
-             (handler-case
-                 (%sys-open filename flags mode)
-               (eexist (c)
-                 (cond ((and retry-on-delete delete-if-exists)
-                        (try-delete) (try-open nil))
-                       (t (handle-error c))))
-               (posix-error (c)
-                 (handle-error c))
-               (:no-error (fd) fd))))
-    (let ((fd (or handle (try-open))))
-      (%set-fd-nonblock fd)
-      (setf (device-handle device) fd)))
+(defmethod device-open ((device file-device) slot-names initargs)
+  (destructuring-bind (&key handle filename flags mode delete-if-exists)
+      initargs
+    (labels ((handle-error (c)
+               (posix-file-error c filename "opening"))
+             (try-delete ()
+               (handler-case
+                   (%sys-unlink filename)
+                 (posix-error (c) (handle-error c))))
+             (try-open (&optional (retry-on-delete t))
+               (handler-case
+                   (%sys-open filename flags mode)
+                 (eexist (c)
+                   (cond ((and retry-on-delete delete-if-exists)
+                          (try-delete) (try-open nil))
+                         (t (handle-error c))))
+                 (posix-error (c)
+                   (handle-error c))
+                 (:no-error (fd) fd))))
+      (let ((fd (or handle (try-open))))
+        (%set-fd-nonblock fd)
+        (setf (device-handle device) fd))))
   (values device))
 
 

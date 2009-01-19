@@ -51,7 +51,7 @@
 
 ;;; Internal functions
 
-(defgeneric device-open (device &rest initargs))
+(defgeneric device-open (device slot-names initargs))
 
 (defgeneric device-read/non-blocking (device vector start end))
 
