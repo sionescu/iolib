@@ -75,17 +75,9 @@
 
 ;;; Device buffer functions
 
-(defgeneric zstream-io-position (buffer))
+(defgeneric zstream-position (buffer &key direction))
 
-(defgeneric (setf zstream-io-position) (position buffer &optional from))
-
-(defgeneric zstream-input-position (buffer))
-
-(defgeneric (setf zstream-input-position) (position buffer &optional from))
-
-(defgeneric zstream-output-position (buffer))
-
-(defgeneric (setf zstream-output-position) (position buffer &optional from))
+(defgeneric (setf zstream-position) (position buffer &key direction from))
 
 (defgeneric zstream-poll (buffer &key direction timeout))
 
@@ -125,23 +117,21 @@
 
 (defmethod zstream-synchronized-p ((buffer memory-buffer))
   (declare (ignore buffer))
-  ;; FIXME: signal proper condition
-  (error "Only device streams are synchronized"))
+  (values nil))
 
 (defmethod zstream-device ((buffer device-buffer))
   (%db-device buffer))
 
 (defmethod zstream-device ((buffer memory-buffer))
-  ;; FIXME: signal proper condition
-  (error "This is not a device stream: ~S" buffer))
+  (declare (ignore buffer))
+  (values nil))
 
 (defmethod (setf zstream-device) (new-device (buffer device-buffer))
   (setf (%db-device buffer) new-device))
 
 (defmethod (setf zstream-device) (new-device (buffer memory-buffer))
-  (declare (ignore new-device))
-  ;; FIXME: signal proper condition
-  (error "This is not a device stream: ~S" buffer))
+  (declare (ignore new-device buffer))
+  (values nil))
 
 
 ;;;-------------------------------------------------------------------------
@@ -366,6 +356,7 @@
 
 (defmethod %zstream-write-vector :after ((buffer single-channel-buffer)
                                          vector start end timeout)
+  (declare (ignore vector start end timeout))
   (setf (%scb-dirtyp buffer) t))
 
 (defmethod zstream-write-vector ((buffer memory-buffer) vector
@@ -381,10 +372,11 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; IO-POSITION
+;;; POSITION
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-io-position ((buffer single-channel-buffer))
+(defmethod zstream-position ((buffer single-channel-buffer) &key direction)
+  (declare (ignore direction))
   (with-synchronized-buffer (buffer :input)
     (let ((position (device-position (zstream-device buffer))))
       ;; FIXME: signal proper condition
@@ -394,94 +386,53 @@
           (+ position (iobuf-available-octets (%db-output-iobuf buffer)))
           (- position (iobuf-available-octets (%db-input-iobuf buffer)))))))
 
-(defmethod zstream-io-position ((buffer dual-channel-buffer))
-  (device-position (zstream-device buffer)))
+(defmethod zstream-position ((buffer dual-channel-buffer) &key direction)
+  (declare (ignore direction))
+  (with-synchronized-buffer (buffer :io)
+    (device-position (zstream-device buffer))))
 
-(defmethod zstream-io-position ((buffer memory-buffer))
-  ;; FIXME: signal proper error
-  (error "~S is a dual-cursor stream" buffer))
-
-(defmethod (setf zstream-io-position)
-    (position (buffer device-buffer) &optional (from :start))
-  (setf (device-position (zstream-device buffer) from) position))
-
-(defmethod (setf zstream-io-position)
-    (position (buffer memory-buffer) &optional from)
-  (declare (ignore position from))
-  ;; FIXME: signal proper error
-  (error "~S is a dual-cursor stream" buffer))
+(defmethod zstream-position ((buffer memory-buffer) &key direction)
+  (ecase direction
+    (:input  (%mb-input-position  buffer))
+    (:output (%mb-output-position buffer))))
 
 
 ;;;-------------------------------------------------------------------------
-;;; INPUT-POSITION
+;;; (SETF POSITION)
 ;;;-------------------------------------------------------------------------
 
-(defmethod zstream-input-position ((buffer device-buffer))
-  ;; FIXME: signal proper error
-  (error "~S is a single-cursor stream" buffer))
+(defmethod (setf zstream-position)
+    (position (buffer device-buffer) &key direction (from :start))
+  (declare (ignore direction))
+  (with-synchronized-buffer (buffer :input)
+    (setf (%db-position buffer from) position)))
 
-(defmethod (setf zstream-input-position)
-    (offset (buffer device-buffer) &optional from)
-  (declare (ignore offset from))
-  ;; FIXME: signal proper error
-  (error "~S is a single-cursor stream" buffer))
+(defun (setf %db-position) (position buffer from)
+  (setf (device-position (zstream-device buffer) from) position))
 
-(defmethod zstream-input-position ((buffer memory-buffer))
-  (%mb-input-position buffer))
-
-(defmethod (setf zstream-input-position)
-    (offset (buffer memory-buffer) &optional (from :start))
+(defmethod (setf zstream-position)
+    (offset (buffer memory-buffer) &key direction (from :start))
   (with-accessors ((data-vector %mb-data-vector)
                    (input-position %mb-input-position)
                    (output-position %mb-output-position))
       buffer
-    (let ((len (length data-vector))
-          (newpos
-           (ecase from
-             (:start   offset)
-             (:current (+ input-position offset))
-             (:output  (+ output-position offset)))))
-      ;; FIXME: signal proper condition
-      (assert (< output-position len))
-      (unless (and (<= newpos output-position))
-        ;; FIXME: signal proper condition
-        (error "Wrong sequence bounds. start: ~S end: ~S"
-               newpos output-position))
-      (setf input-position newpos))))
-
-
-;;;-------------------------------------------------------------------------
-;;; OUTPUT-POSITION
-;;;-------------------------------------------------------------------------
-
-(defmethod zstream-output-position ((buffer device-buffer))
-  ;; FIXME: signal proper error
-  (error "~S is a single-cursor stream" buffer))
-
-(defmethod (setf zstream-output-position)
-    (offset (buffer device-buffer) &optional from)
-  (declare (ignore offset from))
-  ;; FIXME: signal proper error
-  (error "~S is a single-cursor stream" buffer))
-
-(defmethod zstream-output-position ((buffer memory-buffer))
-  (%mb-output-position buffer))
-
-(defmethod (setf zstream-output-position)
-    (offset (buffer memory-buffer) &optional (from :start))
-  (with-accessors ((data-vector %mb-data-vector)
-                   (input-position %mb-input-position)
-                   (output-position %mb-output-position)
-                   (adjust-size %mb-adjust-size))
-      buffer
-    (let ((newpos
-           (ecase from
-             (:start   offset)
-             (:current (+ output-position offset))
-             (:input   (+ input-position offset)))))
-      (check-bounds data-vector input-position newpos)
-      (%ensure-memory-buffer-capacity buffer (- newpos output-position))
-      (setf output-position newpos))))
+    (ecase direction
+      (:input
+       (let ((newpos
+              (ecase from
+                (:start   offset)
+                (:current (+ input-position offset))
+                (:output  (+ output-position offset)))))
+         (check-bounds data-vector newpos output-position)
+         (setf input-position newpos)))
+      (:output
+       (let ((newpos
+              (ecase from
+                (:start   offset)
+                (:current (+ output-position offset))
+                (:input   (+ input-position offset)))))
+         (%ensure-memory-buffer-capacity buffer (- newpos output-position))
+         (setf output-position newpos))))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -496,7 +447,7 @@
   (unless (%scb-dirtyp buffer)
     (let ((nbytes (iobuf-available-octets (%db-input-iobuf buffer))))
       (unless (zerop nbytes)
-        (setf (%buffer-position buffer :current) (- nbytes)))
+        (setf (%db-position buffer :current) (- nbytes)))
       (iobuf-reset (%db-input-iobuf buffer)))))
 
 (defmethod %zstream-clear-input ((buffer dual-channel-buffer))
@@ -531,7 +482,7 @@
 
 (defmethod zstream-fill-input ((buffer single-channel-buffer) &key timeout)
   (with-synchronized-buffer (buffer :input)
-    (%zstream-flush-output buffer)
+    (%zstream-flush-output buffer timeout)
     (%zstream-fill-input buffer timeout)))
 
 (defmethod zstream-fill-input ((buffer dual-channel-buffer) &key timeout)
