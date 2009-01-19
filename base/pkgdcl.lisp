@@ -7,7 +7,7 @@
 
 (defpackage :iolib.base
   (:use #:common-lisp :alexandria)
-  (:shadow #:defun #:defmethod #:defmacro #:define-compiler-macro)
+  (:shadow #:defun #:defmethod #:defmacro #:define-compiler-macro #:defconstant)
   (:export
    ;; Conditions
    #:bug #:iolib-bug
@@ -21,6 +21,8 @@
    ;; RETURN*
    #:return* #:lambda* #:defun #:defmethod
    #:defmacro #:define-compiler-macro
+   ;; Definitions
+   #:defconstant
    ;; DEFOBSOLETE
    #:defobsolete
    #:deprecation-warning
