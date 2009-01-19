@@ -24,10 +24,10 @@
 (defclass memory-zstream (memory-buffer zstream)
   ())
 
-(defclass octet-memory-zstream (memory-zstream)
+(defclass octet-memory-zstream (octet-memory-buffer memory-zstream)
   ())
 
-(defclass character-memory-zstream (memory-zstream)
+(defclass character-memory-zstream (character-memory-buffer memory-zstream)
   ())
 
 
