@@ -76,8 +76,10 @@
 ;;; Default no-op methods
 ;;;-------------------------------------------------------------------------
 
+(defmethod relinquish (device &key abort)
+  (declare (ignore device abort)))
+
 (defmethod device-position ((device device))
-  (declare (ignore device))
   ;; FIXME: signal proper condition
   (error "Device not seekable: ~S" device))
 
@@ -87,7 +89,6 @@
   (error "Device not seekable: ~S" device))
 
 (defmethod device-length ((device device))
-  (declare (ignore device))
   ;; FIXME: signal proper condition
   (error "Device not seekable: ~S" device))
 

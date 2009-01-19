@@ -145,7 +145,11 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod device-poll ((device file-device) direction &optional timeout)
-  (poll-fd (device-handle device) direction timeout))
+  (multiple-value-bind (readp rhupp writep whupp)
+      (poll-fd (device-handle device) direction timeout)
+    (ecase direction
+      (:input  (values readp  rhupp))
+      (:output (values writep whupp)))))
 
 
 ;;;-------------------------------------------------------------------------

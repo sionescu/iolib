@@ -23,6 +23,8 @@
 
 (defclass memory-zstream (memory-buffer zstream)
   ())
+
+(defclass octet-memory-zstream (memory-zstream) ())
 
 
 ;;;-------------------------------------------------------------------------
@@ -64,6 +66,30 @@
                                      &key (external-format :default))
   (declare (ignore slot-names))
   (setf (zstream-external-format stream) external-format))
+
+(defun make-memory-zstream (&key data (start 0) end (element-type t)
+                            (adjust-size 1.5) (adjust-threshold 1))
+  (let ((element-type (upgraded-array-element-type element-type)))
+    (cond
+      ((subtypep element-type 'octet)
+       (make-instance 'octet-memory-zstream
+                      :data data :start start :end end
+                      :adjust-size adjust-size
+                      :adjust-threshold adjust-threshold))
+      ((subtypep element-type 'character)
+       (make-instance 'character-memory-zstream
+                      :data data :start start :end end
+                      :adjust-size adjust-size
+                      :adjust-threshold adjust-threshold))
+      ((subtypep element-type 't)
+       (make-instance 'memory-zstream
+                      :data data :start start :end end
+                      :element-type element-type
+                      :adjust-size adjust-size
+                      :adjust-threshold adjust-threshold))
+      (t
+       (error 'subtype-error :datum element-type
+              :expected-supertype '(or (unsigned-byte 8) character t))))))
 
 
 ;;;-------------------------------------------------------------------------
