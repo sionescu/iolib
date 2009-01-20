@@ -244,14 +244,16 @@
   (setf (zstream-external-format stream) external-format))
 
 (defun make-memory-zstream (&key data (start 0) end (element-type t)
-                            (adjust-size 1.5) (adjust-threshold 1))
+                            (adjust-size 1.5) (adjust-threshold 1)
+                            (external-format :default))
   (let ((element-type (upgraded-array-element-type element-type)))
     (cond
       ((subtypep element-type 'octet)
        (make-instance 'octet-memory-zstream
                       :data data :start start :end end
                       :adjust-size adjust-size
-                      :adjust-threshold adjust-threshold))
+                      :adjust-threshold adjust-threshold
+                      :external-format external-format))
       ((subtypep element-type 'character)
        (make-instance 'character-memory-zstream
                       :data data :start start :end end
