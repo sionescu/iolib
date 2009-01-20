@@ -14,3 +14,10 @@
          (setf ,end ,length))
        (unless (<= ,start ,end ,length)
          (error "Wrong sequence bounds. start: ~S end: ~S" ,start ,end)))))
+
+(defun join (connector strings)
+  (concatenate 'string (car strings)
+               (reduce (lambda (str1 str2)
+                         (concatenate 'string str1 connector str2))
+                       (cdr strings)
+                       :initial-value "")))

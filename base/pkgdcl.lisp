@@ -37,7 +37,7 @@
    #:split-sequence #:split-sequence-if #:split-sequence-if-not
    ;; Misc
    #:function-name #:function-name-p
-   #:check-bounds
+   #:check-bounds #:join
    ;; Matching
    #:multiple-value-case #:flags-case
    ;; Time
