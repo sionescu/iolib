@@ -119,7 +119,7 @@
                                (isys:%sys-getenv "LOGIN"))))
                       (and username
                            (user-homedir username)
-                           (uid-homedir (nix:getuid)))))))
+                           (uid-homedir (isys:%sys-getuid)))))))
            (return* (concat-homedir homedir rest))))
         ((char= #\~ (char first 0))
          (let ((homedir
