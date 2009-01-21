@@ -79,6 +79,8 @@
 
 (defgeneric enough-file-path (path &optional defaults))
 
+(defgeneric concatenate-paths (path &rest other-paths))
+
 (defgeneric parse-file-path-type (namestring type &key start end
                                   as-directory expand-user))
 
@@ -181,6 +183,16 @@
                                 (file-path-directory defaults))
                  :name (or (file-path-name path)
                            (file-path-name defaults))))
+
+(defmethod concatenate-paths ((path file-path) &rest other-paths)
+  (assert (every #'file-path-p other-paths))
+  (let ((as-directory
+         (stringp (file-path-name (lastcar other-paths))))
+        (big-namestring
+         (apply #'join (file-path-directory-delimiter path)
+                (mapcar #'file-path-namestring other-paths))))
+    (parse-file-path-type big-namestring (type-of path)
+                          :as-directory as-directory)))
 
 (defun split-directory-namestring (namestring &optional limit)
   (remove "" (ppcre:split +split-directories-regex+ namestring
