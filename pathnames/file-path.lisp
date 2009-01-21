@@ -79,9 +79,11 @@
 
 (defgeneric enough-file-path (path &optional defaults))
 
-(defgeneric parse-file-path-type (namestring type &key as-directory expand-user))
+(defgeneric parse-file-path-type (namestring type &key start end
+                                  as-directory expand-user))
 
-(defgeneric parse-file-path (namestring &key as-directory expand-user))
+(defgeneric parse-file-path (namestring &key start end
+                             as-directory expand-user))
 
 ;;; Internal functions
 
@@ -183,8 +185,10 @@
                           :limit limit)
           :test #'string=))
 
-(defmethod parse-file-path (namestring &key as-directory expand-user)
+(defmethod parse-file-path (namestring &key (start 0) end
+                            as-directory expand-user)
   (parse-file-path-type namestring +file-path-host-type+
+                        :start start :end end
                         :as-directory as-directory
                         :expand-user expand-user))
 

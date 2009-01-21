@@ -86,10 +86,11 @@
 
 (defmethod parse-file-path-type ((namestring string)
                                  (type (eql 'unix-path))
-                                 &key as-directory expand-user)
+                                 &key (start 0) end
+                                 as-directory expand-user)
   (let* ((expansion (if expand-user
-                        (expand-userdir namestring)
-                        namestring))
+                        (expand-userdir (subseq namestring start end))
+                        (subseq namestring start end)))
          (components (remove "." (split-directory-namestring expansion)
                              :test #'string=))
          (dirname (if as-directory components (butlast components)))
