@@ -103,9 +103,9 @@
 
 (defmethod %expand-user-directory ((pathspec string))
   (flet ((user-homedir (user)
-           (nth-value 5 (nix:getpwnam user)))
+           (nth-value 5 (isys:%sys-getpwnam user)))
          (uid-homedir (uid)
-           (nth-value 5 (nix:getpwuid uid)))
+           (nth-value 5 (isys:%sys-getpwuid uid)))
          (concat-homedir (dir rest)
            (join +directory-delimiter+ dir rest)))
     (destructuring-bind (first &optional rest)
