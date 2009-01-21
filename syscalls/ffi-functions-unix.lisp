@@ -300,6 +300,131 @@
 
 
 ;;;-------------------------------------------------------------------------
+;;; Process creation and info
+;;;-------------------------------------------------------------------------
+
+(defsyscall ("fork" %sys-fork) pid-t
+  "Create a child process.")
+
+(defsyscall ("getpid" %sys-getpid) pid-t
+  "Returns the process id of the current process")
+
+(defsyscall ("getppid" %sys-getppid) pid-t
+  "Returns the process id of the current process's parent")
+
+(defsyscall ("getuid" %sys-getuid) uid-t
+  "Get real user id of the current process.")
+
+(defsyscall ("setuid" %sys-setuid) :int
+  "Set real user id of the current process."
+  (uid uid-t))
+
+(defsyscall ("geteuid" %sys-geteuid) uid-t
+  "Get effective user id of the current process.")
+
+(defsyscall ("seteuid" %sys-seteuid) :int
+  "Set effective user id of the current process."
+  (uid uid-t))
+
+(defsyscall ("getgid" %sys-getgid) gid-t
+  "Get real group id of the current process.")
+
+(defsyscall ("setgid" %sys-setgid) :int
+  "Set real group id of the current process."
+  (gid gid-t))
+
+(defsyscall ("getegid" %sys-getegid) gid-t
+  "Get effective group id of the current process.")
+
+(defsyscall ("setegid" %sys-setegid) :int
+  "Set effective group id of the current process."
+  (gid gid-t))
+
+(defsyscall ("setreuid" %sys-setreuid) :int
+  "Set real and effective user id of the current process."
+  (ruid uid-t)
+  (euid uid-t))
+
+(defsyscall ("setregid" %sys-setregid) :int
+  "Set real and effective group id of the current process."
+  (rgid gid-t)
+  (egid gid-t))
+
+(defsyscall ("getpgid" %sys-getpgid) pid-t
+  "Get process group id of a process."
+  (pid pid-t))
+
+(defsyscall ("setpgid" %sys-setpgid) :int
+  "Set process group id of a process."
+  (pid  pid-t)
+  (pgid pid-t))
+
+(defsyscall ("getpgrp" %sys-getpgrp) pid-t
+  "Get process group id of the current process.")
+
+(defsyscall ("setpgrp" %sys-setpgrp) pid-t
+  "Set process group id of the current process.")
+
+(defsyscall ("setsid" %sys-setsid) pid-t
+  "Create session and set process group id of the current process.")
+
+(defentrypoint %sys-getrlimit (resource)
+  (with-foreign-object (rl 'rlimit)
+    (with-foreign-slots ((cur max) rl rlimit)
+      (%%sys-getrlimit resource rl)
+      (values cur max))))
+
+(defentrypoint %sys-setrlimit (resource soft-limit hard-limit)
+  (with-foreign-object (rl 'rlimit)
+    (with-foreign-slots ((cur max) rl rlimit)
+      (setf cur soft-limit
+            max hard-limit)
+      (%%sys-setrlimit resource rl))))
+
+(defsyscall ("getrusage" %%sys-getrusage) :int
+  (who   :int)
+  (usage :pointer))
+
+;;; TODO: it might be more convenient to return a wrapper object here
+;;; instead like we do in STAT.
+(defentrypoint %sys-getrusage (who)
+  (with-foreign-object (ru 'rusage)
+    (%%sys-getrusage who ru)
+    (with-foreign-slots ((maxrss ixrss idrss isrss minflt majflt nswap inblock
+                          oublock msgsnd msgrcv nsignals nvcsw nivcsw)
+                         ru rusage)
+      (values (foreign-slot-value (foreign-slot-pointer ru 'rusage 'utime)
+                                  'timeval 'sec)
+              (foreign-slot-value (foreign-slot-pointer ru 'rusage 'utime)
+                                  'timeval 'usec)
+              (foreign-slot-value (foreign-slot-pointer ru 'rusage 'stime)
+                                  'timeval 'sec)
+              (foreign-slot-value (foreign-slot-pointer ru 'rusage 'stime)
+                                  'timeval 'usec)
+              maxrss ixrss idrss isrss minflt majflt
+              nswap inblock oublock msgsnd
+              msgrcv nsignals nvcsw nivcsw))))
+
+(defsyscall ("getpriority" %sys-getpriority) :int
+  (which :int)
+  (who   :int))
+
+(defsyscall ("setpriority" %sys-setpriority) :int
+  (which :int)
+  (who   :int)
+  (value :int))
+
+(defentrypoint %sys-nice (&optional (increment 0))
+  "Get or set process priority."
+  ;; FIXME: race condition. might need WITHOUT-INTERRUPTS on some impl.s
+  (setf (%sys-errno) 0)
+  (let ((r (foreign-funcall "nice" :int increment :int)))
+    (if (and (= r -1) (/= (%sys-errno) 0))
+        (signal-posix-error r)
+        r)))
+
+
+;;;-------------------------------------------------------------------------
 ;;; Time
 ;;;-------------------------------------------------------------------------
 

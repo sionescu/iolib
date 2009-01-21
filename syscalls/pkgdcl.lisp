@@ -127,6 +127,32 @@
    #:%sys-mmap
    #:%sys-munmap
 
+   ;; Process creation and info
+   #:%sys-fork
+   #:%sys-getpid
+   #:%sys-getppid
+   #:%sys-getuid
+   #:%sys-setuid
+   #:%sys-geteuid
+   #:%sys-seteuid
+   #:%sys-getgid
+   #:%sys-setgid
+   #:%sys-getegid
+   #:%sys-setegid
+   #:%sys-setreuid
+   #:%sys-setregid
+   #:%sys-getpgid
+   #:%sys-setpgid
+   #:%sys-getpgrp
+   #:%sys-setpgrp
+   #:%sys-setsid
+   #:%sys-getrlimit
+   #:%sys-setrlimit
+   #:%sys-getrusage
+   #:%sys-getpriority
+   #:%sys-setpriority
+   #:%sys-nice
+
    ;; Time
    #:%sys-usleep
    #:%sys-time

@@ -107,3 +107,20 @@
   (errnum :int)
   (buf    :string)
   (buflen size-t))
+
+
+;;;-------------------------------------------------------------------------
+;;; Process functions
+;;;-------------------------------------------------------------------------
+
+(declaim (inline %%sys-getrlimit))
+(defwrapper ("getrlimit" %%sys-getrlimit)
+    ("int" (return-wrapper :int :error-generator signal-posix-error))
+  (resource :int)
+  (rlimit   ("struct rlimit*" :pointer)))
+
+(declaim (inline %%sys-setrlimit))
+(defwrapper ("setrlimit" %%sys-setrlimit)
+    ("int" (return-wrapper :int :error-generator signal-posix-error))
+  (resource :int)
+  (rlimit   ("const struct rlimit*" :pointer)))

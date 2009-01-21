@@ -16,7 +16,7 @@
 
 (include "stdlib.h" "errno.h" "sys/types.h" "sys/stat.h" "sys/mman.h"
          "fcntl.h" "signal.h" "unistd.h" "limits.h" "time.h" "sys/select.h"
-         "sys/poll.h" "sys/ioctl.h")
+         "sys/poll.h" "sys/ioctl.h" "sys/resource.h")
 
 (in-package :iolib.syscalls)
 
@@ -309,3 +309,58 @@
 
 (constant (fionbio "FIONBIO"))
 (constant (fionread "FIONREAD"))
+
+;;;; from sys/resource.h
+
+(ctype rlim-t "rlim_t")
+(ctype id-t "id_t")
+
+(cstruct rlimit "struct rlimit"
+  (cur "rlim_cur" :type rlim-t)
+  (max "rlim_max" :type rlim-t))
+
+(cstruct rusage "struct rusage"
+  (utime    "ru_utime"    :type timeval)
+  (stime    "ru_stime"    :type timeval)
+  (maxrss   "ru_maxrss"   :type :long)
+  (ixrss    "ru_ixrss"    :type :long)
+  (idrss    "ru_idrss"    :type :long)
+  (isrss    "ru_isrss"    :type :long)
+  (minflt   "ru_minflt"   :type :long)
+  (majflt   "ru_majflt"   :type :long)
+  (nswap    "ru_nswap"    :type :long)
+  (inblock  "ru_inblock"  :type :long)
+  (oublock  "ru_oublock"  :type :long)
+  (msgsnd   "ru_msgsnd"   :type :long)
+  (msgrcv   "ru_msgrcv"   :type :long)
+  (nsignals "ru_nsignals" :type :long)
+  (nvcsw    "ru_nvcsw"    :type :long)
+  (nivcsw   "ru_nivcsw"   :type :long))
+
+(constant (prio-process "PRIO_PROCESS"))
+(constant (prio-pgrp "PRIO_PGRP"))
+(constant (prio-user "PRIO_USER"))
+(constant (rlim-infinity "RLIM_INFINITY"))
+(constant (rusage-self "RUSAGE_SELF"))
+(constant (rusage-children "RUSAGE_CHILDREN"))
+(constant (rlimit-as "RLIMIT_AS"))
+(constant (rlimit-core "RLIMIT_CORE"))
+(constant (rlimit-cpu "RLIMIT_CPU"))
+(constant (rlimit-data "RLIMIT_DATA"))
+(constant (rlimit-fsize "RLIMIT_FSIZE"))
+(constant (rlimit-memlock "RLIMIT_MEMLOCK"))
+(constant (rlimit-nofile "RLIMIT_NOFILE"))
+(constant (rlimit-nproc "RLIMIT_NPROC"))
+(constant (rlimit-rss "RLIMIT_RSS"))
+(constant (rlimit-stack "RLIMIT_STACK"))
+
+#+linux
+(progn
+  (constant (rlim-saved-max "RLIM_SAVED_MAX"))
+  (constant (rlim-saved-cur "RLIM_SAVED_CUR"))
+  (constant (rlimit-locks "RLIMIT_LOCKS"))
+  (constant (rlimit-msgqueue "RLIMIT_MSGQUEUE"))
+  (constant (rlimit-nlimits "RLIMIT_NLIMITS"))
+  (constant (rlimit-nice "RLIMIT_NICE"))
+  (constant (rlimit-rtprio "RLIMIT_RTPRIO"))
+  (constant (rlimit-sigpending "RLIMIT_SIGPENDING")))
