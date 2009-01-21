@@ -195,10 +195,10 @@
                         :expand-user expand-user))
 
 (defmethod file-path ((pathspec file-path))
-  file-path)
+  pathspec)
 
 (defmethod file-path ((pathspec string))
-  (parse-file-path string))
+  (parse-file-path pathspec))
 
 
 ;;;-------------------------------------------------------------------------
