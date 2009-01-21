@@ -168,6 +168,14 @@
    #:%sys-gethostname
    #:%sys-getdomainname
 
+   ;; User info
+   #:%sys-getpwnam
+   #:%sys-getpwuid
+
+   ;; Group info
+   #:%sys-getgrnam
+   #:%sys-getgrgid
+
    ;;;--------------------------------------------------------------------------
    ;;; Foreign types and constants
    ;;;--------------------------------------------------------------------------

@@ -59,3 +59,7 @@
 (defun signal-posix-error (return-value)
   (declare (ignore return-value))
   (posix-error))
+
+(declaim (inline signal-posix-error-from-return-value))
+(defun signal-posix-error-from-return-value (return-value)
+  (posix-error return-value))

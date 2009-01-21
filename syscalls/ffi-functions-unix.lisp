@@ -550,7 +550,7 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; Local info
+;;; Hostname info
 ;;;-------------------------------------------------------------------------
 
 (defsyscall ("gethostname" %%sys-gethostname) :int
@@ -568,3 +568,83 @@
 (defentrypoint %sys-getdomainname ()
   (with-foreign-pointer-as-string ((cstr size) 256)
     (%%sys-getdomainname cstr size)))
+
+
+;;;-------------------------------------------------------------------------
+;;; User info
+;;;-------------------------------------------------------------------------
+
+(defcfun ("getpwuid_r" %%sys-getpwuid-r)
+    (return-wrapper :int :error-predicate (lambda (x) (not (zerop x)))
+                    :error-generator signal-posix-error-from-return-value)
+  (uid     uid-t)
+  (pwd     :pointer)
+  (buffer  :pointer)
+  (bufsize size-t)
+  (result  :pointer))
+
+(defcfun ("getpwnam_r" %%sys-getpwnam-r)
+    (return-wrapper :int :error-predicate (lambda (x) (not (zerop x)))
+                    :error-generator signal-posix-error-from-return-value)
+  (name    :string)
+  (pwd     :pointer)
+  (buffer  :pointer)
+  (bufsize size-t)
+  (result  :pointer))
+
+(defun funcall-getpw (fn arg)
+  (with-foreign-objects ((pw 'passwd-entry) (pwp :pointer))
+    (with-foreign-pointer (buf 4096 bufsize)
+      (with-foreign-slots ((name passwd uid gid gecos dir shell) pw passwd-entry)
+        (funcall fn arg pw buf bufsize pwp)
+        (if (null-pointer-p (mem-ref pwp :pointer))
+            nil
+            (values name passwd uid gid gecos dir shell))))))
+
+(defentrypoint %sys-getpwuid (uid)
+  "Gets the password-entry of a user, by user id."
+  (funcall-getpw #'%%sys-getpwuid-r uid))
+
+(defentrypoint %sys-getpwnam (name)
+  "Gets the password-entry of a user, by username."
+  (funcall-getpw #'%%sys-getpwnam-r name))
+
+
+;;;-------------------------------------------------------------------------
+;;; Group info
+;;;-------------------------------------------------------------------------
+
+(defsyscall ("getgrgid_r" %%sys-getgrgid-r)
+    (return-wrapper :int :error-predicate (lambda (x) (not (zerop x)))
+                    :error-generator signal-posix-error-from-return-value)
+  (uid     uid-t)
+  (grp     :pointer)
+  (buffer  :pointer)
+  (bufsize size-t)
+  (result  :pointer))
+
+(defsyscall ("getgrnam_r" %%sys-getgrnam-r)
+    (return-wrapper :int :error-predicate (lambda (x) (not (zerop x)))
+                    :error-generator signal-posix-error-from-return-value)
+  (name    :string)
+  (grp     :pointer)
+  (buffer  :pointer)
+  (bufsize size-t)
+  (result  :pointer))
+
+(defun funcall-getgr (fn arg)
+  (with-foreign-objects ((gr 'group-entry) (grp :pointer))
+    (with-foreign-pointer (buf 4096 bufsize)
+      (with-foreign-slots ((name passwd gid) gr group-entry)
+        (funcall fn arg gr buf bufsize grp)
+        (if (null-pointer-p (mem-ref grp :pointer))
+            nil
+            (values name passwd gid))))))
+
+(defentrypoint %sys-getgrgid (gid)
+  "Gets a group-entry, by group id. (reentrant)"
+  (funcall-getgr #'%%sys-getgrgid-r gid))
+
+(defentrypoint %sys-getgrnam (name)
+  "Gets a group-entry, by group name. (reentrant)"
+  (funcall-getgr #'%%sys-getgrnam-r name))

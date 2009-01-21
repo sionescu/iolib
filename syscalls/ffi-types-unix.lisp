@@ -16,7 +16,7 @@
 
 (include "stdlib.h" "errno.h" "sys/types.h" "sys/stat.h" "sys/mman.h"
          "fcntl.h" "signal.h" "unistd.h" "limits.h" "time.h" "sys/select.h"
-         "sys/poll.h" "sys/ioctl.h" "sys/resource.h")
+         "sys/poll.h" "sys/ioctl.h" "sys/resource.h" "pwd.h" "grp.h")
 
 (in-package :iolib.syscalls)
 
@@ -364,3 +364,23 @@
   (constant (rlimit-nice "RLIMIT_NICE"))
   (constant (rlimit-rtprio "RLIMIT_RTPRIO"))
   (constant (rlimit-sigpending "RLIMIT_SIGPENDING")))
+
+;;;; from pwd.h
+
+(cstruct passwd-entry "struct passwd"
+  (name   "pw_name"   :type :string)
+  (passwd "pw_passwd" :type :string)
+  (uid    "pw_uid"    :type uid-t)
+  (gid    "pw_gid"    :type gid-t)
+  (gecos  "pw_gecos"  :type :string)
+  (dir    "pw_dir"    :type :string)
+  (shell  "pw_shell"  :type :string))
+
+;;;; from grp.h
+
+;;; FIXME What about gr_mem?  Kinda the whole point?
+(cstruct group-entry "struct group"
+  (name   "gr_name"   :type :string)
+  (passwd "gr_passwd" :type :string)
+  (gid    "gr_gid"    :type gid-t)
+  (mem    "gr_mem"    :type :pointer))
