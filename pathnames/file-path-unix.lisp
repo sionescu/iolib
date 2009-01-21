@@ -89,7 +89,7 @@
                                  &key (start 0) end
                                  as-directory expand-user)
   (let* ((expansion (if expand-user
-                        (expand-userdir (subseq namestring start end))
+                        (%expand-user-directory (subseq namestring start end))
                         (subseq namestring start end)))
          (components (remove "." (split-directory-namestring expansion)
                              :test #'string=))
@@ -101,7 +101,7 @@
     (make-instance type :directory (cons directory-type dirname)
                    :name (if (string= "" basename) nil basename))))
 
-(defmethod expand-userdir ((dirname string))
+(defmethod %expand-user-directory ((pathspec string))
   (flet ((user-homedir (user)
            (nth-value 5 (nix:getpwnam user)))
          (uid-homedir (uid)
@@ -109,7 +109,7 @@
          (concat-homedir (dir rest)
            (join +directory-delimiter+ dir rest)))
     (destructuring-bind (first &optional rest)
-        (split-directory-namestring dirname 2)
+        (split-directory-namestring pathspec 2)
       (cond
         ((string= "~" first)
          (let ((homedir
@@ -127,7 +127,19 @@
                      first)))
            (return* (concat-homedir homedir rest))))
         (t
-         dirname)))))
+         pathspec)))))
+
+(defmethod expand-user-directory ((path unix-path))
+  (with-slots (directory)
+      path
+    (assert (and (consp directory)
+                 (eql :relative (first directory))
+                 (stringp (second directory))))
+    (let ((dirs (split-directory-namestring
+                 (%expand-user-directory (second directory)))))
+      (setf directory
+            (append (list :absolute) dirs (cddr directory)))))
+  (values path))
 
 
 ;;;-------------------------------------------------------------------------

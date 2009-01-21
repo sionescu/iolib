@@ -89,11 +89,13 @@
 
 (defgeneric file-path (pathspec))
 
+(defgeneric expand-user-directory (path))
+
 ;;; Internal functions
 
 (defgeneric %file-path-directory-namestring (path &key trailing-delimiter))
 
-(defgeneric expand-userdir (dirname))
+(defgeneric %expand-user-directory (pathspec))
 
 
 ;;;-------------------------------------------------------------------------
