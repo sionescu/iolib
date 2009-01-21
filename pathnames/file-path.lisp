@@ -85,6 +85,8 @@
 (defgeneric parse-file-path (namestring &key start end
                              as-directory expand-user))
 
+(defgeneric file-path (pathspec))
+
 ;;; Internal functions
 
 (defgeneric %file-path-directory-namestring (path &key trailing-delimiter))
@@ -191,6 +193,12 @@
                         :start start :end end
                         :as-directory as-directory
                         :expand-user expand-user))
+
+(defmethod file-path ((pathspec file-path))
+  file-path)
+
+(defmethod file-path ((pathspec string))
+  (parse-file-path string))
 
 
 ;;;-------------------------------------------------------------------------
