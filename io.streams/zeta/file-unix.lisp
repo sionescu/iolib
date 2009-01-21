@@ -27,19 +27,6 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; PRINT-OBJECT
-;;;-------------------------------------------------------------------------
-
-(defmethod print-object ((file file-device) stream)
-  (print-unreadable-object (file stream :identity t :type nil)
-    (format stream "File device for ~S" (file-device-filename file))))
-
-(defmethod print-object ((file file-zstream) stream)
-  (print-unreadable-object (file stream :identity t :type t)
-    (format stream "wrapping ~S" (zstream-device file))))
-
-
-;;;-------------------------------------------------------------------------
 ;;; Generic functions
 ;;;-------------------------------------------------------------------------
 
@@ -61,6 +48,19 @@
   (setf (file-device-filename device) (copy-seq filename))
   (with-device (device)
     (device-open device slot-names initargs)))
+
+
+;;;-------------------------------------------------------------------------
+;;; PRINT-OBJECT
+;;;-------------------------------------------------------------------------
+
+(defmethod print-object ((file file-device) stream)
+  (print-unreadable-object (file stream :identity t :type nil)
+    (format stream "File device for ~S" (file-device-filename file))))
+
+(defmethod print-object ((file file-zstream) stream)
+  (print-unreadable-object (file stream :identity t :type t)
+    (format stream "wrapping ~S" (zstream-device file))))
 
 
 ;;;-------------------------------------------------------------------------
