@@ -190,7 +190,7 @@
   (assert (every #'file-path-p paths))
   (when (null paths) (return* nil))
   (let ((as-directory
-         (stringp (file-path-name (lastcar paths))))
+         (not (stringp (file-path-name (lastcar paths)))))
         (big-namestring
          (apply #'join (file-path-directory-delimiter (car paths))
                 (mapcar #'file-path-namestring paths))))
