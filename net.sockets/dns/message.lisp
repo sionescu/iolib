@@ -296,7 +296,7 @@
                        :do (%deref-dns-string pointer rec)
                        :collect string
                        :until (string= string ""))))
-        (values (join "." (%read-tags)) offset)))))
+        (values (apply #'join "." (%read-tags)) offset)))))
 
 (defgeneric read-domain-name (buffer)
   (:method ((buffer dynamic-buffer))
