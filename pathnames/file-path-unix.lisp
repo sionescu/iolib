@@ -88,9 +88,11 @@
                                  (type (eql 'unix-path))
                                  &key (start 0) end
                                  as-directory expand-user)
-  (let* ((expansion (if expand-user
-                        (%expand-user-directory (subseq namestring start end))
-                        (subseq namestring start end)))
+  (let* ((actual-namestring (subseq namestring start end))
+         (expansion (or (when expand-user
+                          (ignore-some-conditions (isys:posix-error)
+                            (%expand-user-directory actual-namestring)))
+                        actual-namestring))
          (components (remove "." (split-directory-namestring expansion)
                              :test #'string=))
          (dirname (if as-directory components (butlast components)))
@@ -136,7 +138,9 @@
                  (eql :relative (first directory))
                  (stringp (second directory))))
     (let ((dirs (split-directory-namestring
-                 (%expand-user-directory (second directory)))))
+                 (handler-case
+                     (%expand-user-directory (second directory))
+                   (isys:posix-error () (return* path))))))
       (setf directory
             (append (list :absolute) dirs (cddr directory)))))
   (values path))
@@ -147,7 +151,11 @@
 ;;;-------------------------------------------------------------------------
 
 (defparameter *default-file-path-defaults*
-  (parse-file-path (isys:%sys-getcwd) :as-directory t))
+  (or (ignore-some-conditions (isys:posix-error)
+        (parse-file-path (isys:%sys-getcwd) :as-directory t))
+      (ignore-some-conditions (isys:posix-error)
+        (parse-file-path (%expand-user-directory "~") :as-directory t))
+      (parse-file-path "/")))
 
 (defparameter *default-execution-path*
   (mapcar (lambda (p)
