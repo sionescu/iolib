@@ -42,7 +42,6 @@
 (defmethod shared-initialize :after
     ((device file-device) slot-names &rest initargs
      &key handle filename flags (mode *default-open-mode*) delete-if-exists)
-  (declare (ignore slot-names))
   ;; FIXME: use new pathnames
   (check-type filename string)
   (setf (file-device-filename device) (copy-seq filename))
