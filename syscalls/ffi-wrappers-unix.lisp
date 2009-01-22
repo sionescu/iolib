@@ -6,6 +6,7 @@
 (in-package :iolib.syscalls)
 
 (c "#if defined(__linux__)")
+(c "#undef _GNU_SOURCE")
 (define "_XOPEN_SOURCE" 600)
 (define "_LARGEFILE_SOURCE")
 (define "_LARGEFILE64_SOURCE")
@@ -13,7 +14,8 @@
 (c "#endif")
 
 (include "string.h" "errno.h" "sys/types.h" "sys/stat.h"
-         "unistd.h" "sys/mman.h" "dirent.h")
+         "unistd.h" "sys/mman.h" "dirent.h" "sys/time.h"
+         "sys/resource.h")
 
 
 ;;;-------------------------------------------------------------------------
