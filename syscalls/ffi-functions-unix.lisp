@@ -6,7 +6,10 @@
 (in-package :iolib.syscalls)
 
 ;;; Needed for clock_gettime() and friends.
-#+linux (load-foreign-library "librt.so")
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (define-foreign-library librt
+    (:linux "librt.so"))
+  (use-foreign-library librt))
 
 
 ;;;-------------------------------------------------------------------------
