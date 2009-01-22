@@ -744,11 +744,11 @@
             (values name passwd uid gid gecos dir shell))))))
 
 (defentrypoint %sys-getpwuid (uid)
-  "Gets the password-entry of a user, by user id."
+  "Gets the password-entry of a user, by user id. (reentrant)"
   (funcall-getpw #'%%sys-getpwuid-r uid))
 
 (defentrypoint %sys-getpwnam (name)
-  "Gets the password-entry of a user, by username."
+  "Gets the password-entry of a user, by username. (reentrant)"
   (funcall-getpw #'%%sys-getpwnam-r name))
 
 
