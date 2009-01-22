@@ -13,7 +13,7 @@
 (c "#endif")
 
 (include "string.h" "errno.h" "sys/types.h" "sys/stat.h"
-         "unistd.h" "sys/mman.h")
+         "unistd.h" "sys/mman.h" "dirent.h")
 
 
 ;;;-------------------------------------------------------------------------
@@ -32,7 +32,7 @@
 (declaim (inline %sys-truncate))
 (defwrapper ("truncate" %sys-truncate)
     ("int" (return-wrapper :int :error-generator signal-posix-error/restart))
-  (path ("const char*" filename-designator))
+  (path   ("const char*" filename-designator))
   (length off-t))
 
 (declaim (inline %sys-ftruncate))
@@ -84,6 +84,14 @@
   (buf    :pointer)
   (count  size-t)
   (offset off-t))
+
+(declaim (inline %%sys-readdir-r))
+(defwrapper ("readdir_r" %%sys-readdir-r)
+    ("int" (return-wrapper :int :error-predicate (lambda (r) (not (zerop r)))
+                           :error-generator signal-posix-error-from-return-value))
+  (dirp   ("DIR*" :pointer))
+  (entry  ("struct dirent*" :pointer))
+  (result ("struct dirent**" :pointer)))
 
 
 ;;;-------------------------------------------------------------------------

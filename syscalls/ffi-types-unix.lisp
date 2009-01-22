@@ -16,7 +16,8 @@
 
 (include "stdlib.h" "errno.h" "sys/types.h" "sys/stat.h" "sys/mman.h"
          "fcntl.h" "signal.h" "unistd.h" "limits.h" "time.h" "sys/select.h"
-         "sys/poll.h" "sys/ioctl.h" "sys/resource.h" "pwd.h" "grp.h")
+         "sys/poll.h" "sys/ioctl.h" "sys/resource.h" "pwd.h" "grp.h"
+         "dirent.h")
 
 (in-package :iolib.syscalls)
 
@@ -304,6 +305,29 @@
 #-darwin (constant (pollrdhup "POLLRDHUP"))
 (constant (pollhup "POLLHUP"))
 (constant (pollnval "POLLNVAL"))
+
+;;;; from dirent.h
+
+;;; Apparently POSIX 1003.1-2001 (according to linux manpages) only
+;;; requires d_name.  Sigh.  I guess we should assemble some decent
+;;; wrapper functions.  No, struct members can't be optional at this
+;;; point.
+(cstruct dirent "struct dirent"
+  ;; POSIX actually requires this to be d_ino
+  (fileno "d_fileno" :type #-freebsd ino-t #+freebsd :uint32)
+  (type   "d_type"   :type :uint8)
+  (name   "d_name"   :type :uint8 :count :auto))
+
+;;; filetypes set in d_type slot of struct dirent
+(constant (dt-unknown "DT_UNKNOWN"))
+(constant (dt-fifo "DT_FIFO"))
+(constant (dt-chr "DT_CHR"))
+(constant (dt-dir "DT_DIR"))
+(constant (dt-blk "DT_BLK"))
+(constant (dt-reg "DT_REG"))
+(constant (dt-lnk "DT_LNK"))
+(constant (dt-sock "DT_SOCK"))
+(constant (dt-wht "DT_WHT"))
 
 ;;; ioctl()
 
