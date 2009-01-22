@@ -10,13 +10,12 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:iolib.base :cffi :cffi-grovel :osicat :babel
-               :bordeaux-threads :io.streams)
+  :depends-on (:iolib.base :cffi :cffi-grovel :iolib.syscalls
+               :osicat :babel :bordeaux-threads :io.streams)
   :pathname (merge-pathnames #p"net.sockets/" *load-truename*)
   :components
   ((:file "pkgdcl")
    (cffi-grovel:grovel-file "grovel" :depends-on ("pkgdcl"))
-   (cffi-grovel:wrapper-file "wrappers" :depends-on ("pkgdcl"))
    (:file "conditions" :depends-on ("pkgdcl" "grovel"))
    (:file "bsd" :depends-on ("pkgdcl" "grovel" "conditions"))
    (:file "common" :depends-on ("pkgdcl" "grovel" "bsd"))
@@ -49,8 +48,8 @@
                        "address" "address-predicates" "base-sockets" "socket-options"
                        "protocols" "services"))
    (:file "make-socket"
-          :depends-on ("pkgdcl" "grovel" "wrappers" "common" "config" "address"
-                       "address-predicates" "socket-options" "services" "socket-methods"))
+          :depends-on ("pkgdcl" "grovel" "common" "config" "address" "address-predicates"
+                       "socket-options" "services" "socket-methods"))
 
    (:file "dns-common" :pathname #p"dns/common"
           :depends-on ("pkgdcl" "common"))

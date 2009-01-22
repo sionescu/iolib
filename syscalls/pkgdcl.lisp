@@ -185,6 +185,12 @@
    #:%sys-getgrnam
    #:%sys-getgrgid
 
+   ;; CMSG readers
+   #:%sys-cmsg-space
+   #:%sys-cmsg-len
+   #:%sys-cmsg-firsthdr
+   #:%sys-cmsg-data
+
    ;;;--------------------------------------------------------------------------
    ;;; Foreign types and constants
    ;;;--------------------------------------------------------------------------

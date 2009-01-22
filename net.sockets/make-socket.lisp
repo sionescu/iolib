@@ -325,14 +325,14 @@ Buffer sizes for the new sockets can also be specified using `INPUT-BUFFER-SIZE'
 (defun call-with-buffers-for-fd-passing (fn)
   (with-foreign-object (msg 'msghdr)
     (bzero msg size-of-msghdr)
-    (with-foreign-pointer (buffer #.(%cmsg-space size-of-int) buffer-size)
+    (with-foreign-pointer (buffer #.(isys:%sys-cmsg-space size-of-int) buffer-size)
       (bzero buffer buffer-size)
       (with-foreign-slots ((control controllen) msg msghdr)
         (setf control    buffer
               controllen buffer-size)
-        (let ((cmsg (%cmsg-firsthdr msg)))
+        (let ((cmsg (isys:%sys-cmsg-firsthdr msg)))
           (with-foreign-slots ((len level type) cmsg cmsghdr)
-            (setf len (%cmsg-len size-of-int)
+            (setf len (isys:%sys-cmsg-len size-of-int)
                   level sol-socket
                   type scm-rights)
             (funcall fn msg cmsg)))))))
@@ -342,13 +342,13 @@ Buffer sizes for the new sockets can also be specified using `INPUT-BUFFER-SIZE'
 
 (defmethod send-file-descriptor ((socket local-socket) file-descriptor)
   (with-buffers-for-fd-passing (msg cmsg)
-    (let ((data (%cmsg-data cmsg)))
+    (let ((data (isys:%sys-cmsg-data cmsg)))
       (setf (mem-aref data :int) file-descriptor)
       (%sendmsg (fd-of socket) msg 0)
       (values))))
 
 (defmethod receive-file-descriptor ((socket local-socket))
   (with-buffers-for-fd-passing (msg cmsg)
-    (let ((data (%cmsg-data cmsg)))
+    (let ((data (isys:%sys-cmsg-data cmsg)))
       (%recvmsg (fd-of socket) msg 0)
       (mem-aref data :int))))

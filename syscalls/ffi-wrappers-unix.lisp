@@ -15,7 +15,7 @@
 
 (include "string.h" "errno.h" "sys/types.h" "sys/stat.h"
          "unistd.h" "sys/mman.h" "dirent.h" "sys/time.h"
-         "sys/resource.h")
+         "sys/resource.h" "sys/socket.h")
 
 
 ;;;-------------------------------------------------------------------------
@@ -134,3 +134,24 @@
     ("int" (return-wrapper :int :error-generator signal-posix-error))
   (resource :int)
   (rlimit   ("const struct rlimit*" :pointer)))
+
+
+;;;-------------------------------------------------------------------------
+;;; Socket message readers
+;;;-------------------------------------------------------------------------
+
+(defwrapper* ("cmsg_space" %sys-cmsg-space) :unsigned-int
+  ((data-size :unsigned-int))
+  "return CMSG_SPACE(data_size);")
+
+(defwrapper* ("cmsg_len" %sys-cmsg-len) :unsigned-int
+  ((data-size :unsigned-int))
+  "return CMSG_LEN(data_size);")
+
+(defwrapper* ("cmsg_firsthdr" %sys-cmsg-firsthdr) :pointer
+  ((msg ("struct msghdr*" :pointer)))
+  "return CMSG_FIRSTHDR(msg);")
+
+(defwrapper* ("cmsg_data" %sys-cmsg-data) :pointer
+  ((cmsg ("struct cmsghdr*" :pointer)))
+  "return CMSG_DATA(cmsg);")
