@@ -156,8 +156,10 @@
   ((:enonet "ENONET") :optional t)
   ((:enobufs "ENOBUFS"))
   ((:eopnotsupp "EOPNOTSUPP")))
+
 
 ;;; open()
+
 (constant (o-rdonly "O_RDONLY"))
 (constant (o-wronly "O_WRONLY"))
 (constant (o-rdwr "O_RDWR"))
@@ -172,17 +174,22 @@
 (constant (o-sync "O_SYNC"))
 (constant (o-nofollow "O_NOFOLLOW"))
 (constant (o-async "O_ASYNC"))
+
 
 ;;; lseek()
+
 (constant (seek-set "SEEK_SET"))
 (constant (seek-cur "SEEK_CUR"))
 (constant (seek-end "SEEK_END"))
+
 
 ;;; access()
+
 (constant (r-ok "R_OK"))
 (constant (w-ok "W_OK"))
 (constant (x-ok "X_OK"))
 (constant (f-ok "F_OK"))
+
 
 ;;;; stat()
 
@@ -222,12 +229,14 @@
 (constant (s-ifsock "S_IFSOCK") :documentation "socket")
 
 (constant (path-max "PATH_MAX" "MAXPATHLEN"))
+
 
-;;;; from unistd.h
+;;; from unistd.h
 
 (ctype useconds-t "useconds_t")
+
 
-;;;; from time.h
+;;; from time.h
 
 (ctype time-t "time_t")
 (ctype suseconds-t "suseconds_t")
@@ -242,15 +251,17 @@
   "UNIX time specification in seconds and nanoseconds."
   (sec  "tv_sec"  :type time-t)
   (nsec "tv_nsec" :type :long))
+
 
-;;;; from sys/select.h
+;;; from sys/select.h
 
 (cstruct timeval "struct timeval"
   "UNIX time specification in seconds and microseconds."
   (sec  "tv_sec"  :type time-t)
   (usec "tv_usec" :type suseconds-t))
+
 
-;;;; from sys/stat.h
+;;; from sys/stat.h
 
 (ctype dev-t "dev_t")
 (ctype ino-t "ino_t")
@@ -273,8 +284,10 @@
   (atime   "st_atime"   :type time-t)
   (mtime   "st_mtime"   :type time-t)
   (ctime   "st_ctime"   :type time-t))
+
 
 ;;; mmap()
+
 (constant (prot-none   "PROT_NONE")   :documentation "mmap: no protection")
 (constant (prot-read   "PROT_READ")   :documentation "mmap: read protection")
 (constant (prot-write  "PROT_WRITE")  :documentation "mmap: write protection")
@@ -283,6 +296,7 @@
 (constant (map-private "MAP_PRIVATE") :documentation "mmap: private mapping")
 (constant (map-fixed   "MAP_FIXED")   :documentation "mmap: map at location")
 (constant (map-failed  "MAP_FAILED")  :documentation "mmap: failure")
+
 
 ;;; poll()
 
@@ -305,13 +319,14 @@
 #-darwin (constant (pollrdhup "POLLRDHUP"))
 (constant (pollhup "POLLHUP"))
 (constant (pollnval "POLLNVAL"))
+
 
-;;;; from dirent.h
+;;; from dirent.h
 
-;;; Apparently POSIX 1003.1-2001 (according to linux manpages) only
-;;; requires d_name.  Sigh.  I guess we should assemble some decent
-;;; wrapper functions.  No, struct members can't be optional at this
-;;; point.
+;; Apparently POSIX 1003.1-2001 (according to linux manpages) only
+;; requires d_name.  Sigh.  I guess we should assemble some decent
+;; wrapper functions.  No, struct members can't be optional at this
+;; point.
 (cstruct dirent "struct dirent"
   ;; POSIX actually requires this to be d_ino
   (fileno "d_fileno" :type #-freebsd ino-t #+freebsd :uint32)
@@ -328,13 +343,15 @@
 (constant (dt-lnk "DT_LNK"))
 (constant (dt-sock "DT_SOCK"))
 (constant (dt-wht "DT_WHT"))
+
 
 ;;; ioctl()
 
 (constant (fionbio "FIONBIO"))
 (constant (fionread "FIONREAD"))
+
 
-;;;; from sys/resource.h
+;;; from sys/resource.h
 
 (ctype rlim-t "rlim_t")
 (ctype id-t "id_t")
@@ -388,8 +405,9 @@
   (constant (rlimit-nice "RLIMIT_NICE"))
   (constant (rlimit-rtprio "RLIMIT_RTPRIO"))
   (constant (rlimit-sigpending "RLIMIT_SIGPENDING")))
+
 
-;;;; from pwd.h
+;;; from pwd.h
 
 (cstruct passwd-entry "struct passwd"
   (name   "pw_name"   :type :string)
@@ -399,10 +417,10 @@
   (gecos  "pw_gecos"  :type :string)
   (dir    "pw_dir"    :type :string)
   (shell  "pw_shell"  :type :string))
+
 
-;;;; from grp.h
+;;; from grp.h
 
-;;; FIXME What about gr_mem?  Kinda the whole point?
 (cstruct group-entry "struct group"
   (name   "gr_name"   :type :string)
   (passwd "gr_passwd" :type :string)
