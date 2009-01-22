@@ -86,6 +86,28 @@
                                    ,return-exp))))))))))
 
 
+(defun foreign-name (spec &optional varp)
+  (declare (ignore varp))
+  (check-type spec list)
+  (destructuring-bind (first second) spec
+    (etypecase first
+      ((or string cons)
+       (foreign-name (list second (ensure-list first))))
+      (symbol
+       (setf second (ensure-list second))
+       (assert (every #'stringp second))
+       (loop :for sym :in second
+             :if (foreign-symbol-pointer sym) :do (return sym)
+             :finally
+             (error "None of these foreign symbols is defined: ~{~S~^, ~}"
+                    second))))))
+
+(defun parse-name-and-options (spec &optional varp)
+  (values (cffi::lisp-name spec varp)
+          (foreign-name spec varp)
+          (cffi::foreign-options spec varp)))
+
+
 (defmacro defentrypoint (name (&rest args) &body body)
   `(progn
      (declaim (inline ,name))
@@ -93,7 +115,7 @@
 
 (defmacro defcfun* (name-and-opts return-type &body args)
   (multiple-value-bind (lisp-name c-name options)
-      (cffi::parse-name-and-options name-and-opts)
+      (parse-name-and-options name-and-opts)
     `(progn
        (declaim (inline ,lisp-name))
        (defcfun (,c-name ,lisp-name ,@options) ,return-type
@@ -106,7 +128,7 @@
 
 (defmacro defsyscall (name-and-opts return-type &body args)
   (multiple-value-bind (lisp-name c-name options)
-      (cffi::parse-name-and-options name-and-opts)
+      (parse-name-and-options name-and-opts)
     `(progn
        (declaim (inline ,lisp-name))
        (defcfun (,c-name ,lisp-name ,@options)
@@ -115,7 +137,7 @@
 
 (defmacro defsyscall* (name-and-opts return-type &body args)
   (multiple-value-bind (lisp-name c-name options)
-      (cffi::parse-name-and-options name-and-opts)
+      (parse-name-and-options name-and-opts)
     `(progn
        (declaim (inline ,lisp-name))
        (defcfun (,c-name ,lisp-name ,@options)
