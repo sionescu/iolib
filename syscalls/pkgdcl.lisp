@@ -123,6 +123,14 @@
    ;; I/O Polling
    #:%sys-poll
 
+   ;; Directory walking
+   #:%sys-opendir
+   #:%sys-closedir
+   #:%sys-readdir
+   #:%sys-rewinddir
+   #:%sys-seekdir
+   #:%sys-telldir
+
    ;; Memory mapping
    #:%sys-mmap
    #:%sys-munmap

@@ -294,11 +294,11 @@
 ;;; Directory walking
 ;;;-------------------------------------------------------------------------
 
-(defsyscall "opendir" :pointer
+(defsyscall ("opendir" %sys-opendir) :pointer
   "Opens a directory for listing of its contents"
   (filename filename-designator))
 
-(defsyscall "closedir" :int
+(defsyscall ("closedir" %sys-closedir) :int
   "Closes a directory when done listing its contents"
   (dir :pointer))
 
@@ -311,18 +311,18 @@
         (with-foreign-slots ((name type fileno) entry dirent)
           (values (foreign-string-to-lisp name) type fileno)))))
 
-(defsyscall "rewinddir" :void
+(defsyscall ("rewinddir" %sys-rewinddir) :void
   "Rewinds a directory."
   (dir :pointer))
 
-(defsyscall "seekdir" :void
+(defsyscall ("seekdir" %sys-seekdir) :void
   "Seeks a directory."
   (dir :pointer)
   (pos :long))
 
 ;;; FIXME: According to POSIX docs "no errors are defined" for
 ;;; telldir() but Linux manpages specify a possible EBADF.
-(defsyscall "telldir" off-t
+(defsyscall ("telldir" %sys-telldir) off-t
   "Returns the current location in a directory"
   (dir :pointer))
 
