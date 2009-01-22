@@ -17,7 +17,7 @@
 (include "stdlib.h" "errno.h" "sys/types.h" "sys/stat.h" "sys/mman.h"
          "fcntl.h" "signal.h" "unistd.h" "limits.h" "time.h" "sys/select.h"
          "sys/poll.h" "sys/ioctl.h" "sys/resource.h" "pwd.h" "grp.h"
-         "dirent.h")
+         "dirent.h" "sys/utsname.h")
 
 (in-package :iolib.syscalls)
 
@@ -408,6 +408,16 @@
 
 #+freebsd
 (constant (rlimit-sbsize "RLIMIT_SBSIZE"))
+
+
+;;;; from sys/utsname.h
+
+(cstruct utsname "struct utsname"
+  (sysname  "sysname"  :type :char)
+  (nodename "nodename" :type :char)
+  (release  "release"  :type :char)
+  (version  "version"  :type :char)
+  (machine  "machine"  :type :char))
 
 
 ;;; from pwd.h

@@ -175,6 +175,7 @@
    ;; Local info
    #:%sys-gethostname
    #:%sys-getdomainname
+   #:%sys-uname
 
    ;; User info
    #:%sys-getpwnam

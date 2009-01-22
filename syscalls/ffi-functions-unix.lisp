@@ -606,6 +606,23 @@
 (defentrypoint %sys-getdomainname ()
   (with-foreign-pointer-as-string ((cstr size) 256)
     (%%sys-getdomainname cstr size)))
+
+(defsyscall ("uname" %%sys-uname) :int
+  (buf :pointer))
+
+(defentrypoint %sys-uname ()
+  "Get name and information about current kernel."
+  (with-foreign-object (buf 'utsname)
+    (%sys-bzero buf size-of-utsname)
+    (%%sys-uname buf)
+    (macrolet ((utsname-slot (name)
+                 `(foreign-string-to-lisp
+                   (foreign-slot-pointer buf 'utsname ',name))))
+      (values (utsname-slot sysname)
+              (utsname-slot nodename)
+              (utsname-slot release)
+              (utsname-slot version)
+              (utsname-slot machine)))))
 
 
 ;;;-------------------------------------------------------------------------
