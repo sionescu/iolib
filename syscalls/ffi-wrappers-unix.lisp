@@ -5,8 +5,8 @@
 
 (in-package :iolib.syscalls)
 
-(define "_XOPEN_SOURCE" 600)
 (c "#if defined(__linux__)")
+(define "_XOPEN_SOURCE" 600)
 (define "_LARGEFILE_SOURCE")
 (define "_LARGEFILE64_SOURCE")
 (define "_FILE_OFFSET_BITS" 64)

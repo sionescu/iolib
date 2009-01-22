@@ -33,7 +33,6 @@
 ;;; TODO: check if these flags are required on solaris too
 #+linux
 (progn
-  (define "_XOPEN_SOURCE" 600)
   (define "_LARGEFILE_SOURCE")
   (define "_LARGEFILE64_SOURCE")
   (define "_FILE_OFFSET_BITS" 64))

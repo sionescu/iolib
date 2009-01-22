@@ -279,8 +279,9 @@
 ;;;-------------------------------------------------------------------------
 
 ;;; FIXME: Until a way to autodetect platform features is implemented
-#+(or darwin freebsd)
-(defconstant pollrdhup 0)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (unless (boundp 'pollrdhup)
+    (defconstant pollrdhup 0)))
 
 (defsyscall ("poll" %sys-poll) :int
   "Scan for I/O activity on multiple file descriptors."

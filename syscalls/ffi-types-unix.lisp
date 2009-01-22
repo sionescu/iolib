@@ -316,7 +316,7 @@
 (constant (pollwrnorm "POLLWRNORM"))
 (constant (pollwrband "POLLWRBAND"))
 (constant (pollerr "POLLERR"))
-#-darwin (constant (pollrdhup "POLLRDHUP"))
+#+linux (constant (pollrdhup "POLLRDHUP"))
 (constant (pollhup "POLLHUP"))
 (constant (pollnval "POLLNVAL"))
 

@@ -17,7 +17,7 @@
 
 (defun process-poll-revents (fd event-type revents)
   (flet ((poll-error ()
-           (error 'poll-error :code ebadfd :identifier :ebadfd
+           (error 'poll-error :code ebadf :identifier :ebadf
                   :event-type event-type :os-handle fd
                   :message "invalid OS handle")))
     (let ((readp  nil) (rhupp nil)
