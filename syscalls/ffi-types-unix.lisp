@@ -405,6 +405,9 @@
   (constant (rlimit-nice "RLIMIT_NICE"))
   (constant (rlimit-rtprio "RLIMIT_RTPRIO"))
   (constant (rlimit-sigpending "RLIMIT_SIGPENDING")))
+
+#+freebsd
+(constant (rlimit-sbsize "RLIMIT_SBSIZE"))
 
 
 ;;; from pwd.h
