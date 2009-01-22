@@ -19,6 +19,12 @@
 (defentrypoint (setf %sys-errno) (value)
   (%%sys-set-errno value))
 
+(defsyscall (%%sys-strerror-r (#+linux "__xpg_strerror_r" "strerror_r"))
+    :int
+  (errnum :int)
+  (buf    :string)
+  (buflen size-t))
+
 (defentrypoint %sys-strerror (&optional (err (%sys-errno)))
   "Look up the error message string for ERRNO. (reentrant)"
   (let ((errno
@@ -26,7 +32,7 @@
              (foreign-enum-value 'errno-values err)
              err)))
     (with-foreign-pointer-as-string ((buf bufsiz) 1024)
-      (%sys-strerror-r errno buf bufsiz))))
+      (%%sys-strerror-r errno buf bufsiz))))
 
 (defmethod print-object ((posix-error posix-error) stream)
   (print-unreadable-object (posix-error stream :type nil :identity nil)
@@ -75,6 +81,20 @@
   (fd    :int)
   (buf   :pointer)
   (count size-t))
+
+(defsyscall* (%sys-pread (#+linux "pread64" "pread"))
+    ssize-t
+  (fd     :int)
+  (buf    :pointer)
+  (count  size-t)
+  (offset off-t))
+
+(defsyscall* (%sys-pwrite (#+linux "pwrite64" "pwrite"))
+    ssize-t
+  (fd     :int)
+  (buf    :pointer)
+  (count  size-t)
+  (offset off-t))
 
 
 ;;;-------------------------------------------------------------------------
@@ -114,9 +134,25 @@
   "Sets the umask and returns the old one"
   (new-mode mode-t))
 
+(defsyscall (%sys-lseek (#+linux "lseek64" "lseek"))
+    off-t
+  (fildes :int)
+  (offset off-t)
+  (whence :int))
+
 (defsyscall (%sys-access "access") :int
   (path  filename-designator)
   (amode :int))
+
+(defsyscall* (%sys-truncate (#+linux "truncate64" "truncate"))
+    :int
+  (path   filename-designator)
+  (length off-t))
+
+(defsyscall* (%sys-ftruncate (#+linux "ftruncate64" "ftruncate"))
+    :int
+  (fd     :int)
+  (length off-t))
 
 (defsyscall (%sys-rename "rename") :int
   "Rename a file."
@@ -176,13 +212,35 @@
 
 (define-c-struct-wrapper stat ())
 
-(defconstant +stat-version-linux+ 3)
+#+linux
+(defconstant +stat-version+ 3)
+
+(defsyscall (%%sys-stat (#+linux "__xstat64" "stat"))
+    :int
+  #+linux
+  (version   :int)
+  (file-name filename-designator)
+  (buf       :pointer))
+
+(defsyscall (%%sys-fstat (#+linux "__fxstat64" "fstat"))
+    :int
+  #+linux
+  (version   :int)
+  (filedes :int)
+  (buf     :pointer))
+
+(defsyscall (%%sys-lstat (#+linux "__lxstat64" "lstat"))
+    :int
+  #+linux
+  (version   :int)
+  (file-name filename-designator)
+  (buf       :pointer))
 
 ;;; If necessary for performance reasons, we can add an optional
 ;;; argument to this function and use that to reuse a wrapper object.
 (defentrypoint funcall-stat (fn arg)
   (with-foreign-object (buf 'stat)
-    (funcall fn arg buf)
+    (funcall fn #+linux +stat-version+ arg buf)
     (make-instance 'stat :pointer buf)))
 
 (defentrypoint %sys-stat (path)
@@ -305,6 +363,13 @@
   "Closes a directory when done listing its contents"
   (dir :pointer))
 
+(defcfun* (%%sys-readdir-r (#+linux "readdir64_r" "readdir_r"))
+    (return-wrapper :int :error-predicate (lambda (r) (not (zerop r)))
+                    :error-generator signal-posix-error-from-return-value)
+  (dirp   :pointer)
+  (entry  :pointer)
+  (result :pointer))
+
 (defentrypoint %sys-readdir (dir)
   "Reads an item from the listing of a directory (reentrant)"
   (with-foreign-objects ((entry 'dirent) (result :pointer))
@@ -333,6 +398,15 @@
 ;;;-------------------------------------------------------------------------
 ;;; Memory mapping
 ;;;-------------------------------------------------------------------------
+
+(defsyscall (%sys-mmap (#+linux "mmap64" "mmap"))
+    :pointer
+  (start  :pointer)
+  (length size-t)
+  (prot   :int)
+  (flags  :int)
+  (fd     :int)
+  (offset off-t))
 
 (defsyscall (%sys-munmap "munmap") :int
   "Unmap pages of memory."
@@ -409,11 +483,21 @@
 (defsyscall (%sys-setsid "setsid") pid-t
   "Create session and set process group id of the current process.")
 
+(defsyscall (%%sys-getrlimit (#+linux "getrlimit64" "getrlimit"))
+    :int
+  (resource :int)
+  (rlimit   :pointer))
+
 (defentrypoint %sys-getrlimit (resource)
   (with-foreign-object (rl 'rlimit)
     (with-foreign-slots ((cur max) rl rlimit)
       (%%sys-getrlimit resource rl)
       (values cur max))))
+
+(defsyscall (%%sys-setrlimit (#+linux "setrlimit64" "setrlimit"))
+    :int
+  (resource :int)
+  (rlimit   :pointer))
 
 (defentrypoint %sys-setrlimit (resource soft-limit hard-limit)
   (with-foreign-object (rl 'rlimit)
