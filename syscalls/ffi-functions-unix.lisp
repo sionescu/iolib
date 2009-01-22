@@ -34,11 +34,11 @@
     (with-foreign-pointer-as-string ((buf bufsiz) 1024)
       (%%sys-strerror-r errno buf bufsiz))))
 
-(defmethod print-object ((posix-error posix-error) stream)
-  (print-unreadable-object (posix-error stream :type nil :identity nil)
-    (let ((code (code-of posix-error))
-          (identifier (identifier-of posix-error)))
-      (format stream "POSIX Error ~A code: ~S ~S"
+(defmethod print-object ((e posix-error) stream)
+  (print-unreadable-object (e stream :type nil :identity nil)
+    (let ((code (code-of e))
+          (identifier (identifier-of e)))
+      (format stream "System-Error ~A(~S) ~S"
               identifier (or code "[No code]")
               (or (%sys-strerror code) "[Can't get error string.]")))))
 
