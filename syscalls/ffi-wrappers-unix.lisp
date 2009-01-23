@@ -36,6 +36,7 @@
 ;;; Socket message readers
 ;;;-------------------------------------------------------------------------
 
+(include "stdlib.h") ; needed on FreeBSD to define NULL
 (include "sys/socket.h")
 
 (defwrapper* ("cmsg_space" %sys-cmsg-space) :unsigned-int
