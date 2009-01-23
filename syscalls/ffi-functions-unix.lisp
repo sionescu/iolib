@@ -17,6 +17,7 @@
 ;;;-------------------------------------------------------------------------
 
 (defentrypoint (setf %sys-errno) (value)
+  "Set errno value."
   (%%sys-set-errno value))
 
 (defsyscall (%%sys-strerror-r (#+linux "__xpg_strerror_r" "strerror_r"))
@@ -26,7 +27,7 @@
   (buflen size-t))
 
 (defentrypoint %sys-strerror (&optional (err (%sys-errno)))
-  "Look up the error message string for ERRNO. (reentrant)"
+  "Look up the error message string for ERRNO (reentrant)."
   (let ((errno
          (if (keywordp err)
              (foreign-enum-value 'errno-values err)
@@ -48,22 +49,28 @@
 ;;;-------------------------------------------------------------------------
 
 (defcfun* (%sys-memset "memset") :pointer
+  "Fill the first COUNT bytes of BUFFER with the constant VALUE."
   (buffer :pointer)
   (value  :int)
-  (length size-t))
+  (count  size-t))
 
-(defentrypoint %sys-bzero (buffer length)
-  (%sys-memset buffer 0 length))
+(defentrypoint %sys-bzero (buffer count)
+  "Fill the first COUNT bytes of BUFFER with zeros."
+  (%sys-memset buffer 0 count))
 
 (defcfun* (%sys-memcpy "memcpy") :pointer
-  (dest   :pointer)
-  (src    :pointer)
-  (length size-t))
+  "Copy COUNT octets from SRC to DEST.
+The two memory areas must not overlap."
+  (dest :pointer)
+  (src  :pointer)
+  (count size-t))
 
 (defcfun* (%sys-memmove "memmove") :pointer
-  (dest   :pointer)
-  (src    :pointer)
-  (length size-t))
+  "Copy COUNT octets from SRC to DEST.
+The two memory areas may overlap."
+  (dest :pointer)
+  (src  :pointer)
+  (count size-t))
 
 
 ;;;-------------------------------------------------------------------------
@@ -84,6 +91,7 @@
 
 (defsyscall* (%sys-pread (#+linux "pread64" "pread"))
     ssize-t
+  "Read at most COUNT bytes from FD at offset OFFSET into the foreign area BUF."
   (fd     :int)
   (buf    :pointer)
   (count  size-t)
@@ -91,6 +99,7 @@
 
 (defsyscall* (%sys-pwrite (#+linux "pwrite64" "pwrite"))
     ssize-t
+  "Write at most COUNT bytes to FD at offset OFFSET from the foreign area BUF."
   (fd     :int)
   (buf    :pointer)
   (count  size-t)
@@ -102,18 +111,21 @@
 ;;;-------------------------------------------------------------------------
 
 (defsyscall* (%%sys-open "open") :int
-  (pathname filename-designator)
-  (flags    :int)
-  (mode     mode-t))
+  (path  filename-designator)
+  (flags :int)
+  (mode  mode-t))
 
 (defvar *default-open-mode* #o666)
 
-(defentrypoint %sys-open (pathname flags &optional (mode *default-open-mode*))
-  (%%sys-open pathname flags mode))
+(defentrypoint %sys-open (path flags &optional (mode *default-open-mode*))
+  "Open a file descriptor for PATH using FLAGS and permissions MODE
+\(default value is *DEFAULT-OPEN-MODE* - #o666)."
+  (%%sys-open path flags mode))
 
 (defsyscall* (%sys-creat "creat") :int
-  (pathname filename-designator)
-  (mode     mode-t))
+  "Create file PATH with permissions MODE and return the new FD."
+  (path filename-designator)
+  (mode mode-t))
 
 (defsyscall (%%sys-pipe "pipe") :int
   (filedes :pointer))
@@ -126,47 +138,53 @@
             (mem-aref filedes :int 1))))
 
 (defsyscall (%sys-mkfifo "mkfifo") :int
-  "Create a FIFO (named pipe)."
+  "Create a FIFO (named pipe) with name PATH and permissions MODE."
   (path filename-designator)
   (mode mode-t))
 
 (defsyscall (%sys-umask "umask") mode-t
-  "Sets the umask and returns the old one"
+  "Sets the umask to NEW-MODE and returns the old one."
   (new-mode mode-t))
 
 (defsyscall (%sys-lseek (#+linux "lseek64" "lseek"))
     off-t
-  (fildes :int)
+  "Reposition the offset of the open file associated with the file descriptor FD
+to the argument OFFSET according to the directive WHENCE."
+  (fd     :int)
   (offset off-t)
   (whence :int))
 
 (defsyscall (%sys-access "access") :int
-  (path  filename-designator)
-  (amode :int))
+  "Check whether the file PATH can be accessed using mode MODE."
+  (path filename-designator)
+  (mode :int))
 
 (defsyscall* (%sys-truncate (#+linux "truncate64" "truncate"))
     :int
+  "Truncate the file PATH to a size of precisely LENGTH octets."
   (path   filename-designator)
   (length off-t))
 
 (defsyscall* (%sys-ftruncate (#+linux "ftruncate64" "ftruncate"))
     :int
+  "Truncate the file referenced by FD to a size of precisely LENGTH octets."
   (fd     :int)
   (length off-t))
 
 (defsyscall (%sys-rename "rename") :int
-  "Rename a file."
-  (old filename-designator)
-  (new filename-designator))
+  "Rename file named by OLDPATH to NEWPATH."
+  (oldpath filename-designator)
+  (newpath filename-designator))
 
 (defsyscall (%sys-link "link") :int
-  (path1 filename-designator)
-  (path2 filename-designator))
+  "Create a hard link from file OLDPATH to NEWPATH."
+  (oldpath filename-designator)
+  (newpath filename-designator))
 
 (defsyscall (%sys-symlink "symlink") :int
-  "Creates a symbolic link"
-  (name1 filename-designator)
-  (name2 filename-designator))
+  "Create a symbolic link from file OLDPATH to NEWPATH."
+  (oldpath filename-designator)
+  (newpath filename-designator))
 
 (defsyscall (%%sys-readlink "readlink") ssize-t
   (path    filename-designator)
@@ -174,37 +192,40 @@
   (bufsize size-t))
 
 (defentrypoint %sys-readlink (path)
-  "Read value of a symbolic link."
+  "Read the file name pointed by the symbolic link PATH."
   (with-foreign-pointer (buf 4096 bufsize)
     (let ((count (%%sys-readlink path buf bufsize)))
       (values (foreign-string-to-lisp buf :count count)))))
 
 (defsyscall (%sys-unlink "unlink") :int
+  "Delete the file PATH from the file system."
   (path filename-designator))
 
 (defsyscall* (%sys-chown "chown") :int
-  "Change ownership of a file."
+  "Change ownership of file PATH to uid OWNER and gid GROUP(dereferences symlinks)."
   (path  filename-designator)
   (owner uid-t)
   (group uid-t))
 
 (defsyscall* (%sys-fchown "fchown") :int
-  "Change ownership of an open file."
+  "Change ownership of an open file referenced by FD to uid OWNER and gid GROUP."
   (fd    :int)
   (owner uid-t)
   (group uid-t))
 
 (defsyscall* (%sys-lchown "lchown") :int
-  "Change ownership of a file or symlink."
+  "Change ownership of a file PATH to uid OWNER and gid GROUP(does not dereference symlinks)."
   (path  filename-designator)
   (owner uid-t)
   (group uid-t))
 
 (defsyscall* (%sys-chmod "chmod") :int
+  "Change permissions of file PATH to mode MODE."
   (path filename-designator)
   (mode mode-t))
 
 (defsyscall* (%sys-fchmod "fchmod") :int
+  "Change permissions of open file referenced by FD to mode MODE."
   (fd   :int)
   (mode mode-t))
 
@@ -244,27 +265,29 @@
     (make-instance 'stat :pointer buf)))
 
 (defentrypoint %sys-stat (path)
-  "Get information about a file."
+  "Get information about file PATH(dereferences symlinks)."
   (funcall-stat #'%%sys-stat path))
 
 (defentrypoint %sys-fstat (fd)
-  "Get information about a file descriptor"
+  "Get information about file descriptor FD."
   (funcall-stat #'%%sys-fstat fd))
 
 (defentrypoint %sys-lstat (path)
-  "Get information about a file or symlink."
+  "Get information about file PATH(does not dereference symlinks)."
   (funcall-stat #'%%sys-lstat path))
 
 (defsyscall (%sys-sync "sync") :void
   "Schedule all file system buffers to be written to disk.")
 
 (defsyscall* (%sys-fsync "fsync") :int
+  "Schedule a file's buffers to be written to disk."
   (fildes :int))
 
 (defsyscall (%%sys-mkstemp "mkstemp") :int
   (template filename-designator))
 
 (defentrypoint %sys-mkstemp (&optional (template ""))
+  "Generate a unique temporary filename from TEMPLATE."
   (let ((template (concatenate 'string template "XXXXXX")))
     (with-foreign-string (ptr (filename template))
       (values (%%sys-mkstemp ptr) (foreign-string-to-lisp ptr)))))
@@ -275,18 +298,20 @@
 ;;;-------------------------------------------------------------------------
 
 (defsyscall (%sys-mkdir "mkdir") :int
-  "Create a directory."
+  "Create directory PATH with permissions MODE."
   (path filename-designator)
   (mode mode-t))
 
 (defsyscall (%sys-rmdir "rmdir") :int
+  "Delete directory PATH."
   (path filename-designator))
 
 (defsyscall (%sys-chdir "chdir") :int
-  "Changes the current working directory"
+  "Change the current working directory to PATH."
   (path filename-designator))
 
 (defsyscall* (%sys-fchdir "fchdir") :int
+  "Change the current working directory to the directory referenced by FD."
   (fildes :int))
 
 (defsyscall (%%sys-getcwd "getcwd") :string
@@ -294,7 +319,7 @@
   (size size-t))
 
 (defentrypoint %sys-getcwd ()
-  "Returns the current working directory as a string."
+  "Return the current working directory as a string."
   (with-foreign-pointer (buf path-max size)
     (%%sys-getcwd buf size)))
 
@@ -302,6 +327,7 @@
   (template filename-designator))
 
 (defentrypoint %sys-mkdtemp (&optional (template ""))
+  "Generate a unique temporary filename from TEMPLATE."
   (let ((template (concatenate 'string template "XXXXXX")))
     (with-foreign-string (ptr (filename template))
       (values (%%sys-mkdtemp ptr) (foreign-string-to-lisp ptr)))))
@@ -312,27 +338,33 @@
 ;;;-------------------------------------------------------------------------
 
 (defsyscall (%sys-close "close") :int
-  "Close an open file descriptor."
+  "Close open file descriptor FD."
   (fd :int))
 
 (defsyscall (%sys-dup "dup") :int
-  (fildes :int))
+  "Duplicate file descriptor FD."
+  (fd :int))
 
 (defsyscall* (%sys-dup2 "dup2") :int
-  (fildes1 :int)
-  (fildes2 :int))
+  "Make NEWFD be the copy of OLDFD, closing NEWFD first if necessary."
+  (oldfd :int)
+  (newfd :int))
 
 (defsyscall* (%sys-ioctl/2 "ioctl") :int
+  "Send request REQUEST to file referenced by FD."
   (fd      :int)
   (request :int))
 
 (defsyscall* (%sys-ioctl/3 "ioctl") :int
+  "Send request REQUEST to file referenced by FD using argument ARG."
  (fd      :int)
  (request :int)
  (arg     :pointer))
 
 (defentrypoint %sys-fd-open-p (fd)
-  (not (minusp (%sys-fstat fd))))
+  (handler-case
+      (progn (%sys-fstat fd) t)
+    (ebadf () nil)))
 
 
 ;;;-------------------------------------------------------------------------
@@ -356,11 +388,11 @@
 ;;;-------------------------------------------------------------------------
 
 (defsyscall (%sys-opendir "opendir") :pointer
-  "Opens a directory for listing of its contents"
-  (filename filename-designator))
+  "Open directory PATH for listing of its contents."
+  (path filename-designator))
 
 (defsyscall (%sys-closedir "closedir") :int
-  "Closes a directory when done listing its contents"
+  "Close directory DIR when done listing its contents."
   (dir :pointer))
 
 (defcfun* (%%sys-readdir-r (#+linux "readdir64_r" "readdir_r"))
@@ -371,7 +403,7 @@
   (result :pointer))
 
 (defentrypoint %sys-readdir (dir)
-  "Reads an item from the listing of a directory (reentrant)"
+  "Reads an item from the listing of directory DIR (reentrant)."
   (with-foreign-objects ((entry 'dirent) (result :pointer))
     (%%sys-readdir-r dir entry result)
     (if (null-pointer-p (mem-ref result :pointer))
@@ -380,18 +412,18 @@
           (values (foreign-string-to-lisp name) type fileno)))))
 
 (defsyscall (%sys-rewinddir "rewinddir") :void
-  "Rewinds a directory."
+  "Rewind directory DIR."
   (dir :pointer))
 
 (defsyscall (%sys-seekdir "seekdir") :void
-  "Seeks a directory."
+  "Seek into directory DIR to position POS(as returned by TELLDIR)."
   (dir :pointer)
   (pos :long))
 
 ;;; FIXME: According to POSIX docs "no errors are defined" for
 ;;; telldir() but Linux manpages specify a possible EBADF.
 (defsyscall (%sys-telldir "telldir") off-t
-  "Returns the current location in a directory"
+  "Return the current location in directory DIR."
   (dir :pointer))
 
 
@@ -401,7 +433,12 @@
 
 (defsyscall (%sys-mmap (#+linux "mmap64" "mmap"))
     :pointer
-  (start  :pointer)
+  "Map file referenced by FD at offset OFFSET into address space of the
+calling process at address ADDR and length LENGTH.
+PROT describes the desired memory protection of the mapping.
+FLAGS determines whether updates to the mapping are visible to other
+processes mapping the same region."
+  (addr   :pointer)
   (length size-t)
   (prot   :int)
   (flags  :int)
@@ -409,9 +446,9 @@
   (offset off-t))
 
 (defsyscall (%sys-munmap "munmap") :int
-  "Unmap pages of memory."
-  (addr :pointer)
-  (len  size-t))
+  "Unmap pages of memory starting at address ADDR with length LENGTH."
+  (addr   :pointer)
+  (length size-t))
 
 
 ;;;-------------------------------------------------------------------------
@@ -431,46 +468,46 @@
   "Get real user id of the current process.")
 
 (defsyscall (%sys-setuid "setuid") :int
-  "Set real user id of the current process."
+  "Set real user id of the current process to UID."
   (uid uid-t))
 
 (defsyscall (%sys-geteuid "geteuid") uid-t
   "Get effective user id of the current process.")
 
 (defsyscall (%sys-seteuid "seteuid") :int
-  "Set effective user id of the current process."
+  "Set effective user id of the current process to UID."
   (uid uid-t))
 
 (defsyscall (%sys-getgid "getgid") gid-t
   "Get real group id of the current process.")
 
 (defsyscall (%sys-setgid "setgid") :int
-  "Set real group id of the current process."
+  "Set real group id of the current process to GID."
   (gid gid-t))
 
 (defsyscall (%sys-getegid "getegid") gid-t
   "Get effective group id of the current process.")
 
 (defsyscall (%sys-setegid "setegid") :int
-  "Set effective group id of the current process."
+  "Set effective group id of the current process to GID."
   (gid gid-t))
 
 (defsyscall (%sys-setreuid "setreuid") :int
-  "Set real and effective user id of the current process."
+  "Set real and effective user id of the current process to RUID and EUID."
   (ruid uid-t)
   (euid uid-t))
 
 (defsyscall (%sys-setregid "setregid") :int
-  "Set real and effective group id of the current process."
+  "Set real and effective group id of the current process to RGID and EGID."
   (rgid gid-t)
   (egid gid-t))
 
 (defsyscall (%sys-getpgid "getpgid") pid-t
-  "Get process group id of a process."
+  "Get process group id of process PID."
   (pid pid-t))
 
 (defsyscall (%sys-setpgid "setpgid") :int
-  "Set process group id of a process."
+  "Set process group id of process PID to value PGID."
   (pid  pid-t)
   (pgid pid-t))
 
@@ -489,6 +526,7 @@
   (rlimit   :pointer))
 
 (defentrypoint %sys-getrlimit (resource)
+  "Return soft and hard limit of system resource RESOURCE."
   (with-foreign-object (rl 'rlimit)
     (with-foreign-slots ((cur max) rl rlimit)
       (%%sys-getrlimit resource rl)
@@ -500,6 +538,7 @@
   (rlimit   :pointer))
 
 (defentrypoint %sys-setrlimit (resource soft-limit hard-limit)
+  "Set SOFT-LIMIT and HARD-LIMIT of system resource RESOURCE."
   (with-foreign-object (rl 'rlimit)
     (with-foreign-slots ((cur max) rl rlimit)
       (setf cur soft-limit
@@ -513,6 +552,7 @@
 ;;; TODO: it might be more convenient to return a wrapper object here
 ;;; instead like we do in STAT.
 (defentrypoint %sys-getrusage (who)
+  "Return resource usage measures of WHO."
   (with-foreign-object (ru 'rusage)
     (%%sys-getrusage who ru)
     (with-foreign-slots ((maxrss ixrss idrss isrss minflt majflt nswap inblock
@@ -531,10 +571,14 @@
               msgrcv nsignals nvcsw nivcsw))))
 
 (defsyscall (%sys-getpriority "getpriority") :int
+  "Get the scheduling priority of a process, process group, or user,
+as indicated by WHICH and WHO."
   (which :int)
   (who   :int))
 
 (defsyscall (%sys-setpriority "setpriority") :int
+  "Set the scheduling priority of a process, process group, or user,
+as indicated by WHICH and WHO to VALUE."
   (which :int)
   (who   :int)
   (value :int))
@@ -554,12 +598,14 @@
 ;;;-------------------------------------------------------------------------
 
 (defsyscall* (%sys-usleep "usleep") :int
+  "Suspend execution for USECONDS microseconds."
   (useconds useconds-t))
 
 (defsyscall (%%sys-time "time") time-t
   (tloc :pointer))
 
 (defentrypoint %sys-time ()
+  "Get time in seconds."
   (%%sys-time (null-pointer)))
 
 (defsyscall (%%sys-gettimeofday "gettimeofday") :int
@@ -572,43 +618,6 @@
     (with-foreign-slots ((sec usec) tv timeval)
       (%%sys-gettimeofday tv (null-pointer))
       (values sec usec))))
-
-;;; FIXME: or we can implement this through the MACH functions.
-#+darwin
-(progn
-  (defctype kern-return-t :int)
-  (defctype clock-res-t :int)
-  (defctype clock-id-t :int)
-  (defctype port-t :unsigned-int)         ; not sure
-  (defctype clock-serv-t port)
-
-  (defconstant kern-success 0)
-
-  (defconstant system-clock 0)
-  (defconstant calendar-clock 1)
-  (defconstant realtime-clock 0)
-
-  (defsyscall (%sys-mach-host-self "mach_host_self") port-t)
-
-  (defsyscall (%%sys-host-get-clock-service "host_get_clock_service") kern-return-t
-    (host port-t)
-    (id clock-id-t)
-    (clock-name (:pointer clock-serv-t)))
-
-  (defentrypoint %sys-host-get-clock-service (id &optional (host (%sys-mach-host-self)))
-    (with-foreign-object (clock 'clock-serv-t)
-      (%%sys-host-get-clock-service host id clock)
-      (mem-ref clock :int)))
-
-  (defsyscall (%clock-get-time "clock_get_time") kern-return-t
-    (clock-serv clock-serv-t)
-    (cur-time timespec))
-
-  (defentrypoint clock-get-time (clock-service)
-    (with-foreign-object (time 'timespec)
-      (%clock-get-time clock-service time)
-      (with-foreign-slots ((tv-sec tv-nsec) time timespec)
-        (values tv-sec tv-nsec)))))
 
 #-darwin
 (progn
@@ -645,6 +654,43 @@
         (%%sys-clock-settime clock-id ts)
         (values sec nsec)))))
 
+;;; FIXME: or we can implement this through the MACH functions.
+#+darwin
+(progn
+  (defctype kern-return-t :int)
+  (defctype clock-res-t :int)
+  (defctype clock-id-t :int)
+  (defctype port-t :unsigned-int)         ; not sure
+  (defctype clock-serv-t port)
+
+  (defconstant kern-success 0)
+
+  (defconstant system-clock 0)
+  (defconstant calendar-clock 1)
+  (defconstant realtime-clock 0)
+
+  (defsyscall (%sys-mach-host-self "mach_host_self") port-t)
+
+  (defsyscall (%%sys-host-get-clock-service "host_get_clock_service") kern-return-t
+    (host       port-t)
+    (id         clock-id-t)
+    (clock-name :pointer))
+
+  (defentrypoint %sys-host-get-clock-service (id &optional (host (%sys-mach-host-self)))
+    (with-foreign-object (clock 'clock-serv-t)
+      (%%sys-host-get-clock-service host id clock)
+      (mem-ref clock :int)))
+
+  (defsyscall (%clock-get-time "clock_get_time") kern-return-t
+    (clock-serv clock-serv-t)
+    (cur-time   timespec))
+
+  (defentrypoint clock-get-time (clock-service)
+    (with-foreign-object (time 'timespec)
+      (%clock-get-time clock-service time)
+      (with-foreign-slots ((tv-sec tv-nsec) time timespec)
+        (values tv-sec tv-nsec)))))
+
 (defentrypoint %sys-get-monotonic-time ()
   "Gets current time in seconds from a system's monotonic clock."
   (multiple-value-bind (seconds nanoseconds)
@@ -660,17 +706,18 @@
 (defcvar ("environ" :read-only t) (:pointer :string))
 
 (defsyscall (%sys-getenv "getenv") :string
-  "Returns the value of an environment variable"
+  "Returns the value of environment variable NAME."
   (name :string))
 
 (defsyscall (%sys-setenv "setenv") :int
-  "Changes the value of an environment variable"
+  "Changes the value of environment variable NAME to VALUE.
+The environment variable is overwritten only if overwrite it non-NIL."
   (name      :string)
   (value     :string)
   (overwrite bool-designator))
 
 (defsyscall (%sys-unsetenv "unsetenv") :int
-  "Removes the binding of an environment variable"
+  "Removes the binding of environment variable NAME."
   (name :string))
 
 
@@ -683,6 +730,7 @@
   (namelen size-t))
 
 (defentrypoint %sys-gethostname ()
+  "Return the host name of the current machine."
   (with-foreign-pointer-as-string ((cstr size) 256)
     (%%sys-gethostname cstr size)))
 
@@ -691,6 +739,7 @@
   (namelen size-t))
 
 (defentrypoint %sys-getdomainname ()
+  "Return the domain name of the current machine."
   (with-foreign-pointer-as-string ((cstr size) 256)
     (%%sys-getdomainname cstr size)))
 
@@ -744,11 +793,11 @@
             (values name passwd uid gid gecos dir shell))))))
 
 (defentrypoint %sys-getpwuid (uid)
-  "Gets the password-entry of a user, by user id. (reentrant)"
+  "Gets the password-entry of a user, by user id (reentrant)."
   (funcall-getpw #'%%sys-getpwuid-r uid))
 
 (defentrypoint %sys-getpwnam (name)
-  "Gets the password-entry of a user, by username. (reentrant)"
+  "Gets the password-entry of a user, by username (reentrant)."
   (funcall-getpw #'%%sys-getpwnam-r name))
 
 
@@ -784,9 +833,9 @@
             (values name passwd gid))))))
 
 (defentrypoint %sys-getgrgid (gid)
-  "Gets a group-entry, by group id. (reentrant)"
+  "Gets a group-entry, by group id (reentrant)."
   (funcall-getgr #'%%sys-getgrgid-r gid))
 
 (defentrypoint %sys-getgrnam (name)
-  "Gets a group-entry, by group name. (reentrant)"
+  "Gets a group-entry, by group name (reentrant)."
   (funcall-getgr #'%%sys-getgrnam-r name))
