@@ -51,15 +51,5 @@
     (make-condition (get-posix-error-condition error-keyword))))
 
 (declaim (inline posix-error))
-(defun posix-error (&optional (errno (%sys-errno)))
+(defun signal-posix-error (&optional (errno (%sys-errno)))
   (error (make-posix-error errno)))
-
-;;; Default ERROR-GENERATOR for ERRNO-WRAPPER.
-(declaim (inline signal-posix-error))
-(defun signal-posix-error (return-value)
-  (declare (ignore return-value))
-  (posix-error))
-
-(declaim (inline signal-posix-error-from-return-value))
-(defun signal-posix-error-from-return-value (return-value)
-  (posix-error return-value))

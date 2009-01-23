@@ -39,11 +39,13 @@
    #:repeat-decreasing-timeout
    #:repeat-upon-condition-decreasing-timeout
 
-   ;; Return wrapper
-   #:return-wrapper
+   ;; Syscall return wrapper
+   #:syscall-wrapper
    #:error-predicate-of
+   #:error-location-of
    #:return-filter-of
    #:error-generator-of
+   #:syscall-restart-p
    #:base-type-of
    #:never-fails
    #:signal-posix-error
@@ -53,7 +55,6 @@
    #:defentrypoint
    #:defcfun*
    #:defsyscall
-   #:defsyscall*
 
    ;;;--------------------------------------------------------------------------
    ;;; Syscalls

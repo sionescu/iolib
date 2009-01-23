@@ -77,28 +77,30 @@ The two memory areas may overlap."
 ;;; I/O
 ;;;-------------------------------------------------------------------------
 
-(defsyscall* (%sys-read "read") ssize-t
+(defsyscall (%sys-read "read")
+    (ssize-t :restart t)
   "Read at most COUNT bytes from FD into the foreign area BUF."
   (fd    :int)
   (buf   :pointer)
   (count size-t))
 
-(defsyscall* (%sys-write "write") ssize-t
+(defsyscall (%sys-write "write")
+    (ssize-t :restart t)
   "Write at most COUNT bytes to FD from the foreign area BUF."
   (fd    :int)
   (buf   :pointer)
   (count size-t))
 
-(defsyscall* (%sys-pread (#+linux "pread64" "pread"))
-    ssize-t
+(defsyscall (%sys-pread (#+linux "pread64" "pread"))
+    (ssize-t :restart t)
   "Read at most COUNT bytes from FD at offset OFFSET into the foreign area BUF."
   (fd     :int)
   (buf    :pointer)
   (count  size-t)
   (offset off-t))
 
-(defsyscall* (%sys-pwrite (#+linux "pwrite64" "pwrite"))
-    ssize-t
+(defsyscall (%sys-pwrite (#+linux "pwrite64" "pwrite"))
+    (ssize-t :restart t)
   "Write at most COUNT bytes to FD at offset OFFSET from the foreign area BUF."
   (fd     :int)
   (buf    :pointer)
@@ -110,7 +112,8 @@ The two memory areas may overlap."
 ;;; Files
 ;;;-------------------------------------------------------------------------
 
-(defsyscall* (%%sys-open "open") :int
+(defsyscall (%%sys-open "open")
+    (:int :restart t)
   (path  filename-designator)
   (flags :int)
   (mode  mode-t))
@@ -122,7 +125,8 @@ The two memory areas may overlap."
 \(default value is *DEFAULT-OPEN-MODE* - #o666)."
   (%%sys-open path flags mode))
 
-(defsyscall* (%sys-creat "creat") :int
+(defsyscall (%sys-creat "creat")
+    (:int :restart t)
   "Create file PATH with permissions MODE and return the new FD."
   (path filename-designator)
   (mode mode-t))
@@ -159,14 +163,14 @@ to the argument OFFSET according to the directive WHENCE."
   (path filename-designator)
   (mode :int))
 
-(defsyscall* (%sys-truncate (#+linux "truncate64" "truncate"))
-    :int
+(defsyscall (%sys-truncate (#+linux "truncate64" "truncate"))
+    (:int :restart t)
   "Truncate the file PATH to a size of precisely LENGTH octets."
   (path   filename-designator)
   (length off-t))
 
-(defsyscall* (%sys-ftruncate (#+linux "ftruncate64" "ftruncate"))
-    :int
+(defsyscall (%sys-ftruncate (#+linux "ftruncate64" "ftruncate"))
+    (:int :restart t)
   "Truncate the file referenced by FD to a size of precisely LENGTH octets."
   (fd     :int)
   (length off-t))
@@ -201,30 +205,35 @@ to the argument OFFSET according to the directive WHENCE."
   "Delete the file PATH from the file system."
   (path filename-designator))
 
-(defsyscall* (%sys-chown "chown") :int
+(defsyscall (%sys-chown "chown")
+    (:int :restart t)
   "Change ownership of file PATH to uid OWNER and gid GROUP(dereferences symlinks)."
   (path  filename-designator)
   (owner uid-t)
   (group uid-t))
 
-(defsyscall* (%sys-fchown "fchown") :int
+(defsyscall (%sys-fchown "fchown")
+    (:int :restart t)
   "Change ownership of an open file referenced by FD to uid OWNER and gid GROUP."
   (fd    :int)
   (owner uid-t)
   (group uid-t))
 
-(defsyscall* (%sys-lchown "lchown") :int
+(defsyscall (%sys-lchown "lchown")
+    (:int :restart t)
   "Change ownership of a file PATH to uid OWNER and gid GROUP(does not dereference symlinks)."
   (path  filename-designator)
   (owner uid-t)
   (group uid-t))
 
-(defsyscall* (%sys-chmod "chmod") :int
+(defsyscall (%sys-chmod "chmod")
+    (:int :restart t)
   "Change permissions of file PATH to mode MODE."
   (path filename-designator)
   (mode mode-t))
 
-(defsyscall* (%sys-fchmod "fchmod") :int
+(defsyscall (%sys-fchmod "fchmod")
+    (:int :restart t)
   "Change permissions of open file referenced by FD to mode MODE."
   (fd   :int)
   (mode mode-t))
@@ -279,7 +288,8 @@ to the argument OFFSET according to the directive WHENCE."
 (defsyscall (%sys-sync "sync") :void
   "Schedule all file system buffers to be written to disk.")
 
-(defsyscall* (%sys-fsync "fsync") :int
+(defsyscall (%sys-fsync "fsync")
+    (:int :restart t)
   "Schedule a file's buffers to be written to disk."
   (fildes :int))
 
@@ -310,7 +320,8 @@ to the argument OFFSET according to the directive WHENCE."
   "Change the current working directory to PATH."
   (path filename-designator))
 
-(defsyscall* (%sys-fchdir "fchdir") :int
+(defsyscall (%sys-fchdir "fchdir")
+    (:int :restart t)
   "Change the current working directory to the directory referenced by FD."
   (fildes :int))
 
@@ -345,17 +356,20 @@ to the argument OFFSET according to the directive WHENCE."
   "Duplicate file descriptor FD."
   (fd :int))
 
-(defsyscall* (%sys-dup2 "dup2") :int
+(defsyscall (%sys-dup2 "dup2")
+    (:int :restart t)
   "Make NEWFD be the copy of OLDFD, closing NEWFD first if necessary."
   (oldfd :int)
   (newfd :int))
 
-(defsyscall* (%sys-ioctl/2 "ioctl") :int
+(defsyscall (%sys-ioctl/2 "ioctl")
+    (:int :restart t)
   "Send request REQUEST to file referenced by FD."
   (fd      :int)
   (request :int))
 
-(defsyscall* (%sys-ioctl/3 "ioctl") :int
+(defsyscall (%sys-ioctl/3 "ioctl")
+    (:int :restart t)
   "Send request REQUEST to file referenced by FD using argument ARG."
  (fd      :int)
  (request :int)
@@ -395,9 +409,10 @@ to the argument OFFSET according to the directive WHENCE."
   "Close directory DIR when done listing its contents."
   (dir :pointer))
 
-(defcfun* (%%sys-readdir-r (#+linux "readdir64_r" "readdir_r"))
-    (return-wrapper :int :error-predicate (lambda (r) (not (zerop r)))
-                    :error-generator signal-posix-error-from-return-value)
+(defsyscall (%%sys-readdir-r (#+linux "readdir64_r" "readdir_r"))
+    (:int
+     :error-predicate plusp
+     :error-location :return)
   (dirp   :pointer)
   (entry  :pointer)
   (result :pointer))
@@ -597,7 +612,8 @@ as indicated by WHICH and WHO to VALUE."
 ;;; Time
 ;;;-------------------------------------------------------------------------
 
-(defsyscall* (%sys-usleep "usleep") :int
+(defsyscall (%sys-usleep "usleep")
+    (:int :restart t)
   "Suspend execution for USECONDS microseconds."
   (useconds useconds-t))
 
@@ -765,18 +781,20 @@ The environment variable is overwritten only if overwrite it non-NIL."
 ;;; User info
 ;;;-------------------------------------------------------------------------
 
-(defcfun (%%sys-getpwuid-r "getpwuid_r")
-    (return-wrapper :int :error-predicate (lambda (x) (not (zerop x)))
-                    :error-generator signal-posix-error-from-return-value)
+(defsyscall (%%sys-getpwuid-r "getpwuid_r")
+    (:int
+     :error-predicate plusp
+     :error-location :return)
   (uid     uid-t)
   (pwd     :pointer)
   (buffer  :pointer)
   (bufsize size-t)
   (result  :pointer))
 
-(defcfun (%%sys-getpwnam-r "getpwnam_r")
-    (return-wrapper :int :error-predicate (lambda (x) (not (zerop x)))
-                    :error-generator signal-posix-error-from-return-value)
+(defsyscall (%%sys-getpwnam-r "getpwnam_r")
+    (:int
+     :error-predicate plusp
+     :error-location :return)
   (name    :string)
   (pwd     :pointer)
   (buffer  :pointer)
@@ -806,8 +824,9 @@ The environment variable is overwritten only if overwrite it non-NIL."
 ;;;-------------------------------------------------------------------------
 
 (defsyscall (%%sys-getgrgid-r "getgrgid_r")
-    (return-wrapper :int :error-predicate (lambda (x) (not (zerop x)))
-                    :error-generator signal-posix-error-from-return-value)
+    (:int
+     :error-predicate plusp
+     :error-location :return)
   (uid     uid-t)
   (grp     :pointer)
   (buffer  :pointer)
@@ -815,8 +834,9 @@ The environment variable is overwritten only if overwrite it non-NIL."
   (result  :pointer))
 
 (defsyscall (%%sys-getgrnam-r "getgrnam_r")
-    (return-wrapper :int :error-predicate (lambda (x) (not (zerop x)))
-                    :error-generator signal-posix-error-from-return-value)
+    (:int
+     :error-predicate plusp
+     :error-location :return)
   (name    :string)
   (grp     :pointer)
   (buffer  :pointer)
