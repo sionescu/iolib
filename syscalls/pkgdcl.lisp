@@ -56,9 +56,9 @@
    #:defcfun*
    #:defsyscall
 
-   ;;;--------------------------------------------------------------------------
-   ;;; Syscalls
-   ;;;--------------------------------------------------------------------------
+;;;--------------------------------------------------------------------------
+;;; Syscalls
+;;;--------------------------------------------------------------------------
 
    ;; Specials
    #:*default-open-mode*
@@ -122,7 +122,19 @@
    #:%sys-fd-open-p
 
    ;; I/O Polling
+   #:%sys-select
+   #:%sys-fd-zero
+   #:%sys-copy-fd-set
+   #:%sys-fd-isset
+   #:%sys-fd-clr
+   #:%sys-fd-set
    #:%sys-poll
+   #+linux #:%sys-epoll-create
+   #+linux #:%sys-epoll-ctl
+   #+linux #:%sys-epoll-wait
+   #+bsd #:%sys-kqueue
+   #+bsd #:%sys-kevent
+   #+bsd #:%sys-ev-set
 
    ;; Directory walking
    #:%sys-opendir
@@ -192,9 +204,9 @@
    #:%sys-cmsg-firsthdr
    #:%sys-cmsg-data
 
-   ;;;--------------------------------------------------------------------------
-   ;;; Foreign types and constants
-   ;;;--------------------------------------------------------------------------
+;;;--------------------------------------------------------------------------
+;;; Foreign types and constants
+;;;--------------------------------------------------------------------------
 
    ;; Primitive type sizes
    #:size-of-char
@@ -288,6 +300,9 @@
    #:map-fixed
    #:map-failed
 
+   ;; SELECT()
+   #:fd-setsize
+
    ;; POLL()
    #:pollin
    #:pollrdnorm
@@ -301,11 +316,88 @@
    #:pollhup
    #:pollnval
 
+   ;; EPOLL
+   #+linux #:epoll-ctl-add
+   #+linux #:epoll-ctl-del
+   #+linux #:epoll-ctl-mod
+   #+linux #:epollin
+   #+linux #:epollrdnorm
+   #+linux #:epollrdband
+   #+linux #:epollpri
+   #+linux #:epollout
+   #+linux #:epollwrnorm
+   #+linux #:epollwrband
+   #+linux #:epollerr
+   #+linux #:epollhup
+   #+linux #:epollmsg
+   #+linux #:epolloneshot
+   #+linux #:epollet
+
+   ;; KEVENT
+   #+bsd #:ev-add
+   #+bsd #:ev-enable
+   #+bsd #:ev-disable
+   #+bsd #:ev-delete
+   #+bsd #:ev-oneshot
+   #+bsd #:ev-clear
+   #+bsd #:ev-eof
+   #+bsd #:ev-error
+   #+bsd #:evfilt-read
+   #+bsd #:evfilt-write
+   #+bsd #:evfilt-aio
+   #+bsd #:evfilt-vnode
+   #+bsd #:evfilt-proc
+   #+bsd #:evfilt-signal
+   #+bsd #:evfilt-timer
+   #+(and bsd (not darwin)) #:evfilt-netdev
+   #+bsd #:note-delete
+   #+bsd #:note-write
+   #+bsd #:note-extend
+   #+bsd #:note-attrib
+   #+bsd #:note-link
+   #+bsd #:note-rename
+   #+bsd #:note-revoke
+   #+bsd #:note-exit
+   #+bsd #:note-fork
+   #+bsd #:note-exec
+   #+bsd #:note-track
+   #+bsd #:note-trackerr
+   #+(and bsd (not darwin)) #:note-linkup
+   #+(and bsd (not darwin)) #:note-linkdown
+   #+(and bsd (not darwin)) #:note-linkinv
+
    ;; IOCTL()
    #:fionbio
    #:fionread
 
-   ;;; Structs
+   ;; GETRLIMIT()
+   #:prio-process
+   #:prio-pgrp
+   #:prio-user
+   #:rlim-infinity
+   #:rusage-self
+   #:rusage-children
+   #:rlimit-as
+   #:rlimit-core
+   #:rlimit-cpu
+   #:rlimit-data
+   #:rlimit-fsize
+   #:rlimit-memlock
+   #:rlimit-nofile
+   #:rlimit-nproc
+   #:rlimit-rss
+   #:rlimit-stack
+   #+linux #:rlim-saved-max
+   #+linux #:rlim-saved-cur
+   #+linux #:rlimit-locks
+   #+linux #:rlimit-msgqueue
+   #+linux #:rlimit-nlimits
+   #+linux #:rlimit-nice
+   #+linux #:rlimit-rtprio
+   #+linux #:rlimit-sigpending
+   #+bsd #:rlimit-sbsize
+
+;;; Structs
 
    ;; timespec
    #:timespec #:size-of-timespec
@@ -333,11 +425,35 @@
    #:mtime #:stat-mtime
    #:ctime #:stat-ctime
 
+   ;; fd_set
+   #:fd-set #:size-of-fd-set
+
    ;; pollfd
    #:pollfd #:size-of-pollfd
    #:fd
    #:events
    #:revents
+
+   ;; epoll_data
+   #+linux #:epoll-data #+linux #:size-of-epoll-data
+   #+linux #:ptr
+   #+linux #:fd
+   #+linux #:u32
+   #+linux #:u64
+
+   ;; epoll_event
+   #+linux #:epoll-event #+linux #:size-of-epoll-event
+   #+linux #:events
+   #+linux #:data
+
+   ;; kevent
+   #+bsd #:kevent #+bsd #:size-of-kevent
+   #+bsd #:ident
+   #+bsd #:filter
+   #+bsd #:flags
+   #+bsd #:fflags
+   #+bsd #:data
+   #+bsd #:udata
 
    ;; Syscall error codes
    #:errno-values

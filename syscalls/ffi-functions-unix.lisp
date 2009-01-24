@@ -385,6 +385,44 @@ to the argument OFFSET according to the directive WHENCE."
 ;;; File descriptor polling
 ;;;-------------------------------------------------------------------------
 
+(defsyscall (%sys-select "select") :int
+  "Scan for I/O activity on multiple file descriptors."
+  (nfds      :int)
+  (readfds   :pointer)
+  (writefds  :pointer)
+  (exceptfds :pointer)
+  (timeout   :pointer))
+
+(defentrypoint %sys-fd-zero (fd-set)
+  (%sys-bzero fd-set size-of-fd-set)
+  (values fd-set))
+
+(defentrypoint %sys-copy-fd-set (from to)
+  (%sys-memcpy to from size-of-fd-set)
+  (values to))
+
+(deftype select-file-descriptor ()
+  `(mod #.fd-setsize))
+
+(defentrypoint %sys-fd-isset (fd fd-set)
+  (multiple-value-bind (byte-off bit-off) (floor fd 8)
+    (let ((oldval (mem-aref fd-set :uint8 byte-off)))
+      (logbitp bit-off oldval))))
+
+(defentrypoint %sys-fd-clr (fd fd-set)
+  (multiple-value-bind (byte-off bit-off) (floor fd 8)
+    (let ((oldval (mem-aref fd-set :uint8 byte-off)))
+      (setf (mem-aref fd-set :uint8 byte-off)
+            (logandc2 oldval (ash 1 bit-off)))))
+  (values fd-set))
+
+(defentrypoint %sys-fd-set (fd fd-set)
+  (multiple-value-bind (byte-off bit-off) (floor fd 8)
+    (let ((oldval (mem-aref fd-set :uint8 byte-off)))
+      (setf (mem-aref fd-set :uint8 byte-off)
+            (logior oldval (ash 1 bit-off)))))
+  (values fd-set))
+
 ;;; FIXME: Until a way to autodetect platform features is implemented
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unless (boundp 'pollrdhup)
@@ -395,6 +433,45 @@ to the argument OFFSET according to the directive WHENCE."
   (fds     :pointer)
   (nfds    nfds-t)
   (timeout :int))
+
+#+linux
+(progn
+  (defsyscall (%sys-epoll-create "epoll_create") :int
+    "Open an epoll file descriptor."
+    (size :int))
+
+  (defsyscall (%sys-epoll-ctl "epoll_ctl") :int
+    "Control interface for an epoll descriptor."
+    (epfd  :int)
+    (op    :int)
+    (fd    :int)
+    (event :pointer))
+
+  (defsyscall (%sys-epoll-wait "epoll_wait") :int
+    "Wait for an I/O event on an epoll file descriptor."
+    (epfd      :int)
+    (events    :pointer)
+    (maxevents :int)
+    (timeout   :int)))
+
+#+bsd
+(progn
+  (defsyscall (%sys-kqueue "kqueue") :int
+    "Open a kernel event queue.")
+
+  (defsyscall (%sys-kevent "kevent") :int
+    "Control interface for a kernel event queue."
+    (kq         :int)
+    (changelist :pointer)               ; const struct kevent *
+    (nchanges   :int)
+    (eventlist  :pointer)               ; struct kevent *
+    (nevents    :int)
+    (timeout    :pointer))              ; const struct timespec *
+
+  (defentrypoint %sys-ev-set (%kev %ident %filter %flags %fflags %data %udata)
+    (with-foreign-slots ((ident filter flags fflags data udata) %kev kevent)
+      (setf ident %ident filter %filter flags %flags
+            fflags %fflags data %data udata %udata))))
 
 
 ;;;-------------------------------------------------------------------------

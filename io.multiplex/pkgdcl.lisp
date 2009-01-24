@@ -8,9 +8,6 @@
 (defpackage :io.multiplex
   (:nicknames #:iomux)
   (:use :iolib.base :cffi)
-  (:import-from #:osicat-posix #:defsyscall #:bzero
-                #:file-descriptor-designator
-                #:timeval #:sec #:usec)
   (:export
    ;; Classes
    #:event-base

@@ -6,20 +6,23 @@
 (in-package :io.multiplex)
 
 (defun timeout->timeval (timeout tv)
-  (with-foreign-slots ((sec usec) tv timeval)
-    (multiple-value-bind (%sec %usec) (decode-timeout timeout)
-     (setf sec  %sec
-           usec %usec))))
+  (with-foreign-slots ((isys:sec isys:usec) tv isys:timeval)
+    (multiple-value-bind (%sec %usec)
+        (decode-timeout timeout)
+     (setf isys:sec  %sec
+           isys:usec %usec))))
 
 (defun timeout->timespec (timeout ts)
-  (with-foreign-slots ((sec nsec) ts timespec)
-    (multiple-value-bind (%sec %usec) (decode-timeout timeout)
-      (setf sec  %sec
-            nsec (* 1000 %usec)))))
+  (with-foreign-slots ((isys:sec isys:nsec) ts isys:timespec)
+    (multiple-value-bind (%sec %usec)
+        (decode-timeout timeout)
+      (setf isys:sec  %sec
+            isys:nsec (* 1000 %usec)))))
 
 (defun timeout->milisec (timeout)
   (if timeout
-      (multiple-value-bind (sec usec) (decode-timeout timeout)
+      (multiple-value-bind (sec usec)
+          (decode-timeout timeout)
         (+ (* sec 1000)
            (truncate usec 1000)))
       -1))

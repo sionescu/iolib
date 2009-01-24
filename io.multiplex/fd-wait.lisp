@@ -5,11 +5,6 @@
 
 (in-package :io.multiplex)
 
-;;; FIXME: Until a way to autodetect platform features is implemented
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (unless (boundp 'pollrdhup)
-    (defconstant pollrdhup 0)))
-
 (define-condition poll-error (error)
   ((fd :initarg :fd :reader poll-error-fd)
    (identifier :initarg :identifier :initform "Unknown error"
@@ -35,19 +30,19 @@ of a file descriptor."))
 
 (defun compute-poll-flags (type)
   (ecase type
-    (:input  (logior pollin pollrdhup pollpri))
-    (:output (logior pollout))
-    (:io     (logior pollin pollrdhup pollpri pollout))))
+    (:input  (logior isys:pollin isys:pollrdhup isys:pollpri))
+    (:output (logior isys:pollout))
+    (:io     (logior isys:pollin isys:pollrdhup isys:pollpri isys:pollout))))
 
 (defun process-poll-revents (revents fd)
   (let ((readp nil) (writep nil))
     (flags-case revents
-      ((pollin pollrdhup pollpri)
+      ((isys:pollin isys:pollrdhup isys:pollpri)
        (setf readp t))
-      ((pollout pollhup) (setf writep t))
-      ((pollerr) (error 'poll-error :fd fd))
-      ((pollnval) (error 'poll-error :fd fd
-                         :identifier "Invalid file descriptor")))
+      ((isys:pollout isys:pollhup) (setf writep t))
+      ((isys:pollerr) (error 'poll-error :fd fd))
+      ((isys:pollnval) (error 'poll-error :fd fd
+                              :identifier "Invalid file descriptor")))
     (values readp writep)))
 
 (defun wait-until-fd-ready (file-descriptor event-type &optional timeout errorp)
@@ -59,22 +54,22 @@ occurs, then a condition of type `POLL-TIMEOUT' is signaled.
 Returns two boolean values indicating readability and writeability of `FILE-DESCRIPTOR'."
   (flet ((poll-error (unix-err)
            (error 'poll-error :fd file-descriptor
-                  :identifier (osicat-sys:system-error-identifier unix-err))))
-    (with-foreign-object (pollfd 'pollfd)
-      (bzero pollfd size-of-pollfd)
-      (with-foreign-slots ((fd events revents) pollfd pollfd)
-        (setf fd file-descriptor
-              events (compute-poll-flags event-type))
+                  :identifier (isys:identifier-of unix-err))))
+    (with-foreign-object (pollfd 'isys:pollfd)
+      (isys:%sys-bzero pollfd isys:size-of-pollfd)
+      (with-foreign-slots ((isys:fd isys:events isys:revents) pollfd isys:pollfd)
+        (setf isys:fd     file-descriptor
+              isys:events (compute-poll-flags event-type))
         (handler-case
-            (let ((ret (nix:repeat-upon-condition-decreasing-timeout
-                           ((nix:eintr) remaining-time timeout)
-                         (poll pollfd 1 (timeout->milisec remaining-time)))))
+            (let ((ret (isys:repeat-upon-condition-decreasing-timeout
+                           ((isys:eintr) remaining-time timeout)
+                         (isys:%sys-poll pollfd 1 (timeout->milisec remaining-time)))))
               (when (zerop ret)
                 (if errorp
                     (error 'poll-timeout :fd file-descriptor :event-type event-type)
                     (return* (values nil nil)))))
-          (nix:posix-error (err) (poll-error err)))
-        (process-poll-revents revents file-descriptor)))))
+          (isys:posix-error (err) (poll-error err)))
+        (process-poll-revents isys:revents file-descriptor)))))
 
 (defun fd-ready-p (fd &optional (event-type :input))
   "Tests file-descriptor `FD' for I/O readiness.

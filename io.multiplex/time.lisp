@@ -8,7 +8,7 @@
 ;;;; Timeouts
 
 (defun abs-timeout (timeout)
-  (+ (osicat:get-monotonic-time) (normalize-timeout timeout)))
+  (+ (isys:%sys-get-monotonic-time) (normalize-timeout timeout)))
 
 (defun min-timeout (&rest timeouts)
   (let* ((good-timeout-start (member-if-not #'null timeouts))

@@ -13,8 +13,8 @@
 
 (defun get-fd-limit ()
   "Return the maximum number of FDs available for the current process."
-  (let ((fd-limit (nix:getrlimit nix:rlimit-nofile)))
-    (unless (eql fd-limit nix:rlim-infinity)
+  (let ((fd-limit (isys:%sys-getrlimit isys:rlimit-nofile)))
+    (unless (eql fd-limit isys:rlim-infinity)
       (1- fd-limit))))
 
 (defclass multiplexer ()
@@ -57,7 +57,7 @@ Returns a list of fd/result pairs which have one of these forms:
 
 (defmethod close-multiplexer progn ((mux multiplexer))
   (when (and (slot-boundp mux 'fd) (not (null (fd-of mux))))
-    (nix:close (fd-of mux))
+    (isys:%sys-close (fd-of mux))
     (setf (slot-value mux 'fd) nil))
   (values mux))
 
