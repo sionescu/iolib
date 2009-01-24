@@ -90,7 +90,7 @@
                                  as-directory expand-user)
   (let* ((actual-namestring (subseq namestring start end))
          (expansion (or (when expand-user
-                          (ignore-some-conditions (isys:posix-error)
+                          (ignore-some-conditions (isys:syscall-error)
                             (%expand-user-directory actual-namestring)))
                         actual-namestring))
          (components (remove "." (split-directory-namestring expansion)
@@ -140,7 +140,7 @@
     (let ((dirs (split-directory-namestring
                  (handler-case
                      (%expand-user-directory (second directory))
-                   (isys:posix-error () (return* path))))))
+                   (isys:syscall-error () (return* path))))))
       (setf directory
             (append (list :absolute) dirs (cddr directory)))))
   (values path))
@@ -151,9 +151,9 @@
 ;;;-------------------------------------------------------------------------
 
 (defparameter *default-file-path-defaults*
-  (or (ignore-some-conditions (isys:posix-error)
+  (or (ignore-some-conditions (isys:syscall-error)
         (parse-file-path (isys:%sys-getcwd) :as-directory t))
-      (ignore-some-conditions (isys:posix-error)
+      (ignore-some-conditions (isys:syscall-error)
         (parse-file-path (%expand-user-directory "~") :as-directory t))
       (parse-file-path "/")))
 

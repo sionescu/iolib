@@ -66,7 +66,7 @@ Returns two boolean values indicating readability and writeability of `FD'."
                (error 'poll-timeout
                       :os-handle file-descriptor
                       :event-type event-type)))
-          (posix-error (err) (poll-error err)))))))
+          (syscall-error (err) (poll-error err)))))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -78,8 +78,8 @@ Returns two boolean values indicating readability and writeability of `FD'."
   (handler-case
       (with-foreign-object (arg :int)
         (setf (mem-aref arg :int) 1)
-        (%sys-ioctl/3 fd fionbio arg))
-    (posix-error (err)
+        (%sys-ioctl fd fionbio arg))
+    (syscall-error (err)
       (posix-file-error err *device* "issuing FIONBIO IOCTL on")))
   (values))
 
@@ -92,9 +92,9 @@ Returns two boolean values indicating readability and writeability of `FD'."
   (declare (special *device*))
   (handler-case
       (with-foreign-object (arg :int)
-        (%sys-ioctl/3 fd fionread arg)
+        (%sys-ioctl fd fionread arg)
         (mem-aref arg :int))
-    (posix-error (err)
+    (syscall-error (err)
       (posix-file-error err *device* "issuing FIONREAD IOCTL on"))))
 
 
@@ -109,7 +109,7 @@ Returns two boolean values indicating readability and writeability of `FD'."
     (handler-case
         (%sys-read fd (inc-pointer buf start) (- end start))
       (ewouldblock () 0)
-      (posix-error (err)
+      (syscall-error (err)
         (posix-file-error err *device* "reading data from"))
       (:no-error (nbytes)
         (if (zerop nbytes) :eof nbytes)))))
@@ -126,7 +126,7 @@ Returns two boolean values indicating readability and writeability of `FD'."
         (handler-case
             (%sys-read fd (inc-pointer buf start) (- end start))
           (ewouldblock () (check-timeout))
-          (posix-error (err)
+          (syscall-error (err)
             (posix-file-error err *device* "reading data from"))
           (:no-error (nbytes)
             (return-from :rloop
@@ -145,7 +145,7 @@ Returns two boolean values indicating readability and writeability of `FD'."
         (%sys-write fd (inc-pointer buf start) (- end start))
       (ewouldblock () 0)
       (epipe () :hangup)
-      (posix-error (err)
+      (syscall-error (err)
         (posix-file-error err *device* "writing data to"))
       (:no-error (nbytes)
         (if (zerop nbytes) :hangup nbytes)))))
@@ -163,7 +163,7 @@ Returns two boolean values indicating readability and writeability of `FD'."
             (%sys-write fd (inc-pointer buf start) (- end start))
           (ewouldblock () (check-timeout))
           (epipe () (return-from :rloop :hangup))
-          (posix-error (err)
+          (syscall-error (err)
             (posix-file-error err *device* "writing data to"))
           (:no-error (nbytes)
             (return-from :rloop

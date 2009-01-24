@@ -36,6 +36,7 @@
    (error-generator :initarg :error-generator :reader error-generator-of)
    (restart :initarg :restart :reader syscall-restart-p)
    (handle :initarg :handle :reader handle-of)
+   (handle2 :initarg :handle2 :reader handle2-of)
    (base-type :initarg :base-type :reader base-type-of)))
 
 (defun default-error-predicate (base-type)
@@ -56,22 +57,23 @@
         (error "Could not choose an error-predicate function."))))))
 
 (define-parse-method syscall-wrapper
-    (base-type &key handle (restart nil restart-p)
+    (base-type &key handle handle2 (restart nil restart-p)
      (error-predicate 'never-fails error-predicate-p)
      (error-location :errno)
      (return-filter 'identity)
-     (error-generator 'signal-posix-error))
+     (error-generator 'signal-syscall-error))
   ;; pick a default error-predicate
   (unless error-predicate-p
     (setf error-predicate (default-error-predicate base-type)))
   (when (and (not restart-p) (eql 't restart))
-    (setf error-generator 'signal-posix-error/restart))
+    (setf error-generator 'signal-syscall-error/restart))
   (unless (or (eql 'never-fails error-predicate) error-generator)
     (error "Function can fail but no error-generator suplied."))
   (make-instance 'syscall-wrapper
                  :actual-type base-type
                  :base-type base-type
                  :handle handle
+                 :handle2 handle2
                  :restart restart
                  :error-predicate error-predicate
                  :error-location error-location
@@ -100,7 +102,8 @@
                            (if (eql 'never-fails (error-predicate-of type))
                                `return-val-exp
                                `(if (,(error-predicate-of type) ,retval)
-                                    (,(error-generator-of type) ,errno ,(handle-of type))
+                                    (,(error-generator-of type) ,errno
+                                      ,(handle-of type) ,(handle2-of type))
                                     ,return-val-exp))))
                          (if (syscall-restart-p type)
                              `(return-from ,block ,return-exp)
@@ -111,10 +114,10 @@
                     ,foreign-call))
               foreign-call)))))
 
-(defmacro signal-posix-error/restart (errno)
+(defmacro signal-syscall-error/restart (errno)
   `(if (= eintr ,errno)
        (go :restart)
-       (signal-posix-error ,errno)))
+       (signal-syscall-error ,errno)))
 
 
 (defun foreign-name (spec &optional varp)

@@ -35,13 +35,16 @@
     (with-foreign-pointer-as-string ((buf bufsiz) 1024)
       (%%sys-strerror-r errno buf bufsiz))))
 
-(defmethod print-object ((e posix-error) stream)
-  (print-unreadable-object (e stream :type nil :identity nil)
-    (let ((code (code-of e))
-          (identifier (identifier-of e)))
-      (format stream "System-Error ~A(~S) ~S"
-              identifier (or code "[No code]")
-              (or (%sys-strerror code) "[Can't get error string.]")))))
+(defmethod print-object ((e syscall-error) stream)
+  (let ((code (code-of e))
+        (identifier (identifier-of e))
+        (message (message-of e)))
+    (if message
+        (format stream "~A" message)
+        (print-unreadable-object (e stream :type nil :identity nil)
+          (format stream "System-Error ~A(~S) ~S"
+                  identifier (or code "[No code]")
+                  (or (%sys-strerror code) "[Can't get error string.]"))))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -78,21 +81,21 @@ The two memory areas may overlap."
 ;;;-------------------------------------------------------------------------
 
 (defsyscall (%sys-read "read")
-    (ssize-t :restart t)
+    (ssize-t :restart t :handle fd)
   "Read at most COUNT bytes from FD into the foreign area BUF."
   (fd    :int)
   (buf   :pointer)
   (count size-t))
 
 (defsyscall (%sys-write "write")
-    (ssize-t :restart t)
+    (ssize-t :restart t :handle fd)
   "Write at most COUNT bytes to FD from the foreign area BUF."
   (fd    :int)
   (buf   :pointer)
   (count size-t))
 
 (defsyscall (%sys-pread (#+linux "pread64" "pread"))
-    (ssize-t :restart t)
+    (ssize-t :restart t :handle fd)
   "Read at most COUNT bytes from FD at offset OFFSET into the foreign area BUF."
   (fd     :int)
   (buf    :pointer)
@@ -100,7 +103,7 @@ The two memory areas may overlap."
   (offset off-t))
 
 (defsyscall (%sys-pwrite (#+linux "pwrite64" "pwrite"))
-    (ssize-t :restart t)
+    (ssize-t :restart t :handle fd)
   "Write at most COUNT bytes to FD at offset OFFSET from the foreign area BUF."
   (fd     :int)
   (buf    :pointer)
@@ -132,14 +135,14 @@ The two memory areas may overlap."
   (mode mode-t))
 
 (defsyscall (%%sys-pipe "pipe") :int
-  (filedes :pointer))
+  (fds :pointer))
 
 (defentrypoint %sys-pipe ()
   "Create pipe, returns two values with the new FDs."
-  (with-foreign-object (filedes :int 2)
-    (%%sys-pipe filedes)
-    (values (mem-aref filedes :int 0)
-            (mem-aref filedes :int 1))))
+  (with-foreign-object (fds :int 2)
+    (%%sys-pipe fds)
+    (values (mem-aref fds :int 0)
+            (mem-aref fds :int 1))))
 
 (defsyscall (%sys-mkfifo "mkfifo") :int
   "Create a FIFO (named pipe) with name PATH and permissions MODE."
@@ -151,7 +154,7 @@ The two memory areas may overlap."
   (new-mode mode-t))
 
 (defsyscall (%sys-lseek (#+linux "lseek64" "lseek"))
-    off-t
+    (off-t :handle fd)
   "Reposition the offset of the open file associated with the file descriptor FD
 to the argument OFFSET according to the directive WHENCE."
   (fd     :int)
@@ -170,7 +173,7 @@ to the argument OFFSET according to the directive WHENCE."
   (length off-t))
 
 (defsyscall (%sys-ftruncate (#+linux "ftruncate64" "ftruncate"))
-    (:int :restart t)
+    (:int :restart t :handle fd)
   "Truncate the file referenced by FD to a size of precisely LENGTH octets."
   (fd     :int)
   (length off-t))
@@ -213,7 +216,7 @@ to the argument OFFSET according to the directive WHENCE."
   (group uid-t))
 
 (defsyscall (%sys-fchown "fchown")
-    (:int :restart t)
+    (:int :restart t :handle fd)
   "Change ownership of an open file referenced by FD to uid OWNER and gid GROUP."
   (fd    :int)
   (owner uid-t)
@@ -233,7 +236,7 @@ to the argument OFFSET according to the directive WHENCE."
   (mode mode-t))
 
 (defsyscall (%sys-fchmod "fchmod")
-    (:int :restart t)
+    (:int :restart t :handle fd)
   "Change permissions of open file referenced by FD to mode MODE."
   (fd   :int)
   (mode mode-t))
@@ -253,10 +256,10 @@ to the argument OFFSET according to the directive WHENCE."
   (buf       :pointer))
 
 (defsyscall (%%sys-fstat (#+linux "__fxstat64" "fstat"))
-    :int
+    (:int :handle fd)
   #+linux
-  (version   :int)
-  (filedes :int)
+  (version :int)
+  (fd      :int)
   (buf     :pointer))
 
 (defsyscall (%%sys-lstat (#+linux "__lxstat64" "lstat"))
@@ -291,7 +294,7 @@ to the argument OFFSET according to the directive WHENCE."
 (defsyscall (%sys-fsync "fsync")
     (:int :restart t)
   "Schedule a file's buffers to be written to disk."
-  (fildes :int))
+  (fd :int))
 
 (defsyscall (%%sys-mkstemp "mkstemp") :int
   (template filename-designator))
@@ -321,9 +324,9 @@ to the argument OFFSET according to the directive WHENCE."
   (path filename-designator))
 
 (defsyscall (%sys-fchdir "fchdir")
-    (:int :restart t)
+    (:int :restart t :handle fd)
   "Change the current working directory to the directory referenced by FD."
-  (fildes :int))
+  (fd :int))
 
 (defsyscall (%%sys-getcwd "getcwd") :string
   (buf :pointer)
@@ -348,32 +351,37 @@ to the argument OFFSET according to the directive WHENCE."
 ;;; File Descriptors
 ;;;-------------------------------------------------------------------------
 
-(defsyscall (%sys-close "close") :int
+(defsyscall (%sys-close "close")
+    (:int :handle fd)
   "Close open file descriptor FD."
   (fd :int))
 
-(defsyscall (%sys-dup "dup") :int
+(defsyscall (%sys-dup "dup")
+    (:int :handle fd)
   "Duplicate file descriptor FD."
   (fd :int))
 
 (defsyscall (%sys-dup2 "dup2")
-    (:int :restart t)
+    (:int :restart t :handle oldfd :handle2 newfd)
   "Make NEWFD be the copy of OLDFD, closing NEWFD first if necessary."
   (oldfd :int)
   (newfd :int))
 
-(defsyscall (%%sys-fcntl/noarg "fcntl") :int
+(defsyscall (%%sys-fcntl/noarg "fcntl")
+    (:int :handle fd)
   (fd  :int)
   (cmd :int))
 
 ;;; FIXME: Linux/glibc says ARG's type is long, POSIX says it's int.
 ;;; Is this an issue?
-(defsyscall (%%sys-fcntl/int "fcntl") :int
+(defsyscall (%%sys-fcntl/int "fcntl")
+    (:int :handle fd)
   (fd  :int)
   (cmd :int)
   (arg :int))
 
-(defsyscall (%%sys-fcntl/pointer "fcntl") :int
+(defsyscall (%%sys-fcntl/pointer "fcntl")
+    (:int :handle fd)
   (fd  :int)
   (cmd :int)
   (arg :pointer))
@@ -386,13 +394,13 @@ to the argument OFFSET according to the directive WHENCE."
     (t (error "Wrong argument to fcntl: ~S" arg))))
 
 (defsyscall (%%sys-ioctl/noarg "ioctl")
-    (:int :restart t)
+    (:int :restart t :handle fd)
   "Send request REQUEST to file referenced by FD."
   (fd      :int)
   (request :int))
 
 (defsyscall (%%sys-ioctl/pointer "ioctl")
-    (:int :restart t)
+    (:int :restart t :handle fd)
   "Send request REQUEST to file referenced by FD using argument ARG."
  (fd      :int)
  (request :int)
@@ -470,14 +478,16 @@ to the argument OFFSET according to the directive WHENCE."
     "Open an epoll file descriptor."
     (size :int))
 
-  (defsyscall (%sys-epoll-ctl "epoll_ctl") :int
+  (defsyscall (%sys-epoll-ctl "epoll_ctl")
+      (:int :handle epfd :handle2 fd)
     "Control interface for an epoll descriptor."
     (epfd  :int)
     (op    :int)
     (fd    :int)
     (event :pointer))
 
-  (defsyscall (%sys-epoll-wait "epoll_wait") :int
+  (defsyscall (%sys-epoll-wait "epoll_wait")
+      (:int :handle epfd)
     "Wait for an I/O event on an epoll file descriptor."
     (epfd      :int)
     (events    :pointer)
@@ -489,9 +499,10 @@ to the argument OFFSET according to the directive WHENCE."
   (defsyscall (%sys-kqueue "kqueue") :int
     "Open a kernel event queue.")
 
-  (defsyscall (%sys-kevent "kevent") :int
+  (defsyscall (%sys-kevent "kevent")
+      (:int :handle fd)
     "Control interface for a kernel event queue."
-    (kq         :int)
+    (fd         :int)
     (changelist :pointer)               ; const struct kevent *
     (nchanges   :int)
     (eventlist  :pointer)               ; struct kevent *
@@ -514,7 +525,7 @@ to the argument OFFSET according to the directive WHENCE."
 
 (defsyscall (%sys-closedir "closedir") :int
   "Close directory DIR when done listing its contents."
-  (dir :pointer))
+  (dirp :pointer))
 
 (defsyscall (%%sys-readdir-r (#+linux "readdir64_r" "readdir_r"))
     (:int
@@ -535,18 +546,18 @@ to the argument OFFSET according to the directive WHENCE."
 
 (defsyscall (%sys-rewinddir "rewinddir") :void
   "Rewind directory DIR."
-  (dir :pointer))
+  (dirp :pointer))
 
 (defsyscall (%sys-seekdir "seekdir") :void
   "Seek into directory DIR to position POS(as returned by TELLDIR)."
-  (dir :pointer)
-  (pos :long))
+  (dirp :pointer)
+  (pos  :long))
 
 ;;; FIXME: According to POSIX docs "no errors are defined" for
 ;;; telldir() but Linux manpages specify a possible EBADF.
 (defsyscall (%sys-telldir "telldir") off-t
   "Return the current location in directory DIR."
-  (dir :pointer))
+  (dirp :pointer))
 
 
 ;;;-------------------------------------------------------------------------
@@ -554,7 +565,7 @@ to the argument OFFSET according to the directive WHENCE."
 ;;;-------------------------------------------------------------------------
 
 (defsyscall (%sys-mmap (#+linux "mmap64" "mmap"))
-    :pointer
+    (:pointer :handle fd)
   "Map file referenced by FD at offset OFFSET into address space of the
 calling process at address ADDR and length LENGTH.
 PROT describes the desired memory protection of the mapping.
@@ -713,10 +724,11 @@ as indicated by WHICH and WHO to VALUE."
   "Get or set process priority."
   ;; FIXME: race condition. might need WITHOUT-INTERRUPTS on some impl.s
   (setf (%sys-errno) 0)
-  (let ((r (foreign-funcall "nice" :int increment :int)))
-    (if (and (= r -1) (/= (%sys-errno) 0))
-        (signal-posix-error r)
-        r)))
+  (let ((retval (foreign-funcall "nice" :int increment :int))
+        (errno (%sys-errno)))
+    (if (and (= retval -1) (/= errno 0))
+        (signal-syscall-error errno)
+        retval)))
 
 (defsyscall (%sys-kill "kill") :int
   "Send signal SIG to process PID."
@@ -728,8 +740,7 @@ as indicated by WHICH and WHO to VALUE."
 ;;; Time
 ;;;-------------------------------------------------------------------------
 
-(defsyscall (%sys-usleep "usleep")
-    (:int :restart t)
+(defsyscall (%sys-usleep "usleep") :int
   "Suspend execution for USECONDS microseconds."
   (useconds useconds-t))
 

@@ -18,16 +18,9 @@
             :documentation "Error description."))
   (:default-initargs :code nil :identifier :unknown :message nil))
 
-(define-condition system-error (error condition-info-mixin)
-  ()
-  (:documentation
-   "Base class for errors signalled by IOlib low-level functions."))
-
-(defun system-error (control-string &rest args)
-  (error 'system-error :message (format nil "~?" control-string args)))
-
-(define-condition syscall-error (system-error)
-  ((handle :initform nil :initarg :handle :reader handle-of))
+(define-condition syscall-error (error condition-info-mixin)
+  ((handle :initform nil :initarg :handle :reader handle-of)
+   (handle2 :initform nil :initarg :handle2 :reader handle2-of))
   (:documentation "Base class for syscall errors."))
 
 (defun syscall-error (control-string &rest args)
@@ -38,7 +31,7 @@
 ;;; I/O Poll Errors
 ;;;-------------------------------------------------------------------------
 
-(define-condition poll-error (system-error)
+(define-condition poll-error (syscall-error)
   ((event-type :initarg :event-type :reader event-type-of)
    (os-handle :initarg :os-handle :reader os-handle-of))
   (:report (lambda (c s)

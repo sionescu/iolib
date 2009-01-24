@@ -15,10 +15,10 @@
                      (file-error-pathname condition)
                      (%sys-strerror (posix-file-error-code condition))))))
 
-(defun posix-file-error (posix-error filename action)
+(defun posix-file-error (syscall-error filename action)
   (error 'posix-file-error
-         :code (posix-file-error-code posix-error)
-         :identifier (posix-file-error-identifier posix-error)
+         :code (posix-file-error-code syscall-error)
+         :identifier (posix-file-error-identifier syscall-error)
          :pathname filename :action action))
 
 (define-condition hangup (stream-error) ()

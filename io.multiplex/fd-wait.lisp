@@ -68,7 +68,7 @@ Returns two boolean values indicating readability and writeability of `FILE-DESC
                 (if errorp
                     (error 'poll-timeout :fd file-descriptor :event-type event-type)
                     (return* (values nil nil)))))
-          (isys:posix-error (err) (poll-error err)))
+          (isys:syscall-error (err) (poll-error err)))
         (process-poll-revents isys:revents file-descriptor)))))
 
 (defun fd-ready-p (fd &optional (event-type :input))

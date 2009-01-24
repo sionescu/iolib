@@ -6,20 +6,20 @@
 (in-package :net.sockets)
 
 (defgeneric error-code (err)
-  (:method ((err isys:system-error))
+  (:method ((err isys:syscall-error))
     (isys:code-of err)))
 
 (defgeneric error-identifier (err)
-  (:method ((err isys:system-error))
+  (:method ((err isys:syscall-error))
     (isys:identifier-of err)))
 
 (defgeneric error-message (err)
-  (:method ((err isys:system-error))
+  (:method ((err isys:syscall-error))
     (isys:message-of err)))
 
 ;;;; Socket Errors
 
-(define-condition socket-error (isys:posix-error) ())
+(define-condition socket-error (isys:syscall-error) ())
 
 (defmethod print-object ((socket-error socket-error) stream)
   (print-unreadable-object (socket-error stream :type t :identity nil)
@@ -36,7 +36,7 @@
   (let ((errno (cffi:foreign-enum-value 'isys:errno-values identifier)))
     `(progn
        (setf (gethash ,errno *socket-error-map*) ',name)
-       (define-condition ,name (,(isys:get-posix-error-condition errno)
+       (define-condition ,name (,(isys:get-syscall-error-condition errno)
                                  socket-error) ()
          (:default-initargs :code ,(foreign-enum-value 'socket-error-values
                                                        identifier)
@@ -75,6 +75,10 @@
 
 ;;; Used in the ERRNO-WRAPPER foreign type.
 (declaim (inline signal-socket-error))
-(defun signal-socket-error (errno &optional socket)
-  (or (%socket-error errno socket)
-      (error (isys:signal-posix-error errno socket))))
+(defun signal-socket-error (errno &optional fd fd2)
+  (cond
+    ((= errno isys:eintr)
+     (error 'eintr :handle fd :handle2 fd2))
+    (t
+     (or (%socket-error errno fd)
+         (isys:signal-syscall-error errno fd fd2)))))

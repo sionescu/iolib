@@ -34,7 +34,7 @@
 ;;; explicitly.
 (define-designator filename :string
   (pathname (when (wild-pathname-p filename)
-              (system-error "Pathname is wild: ~S." filename))
+              (syscall-error "Pathname is wild: ~S." filename))
             (native-namestring (translate-logical-pathname filename)))
   (string filename))
 

@@ -11,9 +11,7 @@
   (:export
    ;; Conditions
    #:condition-info-mixin
-   #:system-error
    #:syscall-error
-   #:posix-error
    #:poll-error
    #:poll-timeout
 
@@ -22,9 +20,10 @@
    #:identifier-of
    #:message-of
    #:handle-of
+   #:handle2-of
    #:event-type-of
    #:os-handle-of
-   #:get-posix-error-condition
+   #:get-syscall-error-condition
 
    ;; Pathname Functions
    #:native-namestring
@@ -52,9 +51,9 @@
    #:syscall-restart-p
    #:base-type-of
    #:never-fails
-   #:signal-posix-error
-   #:signal-posix-error-kw
-   #:signal-posix-error/restart
+   #:signal-syscall-error
+   #:signal-syscall-error-kw
+   #:signal-syscall-error/restart
 
    ;; Syscall definition
    #:defentrypoint

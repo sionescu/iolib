@@ -18,50 +18,48 @@
           :handle ,(caar forms) ; the socket FD
           :error-generator signal-socket-error)
        ,@forms)))
-
-(defctype fd :int)
-
+
 
 ;;;; sys/socket.h
 
 (define-socket-call ("accept" %accept) :int
-  (socket  fd)
+  (socket  :int)
   (address :pointer) ; sockaddr-foo
   (addrlen :pointer))
 
 (define-socket-call ("bind" %bind) :int
-  (socket  fd)
+  (socket  :int)
   (address :pointer)
   (addrlen socklen-t))
 
 (define-socket-call ("connect" %connect) :int
-  (socket  fd)
+  (socket  :int)
   (address :pointer) ; sockaddr-foo
   (addrlen socklen-t))
 
 (define-socket-call ("getpeername" %getpeername) :int
-  (socket  fd)
+  (socket  :int)
   (address :pointer)
   (addrlen :pointer))
 
 (define-socket-call ("getsockname" %getsockname) :int
-  (socket  fd)
+  (socket  :int)
   (address :pointer)
   (addrlen :pointer))
 
 (define-socket-call ("getsockopt" %getsockopt) :int
-  (socket  fd)
+  (socket  :int)
   (level   :int)
   (optname :int)
   (optval  :pointer)
   (optlen  :pointer))
 
 (define-socket-call ("listen" %listen) :int
-  (socket  fd)
+  (socket  :int)
   (backlog :int))
 
 (define-socket-call ("recvfrom" %recvfrom) ssize-t
-  (socket  fd)
+  (socket  :int)
   (buffer  :pointer)
   (length  size-t)
   (flags   :int)
@@ -69,7 +67,7 @@
   (addrlen :pointer))
 
 (define-socket-call ("sendto" %sendto) ssize-t
-  (socket   fd)
+  (socket   :int)
   (buffer   :pointer)
   (length   size-t)
   (flags    :int)
@@ -77,24 +75,24 @@
   (destlen  socklen-t))
 
 (define-socket-call ("recvmsg" %recvmsg) ssize-t
-  (socket  fd)
+  (socket  :int)
   (message :pointer)
   (flags   :int))
 
 (define-socket-call ("sendmsg" %sendmsg) ssize-t
-  (socket  fd)
+  (socket  :int)
   (message :pointer)
   (flags   :int))
 
 (define-socket-call ("setsockopt" %setsockopt) :int
-  (socket  fd)
+  (socket  :int)
   (level   :int)
   (optname :int)
   (optval  :pointer)
   (optlen  socklen-t))
 
 (define-socket-call ("shutdown" %shutdown) :int
-  (socket fd)
+  (socket :int)
   (how    :int))
 
 ;;; SOCKET is emulated in winsock.lisp.
@@ -105,7 +103,7 @@
 
 #-(and) ; unused
 (define-socket-call ("sockatmark" %sockatmark) :int
-  (socket fd))
+  (socket :int))
 
 (define-socket-creation-call ("socketpair" %%socketpair) :int
   (domain   :int)  ; af-*
@@ -129,9 +127,9 @@
 (defsyscall ("if_nametoindex" %if-nametoindex)
     (:unsigned-int
      :error-predicate zerop
-     :error-generator (lambda (r o)
-                        (declare (ignore r o))
-                        (isys:signal-posix-error-kw :enxio)))
+     :error-generator (lambda (r h h2)
+                        (declare (ignore r h h2))
+                        (isys:signal-syscall-error-kw :enxio)))
   (ifname :string))
 
 (defsyscall ("if_indextoname" %if-indextoname)

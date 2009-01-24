@@ -9,52 +9,51 @@
 ;;; POSIX Syscall Errors
 ;;;-------------------------------------------------------------------------
 
-(define-condition posix-error (syscall-error)
-  ()
-  (:documentation
-   "POSIX-ERRORs are signalled whenever ERRNO is set by a POSIX call."))
-
 ;;; HASH TABLE mapping error codes to symbols denoting
-;;; subtypes of POSIX-ERROR.
-(defparameter *posix-error-map* (make-hash-table :test 'eql))
+;;; subtypes of SYSCALL-ERROR.
+(defparameter *syscall-error-map* (make-hash-table :test 'eql))
 
-(declaim (inline get-posix-error-condition))
-(defun get-posix-error-condition (errno)
-  (gethash errno *posix-error-map*))
+(declaim (inline get-syscall-error-condition))
+(defun get-syscall-error-condition (errno)
+  (gethash errno *syscall-error-map*))
 
 ;;; Define an error condition for each ERRNO value defined in the
-;;; ERRNO-VALUES enum type and populate *POSIX-ERROR-MAP*.
+;;; ERRNO-VALUES enum type and populate *SYSCALL-ERROR-MAP*.
 (macrolet
-    ((define-posix-errors (keywords)
+    ((define-syscall-errors (keywords)
        `(progn
           ,@(loop :for kw :in keywords :collect
                (let ((cond-name (intern (symbol-name kw)))
                      (code (foreign-enum-value 'errno-values kw)))
                  `(progn
-                    (define-condition ,cond-name (posix-error) ()
+                    (define-condition ,cond-name (syscall-error) ()
                       (:default-initargs :code ,code :identifier ,kw))
-                    (setf (gethash ,code *posix-error-map*) ',cond-name)))))))
-  (define-posix-errors
+                    (setf (gethash ,code *syscall-error-map*) ',cond-name)))))))
+  (define-syscall-errors
     #.(foreign-enum-keyword-list 'errno-values)))
 
-;;; Instantiates a subclass of POSIX-ERROR matching ERR
+;;; Instantiates a subclass of SYSCALL-ERROR matching ERR
 ;;; ERR must be either an integer denoting an ERRNO value.
-(defun make-posix-error (errno fd)
+(defun make-syscall-error (errno fd fd2)
   (debug-only* (assert (integerp errno)))
   (let ((error-keyword (foreign-enum-keyword 'errno-values errno :errorp nil)))
     (unless error-keyword
       (bug "A non-existent ~A syscall error has been signaled: ~A, ~A"
            'errno-values (or error-keyword :unknown) errno))
-    (make-condition (get-posix-error-condition errno)
-                    :handle fd)))
+    (make-condition (get-syscall-error-condition errno)
+                    :handle fd :handle2 fd2)))
 
-(declaim (inline posix-error))
-(defun signal-posix-error (&optional (errno (%sys-errno)) fd)
-  (error (make-posix-error errno fd)))
+(declaim (inline signal-syscall-error))
+(defun signal-syscall-error (&optional (errno (%sys-errno)) fd fd2)
+  (cond
+    ((= errno eintr)
+     (error 'eintr :handle fd :handle2 fd2))
+    (t
+     (error (make-syscall-error errno fd fd2)))))
 
-(defun signal-posix-error-kw (error-keyword fd)
+(defun signal-syscall-error-kw (error-keyword &optional fd fd2)
   (let ((errno (foreign-enum-value 'errno-values error-keyword :errorp nil)))
     (unless error-keyword
       (bug "A non-existent ~A syscall error has been signaled: ~A, ~A"
            'errno-values error-keyword errno))
-    (error (make-posix-error errno fd))))
+    (signal-syscall-error errno fd fd2)))
