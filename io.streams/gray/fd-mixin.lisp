@@ -18,11 +18,11 @@
 ;;;; Get and Set O_NONBLOCK
 
 (defun %get-fd-nonblock-mode (fd)
-  (let ((current-flags (isys:%sys-fcntl fd nix:f-getfl)))
+  (let ((current-flags (isys:%sys-fcntl fd isys:f-getfl)))
     (logtest isys:o-nonblock current-flags)))
 
 (defun %set-fd-nonblock-mode (fd mode)
-  (let* ((current-flags (isys:%sys-fcntl fd nix:f-getfl))
+  (let* ((current-flags (isys:%sys-fcntl fd isys:f-getfl))
          (new-flags (if mode
                         (logior current-flags isys:o-nonblock)
                         (logandc2 current-flags isys:o-nonblock))))

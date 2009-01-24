@@ -5,22 +5,18 @@
 
 (in-package :net.sockets)
 
-(defmacro deforeign (name-and-opts return-type &body args)
-  (multiple-value-bind (lisp-name c-name options)
-      (cffi::parse-name-and-options name-and-opts)
-    `(defcfun (,c-name ,lisp-name ,@options) ,return-type
-       ,@args)))
-
 (defmacro define-socket-creation-call (name return-type &body args)
-  `(deforeign ,name (errno-wrapper ,return-type
-                                   :error-generator signal-socket-error)
+  `(defsyscall ,name
+       (,return-type
+        :error-generator signal-socket-error)
      ,@args))
 
 (defmacro define-socket-call (name return-type &body args)
   (let ((forms (alexandria:parse-body args)))
-    `(deforeign ,name (errno-wrapper ,return-type
-                                     :object ,(caar forms) ; the socket FD
-                                     :error-generator signal-socket-error)
+    `(defsyscall ,name
+         (,return-type
+          :handle ,(caar forms) ; the socket FD
+          :error-generator signal-socket-error)
        ,@forms)))
 
 (defctype fd :int)
@@ -36,12 +32,12 @@
 (define-socket-call ("bind" %bind) :int
   (socket  fd)
   (address :pointer)
-  (addrlen socklen))
+  (addrlen socklen-t))
 
 (define-socket-call ("connect" %connect) :int
   (socket  fd)
   (address :pointer) ; sockaddr-foo
-  (addrlen socklen))
+  (addrlen socklen-t))
 
 (define-socket-call ("getpeername" %getpeername) :int
   (socket  fd)
@@ -64,28 +60,28 @@
   (socket  fd)
   (backlog :int))
 
-(define-socket-call ("recvfrom" %recvfrom) ssize
+(define-socket-call ("recvfrom" %recvfrom) ssize-t
   (socket  fd)
   (buffer  :pointer)
-  (length  size)
+  (length  size-t)
   (flags   :int)
   (address :pointer)
   (addrlen :pointer))
 
-(define-socket-call ("sendto" %sendto) ssize
+(define-socket-call ("sendto" %sendto) ssize-t
   (socket   fd)
   (buffer   :pointer)
-  (length   size)
+  (length   size-t)
   (flags    :int)
   (destaddr :pointer)
-  (destlen  socklen))
+  (destlen  socklen-t))
 
-(define-socket-call ("recvmsg" %recvmsg) ssize
+(define-socket-call ("recvmsg" %recvmsg) ssize-t
   (socket  fd)
   (message :pointer)
   (flags   :int))
 
-(define-socket-call ("sendmsg" %sendmsg) ssize
+(define-socket-call ("sendmsg" %sendmsg) ssize-t
   (socket  fd)
   (message :pointer)
   (flags   :int))
@@ -95,7 +91,7 @@
   (level   :int)
   (optname :int)
   (optval  :pointer)
-  (optlen  socklen))
+  (optlen  socklen-t))
 
 (define-socket-call ("shutdown" %shutdown) :int
   (socket fd)
@@ -130,20 +126,21 @@
 
 ;;;; net/if.h
 
-(defcfun ("if_nametoindex" %if-nametoindex)
-    (errno-wrapper :unsigned-int :error-predicate zerop
-                   :error-generator (lambda (r o)
-                                      (declare (ignore r o))
-                                      (nix:posix-error :enxio)))
+(defsyscall ("if_nametoindex" %if-nametoindex)
+    (:unsigned-int
+     :error-predicate zerop
+     :error-generator (lambda (r o)
+                        (declare (ignore r o))
+                        (isys:signal-posix-error-kw :enxio)))
   (ifname :string))
 
-(defcfun ("if_indextoname" %if-indextoname)
-    (errno-wrapper :string)
+(defsyscall ("if_indextoname" %if-indextoname)
+    :string
   (ifindex :unsigned-int)
   (ifname  :pointer))
 
-(defcfun ("if_nameindex" %if-nameindex)
-    (errno-wrapper :pointer))
+(defsyscall ("if_nameindex" %if-nameindex)
+    :pointer)
 
-(defcfun ("if_freenameindex" %if-freenameindex) :void
+(defsyscall ("if_freenameindex" %if-freenameindex) :void
   (ptr :pointer))

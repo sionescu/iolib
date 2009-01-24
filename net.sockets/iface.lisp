@@ -9,7 +9,7 @@
   "Constructor for INTERFACE objects."
   (cons name index))
 
-(define-condition unknown-interface (system-error)
+(define-condition unknown-interface (isys:enxio)
   ((datum :initarg :datum :initform nil :reader unknown-interface-datum))
   (:report (lambda (condition stream)
              (format stream "Unknown interface: ~A"
@@ -18,11 +18,8 @@
 (setf (documentation 'unknown-interface-datum 'function)
       "Return the datum that caused the signalling of an UNKNOWN-INTERFACE condition.")
 
-(defun signal-unknown-interface-error (system-error datum)
-  (error 'unknown-interface
-         :code (osicat-sys:system-error-code system-error)
-         :identifier (osicat-sys:system-error-identifier system-error)
-         :datum datum))
+(defun signal-unknown-interface-error (datum)
+  (error 'unknown-interface :datum datum))
 
 (defun list-network-interfaces ()
   "Returns a list of network interfaces currently available."
@@ -44,16 +41,16 @@
   (with-foreign-object (buffer :uint8 ifnamesize)
     (handler-case
         (%if-indextoname index buffer)
-      (nix:enxio (error)
-        (signal-unknown-interface-error error index))
+      (isys:enxio (error)
+        (signal-unknown-interface-error index))
       (:no-error (name)
         (make-interface name index)))))
 
 (defun get-interface-by-name (name)
   (handler-case
       (%if-nametoindex name)
-    (nix:enxio (error)
-      (signal-unknown-interface-error error name))
+    (isys:enxio (error)
+      (signal-unknown-interface-error name))
     (:no-error (index)
       (make-interface (copy-seq name) index))))
 

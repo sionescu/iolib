@@ -94,7 +94,7 @@
 
 (defun make-sockaddr-in (sin ub8-vector &optional (portno 0))
   (declare (type ipv4-array ub8-vector) (type ub16 portno))
-  (bzero sin size-of-sockaddr-in)
+  (isys:%sys-bzero sin size-of-sockaddr-in)
   (with-foreign-slots ((family addr port) sin sockaddr-in)
     (setf family af-inet)
     (setf addr (htonl (vector-to-integer ub8-vector)))
@@ -108,7 +108,7 @@
 
 (defun make-sockaddr-in6 (sin6 ub16-vector &optional (portno 0))
   (declare (type ipv6-array ub16-vector) (type ub16 portno))
-  (bzero sin6 size-of-sockaddr-in6)
+  (isys:%sys-bzero sin6 size-of-sockaddr-in6)
   (with-foreign-slots ((family addr port) sin6 sockaddr-in6)
     (setf family af-inet6)
     (copy-simple-array-ub16-to-alien-vector ub16-vector addr)
@@ -122,7 +122,7 @@
 
 (defun make-sockaddr-un (sun string)
   (declare (type string string))
-  (bzero sun size-of-sockaddr-un)
+  (isys:%sys-bzero sun size-of-sockaddr-un)
   (with-foreign-slots ((family path) sun sockaddr-un)
     (setf family af-local)
     (with-foreign-string (c-string string)
@@ -138,12 +138,12 @@
 
 (defmacro with-sockaddr-storage ((var) &body body)
   `(with-foreign-object (,var 'sockaddr-storage)
-     (bzero ,var size-of-sockaddr-storage)
+     (isys:%sys-bzero ,var size-of-sockaddr-storage)
      ,@body))
 
 (defmacro with-socklen ((var value) &body body)
-  `(with-foreign-object (,var 'socklen)
-     (setf (mem-aref ,var 'socklen) ,value)
+  `(with-foreign-object (,var 'socklen-t)
+     (setf (mem-aref ,var 'socklen-t) ,value)
      ,@body))
 
 (defmacro with-sockaddr-storage-and-socklen ((ss-var size-var) &body body)

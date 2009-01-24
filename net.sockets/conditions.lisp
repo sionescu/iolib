@@ -6,49 +6,49 @@
 (in-package :net.sockets)
 
 (defgeneric error-code (err)
-  (:method ((err system-error))
-    (osicat-sys:system-error-code err)))
+  (:method ((err isys:system-error))
+    (isys:code-of err)))
 
 (defgeneric error-identifier (err)
-  (:method ((err system-error))
-    (osicat-sys:system-error-identifier err)))
+  (:method ((err isys:system-error))
+    (isys:identifier-of err)))
 
 (defgeneric error-message (err)
-  (:method ((err system-error))
-    (osicat-sys:system-error-message err)))
+  (:method ((err isys:system-error))
+    (isys:message-of err)))
 
 ;;;; Socket Errors
 
-(define-condition socket-error (nix:posix-error) ())
+(define-condition socket-error (isys:posix-error) ())
 
 (defmethod print-object ((socket-error socket-error) stream)
   (print-unreadable-object (socket-error stream :type t :identity nil)
-    (let ((code (osicat-sys:system-error-code socket-error)))
+    (let ((code (iolib.syscalls:code-of socket-error)))
       (format stream "~S ~S ~S, FD: ~S"
               (or code "[Unknown code]")
               (error-identifier socket-error)
-              (if code (nix:strerror code) "[Can't get error string.]")
-              (nix:posix-error-object socket-error)))))
+              (if code (isys:%sys-strerror code) "[Can't get error string.]")
+              (isys:handle-of socket-error)))))
 
-(defvar *socket-error-map* (make-hash-table :test 'eq))
+(defparameter *socket-error-map* (make-hash-table :test 'eql))
 
 (defmacro define-socket-error (name identifier &optional documentation)
-  `(progn
-     (setf (gethash ,identifier *socket-error-map*) ',name)
-     (define-condition ,name (,(nix::get-posix-error-condition identifier)
-                              socket-error) ()
-       (:default-initargs :code ,(foreign-enum-value 'socket-error-values
-                                                     identifier)
-         :identifier ,identifier)
-       (:documentation ,(or documentation (nix:strerror identifier))))))
+  (let ((errno (cffi:foreign-enum-value 'isys:errno-values identifier)))
+    `(progn
+       (setf (gethash ,errno *socket-error-map*) ',name)
+       (define-condition ,name (,(isys:get-posix-error-condition errno)
+                                 socket-error) ()
+         (:default-initargs :code ,(foreign-enum-value 'socket-error-values
+                                                       identifier)
+           :identifier ,identifier)
+         (:documentation ,(or documentation (isys:%sys-strerror identifier)))))))
 
-(defun lookup-socket-error (keyword)
-  (gethash keyword *socket-error-map*))
+(defun lookup-socket-error (errno)
+  (gethash errno *socket-error-map*))
 
 (define-condition unknown-socket-error (socket-error) ()
   (:documentation "Error signalled upon finding an unknown socket error."))
 
-(define-socket-error socket-invalid-argument              :einval)
 (define-socket-error socket-address-in-use-error          :eaddrinuse)
 (define-socket-error socket-address-not-available-error   :eaddrnotavail)
 (define-socket-error socket-network-down-error            :enetdown)
@@ -69,15 +69,12 @@
 (define-socket-error socket-option-not-supported-error    :enoprotoopt)
 (define-socket-error socket-operation-not-supported-error :eopnotsupp)
 
-(defun %socket-error (id code socket)
-  (when-let (err (lookup-socket-error id))
-    (error err :identifier id :code code :object socket)))
+(defun %socket-error (errno socket)
+  (when-let (err (lookup-socket-error errno))
+    (error err :handle socket)))
 
 ;;; Used in the ERRNO-WRAPPER foreign type.
-(defun signal-socket-error (&optional return-value socket)
-  (declare (ignore return-value))
-  (let* ((errno (nix:get-errno))
-         (kw (foreign-enum-keyword 'socket-error-values
-                                   errno :errorp nil)))
-    (or (%socket-error kw errno socket)
-        (error (nix::make-posix-error errno socket)))))
+(declaim (inline signal-socket-error))
+(defun signal-socket-error (errno &optional socket)
+  (or (%socket-error errno socket)
+      (error (isys:signal-posix-error errno socket))))

@@ -50,17 +50,17 @@
                          (external-format :default))
   (declare (ignore if-does-not-exist))
   ;; move OPEN to INITIALIZE-INSTANCE
-  (let ((fd (nix:open path
-                      (logior (ecase direction
-                                (:input nix:o-rdonly)
-                                (:output (logior nix:o-creat nix:o-wronly))
-                                (:io (logior nix:o-creat nix:o-rdwr)))
-                              (ecase if-exists
-                                (:error nix:o-excl)
-                                (:supersede nix:o-trunc)
-                                (:append nix:o-append)
-                                (:overwrite 0)))
-                      (logior nix:s-irusr nix:s-iwusr))))
+  (let ((fd (isys:%sys-open path
+                            (logior (ecase direction
+                                      (:input isys:o-rdonly)
+                                      (:output (logior isys:o-creat isys:o-wronly))
+                                      (:io (logior isys:o-creat isys:o-rdwr)))
+                                    (ecase if-exists
+                                      (:error isys:o-excl)
+                                      (:supersede isys:o-trunc)
+                                      (:append isys:o-append)
+                                      (:overwrite 0)))
+                            (logior isys:s-irusr isys:s-iwusr))))
     (make-instance 'my-file-stream
                    :path path
                    :input-fd fd

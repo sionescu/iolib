@@ -8,16 +8,12 @@
 (defpackage :net.sockets
   (:nicknames #:sockets)
   (:use :iolib.base :cffi :io.streams)
-  (:import-from #:osicat-posix #:system-error #:posix-error
-                #:system-error-message #:errno-wrapper
-                #:pid #:gid #:uid #:size #:ssize #:bzero
+  (:import-from #:iolib.syscalls #:defsyscall #:size-of-int
+                #:size-t #:ssize-t #:pid-t #:uid-t #:gid-t
                 #:timeval #:size-of-timeval #:sec #:usec)
-  (:import-from #:osicat-sys #:size-of-int)
   (:import-from #:io.multiplex #:decode-timeout)
   (:export
    ;; Conditions
-   #:posix-error
-   #:system-error
    #:socket-error
    #:socket-address-in-use-error
    #:socket-address-not-available-error

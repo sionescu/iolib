@@ -27,7 +27,7 @@
   (error 'system-error :message (format nil "~?" control-string args)))
 
 (define-condition syscall-error (system-error)
-  ()
+  ((handle :initform nil :initarg :handle :reader handle-of))
   (:documentation "Base class for syscall errors."))
 
 (defun syscall-error (control-string &rest args)

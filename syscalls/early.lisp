@@ -35,6 +35,7 @@
    (return-filter :initarg :return-filter :reader return-filter-of)
    (error-generator :initarg :error-generator :reader error-generator-of)
    (restart :initarg :restart :reader syscall-restart-p)
+   (handle :initarg :handle :reader handle-of)
    (base-type :initarg :base-type :reader base-type-of)))
 
 (defun default-error-predicate (base-type)
@@ -55,7 +56,7 @@
         (error "Could not choose an error-predicate function."))))))
 
 (define-parse-method syscall-wrapper
-    (base-type &key (restart nil restart-p)
+    (base-type &key handle (restart nil restart-p)
      (error-predicate 'never-fails error-predicate-p)
      (error-location :errno)
      (return-filter 'identity)
@@ -70,6 +71,7 @@
   (make-instance 'syscall-wrapper
                  :actual-type base-type
                  :base-type base-type
+                 :handle handle
                  :restart restart
                  :error-predicate error-predicate
                  :error-location error-location
@@ -98,7 +100,7 @@
                            (if (eql 'never-fails (error-predicate-of type))
                                `return-val-exp
                                `(if (,(error-predicate-of type) ,retval)
-                                    (,(error-generator-of type) ,errno)
+                                    (,(error-generator-of type) ,errno ,(handle-of type))
                                     ,return-val-exp))))
                          (if (syscall-restart-p type)
                              `(return-from ,block ,return-exp)

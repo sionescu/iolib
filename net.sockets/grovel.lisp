@@ -86,8 +86,8 @@
 
 ;;;; sys/socket.h
 
-(ctype socklen "socklen_t")
-(ctype sa-family "sa_family_t")
+(ctype socklen-t "socklen_t")
+(ctype sa-family-t "sa_family_t")
 
 ;;; socket() - socket address family
 (constant (af-unspec "AF_UNSPEC" "PF_UNSPEC"))
@@ -125,10 +125,10 @@
 #-darwin (constant (ipproto-sctp "IPPROTO_SCTP"))
 
 (cstruct sockaddr "struct sockaddr"
-  (family "sa_family" :type sa-family))
+  (family "sa_family" :type sa-family-t))
 
 (cstruct sockaddr-storage "struct sockaddr_storage"
-  (family "ss_family" :type sa-family))
+  (family "ss_family" :type sa-family-t))
 
 (constant (somaxconn "SOMAXCONN")
   :documentation "Maximum listen() queue length")
@@ -219,15 +219,15 @@
 
 (cstruct msghdr "struct msghdr"
   (name       "msg_name"       :type :pointer)
-  (namelen    "msg_namelen"    :type socklen)
+  (namelen    "msg_namelen"    :type socklen-t)
   (iov        "msg_iov"        :type :pointer)
-  (iovlen     "msg_iovlen"     :type size)
+  (iovlen     "msg_iovlen"     :type size-t)
   (control    "msg_control"    :type :pointer)
-  (controllen "msg_controllen" :type socklen)
+  (controllen "msg_controllen" :type socklen-t)
   (flags      "msg_flags"      :type :int))
 
 (cstruct cmsghdr "struct cmsghdr"
-  (len   "cmsg_len"   :type socklen)
+  (len   "cmsg_len"   :type socklen-t)
   (level "cmsg_level" :type :int)
   (type  "cmsg_type"  :type :int))
 
@@ -236,12 +236,12 @@
 
 #+(or (or) freebsd) ; unused
 (cstruct cmsgcred "struct cmsgcred"
-  (pid     "cmcred_pid"     :type pid)
-  (uid     "cmcred_uid"     :type uid)
-  (euid    "cmcred_euid"    :type uid)
-  (gid     "cmcred_gid"     :type gid)
+  (pid     "cmcred_pid"     :type pid-t)
+  (uid     "cmcred_uid"     :type uid-t)
+  (euid    "cmcred_euid"    :type uid-t)
+  (gid     "cmcred_gid"     :type gid-t)
   (ngroups "cmcred_ngroups" :type :short)
-  (groups  "cmcred_groups"  :type gid :count :auto))
+  (groups  "cmcred_groups"  :type gid-t :count :auto))
 
 (constant (scm-rights "SCM_RIGHTS"))
 (constant (scm-credentials "SCM_CREDENTIALS") :optional t)
@@ -249,18 +249,18 @@
 #+(and nil linux)
 (cstruct ucred "struct ucred"
   "Socket credential messages."
-  (pid "pid" :type pid)
-  (uid "uid" :type uid)
-  (gid "gid" :type gid))
+  (pid "pid" :type pid-t)
+  (uid "uid" :type uid-t)
+  (gid "gid" :type gid-t))
 
 #+(and nil freebsd)
 (cstruct sockcred "struct sockcred"
-  (uid     "sc_uid"     :type uid)
-  (euid    "sc_euid"    :type uid)
-  (gid     "sc_gid"     :type gid)
-  (egid    "sc_egid"    :type gid)
+  (uid     "sc_uid"     :type uid-t)
+  (euid    "sc_euid"    :type uid-t)
+  (gid     "sc_gid"     :type gid-t)
+  (egid    "sc_egid"    :type gid-t)
   (ngroups "sc_ngroups" :type :int)
-  (groups  "sc_groups"  :type gid :count :auto))
+  (groups  "sc_groups"  :type gid-t :count :auto))
 
 (cstruct linger "struct linger"
   "SO_LINGER manipulation record."
@@ -276,7 +276,7 @@
 
 (cstruct sockaddr-un "struct sockaddr_un"
   "A UNIX-domain socket address."
-  (family "sun_family" :type sa-family)
+  (family "sun_family" :type sa-family-t)
   (path   "sun_path"   :type :uint8 :count :auto))
 
 #+freebsd
@@ -287,14 +287,14 @@
 
 ;;;; from netinet/in.h
 
-(ctype in-port "in_port_t")
-(ctype in-addr "in_addr_t")
+(ctype in-port-t "in_port_t")
+(ctype in-addr-t "in_addr_t")
 
 (cstruct sockaddr-in "struct sockaddr_in"
   "An IPv4 socket address."
-  (family "sin_family" :type sa-family)
-  (port   "sin_port"   :type in-port)
-  (addr   "sin_addr"   :type in-addr))
+  (family "sin_family" :type sa-family-t)
+  (port   "sin_port"   :type in-port-t)
+  (addr   "sin_addr"   :type in-addr-t))
 
 (cstruct in-addr-struct "struct in_addr"
   (addr "s_addr" :type :uint32))
@@ -307,8 +307,8 @@
 
 (cstruct sockaddr-in6 "struct sockaddr_in6"
   "An IPv6 socket address."
-  (family   "sin6_family"   :type sa-family)
-  (port     "sin6_port"     :type in-port)
+  (family   "sin6_family"   :type sa-family-t)
+  (port     "sin6_port"     :type in-port-t)
   (flowinfo "sin6_flowinfo" :type :uint32)
   (addr     "sin6_addr"     :type in6-addr)
   (scope-id "sin6_scope_id" :type :uint32))

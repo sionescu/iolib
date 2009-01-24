@@ -10,8 +10,8 @@
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:iolib.base :cffi :cffi-grovel :iolib.syscalls
-               :osicat :babel :bordeaux-threads :io.streams)
+  :depends-on (:iolib.base :iolib.syscalls :io.streams
+               :babel :cffi :cffi-grovel :bordeaux-threads)
   :pathname (merge-pathnames #p"net.sockets/" *load-truename*)
   :components
   ((:file "pkgdcl")
@@ -19,7 +19,7 @@
    (:file "conditions" :depends-on ("pkgdcl" "grovel"))
    (:file "bsd" :depends-on ("pkgdcl" "grovel" "conditions"))
    (:file "common" :depends-on ("pkgdcl" "grovel" "bsd"))
-   (:file "config" :depends-on ("pkgdcl" "grovel"))
+   (:file "config" :depends-on ("pkgdcl" "grovel" "bsd"))
 
    (:file "iface" :depends-on ("pkgdcl" "grovel" "bsd" "common"))
 

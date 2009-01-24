@@ -21,8 +21,10 @@
    #:code-of
    #:identifier-of
    #:message-of
+   #:handle-of
    #:event-type-of
    #:os-handle-of
+   #:get-posix-error-condition
 
    ;; Pathname Functions
    #:native-namestring
@@ -51,6 +53,7 @@
    #:base-type-of
    #:never-fails
    #:signal-posix-error
+   #:signal-posix-error-kw
    #:signal-posix-error/restart
 
    ;; Syscall definition

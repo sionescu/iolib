@@ -169,7 +169,7 @@
     (with-sockaddr-storage-and-socklen (ss size)
       (handler-case
           (%getsockname (fd-of socket) ss size)
-        (nix:ebadf () nil)
+        (isys:ebadf () nil)
         (socket-connection-reset-error () nil)
         (:no-error (_) (declare (ignore _)) t)))))
 
@@ -299,7 +299,7 @@
     (ignore-some-conditions (iomux:poll-timeout)
       (when wait (iomux:wait-until-fd-ready (fd-of socket) :input timeout t))
       (with-sockaddr-storage-and-socklen (ss size)
-        (ignore-some-conditions (nix:ewouldblock)
+        (ignore-some-conditions (isys:ewouldblock)
           (make-client-socket (%accept (fd-of socket) ss size)))))))
 
 
@@ -327,8 +327,8 @@
            (t (error err)))))
     (handler-case
         (funcall thunk)
-      (nix:ewouldblock (err) (wait-connect err))
-      (nix:einprogress (err) (wait-connect err)))))
+      (isys:ewouldblock (err) (wait-connect err))
+      (isys:einprogress (err) (wait-connect err)))))
 
 (defmacro with-socket-to-wait-connect ((socket wait timeout) &body body)
   `(call-with-socket-to-wait-connect ,socket (lambda () ,@body) ,wait ,timeout))
@@ -374,7 +374,7 @@
 
 (defmethod disconnect ((socket datagram-socket))
   (with-foreign-object (sin 'sockaddr-in)
-    (bzero sin size-of-sockaddr-in)
+    (isys:%sys-bzero sin size-of-sockaddr-in)
     (setf (foreign-slot-value sin 'sockaddr-in 'addr) af-unspec)
     (%connect (fd-of socket) sin size-of-sockaddr-in)
     (values socket)))
