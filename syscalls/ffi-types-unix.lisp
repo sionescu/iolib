@@ -20,7 +20,7 @@
          "dirent.h" "sys/utsname.h")
 
 #+linux
-(include "sys/epoll.h" "sys/ioctl.h")
+(include "sys/epoll.h" "sys/syscall.h")
 
 #+bsd
 (include "sys/event.h" "sys/time.h")    ; for kqueue
@@ -283,6 +283,11 @@
             :documentation "Smallest real-time signal number.")
   (constant (sigrtmax "SIGRTMAX")
             :documentation "Largest real-time signal number."))
+
+
+;; from sys/syscalls.h
+
+#+linux (constant (sys-gettid "SYS_gettid"))
 
 
 ;;; from unistd.h

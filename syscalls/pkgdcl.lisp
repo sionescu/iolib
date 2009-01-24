@@ -157,6 +157,7 @@
    #:%sys-fork
    #:%sys-getpid
    #:%sys-getppid
+   #:%sys-gettid
    #:%sys-getuid
    #:%sys-setuid
    #:%sys-geteuid
