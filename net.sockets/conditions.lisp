@@ -69,9 +69,10 @@
 (define-socket-error socket-option-not-supported-error    :enoprotoopt)
 (define-socket-error socket-operation-not-supported-error :eopnotsupp)
 
-(defun %socket-error (errno socket)
+(declaim (inline %signal-socket-error))
+(defun %signal-socket-error (errno fd fd2)
   (when-let (err (lookup-socket-error errno))
-    (error err :handle socket)))
+    (error err :handle fd :handle2 fd2)))
 
 ;;; Used in the ERRNO-WRAPPER foreign type.
 (declaim (inline signal-socket-error))
@@ -80,5 +81,5 @@
     ((= errno isys:eintr)
      (error 'eintr :handle fd :handle2 fd2))
     (t
-     (or (%socket-error errno fd)
-         (isys:signal-syscall-error errno fd fd2)))))
+     (or (%signal-socket-error errno fd fd2)
+         (error (isys:make-syscall-error errno fd fd2))))))

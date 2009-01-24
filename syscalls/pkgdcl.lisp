@@ -51,6 +51,7 @@
    #:syscall-restart-p
    #:base-type-of
    #:never-fails
+   #:make-syscall-error
    #:signal-syscall-error
    #:signal-syscall-error-kw
    #:signal-syscall-error/restart
