@@ -296,7 +296,7 @@ to the argument OFFSET according to the directive WHENCE."
   "Schedule a file's buffers to be written to disk."
   (fd :int))
 
-(defsyscall (%%sys-mkstemp "mkstemp") :int
+(defsyscall (%%sys-mkstemp (#+linux "mkstemp64" "mkstemp")) :int
   (template filename-designator))
 
 (defentrypoint %sys-mkstemp (&optional (template ""))
