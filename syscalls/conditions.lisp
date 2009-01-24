@@ -9,18 +9,24 @@
 ;;; System Errors
 ;;;-------------------------------------------------------------------------
 
-(define-condition condition-info-mixin (condition)
+(define-condition iolib-condition ()
+  ())
+
+(define-condition iolib-error (error iolib-condition)
+  ())
+
+(define-condition syscall-error (iolib-error)
   ((code :initarg :code :reader code-of
          :documentation "Numeric error code, or NIL.")
    (identifier :initarg :identifier :reader identifier-of
                :documentation "Keyword identifier, or NIL.")
    (message :initarg :message :reader message-of
-            :documentation "Error description."))
-  (:default-initargs :code nil :identifier :unknown :message nil))
-
-(define-condition syscall-error (error condition-info-mixin)
-  ((handle :initform nil :initarg :handle :reader handle-of)
-   (handle2 :initform nil :initarg :handle2 :reader handle2-of))
+            :documentation "Error description.")
+   (handle :initform nil :initarg :handle :reader handle-of
+           :documentation "The OS handle involved in the error situation.")
+   (handle2 :initform nil :initarg :handle2 :reader handle2-of
+            :documentation "An optional second OS handler."))
+  (:default-initargs :code nil :identifier :unknown :message nil)
   (:documentation "Base class for syscall errors."))
 
 (defun syscall-error (control-string &rest args)
@@ -32,23 +38,21 @@
 ;;;-------------------------------------------------------------------------
 
 (define-condition poll-error (syscall-error)
-  ((event-type :initarg :event-type :reader event-type-of)
-   (os-handle :initarg :os-handle :reader os-handle-of))
+  ((event-type :initarg :event-type :reader event-type-of))
   (:report (lambda (c s)
              (format s "Poll error(event ~S, handle ~A)"
-                     (event-type-of c) (os-handle-of c))
+                     (event-type-of c) (handle-of c))
              (when (message-of c)
                (format s ": ~A" (message-of c)))))
   (:documentation
    "Signaled when an error occurs while polling for I/O readiness
 of a file descriptor."))
 
-(define-condition poll-timeout (condition-info-mixin)
-  ((event-type :initarg :event-type :reader event-type-of)
-   (os-handle :initarg :os-handle :reader os-handle-of))
+(define-condition poll-timeout (poll-error)
+  ()
   (:report (lambda (c s)
              (format s "Poll timeout(event ~S, handle ~A)"
-                     (event-type-of c) (os-handle-of c))
+                     (event-type-of c) (handle-of c))
              (when (message-of c)
                (format s ": ~A" (message-of c)))))
   (:documentation

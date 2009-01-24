@@ -10,8 +10,10 @@
   (:use :iolib.base :cffi)
   (:export
    ;; Conditions
-   #:condition-info-mixin
+   #:iolib-condition
+   #:iolib-error
    #:syscall-error
+   #:make-syscall-error
    #:poll-error
    #:poll-timeout
 
@@ -22,7 +24,6 @@
    #:handle-of
    #:handle2-of
    #:event-type-of
-   #:os-handle-of
    #:get-syscall-error-condition
 
    ;; Pathname Functions
@@ -51,7 +52,6 @@
    #:syscall-restart-p
    #:base-type-of
    #:never-fails
-   #:make-syscall-error
    #:signal-syscall-error
    #:signal-syscall-error-kw
    #:signal-syscall-error/restart
