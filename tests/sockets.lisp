@@ -352,7 +352,7 @@
                                            :defaults (truename
                                                       (asdf:system-definition-pathname
                                                        (asdf:find-system '#:iolib-tests)))))))
-                 ;; (ignore-errors (delete-file file))
+                 (ignore-errors (delete-file file))
                  (with-open-socket (p :address-family :local :connect :passive :local-filename file)
                    (with-open-socket (a :address-family :local :remote-filename file)
                      (format a "local socket test")
