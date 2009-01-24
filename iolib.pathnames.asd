@@ -7,7 +7,7 @@
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :version "0.5.4"
   :licence "MIT"
-  :depends-on (:iolib.base :osicat :iolib.syscalls :cl-ppcre)
+  :depends-on (:iolib.base :iolib.syscalls :cl-ppcre)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "pathnames"))
                              *load-truename*)
   :serial t
