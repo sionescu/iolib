@@ -41,7 +41,7 @@
   (with-foreign-object (buffer :uint8 ifnamesize)
     (handler-case
         (%if-indextoname index buffer)
-      (isys:enxio (error)
+      (isys:enxio ()
         (signal-unknown-interface-error index))
       (:no-error (name)
         (make-interface name index)))))
@@ -49,7 +49,7 @@
 (defun get-interface-by-name (name)
   (handler-case
       (%if-nametoindex name)
-    (isys:enxio (error)
+    (isys:enxio ()
       (signal-unknown-interface-error name))
     (:no-error (index)
       (make-interface (copy-seq name) index))))
