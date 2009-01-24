@@ -298,6 +298,30 @@
   (ctime   "st_ctime"   :type time-t))
 
 
+;;;; fcntl()
+
+(constant (f-dupfd "F_DUPFD"))
+(constant (f-getfd "F_GETFD"))
+(constant (f-setfd "F_SETFD"))
+(constant (f-getfl "F_GETFL"))
+(constant (f-setfl "F_SETFL"))
+(constant (f-getlk "F_GETLK"))
+(constant (f-setlk "F_SETLK"))
+(constant (f-setlkw "F_SETLKW"))
+(constant (f-getown "F_GETOWN"))
+(constant (f-setown "F_SETOWN"))
+(constant (f-rdlck "F_RDLCK"))
+(constant (f-wrlck "F_WRLCK"))
+(constant (f-unlck "F_UNLCK"))
+
+#+linux
+(progn
+  (constant (f-getsig "F_GETSIG"))
+  (constant (f-setsig "F_SETSIG"))
+  (constant (f-setlease "F_SETLEASE"))
+  (constant (f-getlease "F_GETLEASE")))
+
+
 ;;; mmap()
 
 (constant (prot-none   "PROT_NONE")   :documentation "mmap: no protection")

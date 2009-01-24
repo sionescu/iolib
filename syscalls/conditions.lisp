@@ -67,6 +67,15 @@ of a file descriptor."))
 ;;; Repeat upon conditions
 ;;;-------------------------------------------------------------------------
 
+(defmacro repeat-upon-condition ((&rest conditions) &body body)
+  (with-gensyms (block-name)
+    `(loop :named ,block-name :do
+       (ignore-some-conditions ,conditions
+         (return-from ,block-name (progn ,@body))))))
+
+(defmacro repeat-upon-eintr (&body body)
+  `(repeat-upon-condition (eintr) ,@body))
+
 (defmacro repeat-decreasing-timeout
     ((timeout-var timeout &optional (block-name nil blockp)) &body body)
   (unless (find timeout-var (flatten body))

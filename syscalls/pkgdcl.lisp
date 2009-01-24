@@ -36,6 +36,8 @@
    #:bool-designator
 
    ;; Misc
+   #:repeat-upon-condition
+   #:repeat-upon-eintr
    #:repeat-decreasing-timeout
    #:repeat-upon-condition-decreasing-timeout
 
@@ -117,8 +119,8 @@
    #:%sys-close
    #:%sys-dup
    #:%sys-dup2
-   #:%sys-ioctl/2
-   #:%sys-ioctl/3
+   #:%sys-fcntl
+   #:%sys-ioctl
    #:%sys-fd-open-p
 
    ;; I/O Polling
@@ -289,6 +291,25 @@
    #:s-iflnk
    #:s-ifsock
    #:path-max
+
+   ;; FCNTL()
+   #:f-dupfd
+   #:f-getfd
+   #:f-setfd
+   #:f-getfl
+   #:f-setfl
+   #:f-getlk
+   #:f-setlk
+   #:f-setlkw
+   #:f-getown
+   #:f-setown
+   #:f-rdlck
+   #:f-wrlck
+   #:f-unlck
+   #+linux #:f-getsig
+   #+linux #:f-setsig
+   #+linux #:f-setlease
+   #+linux #:f-getlease
 
    ;; MMAP()
    #:prot-none

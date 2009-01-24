@@ -362,18 +362,48 @@ to the argument OFFSET according to the directive WHENCE."
   (oldfd :int)
   (newfd :int))
 
-(defsyscall (%sys-ioctl/2 "ioctl")
+(defsyscall (%%sys-fcntl/noarg "fcntl") :int
+  (fd  :int)
+  (cmd :int))
+
+;;; FIXME: Linux/glibc says ARG's type is long, POSIX says it's int.
+;;; Is this an issue?
+(defsyscall (%%sys-fcntl/int "fcntl") :int
+  (fd  :int)
+  (cmd :int)
+  (arg :int))
+
+(defsyscall (%%sys-fcntl/pointer "fcntl") :int
+  (fd  :int)
+  (cmd :int)
+  (arg :pointer))
+
+(defentrypoint %sys-fcntl (fd cmd &optional (arg nil argp))
+  (cond
+    ((not argp)     (%%sys-fcntl/noarg   fd cmd))
+    ((integerp arg) (%%sys-fcntl/int     fd cmd arg))
+    ((pointerp arg) (%%sys-fcntl/pointer fd cmd arg))
+    (t (error "Wrong argument to fcntl: ~S" arg))))
+
+(defsyscall (%%sys-ioctl/noarg "ioctl")
     (:int :restart t)
   "Send request REQUEST to file referenced by FD."
   (fd      :int)
   (request :int))
 
-(defsyscall (%sys-ioctl/3 "ioctl")
+(defsyscall (%%sys-ioctl/pointer "ioctl")
     (:int :restart t)
   "Send request REQUEST to file referenced by FD using argument ARG."
  (fd      :int)
  (request :int)
  (arg     :pointer))
+
+(defentrypoint %sys-ioctl (fd request &optional (arg nil argp))
+  "Control an I/O device."
+  (cond
+    ((not argp)     (%%sys-ioctl/noarg   fd request))
+    ((pointerp arg) (%%sys-ioctl/pointer fd request arg))
+    (t (error "Wrong argument to ioctl: ~S" arg))))
 
 (defentrypoint %sys-fd-open-p (fd)
   (handler-case
