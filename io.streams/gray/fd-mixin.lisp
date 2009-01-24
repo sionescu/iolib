@@ -12,22 +12,22 @@
   (declare (ignore abort))
   (call-next-method)
   (when (fd-of fd-mixin)
-    (nix:close (fd-of fd-mixin))
+    (isys:%sys-close (fd-of fd-mixin))
     (setf (fd-of fd-mixin) nil)))
 
 ;;;; Get and Set O_NONBLOCK
 
 (defun %get-fd-nonblock-mode (fd)
-  (let ((current-flags (nix:fcntl fd nix:f-getfl)))
-    (logtest nix:o-nonblock current-flags)))
+  (let ((current-flags (isys:%sys-fcntl fd nix:f-getfl)))
+    (logtest isys:o-nonblock current-flags)))
 
 (defun %set-fd-nonblock-mode (fd mode)
-  (let* ((current-flags (nix:fcntl fd nix:f-getfl))
+  (let* ((current-flags (isys:%sys-fcntl fd nix:f-getfl))
          (new-flags (if mode
-                        (logior current-flags nix:o-nonblock)
-                        (logandc2 current-flags nix:o-nonblock))))
+                        (logior current-flags isys:o-nonblock)
+                        (logandc2 current-flags isys:o-nonblock))))
     (when (/= new-flags current-flags)
-      (nix:fcntl fd nix:f-setfl new-flags))
+      (isys:%sys-fcntl fd isys:f-setfl new-flags))
     (values mode)))
 
 (defmethod input-fd-non-blocking ((fd-mixin dual-channel-fd-mixin))

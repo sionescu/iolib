@@ -69,7 +69,7 @@
     nil))
 
 (defun %fill-ibuf (read-fn fd buf)
-  (let ((num (nix:repeat-upon-eintr
+  (let ((num (isys:repeat-upon-eintr
                (funcall read-fn fd (iobuf-end-pointer buf)
                         (iobuf-end-space-length buf)))))
     (if (zerop num)
@@ -155,9 +155,9 @@
                (handler-case
                    (funcall write-fn fd (inc-pointer buf bytes-written)
                             (- nbytes bytes-written))
-                 (nix:epipe ()
+                 (isys:epipe ()
                    (return* (values bytes-written :hangup)))
-                 (nix:ewouldblock ()
+                 (isys:ewouldblock ()
                    (iomux:wait-until-fd-ready fd :output nil t))
                  (:no-error (nbytes) (incf bytes-written nbytes))))
              (buffer-emptyp () (= bytes-written nbytes)))
