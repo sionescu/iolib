@@ -713,6 +713,11 @@ as indicated by WHICH and WHO to VALUE."
     (if (and (= r -1) (/= (%sys-errno) 0))
         (signal-posix-error r)
         r)))
+
+(defsyscall (%sys-kill "kill") :int
+  "Send signal SIG to process PID."
+  (pid pid-t)
+  (sig :int))
 
 
 ;;;-------------------------------------------------------------------------

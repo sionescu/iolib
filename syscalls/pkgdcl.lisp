@@ -178,6 +178,7 @@
    #:%sys-getpriority
    #:%sys-setpriority
    #:%sys-nice
+   #:%sys-kill
 
    ;; Time
    #:%sys-usleep
@@ -294,6 +295,35 @@
    #:s-iflnk
    #:s-ifsock
    #:path-max
+
+   ;; KILL()
+   #:sighup
+   #:sigquit
+   #:sigtrap
+   #-linux #:sigemt
+   #:sigkill
+   #:sigbus
+   #:sigsys
+   #:sigpipe
+   #:sigalrm
+   #:sigurg
+   #:sigstop
+   #:sigtstp
+   #:sigcont
+   #:sigchld
+   #:sigttin
+   #:sigttou
+   #:sigio
+   #:sigxcpu
+   #:sigxfsz
+   #:sigvtalrm
+   #:sigprof
+   #:sigwinch
+   #-linux #:siginfo
+   #:sigusr1
+   #:sigusr2
+   #+linux #:sigrtmin
+   #+linux #:sigrtmax
 
    ;; FCNTL()
    #:f-dupfd

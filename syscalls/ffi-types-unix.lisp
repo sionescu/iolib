@@ -238,6 +238,53 @@
 (constant (path-max "PATH_MAX" "MAXPATHLEN"))
 
 
+;;; from signal.h
+
+(constant (sighup "SIGHUP") :documentation "terminal line hangup.")
+(constant (sigquit "SIGQUIT") :documentation "quit program.")
+(constant (sigtrap "SIGTRAP") :documentation "trace trap.")
+#-linux
+(constant (sigemt "SIGEMT") :documentation "emulate instruction executed.")
+(constant (sigkill "SIGKILL") :documentation "kill program.")
+(constant (sigbus "SIGBUS") :documentation "bus error.")
+(constant (sigsys "SIGSYS") :documentation "non-existent system call invoked.")
+(constant (sigpipe "SIGPIPE") :documentation "write on a pipe with no reader.")
+(constant (sigalrm "SIGALRM") :documentation "real-timeimer expired.")
+(constant (sigurg "SIGURG")
+          :documentation "urgent condition present on socket.")
+(constant (sigstop "SIGSTOP")
+          :documentation "stop (cannot be caught or ignored).")
+(constant (sigtstp "SIGTSTP")
+          :documentation "stop signal generated from keyboard.")
+(constant (sigcont "SIGCONT") :documentation "continue after stop.")
+(constant (sigchld "SIGCHLD") :documentation "child status has changed.")
+(constant (sigttin "SIGTTIN")
+          :documentation "background read attempted from control terminal.")
+(constant (sigttou "SIGTTOU")
+          :documentation "background write attempted from control terminal.")
+(constant (sigio "SIGIO")
+          :documentation "I/O is possible on a descriptor (see fcntl(2)).")
+(constant (sigxcpu "SIGXCPU")
+          :documentation "cpuime limit exceeded (see setrlimit(2)).")
+(constant (sigxfsz "SIGXFSZ")
+          :documentation "file size limit exceeded (see setrlimit(2)).")
+(constant (sigvtalrm "SIGVTALRM")
+          :documentation "virtualime alarm (see setitimer(2)).")
+(constant (sigprof "SIGPROF")
+          :documentation "profilingimer alarm (see setitimer(2)).")
+(constant (sigwinch "SIGWINCH") :documentation "Window size change.")
+#-linux
+(constant (siginfo "SIGINFO") :documentation "status request from keyboard.")
+(constant (sigusr1 "SIGUSR1") :documentation "User defined signal 1.")
+(constant (sigusr2 "SIGUSR2") :documentation "User defined signal 2.")
+#+linux
+(progn
+  (constant (sigrtmin "SIGRTMIN")
+            :documentation "Smallest real-time signal number.")
+  (constant (sigrtmax "SIGRTMAX")
+            :documentation "Largest real-time signal number."))
+
+
 ;;; from unistd.h
 
 (ctype useconds-t "useconds_t")
