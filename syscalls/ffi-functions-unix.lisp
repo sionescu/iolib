@@ -587,12 +587,8 @@ processes mapping the same region."
   "Returns the process id of the current process's parent")
 
 #+linux
-(defsyscall (%syscall-int "syscall") :int
-  (id :int))
-
-#+linux
 (defentrypoint %sys-gettid ()
-  (%syscall-int sys-gettid))
+  (foreign-funcall "syscall" :int sys-gettid :int))
 
 (defsyscall (%sys-getuid "getuid") uid-t
   "Get real user id of the current process.")
