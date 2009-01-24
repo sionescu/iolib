@@ -112,7 +112,7 @@ The two memory areas may overlap."
 ;;; Files
 ;;;-------------------------------------------------------------------------
 
-(defsyscall (%%sys-open "open")
+(defsyscall (%%sys-open (#+linux "open64" "open"))
     (:int :restart t)
   (path  filename-designator)
   (flags :int)
@@ -125,7 +125,7 @@ The two memory areas may overlap."
 \(default value is *DEFAULT-OPEN-MODE* - #o666)."
   (%%sys-open path flags mode))
 
-(defsyscall (%sys-creat "creat")
+(defsyscall (%sys-creat (#+linux "creat64" "creat"))
     (:int :restart t)
   "Create file PATH with permissions MODE and return the new FD."
   (path filename-designator)
