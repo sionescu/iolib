@@ -804,7 +804,7 @@ as indicated by WHICH and WHO to VALUE."
   (defctype clock-res-t :int)
   (defctype clock-id-t :int)
   (defctype port-t :unsigned-int)         ; not sure
-  (defctype clock-serv-t port)
+  (defctype clock-serv-t port-t)
 
   (defconstant kern-success 0)
 
@@ -824,15 +824,15 @@ as indicated by WHICH and WHO to VALUE."
       (%%sys-host-get-clock-service host id clock)
       (mem-ref clock :int)))
 
-  (defsyscall (%clock-get-time "clock_get_time") kern-return-t
+  (defsyscall (%%sys-clock-get-time "clock_get_time") kern-return-t
     (clock-serv clock-serv-t)
     (cur-time   timespec))
 
-  (defentrypoint clock-get-time (clock-service)
+  (defentrypoint %sys-clock-get-time (clock-service)
     (with-foreign-object (time 'timespec)
-      (%clock-get-time clock-service time)
-      (with-foreign-slots ((tv-sec tv-nsec) time timespec)
-        (values tv-sec tv-nsec)))))
+      (%%sys-clock-get-time clock-service time)
+      (with-foreign-slots ((sec nsec) time timespec)
+        (values sec nsec)))))
 
 (defentrypoint %sys-get-monotonic-time ()
   "Gets current time in seconds from a system's monotonic clock."
