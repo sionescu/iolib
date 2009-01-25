@@ -161,6 +161,9 @@
 
    ;; Process creation and info
    #:%sys-fork
+   #:%sys-execv
+   #:%sys-execvp
+   #:%sys-waitpid
    #:%sys-getpid
    #:%sys-getppid
    #:%sys-gettid

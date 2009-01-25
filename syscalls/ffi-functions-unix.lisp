@@ -611,6 +611,19 @@ processes mapping the same region."
 (defsyscall (%sys-fork "fork") pid-t
   "Create a child process.")
 
+(defsyscall (%sys-execv "execv") :int
+  (path :string)
+  (argv :pointer))
+
+(defsyscall (%sys-execvp "execvp") :int
+  (file :string)
+  (argv :pointer))
+
+(defsyscall (%sys-waitpid "waitpid") pid-t
+  (pid     pid-t)
+  (status  :pointer)
+  (options :int))
+
 (defsyscall (%sys-getpid "getpid") pid-t
   "Returns the process id of the current process")
 
