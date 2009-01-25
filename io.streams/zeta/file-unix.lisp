@@ -23,7 +23,7 @@
 
 (defvar *default-open-mode* #o666)
 
-(defclass file-zstream (single-channel-zstream) ())
+(defclass file-zstream (file-device single-channel-zstream) ())
 
 
 ;;;-------------------------------------------------------------------------
@@ -40,26 +40,22 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod shared-initialize :after
-    ((device file-device) slot-names &rest initargs
-     &key handle filename flags (mode *default-open-mode*) delete-if-exists)
-  ;; FIXME: use new pathnames
-  (check-type filename string)
-  (setf (file-device-filename device) (copy-seq filename))
-  (with-device (device)
-    (device-open device slot-names initargs)))
+    ((stream file-zstream) slot-names &rest initargs)
+  (with-device (stream)
+    (device-open stream slot-names initargs))
+  (add-zstream-instance-flags stream :zeta)
+  (setf (slot-value stream 'base-device) stream
+        (slot-value stream 'device) stream))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; PRINT-OBJECT
 ;;;-------------------------------------------------------------------------
 
-(defmethod print-object ((file file-device) stream)
-  (print-unreadable-object (file stream :identity t :type nil)
-    (format stream "File device for ~S" (file-device-filename file))))
-
 (defmethod print-object ((file file-zstream) stream)
   (print-unreadable-object (file stream :identity t :type t)
-    (format stream "wrapping ~S" (zstream-device file))))
+    (format stream "File stream for ~S"
+            (file-device-filename (zstream-device file)))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -67,14 +63,18 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod device-open ((device file-device) slot-names initargs)
-  (destructuring-bind (&key handle filename flags mode delete-if-exists)
+  (destructuring-bind (&key handle filename flags delete-if-exists
+                            (mode *default-open-mode*))
       initargs
+    ;; FIXME: use new pathnames
+    (check-type filename string)
+    (setf (file-device-filename device) (copy-seq filename))
     (labels ((handle-error (c)
                (posix-file-error c filename "opening"))
              (try-delete ()
                (handler-case
                    (%sys-unlink filename)
-                 (posix-error (c) (handle-error c))))
+                 (syscall-error (c) (handle-error c))))
              (try-open (&optional (retry-on-delete t))
                (handler-case
                    (%sys-open filename flags mode)
@@ -82,7 +82,7 @@
                    (cond ((and retry-on-delete delete-if-exists)
                           (try-delete) (try-open nil))
                          (t (handle-error c))))
-                 (posix-error (c)
+                 (syscall-error (c)
                    (handle-error c))
                  (:no-error (fd) fd))))
       (let ((fd (or handle (try-open))))
@@ -109,7 +109,7 @@
 (defmethod device-position ((device file-device))
   (handler-case
       (%sys-lseek (device-handle device) 0 seek-cur)
-    (posix-error (err)
+    (syscall-error (err)
       (posix-file-error err device "seeking on"))))
 
 (defmethod (setf device-position)
@@ -120,7 +120,7 @@
                     (:start seek-set)
                     (:current seek-cur)
                     (:end seek-end)))
-    (posix-error (err)
+    (syscall-error (err)
       (posix-file-error err device "seeking on"))))
 
 
@@ -131,13 +131,13 @@
 (defmethod device-length ((device file-device))
   (handler-case
       (stat-size (%sys-fstat (device-handle device)))
-    (posix-error (err)
+    (syscall-error (err)
       (posix-file-error err device "getting status of"))))
 
 (defmethod (setf device-length) (length (device file-device))
   (handler-case
       (%sys-ftruncate (device-handle device) length)
-    (posix-error (err)
+    (syscall-error (err)
       (posix-file-error err device "truncating"))))
 
 
@@ -200,20 +200,6 @@
                  (eql :error if-does-not-exist)))
     (error 'program-error))
   ;; FIXME: check for file type TTY and adjust buffering
-  (let ((file-device
-         (%open-file filename direction if-exists if-does-not-exist
-                     truncate append extra-flags mode)))
-    (if (null buffering)
-        (values file-device)
-        (make-instance 'file-zeta-stream
-                       :device file-device
-                       :synchronized synchronized
-                       :buffering buffering
-                       :size buffer-size
-                       :external-format external-format))))
-
-(defun %open-file (filename direction if-exists if-does-not-exist
-                   truncate append extra-flags mode)
   (let ((flags 0))
     (setf (values flags if-exists if-does-not-exist)
           (process-file-direction direction flags
@@ -222,11 +208,15 @@
           (process-file-flags direction flags if-exists if-does-not-exist
                               truncate append extra-flags))
     (handler-case
-        (make-instance 'file-device
+        (make-instance 'file-zeta-stream
                        :filename (namestring filename)
                        :flags (logior flags extra-flags)
                        :mode mode
-                       :delete-if-exists (eql :delete if-exists))
+                       :delete-if-exists (eql :delete if-exists)
+                       :synchronized synchronized
+                       :buffering buffering
+                       :size buffer-size
+                       :external-format external-format)
       (posix-file-error (error)
         (case (posix-file-error-identifier error)
           (:enoent

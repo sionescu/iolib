@@ -15,6 +15,7 @@
 (defclass device-buffer (buffer)
   ((synchronized :initarg :synchronized)
    (device :initarg :device)
+   (base-device :initarg :base-device)
    (input-iobuf :initarg :input-buffer)
    (output-iobuf :initarg :output-buffer)
    (buffering :initarg :buffering))
@@ -32,7 +33,8 @@
                      :adjust-threshold 1))
 
 (defclass zstream ()
-  (external-format))
+  ((%flags :initform 0 :type ub16)
+   external-format))
 
 (defclass device-zstream (device-buffer zstream)
   ())
@@ -69,7 +71,7 @@
 
 (defgeneric zstream-device (stream))
 
-(defgeneric (setf zstream-device) (new-device stream))
+(defgeneric zstream-base-device (stream))
 
 (defgeneric zstream-external-format (stream))
 
@@ -163,11 +165,11 @@
   (declare (ignore stream))
   (values nil))
 
-(defmethod (setf zstream-device) (new-device (stream device-zstream))
-  (setf (slot-value stream 'device) new-device))
+(defmethod zstream-base-device ((stream device-zstream))
+  (slot-value stream 'base-device))
 
-(defmethod (setf zstream-device) (new-device (stream memory-zstream))
-  (declare (ignore new-device stream))
+(defmethod zstream-base-device ((stream memory-zstream))
+  (declare (ignore stream))
   (values nil))
 
 (defmethod zstream-external-format ((stream zstream))
@@ -186,6 +188,103 @@
 
 
 ;;;-------------------------------------------------------------------------
+;;; Helper macros
+;;;-------------------------------------------------------------------------
+
+;; FIXME: synchronize memory streams too ?
+(defmacro with-synchronized-device-zstream
+    ((stream &optional direction) &body body)
+  (with-gensyms (body-fun)
+    (labels ((make-locks (body direction)
+               (ecase direction
+                 (:input
+                  `(bt:with-lock-held
+                       ((iobuf-lock (slot-value ,stream 'input-iobuf)))
+                     ,body))
+                 (:output
+                  `(bt:with-lock-held
+                       ((iobuf-lock (slot-value ,stream 'output-iobuf)))
+                     ,body))
+                 (:io
+                  (make-locks (make-locks body :output) :input)))))
+      `(flet ((,body-fun () ,@body))
+         (declare (dynamic-extent #',body-fun))
+         (if (zstream-synchronized-p ,stream)
+             ,(make-locks `(,body-fun) direction)
+             (,body-fun))))))
+
+(defconstant (+flag-bits+ :test 'equal)
+  '(:zeta                             ; instance is valid
+    :buffering                        ; stream is buffered(not raw device)
+    :eof                              ; latched EOF
+    :dirty))                          ; output buffer needs write
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun %flags (flags)
+    (loop :for flag :in flags
+          :as pos := (position flag +flag-bits+)
+          :if pos
+            :sum (ash 1 pos) :into bits
+          :else
+            :collect flag :into unused
+          :finally (when unused
+                     (warn "Invalid stream instance flag~P: ~{~S~^, ~}"
+                           (length unused) unused))
+	      (return bits))))
+
+(defmacro with-zstream-class ((class-name &optional stream) &body body)
+  (if stream
+      (with-gensyms ((stm "ZSTREAM"))
+        `(let* ((,stm ,stream))
+           (declare (type ,class-name ,stm))
+           (macrolet ((sm (slot-name stream)
+                        (declare (ignore stream))
+                        `(slot-value ,',stm ',slot-name))
+                      (add-zstream-instance-flags (stream &rest flags)
+                        (declare (ignore stream))
+                        `(setf (sm %flags ,',stm) (logior (sm %flags ,',stm)
+                                                          ,(%flags flags))))
+                      (remove-zstream-instance-flags (stream &rest flags)
+                        (declare (ignore stream))
+                        `(setf (sm %flags ,',stm) (logandc2 (sm %flags ,',stm)
+                                                            ,(%flags flags))))
+                      (any-zstream-instance-flags (stream &rest flags)
+                        (declare (ignore stream))
+                        `(not (zerop (logand (sm %flags ,',stm)
+                                             ,(%flags flags))))))
+             ,@body)))
+      `(macrolet ((sm (slot-name stream)
+                    `(slot-value ,stream ',slot-name)))
+         ,@body)))
+
+(defmacro sm (slot-name stream)
+  "Access the named slot in Stream."
+  (warn "Using ~S macro outside ~S." 'sm 'with-zstream-class)
+  `(slot-value ,stream ',slot-name))
+
+(defmacro add-zstream-instance-flags (stream &rest flags)
+  "Set the given Flags in Stream."
+  (with-gensyms ((s "STREAM"))
+    `(let ((,s ,stream))
+       (with-zstream-class (zstream ,s)
+         (add-zstream-instance-flags ,s ,@flags)))))
+
+(defmacro remove-zstream-instance-flags (stream &rest flags)
+  "Clear the given Flags in Stream."
+  (with-gensyms ((s "STREAM"))
+    `(let ((,s ,stream))
+       (with-zstream-class (zstream ,s)
+         (remove-zstream-instance-flags ,s ,@flags)))))
+
+(defmacro any-zstream-instance-flags (stream &rest flags)
+  "Determine whether any one of the Flags is set in Stream."
+  (with-gensyms ((s "STREAM"))
+    `(let ((,s ,stream))
+       (with-zstream-class (zstream ,s)
+         (any-zstream-instance-flags ,s ,@flags)))))
+
+
+;;;-------------------------------------------------------------------------
 ;;; Constructors
 ;;;-------------------------------------------------------------------------
 
@@ -196,10 +295,12 @@
   (with-slots (device input-iobuf output-iobuf)
       stream
     (check-type device device)
-    (check-type data (or null iobuf))
     (check-type buffering stream-buffering)
-    (setf input-iobuf (or data (make-iobuf size))
-          output-iobuf input-iobuf)))
+    (when buffering
+      (check-type data (or null iobuf))
+      (setf input-iobuf  (or data (make-iobuf size))
+            output-iobuf input-iobuf)
+      (add-zstream-instance-flags stream :buffering))))
 
 (defmethod shared-initialize :after
     ((stream dual-channel-zstream) slot-names
@@ -208,11 +309,13 @@
   (with-slots (device input-iobuf output-iobuf)
       stream
     (check-type device device)
-    (check-type input-data (or null iobuf))
-    (check-type output-data (or null iobuf))
     (check-type buffering stream-buffering)
-    (setf input-iobuf (or input-data (make-iobuf input-size)))
-    (setf output-iobuf (or output-data (make-iobuf output-size)))))
+    (when buffering
+      (check-type input-data (or null iobuf))
+      (check-type output-data (or null iobuf))
+      (setf input-iobuf  (or input-data (make-iobuf input-size))
+            output-iobuf (or output-data (make-iobuf output-size)))
+      (add-zstream-instance-flags stream :buffering))))
 
 (defmethod shared-initialize :after
     ((stream memory-zstream) slot-names &key data (start 0) end)
@@ -236,7 +339,8 @@
        (setf output-position (- end start))
        (replace data-vector data :start2 start :end2 end))
       (t
-       (setf data-vector (make-array 128 :element-type element-type))))))
+       (setf data-vector (make-array 128 :element-type element-type))))
+    (add-zstream-instance-flags stream :buffering)))
 
 (defmethod shared-initialize :after ((stream zstream) slot-names
                                      &key (external-format :default))
@@ -268,33 +372,6 @@
       (t
        (error 'subtype-error :datum element-type
               :expected-supertype '(or (unsigned-byte 8) character t))))))
-
-
-;;;-------------------------------------------------------------------------
-;;; Helper macros
-;;;-------------------------------------------------------------------------
-
-;; FIXME: synchronize memory streams too ?
-(defmacro with-synchronized-device-zstream
-    ((stream &optional direction) &body body)
-  (with-gensyms (body-fun)
-    (labels ((make-locks (body direction)
-               (ecase direction
-                 (:input
-                  `(bt:with-lock-held
-                       ((iobuf-lock (slot-value ,stream 'input-iobuf)))
-                     ,body))
-                 (:output
-                  `(bt:with-lock-held
-                       ((iobuf-lock (slot-value ,stream 'output-iobuf)))
-                     ,body))
-                 (:io
-                  (make-locks (make-locks body :output) :input)))))
-      `(flet ((,body-fun () ,@body))
-         (declare (dynamic-extent #',body-fun))
-         (if (zstream-synchronized-p ,stream)
-             ,(make-locks `(,body-fun) direction)
-             (,body-fun))))))
 
 
 ;;;-------------------------------------------------------------------------
