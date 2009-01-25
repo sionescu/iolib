@@ -420,6 +420,26 @@ to the argument OFFSET according to the directive WHENCE."
 
 
 ;;;-------------------------------------------------------------------------
+;;; TTYs
+;;;-------------------------------------------------------------------------
+
+(defsyscall (%sys-posix-openpt "posix_openpt") :int
+  (flags :int))
+
+(defsyscall (%sys-grantpt "grantpt")
+    (:int :handle fd)
+  (fd :int))
+
+(defsyscall (%sys-unlockpt "unlockpt")
+    (:int :handle fd)
+  (fd :int))
+
+(defsyscall (%sys-ptsname "ptsname")
+    (:string :handle fd)
+  (fd :int))
+
+
+;;;-------------------------------------------------------------------------
 ;;; File descriptor polling
 ;;;-------------------------------------------------------------------------
 

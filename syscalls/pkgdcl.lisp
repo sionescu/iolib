@@ -126,6 +126,12 @@
    #:%sys-ioctl
    #:%sys-fd-open-p
 
+   ;; TTYs
+   #:%sys-posix-openpt
+   #:%sys-grantpt
+   #:%sys-unlockpt
+   #:%sys-ptsname
+
    ;; I/O Polling
    #:%sys-select
    #:%sys-fd-zero
