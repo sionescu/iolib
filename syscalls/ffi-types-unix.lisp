@@ -335,13 +335,13 @@
 (ctype blkcnt-t "blkcnt_t")
 
 (cstruct stat "struct stat"
-  (dev     "st_dev"     :type #-mips dev-t #+mips :unsigned-long)
+  (dev     "st_dev"     :type dev-t)
   (ino     "st_ino"     :type ino-t)
   (mode    "st_mode"    :type mode-t)
   (nlink   "st_nlink"   :type nlink-t)
   (uid     "st_uid"     :type uid-t)
   (gid     "st_gid"     :type gid-t)
-  (rdev    "st_rdev"    :type #-mips dev-t #+mips :unsigned-long)
+  (rdev    "st_rdev"    :type dev-t)
   (size    "st_size"    :type off-t)
   (blksize "st_blksize" :type blkcnt-t)
   (blocks  "st_blocks"  :type blksize-t)
