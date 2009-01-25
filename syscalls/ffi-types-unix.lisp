@@ -283,6 +283,12 @@
             :documentation "Smallest real-time signal number.")
   (constant (sigrtmax "SIGRTMAX")
             :documentation "Largest real-time signal number."))
+
+(constant (sig-ign "SIG_IGN"))
+(constant (sig-dfl "SIG_DFL"))
+
+(cstruct sigaction "struct sigaction"
+  (handler "sa_handler" :type :long))
 
 
 ;; from sys/syscalls.h

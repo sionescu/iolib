@@ -729,11 +729,21 @@ as indicated by WHICH and WHO to VALUE."
     (if (and (= retval -1) (/= errno 0))
         (signal-syscall-error errno)
         retval)))
+
+
+;;;-------------------------------------------------------------------------
+;;; Signals
+;;;-------------------------------------------------------------------------
 
 (defsyscall (%sys-kill "kill") :int
   "Send signal SIG to process PID."
-  (pid pid-t)
-  (sig :int))
+  (pid    pid-t)
+  (signum :int))
+
+(defsyscall (%sys-sigaction "sigaction") :int
+  (signum :int)
+  (act    :pointer)
+  (oldact :pointer))
 
 
 ;;;-------------------------------------------------------------------------

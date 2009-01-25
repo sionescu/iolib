@@ -179,7 +179,10 @@
    #:%sys-getpriority
    #:%sys-setpriority
    #:%sys-nice
+
+   ;; Signals
    #:%sys-kill
+   #:%sys-sigaction
 
    ;; Time
    #:%sys-usleep
@@ -326,6 +329,10 @@
    #+linux #:sigrtmin
    #+linux #:sigrtmax
 
+   ;; SIGACTION()
+   #:sig-ign
+   #:sig-dfl
+
    ;; FCNTL()
    #:f-dupfd
    #:f-getfd
@@ -463,6 +470,10 @@
    #:timeval #:size-of-timeval
    #:sec
    #:usec
+
+   ;; sigaction
+   #:sigaction #:size-of-sigaction
+   #:handler
 
    ;; stat
    #:stat #:size-of-stat
