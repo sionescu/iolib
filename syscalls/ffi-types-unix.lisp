@@ -454,11 +454,16 @@
 
   (cstruct kevent "struct kevent"
     (ident  "ident"  :type uintptr-t)
-    (filter "filter" :type :short)
-    (flags  "flags"  :type :unsigned-short)
-    (fflags "fflags" :type :unsigned-int)
-    (data   "data"   :type intptr-t)
-    (udata  "udata"  :type :pointer))
+    (filter "filter" :type #-netbsd :short
+                           #+netbsd :uint32)
+    (flags  "flags"  :type #-netbsd :unsigned-short
+                           #+netbsd :uint32)
+    (fflags "fflags" :type #-netbsd :unsigned-int
+                           #+netbsd :uint32)
+    (data   "data"   :type #-netbsd intptr-t
+                           #+netbsd :int64)
+    (udata  "udata"  :type #-netbsd :pointer
+                           #+netbsd intptr-t))
 
   ;; kevent() flags
   (constant (ev-add "EV_ADD"))
