@@ -47,7 +47,7 @@
 @menu
 * Overview::
 @c * Stream Library::
-* Socket Library::
+* Networking Library::
 * Comprehensive Index::
 @end menu
 
@@ -60,9 +60,9 @@ Describe IOLib here.
 @c @chapter Streams
 @c @include streams.texinfo
 
-@node Socket Library
-@chapter Sockets
-@include sockets.texinfo
+@node Networking Library
+@chapter Networking
+@include networking.texinfo
 
 @c We call this node ``Comprehensive Index'' so that texinfo's HTML
 @c output doesn't generate an index.html that'd overwrite the manual's

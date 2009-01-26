@@ -55,9 +55,11 @@
       (make-interface (copy-seq name) index))))
 
 (defun interface-name (interface)
+  "Return the name of an network interface."
   (car interface))
 
 (defun interface-index (interface)
+  "Return the OS index of a network interface."
   (cdr interface))
 
 (defun lookup-interface (interface)

@@ -1,17 +1,80 @@
 @menu
-* Sockets Overview::
+* Networking Overview::
+* Sockets::
 * Addresses::
-* Name Service::
+* DNS::
 * Services::
 * Protocols::
 * Network Interfaces::
-* Sockets::
 @end menu
 
-@node Sockets Overview
+@node Networking Overview
 @section Overview
 
-Describe sockets here.
+Describe networking here.
+
+@node Sockets
+@section Sockets
+
+@menu
+* Socket Classes::
+* Socket Functions::
+* Socket Options::
+@end menu
+
+@node Socket Classes
+@subsection Socket Classes
+
+@include include/class-sockets-socket.texinfo
+@include include/class-sockets-stream-socket.texinfo
+@include include/class-sockets-datagram-socket.texinfo
+@include include/class-sockets-internet-socket.texinfo
+@include include/class-sockets-local-socket.texinfo
+@include include/class-sockets-active-socket.texinfo
+@include include/class-sockets-passive-socket.texinfo
+@include include/class-sockets-socket-stream-internet-active.texinfo
+@include include/class-sockets-socket-stream-internet-passive.texinfo
+@include include/class-sockets-socket-stream-local-active.texinfo
+@include include/class-sockets-socket-stream-local-passive.texinfo
+@include include/class-sockets-socket-datagram-internet-active.texinfo
+@include include/class-sockets-socket-datagram-local-active.texinfo
+
+@node Socket Functions
+@subsection Socket Function and Macros
+
+@include include/fun-sockets-socket-os-fd.texinfo
+@include include/fun-sockets-socket-type.texinfo
+@include include/fun-sockets-socket-protocol.texinfo
+@include include/fun-sockets-socket-address-family.texinfo
+@include include/fun-sockets-socket-open-p.texinfo
+@include include/fun-sockets-ipv6-socket-p.texinfo
+@include include/fun-sockets-local-name.texinfo
+@include include/fun-sockets-local-host.texinfo
+@include include/fun-sockets-local-port.texinfo
+@include include/fun-sockets-local-filename.texinfo
+@include include/fun-sockets-remote-name.texinfo
+@include include/fun-sockets-remote-host.texinfo
+@include include/fun-sockets-remote-port.texinfo
+@include include/fun-sockets-remote-filename.texinfo
+@include include/fun-sockets-bind-address.texinfo
+@include include/fun-sockets-listen-on.texinfo
+@include include/fun-sockets-accept-connection.texinfo
+@include include/macro-sockets-with-accept-connection.texinfo
+@include include/fun-sockets-connect.texinfo
+@include include/fun-sockets-socket-connected-p.texinfo
+@include include/fun-sockets-disconnect.texinfo
+@include include/fun-sockets-shutdown.texinfo
+@include include/fun-sockets-send-to.texinfo
+@include include/fun-sockets-receive-from.texinfo
+@include include/fun-sockets-make-socket.texinfo
+@include include/macro-sockets-with-open-socket.texinfo
+@include include/fun-sockets-make-socket-from-fd.texinfo
+@include include/fun-sockets-make-socket-pair.texinfo
+@include include/fun-sockets-send-file-descriptor.texinfo
+@include include/fun-sockets-receive-file-descriptor.texinfo
+
+@node Socket Options
+@subsection Socket Options
 
 @node Addresses
 @section Socket Addresses
@@ -100,8 +163,8 @@ Describe sockets here.
 
 @node Address Arithmetic
 @subsection Address Arithmetic
-@include include/fun-sockets-make-subnet-mask.texinfo
-@include include/fun-sockets-ensure-subnet-mask.texinfo
+@include include/fun-sockets-make-netmask.texinfo
+@include include/fun-sockets-ensure-netmask.texinfo
 @include include/fun-sockets-inet-address-network-portion.texinfo
 @include include/fun-sockets-inet-address-host-portion.texinfo
 @include include/fun-sockets-inet-address-in-network-p.texinfo
@@ -125,8 +188,8 @@ Describe sockets here.
 @include include/fun-sockets-map-ipv4-address-to-ipv6.texinfo
 @include include/fun-sockets-map-ipv6-address-to-ipv4.texinfo
 
-@node Name Service
-@section Name Service
+@node DNS
+@section DNS
 
 @subsection Functions
 @include include/fun-sockets-lookup-host.texinfo
@@ -157,7 +220,6 @@ Describe sockets here.
 @node Network Interfaces
 @section Network Interfaces
 
-@include include/class-sockets-interface.texinfo
 @include include/fun-sockets-interface-index.texinfo
 @include include/fun-sockets-interface-name.texinfo
 @include include/fun-sockets-make-interface.texinfo
@@ -165,66 +227,3 @@ Describe sockets here.
 @include include/fun-sockets-list-network-interfaces.texinfo
 @include include/condition-sockets-unknown-interface.texinfo
 @include include/fun-sockets-unknown-interface-datum.texinfo
-
-@node Sockets
-@section Sockets
-
-@menu
-* Socket Classes::
-* Socket Functions::
-* Socket Options::
-@end menu
-
-@node Socket Classes
-@subsection Socket Classes
-
-@include include/class-sockets-socket.texinfo
-@include include/class-sockets-stream-socket.texinfo
-@include include/class-sockets-datagram-socket.texinfo
-@include include/class-sockets-internet-socket.texinfo
-@include include/class-sockets-local-socket.texinfo
-@include include/class-sockets-active-socket.texinfo
-@include include/class-sockets-passive-socket.texinfo
-@include include/class-sockets-socket-stream-internet-active.texinfo
-@include include/class-sockets-socket-stream-internet-passive.texinfo
-@include include/class-sockets-socket-stream-local-active.texinfo
-@include include/class-sockets-socket-stream-local-passive.texinfo
-@include include/class-sockets-socket-datagram-internet-active.texinfo
-@include include/class-sockets-socket-datagram-local-active.texinfo
-
-@node Socket Functions
-@subsection Socket Function and Macros
-
-@include include/fun-sockets-socket-os-fd.texinfo
-@include include/fun-sockets-socket-type.texinfo
-@include include/fun-sockets-socket-protocol.texinfo
-@include include/fun-sockets-socket-address-family.texinfo
-@include include/fun-sockets-socket-open-p.texinfo
-@include include/fun-sockets-ipv6-socket-p.texinfo
-@include include/fun-sockets-local-name.texinfo
-@include include/fun-sockets-local-host.texinfo
-@include include/fun-sockets-local-port.texinfo
-@include include/fun-sockets-local-filename.texinfo
-@include include/fun-sockets-remote-name.texinfo
-@include include/fun-sockets-remote-host.texinfo
-@include include/fun-sockets-remote-port.texinfo
-@include include/fun-sockets-remote-filename.texinfo
-@include include/fun-sockets-bind-address.texinfo
-@include include/fun-sockets-listen-on.texinfo
-@include include/fun-sockets-accept-connection.texinfo
-@include include/macro-sockets-with-accept-connection.texinfo
-@include include/fun-sockets-connect.texinfo
-@include include/fun-sockets-socket-connected-p.texinfo
-@include include/fun-sockets-disconnect.texinfo
-@include include/fun-sockets-shutdown.texinfo
-@include include/fun-sockets-send-to.texinfo
-@include include/fun-sockets-receive-from.texinfo
-@include include/fun-sockets-make-socket.texinfo
-@include include/macro-sockets-with-open-socket.texinfo
-@include include/fun-sockets-make-socket-from-fd.texinfo
-@include include/fun-sockets-make-socket-pair.texinfo
-@include include/fun-sockets-send-file-descriptor.texinfo
-@include include/fun-sockets-receive-file-descriptor.texinfo
-
-@node Socket Options
-@subsection Socket Options

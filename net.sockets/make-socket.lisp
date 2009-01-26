@@ -265,15 +265,13 @@ call CLOSE with :ABORT T on `VAR'."
     (t form)))
 
 (defmacro with-open-socket ((var &rest args) &body body)
-  "VAR is bound to a socket created by passing ARGS to
-MAKE-SOCKET and BODY is executed as implicit PROGN.  The socket
-is automatically closed upon exit."
+  "Bind VAR to a socket created by passing ARGS to MAKE-SOCKET and execute BODY as implicit PROGN.
+The socket is automatically closed upon exit."
   `(with-open-stream (,var (make-socket ,@args)) ,@body))
 
 (defmacro with-accept-connection ((var passive-socket &rest args) &body body)
-  "VAR is bound to a socket created by passing PASSIVE-SOCKET and ARGS to
-ACCEPT-CONNECTION and BODY is executed as implicit PROGN.  The socket
-is automatically closed upon exit."
+  "Bind VAR to a socket created by passing PASSIVE-SOCKET and ARGS to ACCEPT-CONNECTION and execute BODY as implicit PROGN.
+The socket is automatically closed upon exit."
   `(with-open-stream (,var (accept-connection ,passive-socket ,@args)) ,@body))
 
 ;;; MAKE-SOCKET-FROM-FD
@@ -282,10 +280,10 @@ is automatically closed upon exit."
 ;;; whether a socket is active or passive
 (defun make-socket-from-fd (fd &key (connect :active) (external-format :default)
                             input-buffer-size output-buffer-size)
-  "Creates an socket instance of the appropriate subclass of SOCKET using `FD'.
-The connection type of the socket must be specified(:ACTIVE or :PASSIVE).
+  "Create a socket instance of the appropriate subclass of SOCKET using FD.
+The connection type of the socket must be specified - :ACTIVE or :PASSIVE.
 The address family and type of the socket is automatically discovered using OS functions. Buffer sizes
-for the new socket can also be specified using `INPUT-BUFFER-SIZE' and `OUTPUT-BUFFER-SIZE'."
+for the new socket can also be specified using INPUT-BUFFER-SIZE and OUTPUT-BUFFER-SIZE."
   (flet ((%get-address-family (fd)
            (with-sockaddr-storage-and-socklen (ss size)
              (%getsockname fd ss size)
@@ -308,8 +306,8 @@ for the new socket can also be specified using `INPUT-BUFFER-SIZE' and `OUTPUT-B
 (defun make-socket-pair (&key (type :stream) (protocol :default) (external-format :default)
                          input-buffer-size output-buffer-size)
   "Creates a pair of sockets connected to each other.
-The socket type can be either :STREAM or :DATAGRAM. Currently OSes can only create :LOCAL sockets this way.
-Buffer sizes for the new sockets can also be specified using `INPUT-BUFFER-SIZE' and `OUTPUT-BUFFER-SIZE'."
+The socket type must be either :STREAM or :DATAGRAM. Currently OSes can only create :LOCAL sockets this way.
+Buffer sizes for the new sockets can also be specified using INPUT-BUFFER-SIZE and OUTPUT-BUFFER-SIZE."
   (flet ((%make-socket-pair (fd)
            (make-socket-from-fd fd :external-format external-format
                                 :input-buffer-size input-buffer-size
