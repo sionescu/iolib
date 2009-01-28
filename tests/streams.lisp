@@ -77,7 +77,7 @@
   (let ((sys-pn (truename (asdf:system-definition-pathname
                            (asdf:find-system 'iolib-tests)))))
     (make-pathname :directory (append (pathname-directory sys-pn)
-                                      '("tests" "data")))))
+                                      '("data")))))
 
 (defvar *test-dir*
   (ensure-directories-exist
