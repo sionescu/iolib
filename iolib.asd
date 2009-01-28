@@ -6,7 +6,7 @@
   :description "I/O library."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
-  :version "0.5.4"
+  :version "0.6.0"
   :licence "MIT"
   :depends-on (:iolib.base :io.multiplex :io.streams :net.sockets)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "iolib"))

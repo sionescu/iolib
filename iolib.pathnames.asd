@@ -5,7 +5,6 @@
 (asdf:defsystem :iolib.pathnames
   :description "New pathnames."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
-  :version "0.5.4"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :cl-ppcre)
   :pathname (merge-pathnames (make-pathname :directory '(:relative "pathnames"))

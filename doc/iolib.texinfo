@@ -1,7 +1,7 @@
 \input texinfo   @c -*-texinfo-*-
 @c %**start of header
 @setfilename iolib.info
-@settitle IOLib Manual
+@settitle IOLib 0.6.0 Manual
 
 @c @exampleindent 2
 @c @documentencoding utf-8
@@ -27,7 +27,7 @@
 @end copying
 
 @titlepage
-@title IOLib Manual
+@title IOLib 0.6.0 Manual
 @subtitle draft version
 @c @author John Doe
 @page
