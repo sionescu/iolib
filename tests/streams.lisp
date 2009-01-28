@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- IO.STREAMS test suite.
+;;; --- iolib.streams test suite.
 ;;;
 ;;; Copyright (c) 2006-2007, Dr. Edmund Weitz.  All rights reserved.
 ;;; Copyright (c) 2007, Luis Oliveira  <loliveira@common-lisp.net>
@@ -31,7 +31,7 @@
 
 (in-package :iolib-tests)
 
-(in-suite* :io.streams :in :iolib)
+(in-suite* :iolib.streams :in :iolib)
 
 (defclass my-file-stream (dual-channel-single-fd-gray-stream)
   ((path :initarg :path :reader file-stream-path)))

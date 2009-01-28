@@ -1,11 +1,11 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- net.sockets test suite.
+;;; --- iolib.sockets test suite.
 ;;;
 
 (in-package :iolib-tests)
 
-(in-suite* :net.sockets :in :iolib)
+(in-suite* :iolib.sockets :in :iolib)
 
 (defparameter *echo-address* (ensure-address #(127 0 0 1)))
 (defparameter *echo-port* 7)
