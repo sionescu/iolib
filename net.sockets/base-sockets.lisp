@@ -23,7 +23,7 @@
 are used to specify the kind of socket to create.
 
 * ADDRESS-FAMILY - :STREAM or :DATAGRAM
-* TYPE - :INTERNET or :LOCAL
+* TYPE - :INTERNET or :LOCAL(or :FILE is as synonim)
 * CONNECT - :ACTIVE or :PASSIVE
 * IPV6 - if NIL, create an IPv4 socket, otherwise an IPv6 socket.
 
