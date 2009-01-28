@@ -106,7 +106,7 @@ call CLOSE with :ABORT T on `VAR'."
     (bind-address socket (ensure-hostname local-host)
                   :port local-port
                   :reuse-address reuse-address))
-  (when (plusp remote-port)
+  (when remote-host
     (connect socket (ensure-hostname remote-host)
              :port remote-port))
   (values socket))
@@ -189,7 +189,7 @@ call CLOSE with :ABORT T on `VAR'."
                   :reuse-address reuse-address)
     (when interface
       (setf (socket-option socket :bind-to-device) interface)))
-  (when (plusp remote-port)
+  (when remote-host
     (connect socket (ensure-hostname remote-host)
              :port remote-port))
   (values socket))
