@@ -17,6 +17,66 @@
 (unset-method-docstring #'socket-protocol () '(socket))
 (set-function-docstring 'socket-protocol "Return the protocol of a socket.")
 
+(defgeneric make-socket (&key address-family type connect ipv6 external-format
+                              &allow-other-keys)
+  (:documentation "Create an instance of a subclass of SOCKET. ADDRESS-FAMILY, TYPE, CONNECT and IPV6
+are used to specify the kind of socket to create.
+
+* ADDRESS-FAMILY - :STREAM or :DATAGRAM
+* TYPE - :INTERNET or :LOCAL
+* CONNECT - :ACTIVE or :PASSIVE
+* IPV6 - if NIL, create an IPv4 socket, otherwise an IPv6 socket.
+
+To initialize the socket, the following keyword arguments can be used depending on ADDRESS-FAMILY, TYPE and CONNECT:
+* :local-host - a hostname designator or NIL. If non-null the socket will be bound to this address
+* :local-port - a port designator or NIL. If LOCAL-HOST is non-null, bind the socket to this port. If NIL, choose a random port
+* :remote-host - a hostname designator or NIL. If non-null the socket will be connected to this address
+* :remote-port - a port designator. If REMOTE-HOST is non-null, connect the socket to this port
+* :local-filename - a string or NIL. If non-null the socket will be bound to this file
+* :remote-filename - a string or NIL. If non-null the socket will be connected to this file
+* :backlog - a positive integer or NIL. Specifies the length of the incomming connection queue and can't be larger than +MAX-BACKLOG-SIZE+. If NIL, default is *DEFAULT-BACKLOG-SIZE*
+* :reuse-address: a boolean(default T). set option SO_REUSEADDR if LOCAL-HOST is non-null
+* :keepalive - a boolean. set option SO_KEEPALIVE
+* :nodelay - a boolean. set option SO_NODELAY
+* :interface - a string. set option SO_BINDTODEVICE to this interface
+* :input-buffer-size - a positive integer. Create the stream input buffer of this size
+* :output-buffer-size - a positive integer. Create the stream output buffer of this size
+
+Glossary:
+* hostname designator: an instance of INET-ADDRESS or any object accepted by LOOKUP-HOST. IPV6 is passed to LOOKUP-HOST as is
+* port designator: any object accepted by LOOKUP-SERVICE
+
+:address-family :STREAM :type :INTERNET :connect :ACTIVE
+* Valid keyword args: :LOCAL-HOST, :LOCAL-PORT, :REMOTE-HOST, :REMOTE-PORT, :REUSE-ADDRESS, :KEEPALIVE, :NODELAY, :INPUT-BUFFER-SIZE and :OUTPUT-BUFFER-SIZE
+
+:address-family :STREAM :type :INTERNET :connect :PASSIVE
+* Valid keyword args: :LOCAL-HOST, :LOCAL-PORT, :BACKLOG, :REUSE-ADDRESS, :INTERFACE and :NODELAY
+
+:address-family :STREAM :type :INTERNET :connect :ACTIVE
+* Valid keyword args: :LOCAL-FILENAME, :REMOTE-FILENAME, :INPUT-BUFFER-SIZE and :OUTPUT-BUFFER-SIZE
+
+:address-family :STREAM :type :INTERNET :connect :PASSIVE
+* Valid keyword args: :LOCAL-FILENAME, :REMOTE-FILENAME, :BACKLOG and :REUSE-ADDRESS
+
+:address-family :DATAGRAM :type :INTERNET
+* Valid keyword args: :LOCAL-HOST, :LOCAL-PORT, :REMOTE-HOST, :REMOTE-PORT, :REUSE-ADDRESS, :INTERFACE and :BROADCAST
+
+:address-family :DATAGRAM :type :LOCAL
+* Valid keyword args: :LOCAL-FILENAME and :REMOTE-FILENAME"))
+
+(defgeneric make-socket-from-fd (fd &key connect external-format
+                                    input-buffer-size output-buffer-size)
+  (:documentation "Create a socket instance of the appropriate subclass of SOCKET using FD.
+The connection type of the socket must be specified - :ACTIVE or :PASSIVE.
+The address family and type of the socket are automatically discovered using OS functions. Buffer sizes
+for the new socket can also be specified using INPUT-BUFFER-SIZE and OUTPUT-BUFFER-SIZE."))
+
+(defgeneric make-socket-pair (&key type protocol external-format
+                                   input-buffer-size output-buffer-size)
+  (:documentation "Create a pair of sockets connected to each other.
+The socket type must be either :STREAM or :DATAGRAM. Currently OSes can only create :LOCAL sockets this way.
+Buffer sizes for the new sockets can also be specified using INPUT-BUFFER-SIZE and OUTPUT-BUFFER-SIZE."))
+
 (defgeneric socket-os-fd (socket)
   (:documentation "Returns the OS file descriptor of SOCKET."))
 

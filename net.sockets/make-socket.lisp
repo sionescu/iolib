@@ -113,14 +113,13 @@ call CLOSE with :ABORT T on `VAR'."
 
 (define-socket-creator (:internet :stream :active)
     (family ef &key keepalive nodelay (reuse-address t)
-            local-host (local-port 0)
-            (remote-host +any-host+) (remote-port 0)
+            local-host local-port remote-host remote-port
             input-buffer-size output-buffer-size)
   (with-close-on-error (socket (%create-internet-socket family :stream :active ef
                                                         :input-buffer-size input-buffer-size
                                                         :output-buffer-size output-buffer-size))
     (%%init-internet-stream-active-socket socket keepalive nodelay reuse-address
-                                          local-host local-port remote-host remote-port)))
+                                          local-host (or local-port 0) remote-host remote-port)))
 
 ;;; Internet Stream Passive Socket creation
 
@@ -137,11 +136,11 @@ call CLOSE with :ABORT T on `VAR'."
 
 (define-socket-creator (:internet :stream :passive)
     (family ef &key interface (reuse-address t)
-            (local-host +any-host+) (local-port 0)
-            (backlog *default-backlog-size*))
+            local-host local-port backlog)
   (with-close-on-error (socket (%create-internet-socket family :stream :passive ef))
     (%%init-internet-stream-passive-socket socket interface reuse-address
-                                           local-host local-port backlog)))
+                                           local-host (or local-port 0)
+                                           (or backlog *default-backlog-size*))))
 
 ;;; Local Stream Active Socket creation
 
@@ -172,11 +171,11 @@ call CLOSE with :ABORT T on `VAR'."
   (values socket))
 
 (define-socket-creator (:local :stream :passive)
-    (family ef &key local-filename (reuse-address t)
-            (backlog *default-backlog-size*))
+    (family ef &key local-filename (reuse-address t) backlog)
   (declare (ignore family))
   (with-close-on-error (socket (create-socket :local :stream :passive ef))
-    (%%init-local-stream-passive-socket socket local-filename reuse-address backlog)))
+    (%%init-local-stream-passive-socket socket local-filename reuse-address
+                                        (or backlog *default-backlog-size*))))
 
 ;;; Internet Datagram Socket creation
 
@@ -197,11 +196,11 @@ call CLOSE with :ABORT T on `VAR'."
 
 (define-socket-creator (:internet :datagram :active)
     (family ef &key broadcast interface (reuse-address t)
-            local-host (local-port 0)
-            (remote-host +any-host+) (remote-port 0))
+            local-host local-port remote-host remote-port)
   (with-close-on-error (socket (%create-internet-socket family :datagram :active ef))
     (%%init-internet-datagram-active-socket socket broadcast interface reuse-address
-                                            local-host local-port remote-host remote-port)))
+                                            local-host (or local-port 0)
+                                            remote-host (or remote-port 0))))
 
 ;;; Local Datagram Socket creation
 
@@ -221,10 +220,9 @@ call CLOSE with :ABORT T on `VAR'."
 
 ;;; MAKE-SOCKET
 
-(defun make-socket (&rest args &key (address-family :internet) (type :stream)
-                    (connect :active) (ipv6 *ipv6*)
-                    (external-format :default) &allow-other-keys)
-  "Creates a socket instance of the appropriate subclass of SOCKET."
+(defmethod make-socket (&rest args &key (address-family :internet) (type :stream)
+                        (connect :active) (ipv6 *ipv6*)
+                        (external-format :default) &allow-other-keys)
   (check-type address-family (member :internet :local :ipv4 :ipv6) "one of :INTERNET, :LOCAL, :IPV4 or :IPV6")
   (check-type type (member :stream :datagram) "either :STREAM or :DATAGRAM")
   (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
@@ -278,12 +276,8 @@ The socket is automatically closed upon exit."
 
 ;;; FIXME: must come up with a way to find out
 ;;; whether a socket is active or passive
-(defun make-socket-from-fd (fd &key (connect :active) (external-format :default)
-                            input-buffer-size output-buffer-size)
-  "Create a socket instance of the appropriate subclass of SOCKET using FD.
-The connection type of the socket must be specified - :ACTIVE or :PASSIVE.
-The address family and type of the socket is automatically discovered using OS functions. Buffer sizes
-for the new socket can also be specified using INPUT-BUFFER-SIZE and OUTPUT-BUFFER-SIZE."
+(defmethod make-socket-from-fd ((fd integer) &key (connect :active) (external-format :default)
+                                input-buffer-size output-buffer-size)
   (flet ((%get-address-family (fd)
            (with-sockaddr-storage-and-socklen (ss size)
              (%getsockname fd ss size)
@@ -303,11 +297,8 @@ for the new socket can also be specified using INPUT-BUFFER-SIZE and OUTPUT-BUFF
 
 ;;; MAKE-SOCKET-PAIR
 
-(defun make-socket-pair (&key (type :stream) (protocol :default) (external-format :default)
-                         input-buffer-size output-buffer-size)
-  "Creates a pair of sockets connected to each other.
-The socket type must be either :STREAM or :DATAGRAM. Currently OSes can only create :LOCAL sockets this way.
-Buffer sizes for the new sockets can also be specified using INPUT-BUFFER-SIZE and OUTPUT-BUFFER-SIZE."
+(defmethod make-socket-pair (&key (type :stream) (protocol :default) (external-format :default)
+                             input-buffer-size output-buffer-size)
   (flet ((%make-socket-pair (fd)
            (make-socket-from-fd fd :external-format external-format
                                 :input-buffer-size input-buffer-size
