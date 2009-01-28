@@ -25,6 +25,7 @@
    #:defconstant
    ;; DEFOBSOLETE
    #:defobsolete
+   #:signal-obsolete
    #:deprecation-warning
    #:deprecation-warning-function-name
    #:deprecation-warning-type
