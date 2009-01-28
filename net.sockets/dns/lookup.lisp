@@ -106,7 +106,7 @@
 ;; TODO: * implement address selection as per RFC 3484
 ;;       * add caching
 ;;       * profile the whole thing
-(defun lookup-host (host &key (ipv6 *ipv6*))
+(defun lookup-hostname (host &key (ipv6 *ipv6*))
   "Looks up a host by name or address. IPV6 determines the
 IPv6 behaviour, defaults to *IPV6*.
 Returns 4 values:
@@ -124,6 +124,11 @@ Returns 4 values:
            (check-type host string "a string")
            (lookup-host-by-name host ipv6)))))
 
+(defun lookup-host (&rest args)
+  (apply #'lookup-hostname args))
+
+(defobsolete lookup-host lookup-hostname)
+
 (defun ensure-hostname (address &key (ipv6 *ipv6*) (errorp t))
   "If ADDRESS is an inet-address designator, it is converted, if
 necessary, to an INET-ADDRESS object and returned.  Otherwise it
@@ -132,7 +137,7 @@ return its primary address as the first return value and the
 remaining address list as the second return value."
   (flet ((%do-ensure-hostname ()
            (or (ensure-address address :family :internet :errorp nil)
-               (nth-value 0 (lookup-host address :ipv6 ipv6)))))
+               (nth-value 0 (lookup-hostname address :ipv6 ipv6)))))
     (if errorp
         (%do-ensure-hostname)
         (ignore-some-conditions (socket-error resolver-error)

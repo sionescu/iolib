@@ -200,7 +200,7 @@ Describe networking here.
 @section DNS
 
 @subsection Functions
-@include include/fun-sockets-lookup-host.texinfo
+@include include/fun-sockets-lookup-hostname.texinfo
 @include include/fun-sockets-ensure-hostname.texinfo
 
 @subsection Conditions

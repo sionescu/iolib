@@ -138,7 +138,8 @@
 
    ;; Hostname, Service, and Protocol Lookups
    #:ensure-hostname
-   #:lookup-host
+   #:lookup-hostname
+   #:lookup-host ; DEPRECATED
    #:lookup-protocol
    #:lookup-service
 
