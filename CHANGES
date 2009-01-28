@@ -1,0 +1,10 @@
+-*- mode: outline; fill-column: 78 -*-
+
+* Changes since 0.6.0:
+** API changes
+- IOLIB.SOCKETS:LOOKUP-HOST was renamed to LOOKUP-HOSTNAME
+- IOLIB.SOCKETS:IPV6-SOCKET-P was renamed to SOCKET-IPV6-P
+- When creating an AF_LOCAL socket, IOLIB.SOCKETS:MAKE-SOCKET accepts :FILE as
+  :TYPE synonim of :LOCAL
+** Misc
+- Sources have been reorganized, ASDF system files are now inside src/
