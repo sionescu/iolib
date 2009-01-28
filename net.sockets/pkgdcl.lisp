@@ -169,7 +169,6 @@
    #:bind-address
    #:connect
    #:disconnect
-   #:ipv6-socket-p
    #:listen-on
    #:local-filename
    #:local-host
@@ -189,6 +188,8 @@
    #:shutdown
    #:socket-connected-p
    #:socket-address-family
+   #:socket-ipv6-p
+   #:ipv6-socket-p ; DEPRECATED
    #:socket-open-p
    #:socket-option
    #:socket-os-fd

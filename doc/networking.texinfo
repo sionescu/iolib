@@ -79,7 +79,7 @@ Describe networking here.
 @subsection Socket Predicates
 @include include/fun-sockets-socket-open-p.texinfo
 @include include/fun-sockets-socket-connected-p.texinfo
-@include include/fun-sockets-ipv6-socket-p.texinfo
+@include include/fun-sockets-socket-ipv6-p.texinfo
 
 @node Socket Options
 @subsection Socket Options

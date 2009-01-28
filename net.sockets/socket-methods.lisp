@@ -71,9 +71,14 @@
 (defmethod socket-type ((socket datagram-socket))
   :datagram)
 
-(defun ipv6-socket-p (socket)
+(defun socket-ipv6-p (socket)
   "Return T if SOCKET is an AF_INET6 socket."
-  (eq :ipv6 (socket-address-family socket)))
+  (eql :ipv6 (socket-address-family socket)))
+
+(defun ipv6-socket-p (&rest args)
+  (apply #'socket-ipv6-p args))
+
+(defobsolete ipv6-socket-p socket-ipv6-p)
 
 
 ;;;-------------------------------------------------------------------------
@@ -239,7 +244,7 @@
 (defmethod bind-address ((socket internet-socket) (address ipv4-address)
                          &key (port 0))
   (let ((port (ensure-numerical-service port)))
-    (if (ipv6-socket-p socket)
+    (if (socket-ipv6-p socket)
         (bind-ipv6-address (fd-of socket)
                            (map-ipv4-vector-to-ipv6 (address-name address))
                            port)
@@ -339,7 +344,7 @@
         (port (ensure-numerical-service port)))
     (with-socket-to-wait-connect (socket wait timeout)
       (cond
-        ((ipv6-socket-p socket)
+        ((socket-ipv6-p socket)
          (when (ipv4-address-p address)
            (setf name (map-ipv4-vector-to-ipv6 name)))
          (ipv6-connect (fd-of socket) name port))
