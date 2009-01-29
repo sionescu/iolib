@@ -197,11 +197,6 @@
     (parse-file-path-type big-namestring (type-of (car paths))
                           :as-directory as-directory)))
 
-(defun split-directory-namestring (namestring &optional limit)
-  (remove "" (ppcre:split +split-directories-regex+ namestring
-                          :limit limit)
-          :test #'string=))
-
 (defmethod parse-file-path (namestring &key (start 0) end
                             as-directory expand-user)
   (parse-file-path-type namestring +file-path-host-type+
