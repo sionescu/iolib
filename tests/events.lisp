@@ -67,18 +67,24 @@
 ;;; FIXME: doesn't work with SELECT.
 ;;;        where ? it works here, on Linux. SIONESCU 2007.12.02
 (test event-base-with-open-sockets
-  (is-false
-   (with-event-base (base)
-     (with-open-socket (passive :address-family :ipv4 :connect :passive
-                                :local-host +ipv4-unspecified+)
-       (with-open-socket (active :address-family :ipv4
-                                 :remote-port (local-port passive)
-                                 :remote-host #(127 0 0 1))
-         (add-timer base #'timeout-cb 5)
-         (let (peer)
-           (waiting-for-event (base (fd-of passive) :read)
-             (setq peer (accept-connection passive)))
-           (assert (socket-open-p peer)))
-         ;; TODO: send and receive some stuff
-         ))
-     nil)))
+  (is-true
+   (block test
+     (with-event-base (base)
+       (with-open-socket (passive :address-family :ipv4 :connect :passive
+                                  :local-host +ipv4-unspecified+)
+         (with-open-socket (active :address-family :ipv4
+                                   :remote-port (local-port passive)
+                                   :remote-host +ipv4-unspecified+)
+           (add-timer base #'timeout-cb 5)
+           (let (peer)
+             (waiting-for-event (base (fd-of passive) :read)
+               (setq peer (accept-connection passive)))
+             (assert (socket-open-p peer))
+             (send-to active #(1 2 3 4))
+             (waiting-for-event (base (fd-of peer) :read)
+               (multiple-value-bind (v n)
+                   (receive-from peer :size 5)
+                 (assert (= n 4))
+                 (assert (equalp v #(1 2 3 4 0))))
+               (return-from test t)))))
+       nil))))
