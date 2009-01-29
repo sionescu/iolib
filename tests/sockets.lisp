@@ -285,10 +285,11 @@
 ;;; as me.
 (test inet.socket-bind.1
   (signals socket-address-in-use-error
-    (with-open-socket (s :address-family :ipv4 :connect :passive
-                         :local-host #(127 0 0 1) :local-port 1974)
-      (with-open-socket (s :address-family :ipv4 :connect :passive
-                           :local-host #(127 0 0 1) :local-port 1974)))))
+    (with-open-socket (s1 :address-family :ipv4 :connect :passive
+                          :local-host #(127 0 0 1) :local-port 1974)
+      (with-open-socket (s2 :address-family :ipv4 :connect :passive
+                            :local-host #(127 0 0 1) :local-port 1974)
+        (values s1 s2)))))
 
 (test sockopt.1
   (is-true (with-open-socket (s :address-family :ipv4)
