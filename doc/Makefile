@@ -2,7 +2,7 @@
 
 MANUAL := "iolib"
 SYSTEM := "iolib"
-PACKAGES := iolib.sockets iolib.streams
+PACKAGES := sockets iolib.streams
 TITLE := "IOLib Manual"
 CSS := "default"
 
