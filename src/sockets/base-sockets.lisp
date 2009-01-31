@@ -22,7 +22,7 @@
   (:documentation "Create an instance of a subclass of SOCKET. ADDRESS-FAMILY, TYPE, CONNECT and IPV6
 are used to specify the kind of socket to create.
 
-* ADDRESS-FAMILY - :INTERNET or :LOCAL(or :FILE is as synonim)
+* ADDRESS-FAMILY - :INTERNET or :LOCAL (or :FILE as synonim)
 * TYPE - :STREAM or :DATAGRAM
 * CONNECT - :ACTIVE or :PASSIVE
 * IPV6 - if NIL, create an IPv4 socket, otherwise an IPv6 socket.
