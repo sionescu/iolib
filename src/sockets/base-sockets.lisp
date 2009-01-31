@@ -22,8 +22,8 @@
   (:documentation "Create an instance of a subclass of SOCKET. ADDRESS-FAMILY, TYPE, CONNECT and IPV6
 are used to specify the kind of socket to create.
 
-* ADDRESS-FAMILY - :STREAM or :DATAGRAM
-* TYPE - :INTERNET or :LOCAL(or :FILE is as synonim)
+* ADDRESS-FAMILY - :INTERNET or :LOCAL(or :FILE is as synonim)
+* TYPE - :STREAM or :DATAGRAM
 * CONNECT - :ACTIVE or :PASSIVE
 * IPV6 - if NIL, create an IPv4 socket, otherwise an IPv6 socket.
 
@@ -46,22 +46,22 @@ Glossary:
 * hostname designator: an instance of INET-ADDRESS or any object accepted by LOOKUP-HOST. IPV6 is passed to LOOKUP-HOST as is
 * port designator: any object accepted by LOOKUP-SERVICE
 
-:address-family :STREAM :type :INTERNET :connect :ACTIVE
+:address-family :INTERNET :type :STREAM :connect :ACTIVE
 * Valid keyword args: :LOCAL-HOST, :LOCAL-PORT, :REMOTE-HOST, :REMOTE-PORT, :REUSE-ADDRESS, :KEEPALIVE, :NODELAY, :INPUT-BUFFER-SIZE and :OUTPUT-BUFFER-SIZE
 
-:address-family :STREAM :type :INTERNET :connect :PASSIVE
+:address-family :INTERNET :type :STREAM :connect :PASSIVE
 * Valid keyword args: :LOCAL-HOST, :LOCAL-PORT, :BACKLOG, :REUSE-ADDRESS, :INTERFACE and :NODELAY
 
-:address-family :STREAM :type :INTERNET :connect :ACTIVE
+:address-family :INTERNET :type :STREAM :connect :ACTIVE
 * Valid keyword args: :LOCAL-FILENAME, :REMOTE-FILENAME, :INPUT-BUFFER-SIZE and :OUTPUT-BUFFER-SIZE
 
-:address-family :STREAM :type :INTERNET :connect :PASSIVE
+:address-family :INTERNET :type :STREAM :connect :PASSIVE
 * Valid keyword args: :LOCAL-FILENAME, :REMOTE-FILENAME, :BACKLOG and :REUSE-ADDRESS
 
-:address-family :DATAGRAM :type :INTERNET
+:address-family :INTERNET :type :DATAGRAM
 * Valid keyword args: :LOCAL-HOST, :LOCAL-PORT, :REMOTE-HOST, :REMOTE-PORT, :REUSE-ADDRESS, :INTERFACE and :BROADCAST
 
-:address-family :DATAGRAM :type :LOCAL
+:address-family :LOCAL :type :DATAGRAM
 * Valid keyword args: :LOCAL-FILENAME and :REMOTE-FILENAME"))
 
 (defgeneric make-socket-from-fd (fd &key connect external-format
