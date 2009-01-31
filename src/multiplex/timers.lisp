@@ -47,14 +47,21 @@
 (defmethod print-object ((object timer) stream)
   (print-unreadable-object (object stream)
     (format stream "TIMER ~S, Timeout: [ ~A , ~A ], ~:[persistent~;one-shot~]"
-            (or (%timer-name object)
-                "(unnamed)")
+            (%timer-name object)
             (%timer-relative-time object)
             (%timer-expire-time object)
             (%timer-one-shot object))))
 
-(defun make-timer (function delay &key (name "A timer") one-shot)
-  (%make-timer name function (abs-timeout delay) delay one-shot))
+;; about 65 years
+(defconstant +far-into-the-future+ 2.0d9)
+
+(defun make-timer (function delay &key name one-shot)
+  (flet ((abs-timeout (timeout)
+           (+ (isys:%sys-get-monotonic-time)
+              (normalize-timeout timeout))))
+    (let ((delay (or delay +far-into-the-future+))
+          (name (or name "(unnamed)")))
+      (%make-timer name function (abs-timeout delay) delay one-shot))))
 
 (defun timer-name (timer)
   (%timer-name timer))

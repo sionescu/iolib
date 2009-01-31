@@ -13,17 +13,16 @@
   ((:file "pkgdcl")
 
    ;; Scheduler
-   (:file "time" :depends-on ("pkgdcl"))
-   (:file "utils" :depends-on ("pkgdcl" "time"))
-   (:file "timers" :depends-on ("pkgdcl" "time"))
+   (:file "utils" :depends-on ("pkgdcl"))
+   (:file "timers" :depends-on ("pkgdcl"))
    (:file "queue" :depends-on ("pkgdcl"))
    (:file "scheduler" :depends-on ("pkgdcl" "timers" "queue"))
 
    ;; Event loop
    (:file "fd-entry" :depends-on ("pkgdcl" "timers"))
    (:file "multiplexer" :depends-on ("pkgdcl" "utils" "fd-entry"))
-   (:file "event-loop" :depends-on ("pkgdcl" "time" "timers" "queue"
-                                    "scheduler" "fd-entry" "multiplexer"))
+   (:file "event-loop" :depends-on ("pkgdcl" "timers" "queue" "scheduler"
+                                    "fd-entry" "multiplexer"))
 
    ;; FD wait
    (:file "fd-wait" :depends-on ("pkgdcl" "utils"))

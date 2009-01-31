@@ -26,9 +26,3 @@
         (+ (* sec 1000)
            (truncate usec 1000)))
       -1))
-
-(defmacro ignore-and-print-errors (&body body)
-  `(handler-case (locally ,@body)
-     (error (error)
-       (warn "Caught a ~A: ~A, ignoring it."
-             (type-of error) error))))

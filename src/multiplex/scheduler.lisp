@@ -54,7 +54,9 @@
 
 (defun time-to-next-timer (schedule)
   (let ((timer (peek-schedule schedule)))
-    (and timer (%timer-expire-time timer))))
+    (if timer
+        (%timer-expire-time timer)
+        +far-into-the-future+)))
 
 ;;;
 ;;; Expiring timers
