@@ -6,5 +6,10 @@
 - IOLIB.SOCKETS:IPV6-SOCKET-P was renamed to SOCKET-IPV6-P
 - When creating an AF_LOCAL socket, IOLIB.SOCKETS:MAKE-SOCKET accepts :FILE as
   :TYPE synonim of :LOCAL
+** Bug fixes:
+- EVENT-DISPATCH now calculates the distance to the next timer correctly
+  (reported by Ariel Badichi)
+- fixed possible fd load in the the select() multiplexer (reported by Ariel
+  Badichi)
 ** Misc
 - Sources have been reorganized, ASDF system files are now inside src/
