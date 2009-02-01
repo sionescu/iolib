@@ -899,7 +899,7 @@ as indicated by WHICH and WHO to VALUE."
         (errno (%sys-errno)))
     (cond
       ((not (null-pointer-p retval))
-       (foreign-string-to-lisp retval))
+       (nth-value 0 (foreign-string-to-lisp retval)))
       ((plusp errno)
        (signal-syscall-error errno))
       (t nil))))
