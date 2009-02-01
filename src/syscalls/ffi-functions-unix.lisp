@@ -891,9 +891,18 @@ as indicated by WHICH and WHO to VALUE."
 
 (defcvar ("environ" :read-only t) (:pointer :string))
 
-(defsyscall (%sys-getenv "getenv") :string
+(defentrypoint %sys-getenv (name)
   "Returns the value of environment variable NAME."
-  (name :string))
+  ;; FIXME: race condition
+  (setf (%sys-errno) 0)
+  (let ((retval (foreign-funcall "getenv" :string name :pointer))
+        (errno (%sys-errno)))
+    (cond
+      ((not (null-pointer-p retval))
+       (foreign-string-to-lisp retval))
+      ((plusp errno)
+       (signal-syscall-error errno))
+      (t nil))))
 
 (defsyscall (%sys-setenv "setenv") :int
   "Changes the value of environment variable NAME to VALUE.
