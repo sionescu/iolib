@@ -56,8 +56,9 @@
     (if write
         (isys:%sys-fd-set fd ws)
         (isys:%sys-fd-clr fd ws))
-    (setf max-fd (max (find-max-fd rs fd)
-                      (find-max-fd ws fd)))
+    (let ((end (max max-fd fd)))
+      (setf max-fd (max (find-max-fd rs end)
+                        (find-max-fd ws end))))
     t))
 
 (defmethod monitor-fd ((mux select-multiplexer) fd-entry)
