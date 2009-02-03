@@ -333,7 +333,8 @@ returned unmodified."
   (vector-to-colon-separated (address-name address)))
 
 (defmethod address-to-string ((address local-address))
-  (address-name address))
+  (format nil "~:[~;@~]~S" (abstract-address-p address)
+          (address-name address)))
 
 (defmethod print-object ((address ipv4-address) stream)
   (format stream "@~A" (address-to-string address)))
@@ -343,8 +344,8 @@ returned unmodified."
 
 (defmethod print-object ((address local-address) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
-    (format stream "Unix socket address: ~A. Abstract: ~:[no~;yes~]"
-            (address-to-string address) (abstract-address-p address))))
+    (format stream "Unix socket address: ~A"
+            (address-to-string address))))
 
 ;;;; Reader Macro
 

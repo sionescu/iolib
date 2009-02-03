@@ -8,6 +8,7 @@
   :TYPE synonim of :LOCAL
 ** New features
 - Add support for abstract UNIX addresses
+- UNIX addresses are now printed as strings. Abstract addresses have a leading #\@
 ** Bug fixes:
 - EVENT-DISPATCH now calculates the distance to the next timer correctly
   (reported by Ariel Badichi)
