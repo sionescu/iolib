@@ -120,20 +120,38 @@
      (make-sockaddr-in6 ,var ,address ,port)
      ,@body))
 
-(defun make-sockaddr-un (sun string)
+(defun make-sockaddr-un (sun string abstract)
   (declare (type string string))
   (isys:%sys-bzero sun size-of-sockaddr-un)
   (with-foreign-slots ((family path) sun sockaddr-un)
     (setf family af-local)
-    (with-foreign-string (c-string string)
-      (loop :for off :below (1- unix-path-max)
-            :do (setf (mem-aref path :uint8 off)
-                      (mem-aref c-string :uint8 off)))))
+    (let* ((address-string
+            (concatenate 'string (when abstract (string #\Null)) string))
+           (path-length (length address-string))
+           (sun-path-len
+            (load-time-value
+             (- size-of-sockaddr-un
+                (foreign-slot-offset 'sockaddr-un 'path)))))
+      (assert (< path-length sun-path-len))
+      (with-foreign-string (c-string address-string :null-terminated-p nil)
+        (isys:%sys-memcpy (foreign-slot-pointer sun 'sockaddr-un 'path)
+                          c-string path-length))))
   (values sun))
 
-(defmacro with-sockaddr-un ((var address) &body body)
+(defun actual-size-of-sockaddr-un (sun)
+  (let ((path-ptr (foreign-slot-pointer sun 'sockaddr-un 'path))
+        (sun-path-len
+         (load-time-value
+          (- size-of-sockaddr-un
+             (foreign-slot-offset 'sockaddr-un 'path)))))
+    (loop :for i :from 1 :below sun-path-len
+          :if (zerop (mem-aref path-ptr :char i))
+          :do (return (+ i (foreign-slot-offset 'sockaddr-un 'path)))
+          :finally (bug "Invalid sockaddr_un struct: slot sun_path contains invalid C string"))))
+
+(defmacro with-sockaddr-un ((var address abstract) &body body)
   `(with-foreign-object (,var 'sockaddr-un)
-     (make-sockaddr-un ,var ,address)
+     (make-sockaddr-un ,var ,address ,abstract)
      ,@body))
 
 (defmacro with-sockaddr-storage ((var) &body body)
