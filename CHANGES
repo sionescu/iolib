@@ -14,5 +14,7 @@
   (reported by Ariel Badichi)
 - fixed possible fd load in the the select() multiplexer (reported by Ariel
   Badichi)
+- reading from socket streams with non-blocking FDs now works (reported by
+  Chaitanya Gupta)
 ** Misc
 - Sources have been reorganized, ASDF system files are now inside src/

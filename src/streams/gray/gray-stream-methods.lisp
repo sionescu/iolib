@@ -69,12 +69,19 @@
     nil))
 
 (defun %fill-ibuf (read-fn fd buf)
-  (let ((num (isys:repeat-upon-eintr
-               (funcall read-fn fd (iobuf-end-pointer buf)
-                        (iobuf-end-space-length buf)))))
-    (if (zerop num)
-        :eof
-        (incf (iobuf-end buf) num))))
+  (flet ((read-once ()
+           (loop :named read :do
+             (handler-case
+                 (return-from read
+                   (funcall read-fn fd (iobuf-end-pointer buf)
+                            (iobuf-end-space-length buf)))
+               (isys:eintr ())
+               (isys:ewouldblock ()
+                 (iomux:wait-until-fd-ready fd :input nil t))))))
+    (let ((nbytes (read-once)))
+      (if (zerop nbytes)
+          :eof
+          (incf (iobuf-end buf) nbytes)))))
 
 (defun %read-into-simple-array-ub8 (stream array start end)
   (declare (type dual-channel-gray-stream stream))
