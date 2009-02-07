@@ -1,4 +1,7 @@
-Some of the socket tests require an echo server runing locally.
+-*- outline -*-
+
+* Tests
+ Some of the socket tests require an echo server runing locally.
 You can either compile and run the provided tests/echo-server.c
 or enabled the echo services in (x)inetd.
 Note: on Darwin, this can be achieved by uncommenting the echo
@@ -6,3 +9,11 @@ Note: on Darwin, this can be achieved by uncommenting the echo
    sudo xinetd -dontfork -inetd_compat)
 Otherwise, set iolib-tests:*echo-address* and iolib-test:*echo-port*
 appropriately if you want to point the echo tests somewhere else.
+
+* Generating documentation
+ To generate the documentation, use this patched version of
+texinfo-docstrings: http://common-lisp.net/~sionescu/texinfo-docstrings.tar.bz2
+Then make sure that IOLib's .asd files and texinfo-docstrings.asd can
+be loaded and run GNU make inside doc/ ; you'll then find the
+generated docs under manual/. This procedure has only been tested
+with SBCL.
