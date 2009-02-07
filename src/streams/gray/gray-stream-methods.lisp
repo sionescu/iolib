@@ -70,9 +70,9 @@
 
 (defun %fill-ibuf (read-fn fd buf)
   (flet ((read-once ()
-           (loop :named read :do
+           (loop
              (handler-case
-                 (return-from read
+                 (return-from read-once
                    (funcall read-fn fd (iobuf-end-pointer buf)
                             (iobuf-end-space-length buf)))
                (isys:eintr ())
