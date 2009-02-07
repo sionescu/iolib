@@ -162,6 +162,7 @@
                (handler-case
                    (funcall write-fn fd (inc-pointer buf bytes-written)
                             (- nbytes bytes-written))
+                 (isys:eintr ())
                  (isys:epipe ()
                    (return* (values bytes-written :hangup)))
                  (isys:ewouldblock ()
