@@ -5,7 +5,7 @@
 
 (in-package :iolib.sockets)
 
-(define-condition resolver-error (error)
+(define-condition resolver-error (isys:iolib-error)
   ((datum :initarg :data :reader resolver-error-datum))
   (:documentation
    "Signaled when an error occurs while trying to resolve an address."))

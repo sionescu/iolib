@@ -16,5 +16,6 @@
   Badichi)
 - reading from socket streams with non-blocking FDs now works (reported by
   Chaitanya Gupta)
+- make RESOLVER-ERROR actually a subtype of IOLIB-ERROR (reported by Ariel Badichi)
 ** Misc
 - Sources have been reorganized, ASDF system files are now inside src/
