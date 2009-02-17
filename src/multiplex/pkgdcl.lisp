@@ -9,7 +9,8 @@
   (:nicknames #:iomux)
   (:use :iolib.base :cffi)
   (:export
-   ;; Classes
+   ;; Classes and Types
+   #:timer
    #:event-base
    #:multiplexer
    #:select-multiplexer
