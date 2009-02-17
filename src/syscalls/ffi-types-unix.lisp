@@ -462,8 +462,7 @@
                            #+netbsd :uint32)
     (data   "data"   :type #-netbsd intptr-t
                            #+netbsd :int64)
-    (udata  "udata"  :type #-netbsd :pointer
-                           #+netbsd intptr-t))
+    (udata  "udata"  :type :pointer))
 
   ;; kevent() flags
   (constant (ev-add "EV_ADD"))
