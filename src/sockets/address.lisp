@@ -84,7 +84,8 @@ ADDRESS-NAME reader."))
   (etypecase sockaddr
     (ipv4-address (make-sockaddr-in ss (address-name sockaddr) port))
     (ipv6-address (make-sockaddr-in6 ss (address-name sockaddr) port))
-    (local-address (make-sockaddr-un ss (address-name sockaddr)))))
+    (local-address (make-sockaddr-un ss (address-name sockaddr)
+                                     (abstract-address-p sockaddr)))))
 
 (defun sockaddr-size (ss)
   (with-foreign-slots ((family) ss sockaddr-storage)
