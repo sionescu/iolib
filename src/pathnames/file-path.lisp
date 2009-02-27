@@ -73,16 +73,13 @@
 
 ;;; Operations
 
-(defgeneric make-file-path (&key host device directory name defaults type))
+(defgeneric make-file-path (&key host device directory name defaults))
 
 (defgeneric merge-file-paths (path &optional defaults))
 
 (defgeneric enough-file-path (path &optional defaults))
 
 (defgeneric concatenate-paths (&rest paths))
-
-(defgeneric parse-file-path-type (namestring type &key start end
-                                  as-directory expand-user))
 
 (defgeneric parse-file-path (namestring &key start end
                              as-directory expand-user))
@@ -155,10 +152,9 @@
 ;;; Operations
 ;;;-------------------------------------------------------------------------
 
-(defmethod make-file-path (&key (type '#.+file-path-host-type+)
-                           host device directory name defaults)
+(defmethod make-file-path (&key host device directory name defaults)
   (check-type defaults (or null file-path))
-  (make-instance type
+  (make-instance '#.+file-path-host-type+
                  :host (or host
                            (if defaults
                                (file-path-host defaults)
@@ -194,15 +190,7 @@
         (big-namestring
          (apply #'join (file-path-directory-delimiter (car paths))
                 (mapcar #'file-path-namestring paths))))
-    (parse-file-path-type big-namestring (type-of (car paths))
-                          :as-directory as-directory)))
-
-(defmethod parse-file-path (namestring &key (start 0) end
-                            as-directory expand-user)
-  (parse-file-path-type namestring +file-path-host-type+
-                        :start start :end end
-                        :as-directory as-directory
-                        :expand-user expand-user))
+    (parse-file-path big-namestring :as-directory as-directory)))
 
 (defmethod file-path ((pathspec file-path))
   pathspec)

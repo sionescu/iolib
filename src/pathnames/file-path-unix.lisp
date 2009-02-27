@@ -84,10 +84,8 @@
                           :limit limit)
           :test #'string=))
 
-(defmethod parse-file-path-type ((namestring string)
-                                 (type (eql 'unix-path))
-                                 &key (start 0) end
-                                 as-directory expand-user)
+(defmethod parse-file-path ((namestring string) &key (start 0) end
+                            as-directory expand-user)
   (let* ((actual-namestring (subseq namestring start end))
          (expansion (or (when expand-user
                           (ignore-some-conditions (isys:syscall-error)
@@ -100,7 +98,7 @@
          (directory-type (if (absolute-namestring-p expansion)
                              :absolute
                              :relative)))
-    (make-instance type :directory (cons directory-type dirname)
+    (make-instance 'unix-path :directory (cons directory-type dirname)
                    :name (if (string= "" basename) nil basename))))
 
 (defmethod %expand-user-directory ((pathspec string))
