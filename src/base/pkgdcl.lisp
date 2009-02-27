@@ -42,6 +42,7 @@
    ;; Matching
    #:multiple-value-case #:flags-case
    ;; Time
+   #:timeout-designator #:positive-timeout-designator
    #:decode-timeout #:normalize-timeout #:clamp-timeout))
 
 (flet ((gather-external-symbols (&rest packages)

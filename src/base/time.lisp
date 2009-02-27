@@ -8,6 +8,12 @@
 (deftype timeout ()
   'double-float)
 
+(deftype timeout-designator ()
+  '(or non-negative-real (member t nil)))
+
+(deftype positive-timeout-designator ()
+  '(or non-negative-real (eql t)))
+
 ;;; Break a real timeout into seconds and microseconds.
 (defun decode-timeout (timeout)
   (assert (or (not timeout)
