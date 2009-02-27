@@ -191,6 +191,12 @@
 (defun lisp->c-bool (val)
   (if val 1 0))
 
+(defun wait->timeout (wait)
+  (case wait
+    (nil 0)
+    ((t) nil)
+    (t   wait)))
+
 (defun compute-flags (flags args)
   (loop :with flag-combination := 0
         :for cons :on args :by #'cddr
