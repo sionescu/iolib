@@ -6,6 +6,8 @@
 - IOLIB.SOCKETS:IPV6-SOCKET-P was renamed to SOCKET-IPV6-P
 - When creating an AF_LOCAL socket, IOLIB.SOCKETS:MAKE-SOCKET accepts :FILE as
   :TYPE synonim of :LOCAL
+- IOLIB.SOCKETS:ACCEPT-CONNECTION : keyword arg TIMEOUT has been coalesced
+  into WAIT
 ** New features
 - Add support for abstract UNIX addresses (patch by Julian Stecklina)
 - UNIX addresses are now printed as strings. Abstract addresses have a leading #\@

@@ -291,8 +291,8 @@
   (error "You can't accept connections on active sockets."))
 
 (defmethod accept-connection ((socket passive-socket) &key external-format
-                              input-buffer-size output-buffer-size
-                              (wait t) (timeout nil))
+                              input-buffer-size output-buffer-size (wait t))
+  (check-type wait timeout-designator)
   (flet ((make-client-socket (fd)
            (make-instance (active-class socket)
                           :address-family (socket-address-family socket)
@@ -301,11 +301,11 @@
                                                (external-format-of socket))
                           :input-buffer-size input-buffer-size
                           :output-buffer-size output-buffer-size)))
-    (ignore-some-conditions (iomux:poll-timeout)
-      (when wait (iomux:wait-until-fd-ready (fd-of socket) :input timeout t))
+    (ignore-some-conditions (isys:ewouldblock iomux:poll-timeout)
+      (iomux:wait-until-fd-ready (fd-of socket) :input (wait->timeout wait) t)
       (with-sockaddr-storage-and-socklen (ss size)
-        (ignore-some-conditions (isys:ewouldblock)
-          (make-client-socket (%accept (fd-of socket) ss size)))))))
+        (values (make-client-socket (%accept (fd-of socket) ss size))
+                (sockaddr-storage->sockaddr ss))))))
 
 
 ;;;-------------------------------------------------------------------------
