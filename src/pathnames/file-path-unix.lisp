@@ -63,7 +63,8 @@
       (when (stringp name)
         (princ name stream)))))
 
-(defmethod %file-path-directory-namestring ((path unix-path) &key trailing-delimiter)
+(defmethod %file-path-directory-namestring ((path unix-path) &key trailing-delimiter
+                                            print-dot)
   (with-slots (directory)
       path
     (with-output-to-string (stream)
@@ -71,10 +72,10 @@
         (destructuring-bind (directory-type &rest dirs)
             directory
           (ecase directory-type
-            (nil t)   ; no directory
             (:absolute
              (princ (file-path-directory-delimiter path) stream))
-            (:relative t))
+            (:relative
+             (when (and (null dirs) print-dot) (princ "." stream))))
           (princ (apply #'join (file-path-directory-delimiter path)
                         (if trailing-delimiter (append dirs (list "")) dirs))
                  stream))))))
@@ -105,29 +106,26 @@
   (flet ((user-homedir (user)
            (nth-value 5 (isys:%sys-getpwnam user)))
          (uid-homedir (uid)
-           (nth-value 5 (isys:%sys-getpwuid uid)))
-         (concat-homedir (dir rest)
-           (join +directory-delimiter+ dir rest)))
+           (nth-value 5 (isys:%sys-getpwuid uid))))
+    (unless (char= #\~ (char pathspec 0))
+      (return* pathspec))
     (destructuring-bind (first &optional rest)
         (split-directory-namestring pathspec 2)
-      (cond
-        ((string= "~" first)
-         (let ((homedir
+      (let ((homedir
+             (cond
+               ((string= "~" first)
                 (or (isys:%sys-getenv "HOME")
                     (let ((username
                            (or (isys:%sys-getenv "USER")
                                (isys:%sys-getenv "LOGIN"))))
-                      (and username
-                           (user-homedir username)
-                           (uid-homedir (isys:%sys-getuid)))))))
-           (return* (concat-homedir homedir rest))))
-        ((char= #\~ (char first 0))
-         (let ((homedir
-                (and (user-homedir (subseq first 1))
-                     first)))
-           (return* (concat-homedir homedir rest))))
-        (t
-         pathspec)))))
+                      (if username
+                          (user-homedir username)
+                          (uid-homedir (isys:%sys-getuid))))))
+               ((char= #\~ (char first 0))
+                (user-homedir (subseq first 1)))
+               (t
+                (bug "The pathspec is suppose to start with a ~S" #\~)))))
+        (join +directory-delimiter+ homedir rest)))))
 
 (defmethod expand-user-directory ((path unix-path))
   (with-slots (directory)

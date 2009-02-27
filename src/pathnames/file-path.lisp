@@ -86,11 +86,12 @@
 
 (defgeneric file-path (pathspec))
 
-(defgeneric expand-user-directory (path))
-
 ;;; Internal functions
 
-(defgeneric %file-path-directory-namestring (path &key trailing-delimiter))
+(defgeneric expand-user-directory (path))
+
+(defgeneric %file-path-directory-namestring (path &key trailing-delimiter
+                                                  print-dot))
 
 (defgeneric %expand-user-directory (pathspec))
 
@@ -107,7 +108,7 @@
 
 (defmethod file-path-directory ((path file-path) &key namestring)
   (if namestring
-      (%file-path-directory-namestring path)
+      (%file-path-directory-namestring path :print-dot t)
       (slot-value path 'directory)))
 
 (defmethod file-path-name ((path file-path))
@@ -183,8 +184,8 @@
                            (file-path-name defaults))))
 
 (defmethod concatenate-paths (&rest paths)
-  (assert (every #'file-path-p paths))
   (when (null paths) (return* nil))
+  (assert (every #'file-path-p paths))
   (let ((as-directory
          (not (stringp (file-path-name (lastcar paths)))))
         (big-namestring
