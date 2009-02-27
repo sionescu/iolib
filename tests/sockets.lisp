@@ -105,8 +105,8 @@
               (values "::ff:ff:ff:0:" "::ff:ff:ff:0:" "::FF:FF:FF:0:"))))
 
 (test vector-to-colon-separated.2
-    (is (string= (vector-to-colon-separated #(1 2 3 4 5 0 6 7))
-                 "1:2:3:4:5::6:7")))
+  (is (string= (vector-to-colon-separated #(1 2 3 4 5 0 6 7))
+               "1:2:3:4:5::6:7")))
 
 (test vector-to-colon-separated.3
   (is (string= (vector-to-colon-separated #(0 2 3 4 5 0 6 7))
