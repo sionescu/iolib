@@ -320,29 +320,30 @@
   (with-sockaddr-in6 (sin6 address port)
     (%connect fd sin6 size-of-sockaddr-in6)))
 
-(defun call-with-socket-to-wait-connect (socket thunk wait timeout)
-  (flet
-      ((wait-connect (err)
-         (cond
-           (wait
-            (iomux:wait-until-fd-ready (fd-of socket) :output timeout t)
-            (let ((errcode (socket-option socket :error)))
-              (unless (zerop errcode)
-                (signal-socket-error errcode (fd-of socket)))))
-           (t (error err)))))
-    (handler-case
-        (funcall thunk)
-      (isys:ewouldblock (err) (wait-connect err))
-      (isys:einprogress (err) (wait-connect err)))))
+(defun call-with-socket-to-wait-connect (socket thunk wait)
+  (check-type wait timeout-designator)
+  (let ((timeout (wait->timeout wait)))
+    (flet
+        ((wait-connect (err)
+           (when (and wait (plusp wait))
+             (iomux:wait-until-fd-ready (fd-of socket) :output timeout t)
+             (let ((errcode (socket-option socket :error)))
+               (unless (zerop errcode)
+                 (signal-socket-error errcode (fd-of socket)))))))
+      (ignore-some-conditions (iomux:poll-timeout)
+        (handler-case
+            (funcall thunk)
+          (isys:ewouldblock (err) (wait-connect err))
+          (isys:einprogress (err) (wait-connect err)))))))
 
-(defmacro with-socket-to-wait-connect ((socket wait timeout) &body body)
-  `(call-with-socket-to-wait-connect ,socket (lambda () ,@body) ,wait ,timeout))
+(defmacro with-socket-to-wait-connect ((socket wait) &body body)
+  `(call-with-socket-to-wait-connect ,socket (lambda () ,@body) ,wait))
 
 (defmethod connect ((socket internet-socket) (address inet-address)
-                    &key (port 0) (wait t) (timeout nil))
+                    &key (port 0) (wait t))
   (let ((name (address-name address))
         (port (ensure-numerical-service port)))
-    (with-socket-to-wait-connect (socket wait timeout)
+    (with-socket-to-wait-connect (socket wait)
       (cond
         ((socket-ipv6-p socket)
          (when (ipv4-address-p address)
@@ -351,9 +352,10 @@
         (t (ipv4-connect (fd-of socket) name port)))))
   (values socket))
 
-(defmethod connect ((socket local-socket) (address local-address) &key)
-  (with-sockaddr-un (sun (address-name address) (abstract-address-p address))
-    (%connect (fd-of socket) sun (actual-size-of-sockaddr-un sun)))
+(defmethod connect ((socket local-socket) (address local-address) &key (wait t))
+  (with-socket-to-wait-connect (socket wait)
+    (with-sockaddr-un (sun (address-name address) (abstract-address-p address))
+        (%connect (fd-of socket) sun (actual-size-of-sockaddr-un sun))))
   (values socket))
 
 (defmethod connect ((socket passive-socket) address &key)
