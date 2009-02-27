@@ -4,11 +4,13 @@
   :description "IOLib test suite."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:iolib :fiveam)
+  :depends-on (:fiveam :iolib :iolib.pathnames)
   :components
   ((:file "pkgdcl")
    (:file "mainsuite" :depends-on ("pkgdcl"))
    (:file "base" :depends-on ("pkgdcl" "mainsuite"))
+   (:file "file-paths-os" :depends-on ("pkgdcl" "mainsuite")
+          :pathname #+unix "file-paths-unix")
    (:file "events" :depends-on ("pkgdcl" "mainsuite"))
    (:file "streams" :depends-on ("pkgdcl" "mainsuite"))
    (:file "sockets" :depends-on ("pkgdcl" "mainsuite"))))

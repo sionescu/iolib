@@ -6,5 +6,5 @@
 (in-package #:cl-user)
 
 (defpackage #:iolib-tests
-  (:use :iolib.base :iolib :5am)
+  (:use :5am :iolib.base :iolib :iolib.pathnames)
   (:export #:*echo-address* #:*echo-port*))
