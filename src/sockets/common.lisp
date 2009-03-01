@@ -191,11 +191,12 @@
 (defun lisp->c-bool (val)
   (if val 1 0))
 
+;; FIXME: perhaps return some very large value instead of NIL
 (defun wait->timeout (wait)
   (case wait
-    (nil 0)
-    ((t) nil)
-    (t   wait)))
+    ((nil) 0)
+    ((t)   nil)
+    (t     wait)))
 
 (defun compute-flags (flags args)
   (loop :with flag-combination := 0
