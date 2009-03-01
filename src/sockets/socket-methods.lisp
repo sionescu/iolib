@@ -325,7 +325,8 @@
   (let ((timeout (wait->timeout wait)))
     (flet
         ((wait-connect (err)
-           (when (and wait (plusp wait))
+           (when (or (null  timeout)
+                     (plusp timeout))
              (iomux:wait-until-fd-ready (fd-of socket) :output timeout t)
              (let ((errcode (socket-option socket :error)))
                (unless (zerop errcode)
