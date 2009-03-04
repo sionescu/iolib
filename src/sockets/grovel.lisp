@@ -69,7 +69,6 @@
   ((:eopnotsupp "EOPNOTSUPP"))
   ((:eagain "EAGAIN"))
   ((:ebadf "EBADF"))
-  ((:eintr "EINTR"))
   ((:einval "EINVAL"))
   ((:enomem "ENOMEM"))
   ((:eacces "EACCES"))

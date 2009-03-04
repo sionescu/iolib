@@ -79,7 +79,7 @@
 (defun signal-socket-error (errno &optional fd fd2)
   (cond
     ((= errno isys:eintr)
-     (error 'eintr :handle fd :handle2 fd2))
+     (error 'isys:eintr :handle fd :handle2 fd2))
     (t
      (or (%signal-socket-error errno fd fd2)
          (error (isys:make-syscall-error errno fd fd2))))))
