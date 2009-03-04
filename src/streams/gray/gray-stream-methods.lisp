@@ -76,8 +76,14 @@
                    (funcall read-fn fd (iobuf-end-pointer buf)
                             (iobuf-end-space-length buf)))
                (isys:eintr ())
-               (isys:ewouldblock ()
-                 (iomux:wait-until-fd-ready fd :input nil t))))))
+               (isys:ewouldblock (err)
+                 (if (%get-fd-nonblock-mode fd)
+                     (iomux:wait-until-fd-ready fd :input nil t)
+                       ;; FIXME: big kludge.
+                       ;; the only way to get EWOULDBLOCK on a blocking socket
+                       ;; is when the user has set the RCV_TIMEO option, so
+                       ;; the error object must be resignaled
+                     (error err)))))))
     (let ((nbytes (read-once)))
       (if (zerop nbytes)
           :eof
@@ -165,8 +171,14 @@
                  (isys:eintr ())
                  (isys:epipe ()
                    (return* (values bytes-written :hangup)))
-                 (isys:ewouldblock ()
-                   (iomux:wait-until-fd-ready fd :output nil t))
+                 (isys:ewouldblock (err)
+                   (if (%get-fd-nonblock-mode fd)
+                       (iomux:wait-until-fd-ready fd :output nil t)
+                       ;; FIXME: big kludge.
+                       ;; the only way to get EWOULDBLOCK on a blocking socket
+                       ;; is when the user has set the SND_TIMEO option, so
+                       ;; the error object must be resignaled
+                       (error err)))
                  (:no-error (nbytes) (incf bytes-written nbytes))))
              (buffer-emptyp () (= bytes-written nbytes)))
       (loop :until (buffer-emptyp) :do (write-once)

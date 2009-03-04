@@ -21,5 +21,7 @@
   Chaitanya Gupta)
 - make RESOLVER-ERROR actually a subtype of IOLIB-ERROR (reported by Ariel Badichi)
 - socket syscalls that return EINTR now work
+- when setting send/receive timeouts on blocking sockets, stream methods now
+  properly signal ISYS:EWOULDBLOCK upon timeout
 ** Misc
 - Sources have been reorganized, ASDF system files are now inside src/
