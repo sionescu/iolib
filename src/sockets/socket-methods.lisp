@@ -324,7 +324,7 @@
   (check-type wait timeout-designator)
   (let ((timeout (wait->timeout wait)))
     (flet
-        ((wait-connect (err)
+        ((wait-connect ()
            (when (or (null  timeout)
                      (plusp timeout))
              (iomux:wait-until-fd-ready (fd-of socket) :output timeout t)
@@ -334,8 +334,8 @@
       (ignore-some-conditions (iomux:poll-timeout)
         (handler-case
             (funcall thunk)
-          (isys:ewouldblock (err) (wait-connect err))
-          (isys:einprogress (err) (wait-connect err)))))))
+          (isys:ewouldblock () (wait-connect))
+          (isys:einprogress () (wait-connect)))))))
 
 (defmacro with-socket-to-wait-connect ((socket wait) &body body)
   `(call-with-socket-to-wait-connect ,socket (lambda () ,@body) ,wait))
