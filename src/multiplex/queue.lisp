@@ -31,7 +31,7 @@
 ;;;
 
 (defun heap-parent (i)
-  (ash i -1))
+  (ash (1- i) -1))
 
 (defun heap-left (i)
   (ash i 1))
