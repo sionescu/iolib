@@ -9,7 +9,7 @@
 
 (defmacro define-designator (name cffi-type &body type-clauses)
   (let ((type `(quote (or ,@(mapcar #'car type-clauses))))
-        (ctype (format-symbol t "~A-DESIGNATOR" name)))
+        (ctype (format-symbol t "~A-~A" (string name) (string '#:designator))))
     `(progn
        (deftype ,name () ,type)
        (defun ,name (,name)

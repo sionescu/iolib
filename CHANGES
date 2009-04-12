@@ -24,5 +24,6 @@
 - when setting send/receive timeouts on blocking sockets, stream methods now
   properly signal ISYS:EWOULDBLOCK upon timeout
 - fix bug in HEAP-PARENT, used in the multiplexer (reported by Ole Arndt on sbcl-devel)
+- fix define-designator for when *print-case* is :downcase.
 ** Misc
 - Sources have been reorganized, ASDF system files are now inside src/
