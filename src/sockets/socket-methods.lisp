@@ -334,8 +334,9 @@
       (ignore-some-conditions (iomux:poll-timeout)
         (handler-case
             (funcall thunk)
-          (isys:ewouldblock () (wait-connect))
-          (isys:einprogress () (wait-connect)))))))
+          ((or isys:ewouldblock
+               isys:einprogress) ()
+            (wait-connect)))))))
 
 (defmacro with-socket-to-wait-connect ((socket wait) &body body)
   `(call-with-socket-to-wait-connect ,socket (lambda () ,@body) ,wait))
