@@ -41,13 +41,13 @@
 (defconstant +alternative-delimiter+
   #+unix nil #+windows #\/)
 
-(defconstant (+split-directories-regex+ :test 'equal)
+(defconstant (+split-directories-regex+ :test 'string=)
   (if +alternative-delimiter+
       (format nil "(~C|~C)" +directory-delimiter+ +alternative-delimiter+)
-      +directory-delimiter+))
+      (string +directory-delimiter+)))
 
-(defconstant (+absolute-directory-regex+ :test 'equal)
-  (format nil "^~C" +split-directories-regex+))
+(defconstant (+absolute-directory-regex+ :test 'string=)
+  (format nil "^~A" +split-directories-regex+))
 
 (defconstant +execution-path-delimiter+
   #+unix #\: #+windows #\;)
