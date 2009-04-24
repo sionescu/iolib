@@ -33,13 +33,16 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defconstant +file-path-host-type+
-    #+unix 'unix-path #+windows 'unc-path))
+    #+unix    'unix-path
+    #+windows 'unc-path))
 
 (defconstant +directory-delimiter+
-  #+unix #\/ #+windows #\\)
+  #+unix    #\/
+  #+windows #\\)
 
 (defconstant +alternative-delimiter+
-  #+unix nil #+windows #\/)
+  #+unix    nil
+  #+windows #\/)
 
 (defconstant (+split-directories-regex+ :test 'string=)
   (if +alternative-delimiter+
@@ -50,7 +53,8 @@
   (format nil "^~A" +split-directories-regex+))
 
 (defconstant +execution-path-delimiter+
-  #+unix #\: #+windows #\;)
+  #+unix    #\:
+  #+windows #\;)
 
 (declaim (special *default-file-path-defaults*))
 
