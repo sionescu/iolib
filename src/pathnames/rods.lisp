@@ -150,7 +150,7 @@
 (defun rod-trim (rod rune-bag)
   (check-type rod rod)
   (assert (every #'runep rune-bag))
-  (let ((left  (%rod-left-trim rod rune-bag))
+  (let ((left  (%rod-left-trim  rod rune-bag))
         (right (%rod-right-trim rod rune-bag)))
     (if (and (zerop left)
              (= right (length rod)))

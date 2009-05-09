@@ -94,7 +94,7 @@
 (defun rune> (rune &rest more-runes)
   (check-type rune rune)
   (assert (every #'runep more-runes))
-  (reduce #'< more-runes :initial-value rune))
+  (reduce #'> more-runes :initial-value rune))
 
 (defun rune<= (rune &rest more-runes)
   (check-type rune rune)
@@ -126,7 +126,7 @@
 (defun rune-greaterp (rune &rest more-runes)
   (check-type rune rune)
   (assert (every #'runep more-runes))
-  (reduce #'< more-runes :initial-value rune :key #'rune-downcase))
+  (reduce #'> more-runes :initial-value rune :key #'rune-downcase))
 
 (defun rune-not-greaterp (rune &rest more-runes)
   (check-type rune rune)
