@@ -138,15 +138,38 @@
   ;; TODO: Implement it
   )
 
+(defun %rod-left-trim (rod rune-bag)
+  (or (position-if-not (lambda (rune) (find rune rune-bag)) rod)
+      0))
+
+(defun %rod-right-trim (rod rune-bag)
+  (or (position-if-not (lambda (rune) (find rune rune-bag)) rod
+                       :from-end t)
+      (length rod)))
+
 (defun rod-trim (rod rune-bag)
   (check-type rod rod)
-  (assert (every #'runep rune-bag)))
+  (assert (every #'runep rune-bag))
+  (let ((left  (%rod-left-trim rod rune-bag))
+        (right (%rod-right-trim rod rune-bag)))
+    (if (and (zerop left)
+             (= right (length rod)))
+        rod
+        (subseq rod left right))))
 
 (defun rod-left-trim (rod rune-bag)
   (check-type rod rod)
-  (assert (every #'runep rune-bag)))
+  (assert (every #'runep rune-bag))
+  (let ((left (%rod-left-trim rod rune-bag)))
+    (if (zerop left)
+        rod
+        (subseq rod left))))
 
 (defun rod-right-trim (rod rune-bag)
   (check-type rod rod)
-  (assert (every #'runep rune-bag)))
+  (assert (every #'runep rune-bag))
+  (let ((right (%rod-right-trim rod rune-bag)))
+    (if (= right (length rod))
+        rod
+        (subseq rod 0 right))))
 
