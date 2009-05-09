@@ -11,6 +11,8 @@
   :serial t
   :components
   ((:file "pkgdcl")
+   (:file "runes")
+   (:file "rods")
    (:file "file-path")
    (:file "file-path-os"
      :pathname #+unix "file-path-unix")))
