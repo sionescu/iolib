@@ -10,12 +10,7 @@
 ;;;-------------------------------------------------------------------------
 
 (defclass unix-path (file-path)
-  ((directory-delimiter
-    :initform #\/)
-   (alternative-delimiter
-    :initform nil)
-   (execution-path-delimiter
-    :initform #\:))
+  ()
   (:default-initargs :host :unspecific
                      :device :unspecific))
 
@@ -73,10 +68,10 @@
             directory
           (ecase directory-type
             (:absolute
-             (princ (file-path-directory-delimiter path) stream))
+             (princ +directory-delimiter+ stream))
             (:relative
              (when (and (null dirs) print-dot) (princ "." stream))))
-          (princ (apply #'join (file-path-directory-delimiter path)
+          (princ (apply #'join +directory-delimiter+
                         (if trailing-delimiter (append dirs (list "")) dirs))
                  stream))))))
 

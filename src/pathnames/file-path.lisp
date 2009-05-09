@@ -15,16 +15,7 @@
    (directory :initarg :directory
               :initform nil)
    (name :initarg :name
-         :initform nil)
-   (directory-delimiter
-    :reader file-path-directory-delimiter
-    :allocation :class)
-   (alternative-delimiter
-    :reader file-path-alternative-delimiter
-    :allocation :class)
-   (execution-path-delimiter
-    :reader file-path-execution-path-delimiter
-    :allocation :class)))
+         :initform nil)))
 
 
 ;;;-------------------------------------------------------------------------
@@ -193,7 +184,7 @@
   (let ((as-directory
          (not (stringp (file-path-name (lastcar paths)))))
         (big-namestring
-         (apply #'join (file-path-directory-delimiter (car paths))
+         (apply #'join +directory-delimiter+
                 (mapcar #'file-path-namestring paths))))
     (parse-file-path big-namestring :as-directory as-directory)))
 
