@@ -32,3 +32,19 @@
 (test make-rod.error.3
   (signals type-error
     (make-rod 1 :initial-element #\a)))
+
+
+(test string-rod.1
+  (is-true (typep (string-rod "a") '(rod 1))))
+
+(test string-rod.2
+  (is (equal (string-rod "a")
+             #(97))))
+
+(test string-rod.3
+  (is (equal (string-rod #\a)
+             #(97))))
+
+(test string-rod.4
+  (is (equal (string-rod 'a)
+             #(97))))

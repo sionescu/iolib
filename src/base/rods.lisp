@@ -14,7 +14,7 @@
   (make-array size :element-type 'rune :initial-element initial-element))
 
 (defun string-rod (string)
-  (map 'rod #'char-rune string))
+  (map 'rod #'char-rune (string string)))
 
 (defun rod (thing &key new)
   (etypecase thing
