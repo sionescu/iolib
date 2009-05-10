@@ -44,11 +44,6 @@
 (defun rune-char (rune)
   (code-char rune))
 
-(defun rune-name (rune)
-  (if (unicode-rune-p rune)
-      (char-name (rune-char rune))
-      (format nil "Non-Unicode rune #x~X" rune)))
-
 (defun digit-rune (digit)
   (if-let (char (digit-char digit))
     (char-rune char)

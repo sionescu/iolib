@@ -214,3 +214,9 @@
           (and (not (unicode-rune-p rune)) rune))
         (if-let (char (name-char (rod-string name)))
           (char-rune char)))))
+
+;; FIXME: return rods ?
+(defun rune-name (rune)
+  (if (unicode-rune-p rune)
+      (char-name (rune-char rune))
+      (format nil "Non-Unicode rune #x~X" rune)))
