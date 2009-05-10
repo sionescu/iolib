@@ -242,3 +242,25 @@
 
 (test rune-equal.6
   (is (eql nil (rune-equal #x40 #x41))))
+
+
+(test rune-not-equal.1
+  (is (eql t (rune-not-equal #x40))))
+
+(test rune-not-equal.2
+  (is (eql t (rune-not-equal #x40 #x41))))
+
+(test rune-not-equal.3
+  (is (eql t (rune-not-equal #x40 #x41 #x42))))
+
+(test rune-not-equal.4
+  (is (eql nil (rune-not-equal #x40 #x40))))
+
+(test rune-not-equal.5
+  (is (eql nil (rune-not-equal #x40 #x41 #x40))))
+
+(test rune-not-equal.6
+  (is (eql nil (rune-not-equal #x41 #x61))))
+
+(test rune-not-equal.7
+  (is (eql nil (rune-not-equal #x41 #x61 #x41))))
