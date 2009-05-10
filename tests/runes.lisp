@@ -98,3 +98,22 @@
 (test rune.error.5
   (signals type-error
     (rune 'nil)))
+
+
+(test runep.1
+  (is-true (runep 0)))
+
+(test runep.2
+  (is-true (runep (1- rune-code-limit))))
+
+(test runep.3
+  (is-false (runep -1)))
+
+(test runep.4
+  (is-false (runep rune-code-limit)))
+
+(test runep.5
+  (is-false (runep #\a)))
+
+(test runep.6
+  (is-true (runep "string")))
