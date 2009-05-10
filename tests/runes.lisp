@@ -366,7 +366,7 @@
    (alpha-rune-p (char-rune #\5))))
 
 (test alpha-rune-p.error.1
-  (signals type-erros
+  (signals type-error
    (alpha-rune-p "string")))
 
 
