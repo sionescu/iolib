@@ -11,7 +11,7 @@
 
 (defun make-rod (size &key (initial-element 0))
   (check-type initial-element rune)
-  (make-array size :initial-element initial-element))
+  (make-array size :element-type 'rune :initial-element initial-element))
 
 (defun rod (thing)
   (etypecase thing
