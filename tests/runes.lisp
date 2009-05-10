@@ -420,3 +420,14 @@
 (test alphanumeric-rune-p.error.1
   (signals type-error
     (alphanumeric-rune-p "string")))
+
+
+(test graphic-rune-p.1
+  (is-true
+   (loop :for i :from 0 :to 255
+         :always (eql (graphic-rune-p i)
+                      (graphic-char-p (code-char i))))))
+
+(test graphic-rune-p.error.1
+  (signals type-error
+    (graphic-rune-p "string")))
