@@ -100,7 +100,7 @@
 
 (macrolet
     ((define-rune-comparison (name test &key (key 'identity))
-       (with-gensyms (rune more-runes r next-r list)
+       (with-gensyms (rune more-runes r list)
          `(defun ,name (,rune &rest ,more-runes)
             (check-type ,rune rune)
             (assert (every #'runep ,more-runes))
