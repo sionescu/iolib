@@ -39,3 +39,10 @@
 
 (test name-rune.error.1
   (is (null (name-rune "This is not a rune name"))))
+
+(test rune-name.1
+  (is (string-equal "Space" (rune-name (char-rune #\space)))))
+
+(test rune-name.2
+  (is (string-equal "Non-Unicode rune #xD800"
+                    (rune-name #xD800))))
