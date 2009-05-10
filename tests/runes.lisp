@@ -308,3 +308,25 @@
 
 (test rune-greaterp.7
   (is (eql nil (rune-greaterp #x62 #x61 #x41))))
+
+
+(test rune-not-greaterp.1
+  (is (eql t (rune-not-greaterp #x40))))
+
+(test rune-not-greaterp.2
+  (is (eql t (rune-not-greaterp #x40 #x41))))
+
+(test rune-not-greaterp.3
+  (is (eql t (rune-not-greaterp #x40 #x41 #x42))))
+
+(test rune-not-greaterp.4
+  (is (eql t (rune-not-greaterp #x40 #x40))))
+
+(test rune-not-greaterp.5
+  (is (eql nil (rune-not-greaterp #x40 #x41 #x40))))
+
+(test rune-not-greaterp.6
+  (is (eql t (rune-not-greaterp #x41 #x61))))
+
+(test rune-not-greaterp.7
+  (is (eql t (rune-not-greaterp #x41 #x61 #x62))))
