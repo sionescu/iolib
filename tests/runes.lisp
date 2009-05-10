@@ -116,4 +116,4 @@
   (is-false (runep #\a)))
 
 (test runep.6
-  (is-true (runep "string")))
+  (is-false (runep "string")))
