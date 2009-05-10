@@ -3,7 +3,7 @@
 ;;; --- Surrogates of chars.
 ;;;
 
-(in-package :iolib.pathnames)
+(in-package :iolib.base)
 
 ;;;-------------------------------------------------------------------------
 ;;; Constants
