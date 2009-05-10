@@ -51,9 +51,12 @@
 
 (defun rune (thing)
   (etypecase thing
-    (rune      thing)
-    ((rod 1)   (aref thing 0))
-    (character (char-rune (character thing)))))
+    (rune    thing)
+    ((rod 1) (aref thing 0))
+    ((or character
+         string
+         symbol)
+     (char-rune (character thing)))))
 
 
 ;;;-------------------------------------------------------------------------
