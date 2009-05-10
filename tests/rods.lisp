@@ -48,3 +48,36 @@
 (test string-rod.4
   (is (equalp (string-rod 'a)
               #(65))))
+
+
+(test rod.1
+  (is (equalp #(97) (rod (make-rod 1 :initial-element 97)))))
+
+(test rod.2
+  (is (equalp #(97) (rod 97))))
+
+(test rod.3
+  (is (equalp #(97) (rod #(97)))))
+
+(test rod.4
+  (is (equalp #(97) (rod "a"))))
+
+(test rod.5
+  (is (equalp #(97) (rod #\a))))
+
+(test rod.6
+  (is (equalp #(65) (rod 'a))))
+
+(test rod.7
+  (is-true
+   (let ((rod (make-rod 1 :initial-element 100)))
+     (eq rod (rod rod :new nil)))))
+
+(test rod.8
+  (is-false
+   (let ((rod (make-rod 1 :initial-element 100)))
+     (eq rod (rod rod :new t)))))
+
+(test rod.error.1
+  (signals type-error
+    (rod (make-hash-table))))
