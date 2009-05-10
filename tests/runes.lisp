@@ -286,3 +286,25 @@
 
 (test rune-lessp.7
   (is (eql nil (rune-lessp #x41 #x61 #x62))))
+
+
+(test rune-greaterp.1
+  (is (eql t (rune-greaterp #x40))))
+
+(test rune-greaterp.2
+  (is (eql t (rune-greaterp #x41 #x40))))
+
+(test rune-greaterp.3
+  (is (eql t (rune-greaterp #x42 #x41 #x40))))
+
+(test rune-greaterp.4
+  (is (eql nil (rune-greaterp #x40 #x40))))
+
+(test rune-greaterp.5
+  (is (eql nil (rune-greaterp #x41 #x40 #x40))))
+
+(test rune-greaterp.6
+  (is (eql nil (rune-greaterp #x61 #x41))))
+
+(test rune-greaterp.7
+  (is (eql nil (rune-greaterp #x62 #x61 #x41))))
