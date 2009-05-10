@@ -442,3 +442,14 @@
 (test upper-case-rune-p.error.1
   (signals type-error
     (upper-case-rune-p "string")))
+
+
+(test lower-case-rune-p.1
+  (is-true
+   (loop :for i :from 0 :to 255
+         :always (eql (lower-case-rune-p i)
+                      (lower-case-p (code-char i))))))
+
+(test lower-case-rune-p.error.1
+  (signals type-error
+    (lower-case-rune-p "string")))
