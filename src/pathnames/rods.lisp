@@ -122,18 +122,21 @@
                    :start start :end end))
 
 (defun nrod-upcase (rod &key (start 0) end)
+  (check-type rod rod)
   (check-bounds rod start end)
   (loop :for i :from start :below end :do
         (setf (aref rod i)
               (rune-upcase (aref rod i)))))
 
 (defun nrod-downcase (rod &key (start 0) end)
+  (check-type rod rod)
   (check-bounds rod start end)
   (loop :for i :from start :below end :do
         (setf (aref rod i)
               (rune-downcase (aref rod i)))))
 
 (defun nrod-capitalize (rod &key (start 0) end)
+  (check-type rod rod)
   (check-bounds rod start end)
   ;; TODO: Implement it
   )
