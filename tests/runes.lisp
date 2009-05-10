@@ -453,3 +453,14 @@
 (test lower-case-rune-p.error.1
   (signals type-error
     (lower-case-rune-p "string")))
+
+
+(test both-case-rune-p.1
+  (is-true
+   (loop :for i :from 0 :to 255
+         :always (eql (both-case-rune-p i)
+                      (both-case-p (code-char i))))))
+
+(test both-case-rune-p.error.1
+  (signals type-error
+    (both-case-rune-p "string")))
