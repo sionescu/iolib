@@ -431,3 +431,14 @@
 (test graphic-rune-p.error.1
   (signals type-error
     (graphic-rune-p "string")))
+
+
+(test upper-case-rune-p.1
+  (is-true
+   (loop :for i :from 0 :to 255
+         :always (eql (upper-case-rune-p i)
+                      (upper-case-p (code-char i))))))
+
+(test upper-case-rune-p.error.1
+  (signals type-error
+    (upper-case-rune-p "string")))
