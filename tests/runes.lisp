@@ -352,3 +352,19 @@
 
 (test rune-not-lessp.7
   (is (eql nil (rune-not-lessp #x40 #x41 #x40))))
+
+
+(test alpha-rune-p.1
+  (is-true
+   (and (loop :for r :from (char-rune #\a) :to (char-rune #\z)
+              :always (alpha-rune-p r))
+        (loop :for r :from (char-rune #\A) :to (char-rune #\Z)
+              :always (alpha-rune-p r)))))
+
+(test alpha-rune-p.2
+  (is-false
+   (alpha-rune-p (char-rune #\5))))
+
+(test alpha-rune-p.error.1
+  (signals type-erros
+   (alpha-rune-p "string")))
