@@ -55,13 +55,24 @@
 
 
 (test digit-rune.1
-  (is (= 9 (digit-rune 9))))
+  (is (= (+ #x30 9) (digit-rune 9))))
 
 (test digit-rune.2
   (is (loop :for i :below 16 :always (digit-rune i 16))))
 
+(test digit-rune.3
+  (is-true
+   (loop :for i :from 0 :to 255
+         :always (eql (digit-rune i)
+                      (if-let (char (digit-char i))
+                        (char-rune char))))))
+
 (test digit-rune.error.1
   (is-false (digit-rune 16 16)))
+
+(test digit-rune.error.2
+  (signals type-error
+    (digit-rune "string")))
 
 
 (test rune.1

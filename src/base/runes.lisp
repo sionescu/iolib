@@ -45,9 +45,8 @@
   (code-char rune))
 
 (defun digit-rune (digit &optional (radix 10))
-  (if (< -1 digit radix)
-      digit
-      nil))
+  (if-let (char (digit-char digit radix))
+    (char-rune char)))
 
 (defun rune (thing)
   (etypecase thing
