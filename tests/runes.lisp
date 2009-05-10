@@ -264,3 +264,25 @@
 
 (test rune-not-equal.7
   (is (eql nil (rune-not-equal #x41 #x61 #x41))))
+
+
+(test rune-lessp.1
+  (is (eql t (rune-lessp #x40))))
+
+(test rune-lessp.2
+  (is (eql t (rune-lessp #x40 #x41))))
+
+(test rune-lessp.3
+  (is (eql t (rune-lessp #x40 #x41 #x42))))
+
+(test rune-lessp.4
+  (is (eql nil (rune-lessp #x40 #x40))))
+
+(test rune-lessp.5
+  (is (eql nil (rune-lessp #x40 #x41 #x40))))
+
+(test rune-lessp.6
+  (is (eql nil (rune-lessp #x41 #x61))))
+
+(test rune-lessp.7
+  (is (eql nil (rune-lessp #x41 #x61 #x62))))
