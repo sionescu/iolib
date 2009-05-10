@@ -475,3 +475,14 @@
 (test rune-upcase.error.1
   (signals type-error
     (rune-upcase "string")))
+
+
+(test rune-downcase.1
+  (is-true
+   (loop :for i :from 0 :to 255
+         :always (eql (rune-downcase i)
+                      (char-rune (char-downcase (code-char i)))))))
+
+(test rune-downcase.error.1
+  (signals type-error
+    (rune-downcase "string")))
