@@ -117,3 +117,16 @@
 
 (test runep.6
   (is-false (runep "string")))
+
+
+(test unicode-rune-p.1
+  (is-true (unicode-rune-p #xD7FF)))
+
+(test unicode-rune-p.2
+  (is-true (unicode-rune-p #xDE00)))
+
+(test unicode-rune-p.1
+  (is-false (unicode-rune-p #xD800)))
+
+(test unicode-rune-p.2
+  (is-false (unicode-rune-p #xDFFF)))
