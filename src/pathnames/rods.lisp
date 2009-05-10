@@ -146,8 +146,23 @@
 (defun nrod-capitalize (rod &key (start 0) end)
   (check-type rod rod)
   (check-bounds rod start end)
-  ;; TODO: Implement it
-  )
+  (let ((i start))
+    (labels ((%nupcase-rune (pos)
+               (setf (aref rod pos) (rune-upcase (aref rod pos))))
+             (%ndowncase-rune (pos)
+               (setf (aref rod pos) (rune-downcase (aref rod pos))))
+             (%ncapitalize-word ()
+               (if-let ((pos (position-if #'alphanumeric-rune-p rod
+                                          :start i :end end)))
+                 (progn
+                   (%nupcase-rune pos)
+                   (setf i (1+ pos))
+                   (loop :until (or (= i end)
+                                    (not (alphanumeric-rune-p (aref rod i))))
+                         :do (%ndowncase-rune i) (incf i)))
+                 (setf i end))))
+      (loop :until (= i end) :do (%ncapitalize-word))
+      rod)))
 
 (defun %rod-left-trim (rod rune-bag)
   (or (position-if-not (lambda (rune) (find rune rune-bag)) rod)
