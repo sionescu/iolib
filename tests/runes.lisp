@@ -38,7 +38,7 @@
   (is (= #xD800 (name-rune "Non-Unicode rune #xD800"))))
 
 (test name-rune.error.1
-  (is (null (name-rune "This is not a rune name"))))
+  (is-false (name-rune "This is not a rune name")))
 
 (test rune-name.1
   (is (string-equal "Space" (rune-name (char-rune #\space)))))
@@ -46,3 +46,12 @@
 (test rune-name.2
   (is (string-equal "Non-Unicode rune #xD800"
                     (rune-name #xD800))))
+
+(test digit-rune.1
+  (is (= 9 (digit-rune 9))))
+
+(test digit-rune.2
+  (is (loop :for i :below 16 :always (digit-rune i 16))))
+
+(test digit-rune.error.1
+  (is-false (digit-rune 16 16)))
