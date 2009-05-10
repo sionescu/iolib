@@ -43,7 +43,30 @@
    #:multiple-value-case #:flags-case
    ;; Time
    #:timeout-designator #:positive-timeout-designator
-   #:decode-timeout #:normalize-timeout #:clamp-timeout))
+   #:decode-timeout #:normalize-timeout #:clamp-timeout
+   ;; Runes
+   #:rune-code-limit #:rune
+   #:code-rune #:rune-code
+   #:char-rune #:rune-char
+   #:name-rune #:rune-name
+   #:digit-rune
+   #:runep #:unicode-rune-p
+   #:rune= #:rune/= #:rune< #:rune> #:rune<= #:rune>=
+   #:rune-equal #:rune-not-equal #:rune-lessp
+   #:rune-greaterp #:rune-not-greaterp #:rune-not-lessp
+   #:alpha-rune-p #:alphanumeric-rune-p #:digit-rune-p #:graphic-rune-p
+   #:upper-case-rune-p #:lower-case-rune-p #:both-case-rune-p
+   #:rune-upcase #:rune-downcase
+   ;; Rods
+   #:make-rod #:string-rod #:rod #:rodp
+   #:rod= #:rod/= #:rod< #:rod> #:rod<= #:rod>=
+   #:rod-equal #:rod-not-equal #:rod-lessp
+   #:rod-greaterp #:rod-not-greaterp #:rod-not-lessp
+   #:rod-string
+   #:rod-upcase #:rod-downcase #:rod-capitalize
+   #:nrod-upcase #:nrod-downcase #:nrod-capitalize
+   #:rod-trim #:rod-left-trim #:rod-right-trim
+   ))
 
 (flet ((gather-external-symbols (&rest packages)
          (let (symbols)
