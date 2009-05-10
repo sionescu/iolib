@@ -330,3 +330,25 @@
 
 (test rune-not-greaterp.7
   (is (eql t (rune-not-greaterp #x41 #x61 #x62))))
+
+
+(test rune-not-lessp.1
+  (is (eql t (rune-not-lessp #x40))))
+
+(test rune-not-lessp.2
+  (is (eql t (rune-not-lessp #x41 #x40))))
+
+(test rune-not-lessp.3
+  (is (eql t (rune-not-lessp #x42 #x41 #x40))))
+
+(test rune-not-lessp.4
+  (is (eql t (rune-not-lessp #x40 #x40))))
+
+(test rune-not-lessp.5
+  (is (eql t (rune-not-lessp #x61 #x41))))
+
+(test rune-not-lessp.6
+  (is (eql t (rune-not-lessp #x62 #x61 #x41))))
+
+(test rune-not-lessp.7
+  (is (eql nil (rune-not-lessp #x40 #x41 #x40))))

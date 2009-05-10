@@ -164,7 +164,11 @@
 (defun rune-not-lessp (rune &rest more-runes)
   (check-type rune rune)
   (assert (every #'runep more-runes))
-  (reduce #'>= more-runes :initial-value rune :key #'rune-downcase))
+  (do* ((r (rune-downcase rune) (rune-downcase (car list)))
+        (list more-runes (cdr list)))
+       ((null list) t)
+    (unless (>= r (rune-downcase (car list)))
+      (return nil))))
 
 (defun alpha-rune-p (rune)
   (and (unicode-rune-p rune)
