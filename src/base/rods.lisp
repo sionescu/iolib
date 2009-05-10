@@ -35,77 +35,30 @@
 (defun rodp (rod)
   (typep rod 'rod))
 
-(defun rod= (rod1 rod2 &key start1 end1 start2 end2)
-  (check-type rod1 rod)
-  (check-type rod2 rod)
-  (check-bounds rod1 start1 end1)
-  (check-bounds rod2 start2 end2))
-
-(defun rod/= (rod1 rod2 &key start1 end1 start2 end2)
-  (check-type rod1 rod)
-  (check-type rod2 rod)
-  (check-bounds rod1 start1 end1)
-  (check-bounds rod2 start2 end2))
-
-(defun rod< (rod1 rod2 &key start1 end1 start2 end2)
-  (check-type rod1 rod)
-  (check-type rod2 rod)
-  (check-bounds rod1 start1 end1)
-  (check-bounds rod2 start2 end2))
-
-(defun rod> (rod1 rod2 &key start1 end1 start2 end2)
-  (check-type rod1 rod)
-  (check-type rod2 rod)
-  (check-bounds rod1 start1 end1)
-  (check-bounds rod2 start2 end2))
-
-(defun rod<= (rod1 rod2 &key start1 end1 start2 end2)
-  (check-type rod1 rod)
-  (check-type rod2 rod)
-  (check-bounds rod1 start1 end1)
-  (check-bounds rod2 start2 end2))
-
-(defun rod>= (rod1 rod2 &key start1 end1 start2 end2)
-  (check-type rod1 rod)
-  (check-type rod2 rod)
-  (check-bounds rod1 start1 end1)
-  (check-bounds rod2 start2 end2))
-
-(defun rod-equal (rod1 rod2 &key start1 end1 start2 end2)
-  (check-type rod1 rod)
-  (check-type rod2 rod)
-  (check-bounds rod1 start1 end1)
-  (check-bounds rod2 start2 end2))
-
-(defun rod-not-equal (rod1 rod2 &key start1 end1 start2 end2)
-  (check-type rod1 rod)
-  (check-type rod2 rod)
-  (check-bounds rod1 start1 end1)
-  (check-bounds rod2 start2 end2))
-
-(defun rod-lessp (rod1 rod2 &key start1 end1 start2 end2)
-  (check-type rod1 rod)
-  (check-type rod2 rod)
-  (check-bounds rod1 start1 end1)
-  (check-bounds rod2 start2 end2))
-
-(defun rod-greaterp (rod1 rod2 &key start1 end1 start2 end2)
-  (check-type rod1 rod)
-  (check-type rod2 rod)
-  (check-bounds rod1 start1 end1)
-  (check-bounds rod2 start2 end2))
-
-(defun rod-not-greaterp (rod1 rod2 &key start1 end1 start2 end2)
-  (check-type rod1 rod)
-  (check-type rod2 rod)
-  (check-bounds rod1 start1 end1)
-  (check-bounds rod2 start2 end2))
-
-(defun rod-not-lessp (rod1 rod2 &key start1 end1 start2 end2)
-  (check-type rod1 rod)
-  (check-type rod2 rod)
-  (check-bounds rod1 start1 end1)
-  (check-bounds rod2 start2 end2))
+(macrolet
+    ((define-rod-comparison (name test &key (key 'identity))
+       (with-gensyms (rod1 rod2 start1 start2 end1 end2 i j)
+         `(defun ,name (,rod1 ,rod2 &key (,start1 0) ,end1 (,start2 0) ,end2)
+            (check-type ,rod1 rod)
+            (check-type ,rod2 rod)
+            (check-bounds ,rod1 ,start1 ,end1)
+            (check-bounds ,rod2 ,start2 ,end2)
+            (loop :for ,i :from ,start1 :below ,end1
+                  :for ,j :from ,start2 :below ,end2
+                  :always (,test (,key (aref ,rod1 ,i))
+                            (,key (aref ,rod2 ,j))))))))
+  (define-rod-comparison rod=              =                   )
+  (define-rod-comparison rod-equal         = :key rune-downcase)
+  (define-rod-comparison rod/=            /=                   )
+  (define-rod-comparison rod-not-equal    /= :key rune-downcase)
+  (define-rod-comparison rod<              <                   )
+  (define-rod-comparison rod-lessp         < :key rune-downcase)
+  (define-rod-comparison rod>              >                   )
+  (define-rod-comparison rod-greaterp      > :key rune-downcase)
+  (define-rod-comparison rod<=            <=                   )
+  (define-rod-comparison rod-not-greaterp <= :key rune-downcase)
+  (define-rod-comparison rod>=            >=                   )
+  (define-rod-comparison rod-not-lessp    >= :key rune-downcase))
 
 
 ;;;-------------------------------------------------------------------------
