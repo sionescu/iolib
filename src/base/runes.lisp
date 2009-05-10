@@ -44,15 +44,6 @@
 (defun rune-char (rune)
   (code-char rune))
 
-(defun name-rune (name)
-  (let ((name (rod-downcase (rod name))))
-    (if (and (= 23 (length name))
-             (starts-with-subseq (rod "non-unicode rune #x") name))
-        (let ((rune (parse-integer (rod-string name) :start 19 :radix 16)))
-          (and (not (unicode-rune-p rune)) rune))
-        (if-let (char (name-char (rod-string name)))
-          (char-rune char)))))
-
 (defun rune-name (rune)
   (if (unicode-rune-p rune)
       (char-name (rune-char rune))
