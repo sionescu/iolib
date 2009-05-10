@@ -20,8 +20,8 @@
    (:file "matching" :depends-on ("pkgdcl" "return-star"))
    (:file "time" :depends-on ("pkgdcl" "return-star"))
    (:file "split-sequence" :depends-on ("pkgdcl" "return-star" "sequence"))
-   (:file "runes" :depends-on  ("pkgdcl" "sequence" "split-sequence"))
-   (:file "rods" :depends-on  ("pkgdcl" "sequence" "split-sequence" "runes"))
+   (:file "runes" :depends-on ("pkgdcl" "definitions" "sequence" "split-sequence"))
+   (:file "rods" :depends-on ("pkgdcl" "sequence" "split-sequence" "runes"))
    #+scl (:file "scl-gray-streams")
    (:file "gray-stream-mixin"
           :depends-on ("pkgdcl" "return-star" #+scl "scl-gray-streams"))))
