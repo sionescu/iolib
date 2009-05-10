@@ -108,17 +108,17 @@
 
 (defun rod-upcase (rod &key (start 0) end)
   (check-bounds rod start end)
-  (nrod-upcase (copy-seq (rod rod))
+  (nrod-upcase (rod rod :new t)
                :start start :end end))
 
 (defun rod-downcase (rod &key (start 0) end)
   (check-bounds rod start end)
-  (nrod-downcase (copy-seq (rod rod))
+  (nrod-downcase (rod rod :new t)
                  :start start :end end))
 
 (defun rod-capitalize (rod &key (start 0) end)
   (check-bounds rod start end)
-  (nrod-capitalize (copy-seq (rod rod))
+  (nrod-capitalize (rod rod :new t)
                    :start start :end end))
 
 (defun nrod-upcase (rod &key (start 0) end)
