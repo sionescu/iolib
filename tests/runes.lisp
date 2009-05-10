@@ -159,3 +159,19 @@
 
 (test rune/=.5
   (is (eql nil (rune/= #x40 #x41 #x40))))
+
+
+(test rune<.1
+  (is (eql t (rune< #x40))))
+
+(test rune<.2
+  (is (eql t (rune< #x40 #x41))))
+
+(test rune<.3
+  (is (eql t (rune< #x40 #x41 #x42))))
+
+(test rune<.4
+  (is (eql nil (rune< #x40 #x40))))
+
+(test rune<.5
+  (is (eql nil (rune< #x40 #x41 #x40))))
