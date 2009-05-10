@@ -382,3 +382,14 @@
 (test digit-rune.error.2
   (signals type-error
     (digit-rune-p "string")))
+
+
+(test alphanumeric-rune-p.1
+  (is-true
+   (loop :for i :from 0 :to 255
+         :always (eql (alphanumeric-rune-p i)
+                      (alphanumericp (code-char i))))))
+
+(test alphanumeric-rune-p.error.1
+  (signals type-error
+    (alphanumeric-rune-p "string")))
