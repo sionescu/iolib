@@ -126,7 +126,7 @@
        (alphanumericp (rune-char rune))))
 
 (defun digit-rune-p (rune &optional (radix 10))
-  (digit-rune rune radix))
+  (digit-char-p (rune-char rune) radix))
 
 (defun graphic-rune-p (rune)
   (and (unicode-rune-p rune)

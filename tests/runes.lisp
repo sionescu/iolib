@@ -388,10 +388,20 @@
 
 
 (test digit-rune-p.1
-  (is (= 9 (digit-rune-p 9))))
+  (is (= 9 (digit-rune-p (+ #x30 9)))))
 
 (test digit-rune-p.2
-  (is (loop :for i :below 16 :always (= i (digit-rune-p i 16)))))
+  (is (loop :for i :below 10 :always (= i (digit-rune-p (+ i #x30) 10)))))
+
+(test digit-rune-p.3
+  (is (loop :for i :from 10 :below 36
+            :always (= i (digit-rune-p (+ i #x57) 36)))))
+
+(test digit-rune-p.4
+  (is-true
+   (loop :for i :from 0 :to 255
+         :always (eql (digit-rune-p i)
+                      (digit-char-p (code-char i))))))
 
 (test digit-rune.error.1
   (is-false (digit-rune-p 16 16)))
