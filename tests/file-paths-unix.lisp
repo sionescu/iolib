@@ -5,7 +5,7 @@
 
 (in-package :iolib-tests)
 
-(in-suite* :iolib.pathnames :in :iolib)
+(in-suite :iolib.pathnames)
 
 (defmacro is-file-path (path (directory name))
   (with-gensyms (p)

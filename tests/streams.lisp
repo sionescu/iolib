@@ -31,7 +31,7 @@
 
 (in-package :iolib-tests)
 
-(in-suite* :iolib.streams :in :iolib)
+(in-suite :iolib.streams)
 
 (defclass my-file-stream (dual-channel-single-fd-gray-stream)
   ((path :initarg :path :reader file-stream-path)))

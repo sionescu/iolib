@@ -5,7 +5,7 @@
 
 (in-package :iolib-tests)
 
-(in-suite* :iolib.base :in :iolib)
+(in-suite :iolib.base)
 
 ;;;; SPLIT-SEQUENCE
 

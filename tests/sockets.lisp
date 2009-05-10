@@ -5,7 +5,7 @@
 
 (in-package :iolib-tests)
 
-(in-suite* :iolib.sockets :in :iolib)
+(in-suite :iolib.sockets)
 
 (defparameter *echo-address* (ensure-address #(127 0 0 1)))
 (defparameter *echo-port* 7)

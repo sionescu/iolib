@@ -5,7 +5,7 @@
 
 (in-package :iolib-tests)
 
-(in-suite* :iolib.multiplex :in :iolib)
+(in-suite :iolib.multiplex)
 
 (defmacro with-event-base/for-each-mux ((base &rest initargs) &body body)
   `(let ((failed-list))
