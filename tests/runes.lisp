@@ -130,3 +130,16 @@
 
 (test unicode-rune-p.2
   (is-false (unicode-rune-p #xDFFF)))
+
+
+(test rune=.1
+  (is (eql t (rune= #x40))))
+
+(test rune=.2
+  (is (eql t (rune= #x40 #x40))))
+
+(test rune=.3
+  (is (eql t (rune= #x40 #x40 #x40))))
+
+(test rune=.4
+  (is (eql nil (rune= #x40 #x41))))

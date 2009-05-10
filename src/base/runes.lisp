@@ -74,7 +74,8 @@
 (defun rune= (rune &rest more-runes)
   (check-type rune rune)
   (assert (every #'runep more-runes))
-  (reduce #'= more-runes :initial-value rune))
+  (dolist (r more-runes t)
+    (unless (= r rune) (return nil))))
 
 (defun rune/= (rune &rest more-runes)
   (check-type rune rune)
