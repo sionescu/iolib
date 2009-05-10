@@ -106,6 +106,11 @@
 ;;; Operators
 ;;;-------------------------------------------------------------------------
 
+(defun rod-string (rod &key (start 0) end)
+  (check-bounds rod start end)
+  ;; FIXME: inefficient
+  (map 'string #'rune-char (subseq rod start end)))
+
 (defun rod-upcase (rod &key (start 0) end)
   (check-bounds rod start end)
   (nrod-upcase (rod rod :new t)
