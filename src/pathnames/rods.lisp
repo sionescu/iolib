@@ -13,9 +13,9 @@
   (check-type initial-element rune)
   (make-array size :element-type 'rune :initial-element initial-element))
 
-(defun rod (thing)
+(defun rod (thing &key new)
   (etypecase thing
-    (rod              thing)
+    (rod              (if new (copy-seq thing) thing))
     ((array rune (*)) (coerce thing 'rod))
     (string           (map 'rod #'char-rune thing))
     (rune             (make-rod 1 :initial-element thing))
