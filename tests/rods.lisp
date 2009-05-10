@@ -78,3 +78,10 @@
 (test rod.error.1
   (signals type-error
     (rod (make-hash-table))))
+
+
+(test rodp.1
+  (is-true (rodp (make-rod 1))))
+
+(test rodp.error.1
+  (is-false (rodp "string")))
