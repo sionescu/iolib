@@ -464,3 +464,14 @@
 (test both-case-rune-p.error.1
   (signals type-error
     (both-case-rune-p "string")))
+
+
+(test rune-upcase.1
+  (is-true
+   (loop :for i :from 0 :to 255
+         :always (eql (rune-upcase i)
+                      (char-rune (char-upcase (code-char i)))))))
+
+(test rune-upcase.error.1
+  (signals type-error
+    (rune-upcase "string")))
