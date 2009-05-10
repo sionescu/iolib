@@ -105,7 +105,11 @@
 (defun rune<= (rune &rest more-runes)
   (check-type rune rune)
   (assert (every #'runep more-runes))
-  (reduce #'<= more-runes :initial-value rune))
+  (do* ((r rune (car list))
+        (list more-runes (cdr list)))
+       ((null list) t)
+    (unless (<= r (car list))
+      (return nil))))
 
 (defun rune>= (rune &rest more-runes)
   (check-type rune rune)
