@@ -38,16 +38,13 @@
   (is-true (typep (string-rod "a") '(rod 1))))
 
 (test string-rod.2
-  (is (equalp (string-rod "a")
-              #(97))))
+  (is (equalp #(97) (string-rod "a"))))
 
 (test string-rod.3
-  (is (equalp (string-rod #\a)
-              #(97))))
+  (is (equalp #(97) (string-rod #\a))))
 
 (test string-rod.4
-  (is (equalp (string-rod 'a)
-              #(65))))
+  (is (equalp #(65) (string-rod 'a))))
 
 
 (test rod.1
