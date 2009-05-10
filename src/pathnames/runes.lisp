@@ -19,6 +19,9 @@
 
 (deftype rune ()
   '(mod #.rune-code-limit))
+
+(deftype rod (&optional (size '*))
+  `(simple-array rune (,size)))
 
 
 ;;;-------------------------------------------------------------------------
