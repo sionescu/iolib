@@ -365,6 +365,12 @@
   (is-false
    (alpha-rune-p (char-rune #\5))))
 
+(test alpha-rune-p.3
+  (is-true
+   (loop :for i :from 0 :to 255
+         :always (eql (alpha-rune-p i)
+                      (alpha-char-p (code-char i))))))
+
 (test alpha-rune-p.error.1
   (signals type-error
    (alpha-rune-p "string")))
