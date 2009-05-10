@@ -123,7 +123,9 @@
 (defun rune-equal (rune &rest more-runes)
   (check-type rune rune)
   (assert (every #'runep more-runes))
-  (reduce #'= more-runes :initial-value rune :key #'rune-downcase))
+  (let ((rune (rune-downcase rune)))
+    (dolist (r more-runes t)
+      (unless (= (rune-downcase r) rune) (return nil)))))
 
 (defun rune-not-equal (rune &rest more-runes)
   (check-type rune rune)

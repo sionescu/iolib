@@ -223,3 +223,22 @@
 
 (test rune>=.5
   (is (eql nil (rune>= #x40 #x41 #x40))))
+
+
+(test rune-equal.1
+  (is (eql t (rune-equal #x40))))
+
+(test rune-equal.2
+  (is (eql t (rune-equal #x40 #x40))))
+
+(test rune-equal.3
+  (is (eql t (rune-equal #x40 #x40 #x40))))
+
+(test rune-equal.4
+  (is (eql t (rune-equal #x41 #x61))))
+
+(test rune-equal.5
+  (is (eql t (rune-equal #x41 #x61 #x41))))
+
+(test rune-equal.6
+  (is (eql nil (rune-equal #x40 #x41))))
