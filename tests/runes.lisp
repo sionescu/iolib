@@ -368,3 +368,17 @@
 (test alpha-rune-p.error.1
   (signals type-erros
    (alpha-rune-p "string")))
+
+
+(test digit-rune-p.1
+  (is (= 9 (digit-rune-p 9))))
+
+(test digit-rune-p.2
+  (is (loop :for i :below 16 :always (= i (digit-rune-p i 16)))))
+
+(test digit-rune.error.1
+  (is-false (digit-rune-p 16 16)))
+
+(test digit-rune.error.2
+  (signals type-error
+    (digit-rune-p "string")))

@@ -126,9 +126,8 @@
   (and (unicode-rune-p rune)
        (alphanumericp (rune-char rune))))
 
-(defun digit-rune-p (rune)
-  (and (unicode-rune-p rune)
-       (digit-char-p (rune-char rune))))
+(defun digit-rune-p (rune &optional (radix 10))
+  (digit-rune rune radix))
 
 (defun graphic-rune-p (rune)
   (and (unicode-rune-p rune)
