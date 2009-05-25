@@ -85,3 +85,384 @@
 
 (test rodp.error.1
   (is-false (rodp "string")))
+
+
+(test rod=.1
+  (is-true (rod= "" "")))
+
+(test rod=.2
+  (is-true (rod= "a" "a")))
+
+(test rod=.3
+  (is-true (rod= "bac" "acb" :start1 1 :end2 2)))
+
+(test rod=.4
+  (is-false (rod= "a" "b")))
+
+(test rod=.5
+  (is-false (rod= "bac" "")))
+
+(test rod=.6
+  (is-false (rod= "bac" "bac" :end1 0)))
+
+
+(test rod-equal.1
+  (is-true (rod-equal "" "")))
+
+(test rod-equal.2
+  (is-true (rod-equal "a" "a")))
+
+(test rod-equal.3
+  (is-true (rod-equal "a" "A")))
+
+(test rod-equal.4
+  (is-true (rod-equal "bac" "acb" :start1 1 :end2 2)))
+
+(test rod-equal.5
+  (is-true (rod-equal "bac" "ACB" :start1 1 :end2 2)))
+
+(test rod-equal.6
+  (is-false (rod-equal "a" "b")))
+
+(test rod-equal.7
+  (is-false (rod-equal "bac" "")))
+
+(test rod-equal.8
+  (is-false (rod-equal "bac" "bac" :end1 0)))
+
+
+(test rod/=.1
+  (is-false (rod/= "" "")))
+
+(test rod/=.2
+  (is (eql 0 (rod/= "" "a"))))
+
+(test rod/=.3
+  (is (eql 0 (rod/= "a" "b"))))
+
+(test rod/=.4
+  (is-false (rod/= "bac" "acb" :start1 1 :end2 2)))
+
+(test rod/=.5
+  (is (eql 1 (rod/= "abc" "acb"))))
+
+
+(test rod-not-equal.1
+  (is-false (rod-not-equal "" "")))
+
+(test rod-not-equal.2
+  (is (eql 0 (rod-not-equal "" "a"))))
+
+(test rod-not-equal.3
+  (is (eql 0 (rod-not-equal "a" "b"))))
+
+(test rod-not-equal.4
+  (is-false (rod-not-equal "a" "A")))
+
+(test rod-not-equal.5
+  (is-false (rod-not-equal "bac" "acb" :start1 1 :end2 2)))
+
+(test rod-not-equal.6
+  (is-false (rod-not-equal "bac" "ACB" :start1 1 :end2 2)))
+
+(test rod-not-equal.7
+  (is (eql 1 (rod-not-equal "abc" "acb"))))
+
+(test rod-not-equal.8
+  (is (eql 1 (rod-not-equal "abc" "ACB"))))
+
+
+(test rod<.1
+  (is-false (rod< "" "")))
+
+(test rod<.2
+  (is (eql 0 (rod< "" "a"))))
+
+(test rod<.3
+  (is-false (rod< "a" "")))
+
+(test rod<.4
+  (is (eql 0 (rod< "a" "b"))))
+
+(test rod<.5
+  (is-false (rod< "b" "a")))
+
+(test rod<.6
+  (is-false (rod< "bac" "acb" :start1 1 :end2 2)))
+
+(test rod<.7
+  (is-false (rod< "acb" "bac" :start1 1 :end2 2)))
+
+(test rod<.8
+  (is (eql 1 (rod< "abc" "acb"))))
+
+(test rod<.9
+  (is-false (rod< "acb" "abc")))
+
+(test rod<.10
+  (is-false (rod< "a" "a")))
+
+(test rod<.11
+  (is-false (rod< "a" "A")))
+
+(test rod<.12
+  (is (eql 0 (rod< "A" "a"))))
+
+
+(test rod-lessp.1
+  (is-false (rod-lessp "" "")))
+
+(test rod-lessp.2
+  (is (eql 0 (rod-lessp "" "a"))))
+
+(test rod-lessp.3
+  (is-false (rod-lessp "a" "")))
+
+(test rod-lessp.4
+  (is (eql 0 (rod-lessp "a" "b"))))
+
+(test rod-lessp.5
+  (is-false (rod-lessp "b" "a")))
+
+(test rod-lessp.6
+  (is-false (rod-lessp "bac" "acb" :start1 1 :end2 2)))
+
+(test rod-lessp.7
+  (is-false (rod-lessp "acb" "bac" :start1 1 :end2 2)))
+
+(test rod-lessp.8
+  (is (eql 1 (rod-lessp "abc" "acb"))))
+
+(test rod-lessp.9
+  (is-false (rod-lessp "acb" "abc")))
+
+(test rod-lessp.10
+  (is-false (rod-lessp "a" "a")))
+
+(test rod-lessp.11
+  (is-false (rod-lessp "a" "A")))
+
+(test rod-lessp.12
+  (is-false (rod-lessp "A" "a")))
+
+
+(test rod>.1
+  (is-false (rod> "" "")))
+
+(test rod>.2
+  (is-false (rod> "" "a")))
+
+(test rod>.3
+  (is (eql 0 (rod> "a" ""))))
+
+(test rod>.4
+  (is-false (rod> "a" "b")))
+
+(test rod>.5
+  (is (eql 0 (rod> "b" "a"))))
+
+(test rod>.6
+  (is-false (rod> "bac" "acb" :start1 1 :end2 2)))
+
+(test rod>.7
+  (is (eql 1 (rod> "acb" "bac" :start1 1 :end2 2))))
+
+(test rod>.8
+  (is-false (rod> "abc" "acb")))
+
+(test rod>.9
+  (is (eql 1 (rod> "acb" "abc"))))
+
+(test rod>.10
+  (is-false (rod> "a" "a")))
+
+(test rod>.11
+  (is (eql 0 (rod> "a" "A"))))
+
+(test rod>.12
+  (is-false (rod> "A" "a")))
+
+
+(test rod-greaterp.1
+  (is-false (rod-greaterp "" "")))
+
+(test rod-greaterp.2
+  (is-false (rod-greaterp "" "a")))
+
+(test rod-greaterp.3
+  (is (eql 0 (rod-greaterp "a" ""))))
+
+(test rod-greaterp.4
+  (is-false (rod-greaterp "a" "b")))
+
+(test rod-greaterp.5
+  (is (eql 0 (rod-greaterp "b" "a"))))
+
+(test rod-greaterp.6
+  (is-false (rod-greaterp "bac" "acb" :start1 1 :end2 2)))
+
+(test rod-greaterp.7
+  (is (eql 1 (rod-greaterp "acb" "bac" :start1 1 :end2 2))))
+
+(test rod-greaterp.8
+  (is-false (rod-greaterp "abc" "acb")))
+
+(test rod-greaterp.9
+  (is (eql 1 (rod-greaterp "acb" "abc"))))
+
+(test rod-greaterp.10
+  (is-false (rod-greaterp "a" "a")))
+
+(test rod-greaterp.11
+  (is-false (rod-greaterp "a" "A")))
+
+(test rod-greaterp.12
+  (is-false (rod-greaterp "A" "a")))
+
+
+(test rod<=.1
+  (is (eql 0 (rod<= "" ""))))
+
+(test rod<=.2
+  (is (eql 0 (rod<= "" "a"))))
+
+(test rod<=.3
+  (is-false (rod<= "a" "")))
+
+(test rod<=.4
+  (is (eql 0 (rod<= "a" "b"))))
+
+(test rod<=.5
+  (is-false (rod<= "b" "a")))
+
+(test rod<=.6
+  (is (eql 3 (rod<= "bac" "acb" :start1 1 :end2 2))))
+
+(test rod<=.7
+  (is-false (rod<= "acb" "bac" :start1 1 :end2 2)))
+
+(test rod<=.8
+  (is (eql 1 (rod<= "abc" "acb"))))
+
+(test rod<=.9
+  (is-false (rod<= "acb" "abc")))
+
+(test rod<=.10
+  (is (eql 1 (rod<= "a" "a"))))
+
+(test rod<=.11
+  (is-false (rod<= "a" "A")))
+
+(test rod<=.12
+  (is (eql 0 (rod<= "A" "a"))))
+
+
+(test rod-not-greaterp.1
+  (is (eql 0 (rod-not-greaterp "" ""))))
+
+(test rod-not-greaterp.2
+  (is (eql 0 (rod-not-greaterp "" "a"))))
+
+(test rod-not-greaterp.3
+  (is-false (rod-not-greaterp "a" "")))
+
+(test rod-not-greaterp.4
+  (is (eql 0 (rod-not-greaterp "a" "b"))))
+
+(test rod-not-greaterp.5
+  (is-false (rod-not-greaterp "b" "a")))
+
+(test rod-not-greaterp.6
+  (is (eql 3 (rod-not-greaterp "bac" "acb" :start1 1 :end2 2))))
+
+(test rod-not-greaterp.7
+  (is-false (rod-not-greaterp "acb" "bac" :start1 1 :end2 2)))
+
+(test rod-not-greaterp.8
+  (is (eql 1 (rod-not-greaterp "abc" "acb"))))
+
+(test rod-not-greaterp.9
+  (is-false (rod-not-greaterp "acb" "abc")))
+
+(test rod-not-greaterp.10
+  (is (eql 1 (rod-not-greaterp "a" "a"))))
+
+(test rod-not-greaterp.11
+  (is (eql 1 (rod-not-greaterp "a" "A"))))
+
+(test rod-not-greaterp.12
+  (is (eql 1 (rod-not-greaterp "A" "a"))))
+
+
+(test rod>=.1
+  (is (eql 0 (rod>= "" ""))))
+
+(test rod>=.2
+  (is-false (rod>= "" "a")))
+
+(test rod>=.3
+  (is (eql 0 (rod>= "a" ""))))
+
+(test rod>=.4
+  (is-false (rod>= "a" "b")))
+
+(test rod>=.5
+  (is (eql 0 (rod>= "b" "a"))))
+
+(test rod>=.6
+  (is (eql 3 (rod>= "bac" "acb" :start1 1 :end2 2))))
+
+(test rod>=.7
+  (is (eql 1 (rod>= "acb" "bac" :start1 1 :end2 2))))
+
+(test rod>=.8
+  (is-false (rod>= "abc" "acb")))
+
+(test rod>=.9
+  (is (eql 1 (rod>= "acb" "abc"))))
+
+(test rod>=.10
+  (is (eql 1 (rod>= "a" "a"))))
+
+(test rod>=.11
+  (is (eql 0 (rod>= "a" "A"))))
+
+(test rod>=.12
+  (is-false (rod>= "A" "a")))
+
+
+(test rod-not-lessp.1
+  (is (eql 0 (rod-not-lessp "" ""))))
+
+(test rod-not-lessp.2
+  (is-false (rod-not-lessp "" "a")))
+
+(test rod-not-lessp.3
+  (is (eql 0 (rod-not-lessp "a" ""))))
+
+(test rod-not-lessp.4
+  (is-false (rod-not-lessp "a" "b")))
+
+(test rod-not-lessp.5
+  (is (eql 0 (rod-not-lessp "b" "a"))))
+
+(test rod-not-lessp.6
+  (is (eql 3 (rod-not-lessp "bac" "acb" :start1 1 :end2 2))))
+
+(test rod-not-lessp.7
+  (is (eql 1 (rod-not-lessp "acb" "bac" :start1 1 :end2 2))))
+
+(test rod-not-lessp.8
+  (is-false (rod-not-lessp "abc" "acb")))
+
+(test rod-not-lessp.9
+  (is (eql 1 (rod-not-lessp "acb" "abc"))))
+
+(test rod-not-lessp.10
+  (is (eql 1 (rod-not-lessp "a" "a"))))
+
+(test rod-not-lessp.11
+  (is (eql 1 (rod-not-lessp "a" "A"))))
+
+(test rod-not-lessp.12
+  (is (eql 1 (rod-not-lessp "A" "a"))))

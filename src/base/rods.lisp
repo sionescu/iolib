@@ -35,30 +35,86 @@
 (defun rodp (rod)
   (typep rod 'rod))
 
+(defmacro with-rods ((&rest rods) &body body)
+  `(let ,(loop :for rod :in rods
+               :collect `(,(car rod) (rod ,(car rod))))
+     ,@(loop :for (name start end) :in rods
+             :collect `(check-bounds ,name ,start ,end))
+     ,@body))
+
+(defun rod= (rod1 rod2 &key (start1 0) end1 (start2 0) end2)
+  (with-rods ((rod1 start1 end1)
+              (rod2 start2 end2))
+    (if (/= (- end1 start1) (- end2 start2))
+        nil
+        (loop :for i :from start1 :below end1
+              :for j :from start2 :below end2
+              :always (rune= (aref rod1 i)
+                             (aref rod2 j))))))
+
+(defun rod-equal (rod1 rod2 &key (start1 0) end1 (start2 0) end2)
+  (with-rods ((rod1 start1 end1)
+              (rod2 start2 end2))
+    (if (/= (- end1 start1) (- end2 start2))
+        nil
+        (loop :for i :from start1 :below end1
+              :for j :from start2 :below end2
+              :always (rune-equal (aref rod1 i)
+                                  (aref rod2 j))))))
+
+(defun rod/= (rod1 rod2 &key (start1 0) end1 (start2 0) end2)
+  (with-rods ((rod1 start1 end1)
+              (rod2 start2 end2))
+    (loop :for i :from start1 :below end1
+          :for j :from start2 :below end2
+          :when (rune/= (aref rod1 i)
+                        (aref rod2 j))
+          :do (return i)
+          :finally (return (if (= (- end1 start1)
+                                  (- end2 start2))
+                               nil
+                               i)))))
+
+(defun rod-not-equal (rod1 rod2 &key (start1 0) end1 (start2 0) end2)
+  (with-rods ((rod1 start1 end1)
+              (rod2 start2 end2))
+    (loop :for i :from start1 :below end1
+          :for j :from start2 :below end2
+          :when (rune-not-equal (aref rod1 i)
+                                (aref rod2 j))
+          :do (return i)
+          :finally (return (if (= (- end1 start1)
+                                  (- end2 start2))
+                               nil
+                               i)))))
+
+
 (macrolet
-    ((define-rod-comparison (name test &key (key 'identity))
-       (with-gensyms (rod1 rod2 start1 start2 end1 end2 i j)
-         `(defun ,name (,rod1 ,rod2 &key (,start1 0) ,end1 (,start2 0) ,end2)
-            (check-type ,rod1 rod)
-            (check-type ,rod2 rod)
-            (check-bounds ,rod1 ,start1 ,end1)
-            (check-bounds ,rod2 ,start2 ,end2)
-            (loop :for ,i :from ,start1 :below ,end1
-                  :for ,j :from ,start2 :below ,end2
-                  :always (,test (,key (aref ,rod1 ,i))
-                            (,key (aref ,rod2 ,j))))))))
-  (define-rod-comparison rod=              =                   )
-  (define-rod-comparison rod-equal         = :key rune-downcase)
-  (define-rod-comparison rod/=            /=                   )
-  (define-rod-comparison rod-not-equal    /= :key rune-downcase)
-  (define-rod-comparison rod<              <                   )
-  (define-rod-comparison rod-lessp         < :key rune-downcase)
-  (define-rod-comparison rod>              >                   )
-  (define-rod-comparison rod-greaterp      > :key rune-downcase)
-  (define-rod-comparison rod<=            <=                   )
-  (define-rod-comparison rod-not-greaterp <= :key rune-downcase)
-  (define-rod-comparison rod>=            >=                   )
-  (define-rod-comparison rod-not-lessp    >= :key rune-downcase))
+    ((define-rod-comparison (name test equality &optional lessp equalp)
+       `(defun ,name (rod1 rod2 &key (start1 0) end1 (start2 0) end2)
+          (with-rods ((rod1 start1 end1) (rod2 start2 end2))
+            (let ((len1 (- end1 start1))
+                  (len2 (- end2 start2))
+                  (index
+                   (mismatch rod1 rod2 :test #',equality
+                             :start1 start1 :end1 end1
+                             :start2 start2 :end2 end2)))
+              (cond
+                ((null index) ,(if equalp 'end1 nil))
+                ((= len1 len2) (if (,test (aref rod1 index)
+                                          (aref rod2 (+ start2
+                                                        (- index start1))))
+                                   index
+                                   nil))
+                ((,(if lessp '< '>) len1 len2) index)))))))
+  (define-rod-comparison rod<             rune<             rune=      t    )
+  (define-rod-comparison rod-lessp        rune-lessp        rune-equal t    )
+  (define-rod-comparison rod>             rune>             rune=           )
+  (define-rod-comparison rod-greaterp     rune-greaterp     rune-equal      )
+  (define-rod-comparison rod<=            rune<=            rune=      t   t)
+  (define-rod-comparison rod-not-greaterp rune-not-greaterp rune-equal t   t)
+  (define-rod-comparison rod>=            rune>=            rune=      nil t)
+  (define-rod-comparison rod-not-lessp    rune-not-lessp    rune-equal nil t))
 
 
 ;;;-------------------------------------------------------------------------
