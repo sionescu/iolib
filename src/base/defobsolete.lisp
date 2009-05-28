@@ -17,15 +17,17 @@
   (:documentation "Warning signaled at compile-time indicating that a certain function has been deprecated."))
 
 (defun setf-function-name-p (function-name)
-  (and (eq 'setf (first function-name))
+  ;; FIXME: This would be better written using pattern matching
+  (and (consp function-name)
+       (eql 'setf (first function-name))
+       (symbolp (second function-name))
        (null (cddr function-name))))
 
 (defun function-name-p (function-name)
   "Returns T if FUNCTION-NAME is a legal function name:
 a symbol or a list (CL:SETF symbol)."
   (or (symbolp function-name)
-      (and (consp function-name)
-           (setf-function-name-p function-name))))
+      (setf-function-name-p function-name)))
 
 (deftype function-name ()
   "A legal function name: a symbol or a list (CL:SETF symbol)."
