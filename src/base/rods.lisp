@@ -180,37 +180,30 @@
 
 (defun %rod-left-trim (rod rune-bag)
   (or (position-if-not (lambda (rune) (find rune rune-bag)) rod)
-      0))
+      (length rod)))
 
 (defun %rod-right-trim (rod rune-bag)
   (or (position-if-not (lambda (rune) (find rune rune-bag)) rod
                        :from-end t)
-      (length rod)))
+      0))
 
 (defun rod-trim (rod rune-bag)
   (let* ((rod (rod rod))
          (rune-bag (map 'rod #'rune rune-bag))
          (left  (%rod-left-trim  rod rune-bag))
          (right (%rod-right-trim rod rune-bag)))
-    (if (and (zerop left)
-             (= right (length rod)))
-        (copy-seq rod)
-        (subseq rod left (1+ right)))))
+    (subseq rod left (1+ right))))
 
 (defun rod-left-trim (rod rune-bag)
   (let* ((rod (rod rod))
          (rune-bag (map 'rod #'rune rune-bag))
          (left (%rod-left-trim rod rune-bag)))
-    (if (zerop left)
-        (copy-seq rod)
-        (subseq rod left))))
+    (subseq rod left)))
 
 (defun rod-right-trim (rod rune-bag &aux (rod (rod rod)))
   (let* ((rune-bag (map 'rod #'rune rune-bag))
          (right (%rod-right-trim rod rune-bag)))
-    (if (= right (length rod))
-        (copy-seq rod)
-        (subseq rod 0 (1+ right)))))
+    (subseq rod 0 (1+ right))))
 
 
 ;;;-------------------------------------------------------------------------

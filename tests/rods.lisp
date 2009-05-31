@@ -565,6 +565,9 @@
   (is (rod= "aha" (rod-trim "kekahakek" '(#\k #\e)))))
 
 (test rod-trim.3
+  (is (rod= "" (rod-left-trim "aha" "ah"))))
+
+(test rod-trim.4
   (is-false (let ((rod (rod "aha")))
               (eql rod (rod-trim rod "z")))))
 
@@ -584,6 +587,9 @@
   (is (rod= "ahakek" (rod-left-trim "kekahakek" '(#\k #\e)))))
 
 (test rod-left-trim.3
+  (is (rod= "" (rod-left-trim "aha" "ah"))))
+
+(test rod-left-trim.4
   (is-false (let ((rod (rod "aha")))
               (eql rod (rod-left-trim rod "z")))))
 
@@ -603,6 +609,9 @@
   (is (rod= "kekaha" (rod-right-trim "kekahakek" '(#\k #\e)))))
 
 (test rod-right-trim.3
+  (is (rod= "" (rod-left-trim "aha" "ah"))))
+
+(test rod-right-trim.4
   (is-false (let ((rod (rod "aha")))
               (eql rod (rod-right-trim rod "z")))))
 
