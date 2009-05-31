@@ -208,7 +208,6 @@
                  (:io
                   (make-locks (make-locks body :output) :input)))))
       `(flet ((,body-fun () ,@body))
-         (declare (dynamic-extent #',body-fun))
          (if (zstream-synchronized-p ,stream)
              ,(make-locks `(,body-fun) direction)
              (,body-fun))))))
@@ -399,14 +398,12 @@
 
 (defmethod zstream-read-element ((stream device-zstream) &key timeout)
   (let ((v (make-array 1 :element-type 'octet)))
-    (declare (dynamic-extent v))
     (zstream-read-vector stream v :timeout timeout)
     (aref v 0)))
 
 (defmethod zstream-read-element ((stream memory-zstream) &key timeout)
   (declare (ignore timeout))
   (let ((v (make-array 1 :element-type (slot-value stream 'element-type))))
-    (declare (dynamic-extent v))
     (zstream-read-vector stream v)
     (aref v 0)))
 
@@ -463,15 +460,13 @@
 
 (defmethod zstream-write-element ((stream device-zstream) octet &key timeout)
   (check-type octet octet)
-  (let ((v (make-array 1 :element-type 'octet :initial-contents octet)))
-    (declare (dynamic-extent v))
+  (let ((v (make-array 1 :element-type 'octet :initial-element octet)))
     (zstream-write-vector stream v :timeout timeout)))
 
 (defmethod zstream-write-element ((stream memory-zstream) element &key timeout)
   (declare (ignore timeout))
   (let ((v (make-array 1 :element-type (slot-value stream 'element-type)
                        :initial-contents element)))
-    (declare (dynamic-extent v))
     (zstream-write-vector stream v)))
 
 
