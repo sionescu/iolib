@@ -556,3 +556,60 @@
 (test nrod-capitalize.error.1
   (signals type-error
     (nrod-capitalize 5)))
+
+
+(test rod-trim.1
+  (is (rod= "aha" (rod-trim "kekahakek" "ke"))))
+
+(test rod-trim.2
+  (is (rod= "aha" (rod-trim "kekahakek" '(#\k #\e)))))
+
+(test rod-trim.3
+  (is-false (let ((rod (rod "aha")))
+              (eql rod (rod-trim rod "z")))))
+
+(test rod-trim.error.1
+  (signals type-error
+    (rod-trim "kekahakek" 5)))
+
+(test rod-trim.error.2
+  (signals type-error
+    (rod-trim (make-hash-table) '(#\k #\e))))
+
+
+(test rod-left-trim.1
+  (is (rod= "ahakek" (rod-left-trim "kekahakek" "ke"))))
+
+(test rod-left-trim.2
+  (is (rod= "ahakek" (rod-left-trim "kekahakek" '(#\k #\e)))))
+
+(test rod-left-trim.3
+  (is-false (let ((rod (rod "aha")))
+              (eql rod (rod-left-trim rod "z")))))
+
+(test rod-left-trim.error.1
+  (signals type-error
+    (rod-left-trim "kekahakek" 5)))
+
+(test rod-left-trim.error.2
+  (signals type-error
+    (rod-left-trim (make-hash-table) '(#\k #\e))))
+
+
+(test rod-right-trim.1
+  (is (rod= "kekaha" (rod-right-trim "kekahakek" "ke"))))
+
+(test rod-right-trim.2
+  (is (rod= "kekaha" (rod-right-trim "kekahakek" '(#\k #\e)))))
+
+(test rod-right-trim.3
+  (is-false (let ((rod (rod "aha")))
+              (eql rod (rod-right-trim rod "z")))))
+
+(test rod-right-trim.error.1
+  (signals type-error
+    (rod-right-trim "kekahakek" 5)))
+
+(test rod-right-trim.error.2
+  (signals type-error
+    (rod-right-trim (make-hash-table) '(#\k #\e))))

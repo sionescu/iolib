@@ -188,30 +188,29 @@
       (length rod)))
 
 (defun rod-trim (rod rune-bag)
-  (check-type rod rod)
-  (assert (every #'runep rune-bag))
-  (let ((left  (%rod-left-trim  rod rune-bag))
-        (right (%rod-right-trim rod rune-bag)))
+  (let* ((rod (rod rod))
+         (rune-bag (map 'rod #'rune rune-bag))
+         (left  (%rod-left-trim  rod rune-bag))
+         (right (%rod-right-trim rod rune-bag)))
     (if (and (zerop left)
              (= right (length rod)))
-        rod
-        (subseq rod left right))))
+        (copy-seq rod)
+        (subseq rod left (1+ right)))))
 
 (defun rod-left-trim (rod rune-bag)
-  (check-type rod rod)
-  (assert (every #'runep rune-bag))
-  (let ((left (%rod-left-trim rod rune-bag)))
+  (let* ((rod (rod rod))
+         (rune-bag (map 'rod #'rune rune-bag))
+         (left (%rod-left-trim rod rune-bag)))
     (if (zerop left)
-        rod
+        (copy-seq rod)
         (subseq rod left))))
 
-(defun rod-right-trim (rod rune-bag)
-  (check-type rod rod)
-  (assert (every #'runep rune-bag))
-  (let ((right (%rod-right-trim rod rune-bag)))
+(defun rod-right-trim (rod rune-bag &aux (rod (rod rod)))
+  (let* ((rune-bag (map 'rod #'rune rune-bag))
+         (right (%rod-right-trim rod rune-bag)))
     (if (= right (length rod))
-        rod
-        (subseq rod 0 right))))
+        (copy-seq rod)
+        (subseq rod 0 (1+ right)))))
 
 
 ;;;-------------------------------------------------------------------------
