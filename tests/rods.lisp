@@ -466,3 +466,93 @@
 
 (test rod-not-lessp.12
   (is (eql 1 (rod-not-lessp "A" "a"))))
+
+
+(test rod-upcase.1
+  (is (rod= "AHA" (rod-upcase "aha"))))
+
+(test rod-upcase.2
+  (is (rod= "" (rod-upcase ""))))
+
+(test rod-upcase.3
+  (is-false (let ((rod (rod "AHA")))
+              (eql rod (rod-upcase rod)))))
+
+(test rod-upcase.4
+  (signals type-error
+    (rod-upcase 5)))
+
+
+(test nrod-upcase.1
+  (is (rod= "AHA" (nrod-upcase (rod "aha")))))
+
+(test nrod-upcase.2
+  (is (rod= "" (nrod-upcase (rod "")))))
+
+(test nrod-upcase.3
+  (is-true (let ((rod (rod "AHA")))
+             (eql rod (nrod-upcase rod)))))
+
+(test nrod-upcase.4
+  (signals type-error
+    (nrod-upcase 5)))
+
+
+(test rod-downcase.1
+  (is (rod= "aha" (rod-downcase "AHA"))))
+
+(test rod-downcase.2
+  (is (rod= "" (rod-downcase ""))))
+
+(test rod-downcase.3
+  (is-false (let ((rod (rod "aha")))
+              (eql rod (rod-downcase rod)))))
+
+(test rod-downcase.4
+  (signals type-error
+    (rod-downcase 5)))
+
+
+(test nrod-downcase.1
+  (is (rod= "aha" (nrod-downcase (rod "AHA")))))
+
+(test nrod-downcase.2
+  (is (rod= "" (nrod-downcase (rod "")))))
+
+(test nrod-downcase.3
+  (is-true (let ((rod (rod "aha")))
+             (eql rod (nrod-downcase rod)))))
+
+(test nrod-downcase.4
+  (signals type-error
+    (nrod-downcase 5)))
+
+
+(test rod-capitalize.1
+  (is (rod= "Hak Mak" (rod-capitalize "hak mak"))))
+
+(test rod-capitalize.2
+  (is (rod= "" (rod-capitalize ""))))
+
+(test rod-capitalize.3
+  (is-false (let ((rod (rod "Hak Mak")))
+              (eql rod (rod-capitalize rod)))))
+
+(test rod-capitalize.4
+  (signals type-error
+    (rod-capitalize 5)))
+
+
+(test nrod-capitalize.1
+  (is (rod= "Hak Mak" (nrod-capitalize (rod "hak mak")))))
+
+(test nrod-capitalize.2
+  (is (rod= "" (nrod-capitalize (rod "")))))
+
+(test nrod-capitalize.3
+  (is-true (let ((rod (rod "Hak Mak")))
+             (eql rod (nrod-capitalize rod)))))
+
+(test nrod-capitalize.4
+  (signals type-error
+    (nrod-capitalize 5)))
