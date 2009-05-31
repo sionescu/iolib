@@ -478,7 +478,7 @@
   (is-false (let ((rod (rod "AHA")))
               (eql rod (rod-upcase rod)))))
 
-(test rod-upcase.4
+(test rod-upcase.error.1
   (signals type-error
     (rod-upcase 5)))
 
@@ -493,7 +493,7 @@
   (is-true (let ((rod (rod "AHA")))
              (eql rod (nrod-upcase rod)))))
 
-(test nrod-upcase.4
+(test nrod-upcase.error.1
   (signals type-error
     (nrod-upcase 5)))
 
@@ -508,7 +508,7 @@
   (is-false (let ((rod (rod "aha")))
               (eql rod (rod-downcase rod)))))
 
-(test rod-downcase.4
+(test rod-downcase.error.1
   (signals type-error
     (rod-downcase 5)))
 
@@ -523,7 +523,7 @@
   (is-true (let ((rod (rod "aha")))
              (eql rod (nrod-downcase rod)))))
 
-(test nrod-downcase.4
+(test nrod-downcase.error.1
   (signals type-error
     (nrod-downcase 5)))
 
@@ -538,7 +538,7 @@
   (is-false (let ((rod (rod "Hak Mak")))
               (eql rod (rod-capitalize rod)))))
 
-(test rod-capitalize.4
+(test rod-capitalize.error.1
   (signals type-error
     (rod-capitalize 5)))
 
@@ -553,6 +553,6 @@
   (is-true (let ((rod (rod "Hak Mak")))
              (eql rod (nrod-capitalize rod)))))
 
-(test nrod-capitalize.4
+(test nrod-capitalize.error.1
   (signals type-error
     (nrod-capitalize 5)))
