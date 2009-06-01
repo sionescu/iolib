@@ -44,28 +44,28 @@
    ;; Time
    #:timeout-designator #:positive-timeout-designator
    #:decode-timeout #:normalize-timeout #:clamp-timeout
-   ;; Runes
-   #:rune-code-limit #:rune
-   #:code-rune #:rune-code
-   #:char-rune #:rune-char
-   #:name-rune #:rune-name
-   #:digit-rune
-   #:runep #:unicode-rune-p
-   #:rune= #:rune/= #:rune< #:rune> #:rune<= #:rune>=
-   #:rune-equal #:rune-not-equal #:rune-lessp
-   #:rune-greaterp #:rune-not-greaterp #:rune-not-lessp
-   #:alpha-rune-p #:alphanumeric-rune-p #:digit-rune-p #:graphic-rune-p
-   #:upper-case-rune-p #:lower-case-rune-p #:both-case-rune-p
-   #:rune-upcase #:rune-downcase
-   ;; Rods
-   #:make-rod #:string-rod #:rod #:rodp
-   #:rod= #:rod/= #:rod< #:rod> #:rod<= #:rod>=
-   #:rod-equal #:rod-not-equal #:rod-lessp
-   #:rod-greaterp #:rod-not-greaterp #:rod-not-lessp
-   #:rod-string
-   #:rod-upcase #:rod-downcase #:rod-capitalize
-   #:nrod-upcase #:nrod-downcase #:nrod-capitalize
-   #:rod-trim #:rod-left-trim #:rod-right-trim
+   ;; Uchars
+   #:uchar-code-limit #:uchar
+   #:code-uchar #:uchar-code
+   #:char-to-uchar #:uchar-to-char
+   #:name-uchar #:uchar-name
+   #:digit-uchar
+   #:ucharp #:unicode-uchar-p
+   #:uchar= #:uchar/= #:uchar< #:uchar> #:uchar<= #:uchar>=
+   #:uchar-equal #:uchar-not-equal #:uchar-lessp
+   #:uchar-greaterp #:uchar-not-greaterp #:uchar-not-lessp
+   #:alpha-uchar-p #:alphanumeric-uchar-p #:digit-uchar-p #:graphic-uchar-p
+   #:upper-case-uchar-p #:lower-case-uchar-p #:both-case-uchar-p
+   #:uchar-upcase #:uchar-downcase
+   ;; Ustrings
+   #:make-ustring #:string-to-ustring #:ustring #:ustringp
+   #:ustring= #:ustring/= #:ustring< #:ustring> #:ustring<= #:ustring>=
+   #:ustring-equal #:ustring-not-equal #:ustring-lessp
+   #:ustring-greaterp #:ustring-not-greaterp #:ustring-not-lessp
+   #:ustring-to-string
+   #:ustring-upcase #:ustring-downcase #:ustring-capitalize
+   #:nustring-upcase #:nustring-downcase #:nustring-capitalize
+   #:ustring-trim #:ustring-left-trim #:ustring-right-trim
    ))
 
 (flet ((gather-external-symbols (&rest packages)

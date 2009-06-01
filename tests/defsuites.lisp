@@ -10,8 +10,8 @@
 
 (def-suite :iolib.base :in :iolib)
 
-(def-suite :iolib.base.runes :in :iolib.base)
-(def-suite :iolib.base.rods :in :iolib.base)
+(def-suite :iolib.base.uchars :in :iolib.base)
+(def-suite :iolib.base.ustrings :in :iolib.base)
 
 (def-suite :iolib.pathnames :in :iolib)
 
