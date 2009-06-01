@@ -9,6 +9,7 @@
 
 (defparameter *echo-address* (ensure-address #(127 0 0 1)))
 (defparameter *echo-port* 7)
+(defparameter *echo-timeout* 2)
 
 ;;;; Addresses
 
@@ -310,6 +311,7 @@
   (is-true
    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                         :address-family :ipv4)
+     (setf (socket-option s :receive-timeout) *echo-timeout*)
      (let ((data (make-string 200)))
        (format s "here is some text")
        (finish-output s)
@@ -321,6 +323,7 @@
   (is-true
    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                         :address-family :ipv4)
+     (setf (socket-option s :receive-timeout) *echo-timeout*)
      (and (ipv4-address-p (remote-host s))
           (numberp (remote-port s))))))
 
@@ -334,6 +337,7 @@
   (is-true
    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                         :type :datagram :address-family :ipv4)
+     (setf (socket-option s :receive-timeout) *echo-timeout*)
      (send-to s #(1 2 3 4 5))
      (let ((nbytes (nth-value 1 (receive-from s :size 200))))
        (plusp nbytes)))))
@@ -341,6 +345,7 @@
 (test simple-udp-client.2
   (is-true
    (with-open-socket (s :type :datagram :address-family :ipv4)
+     (setf (socket-option s :receive-timeout) *echo-timeout*)
      (send-to s #(1 2 3 4 5)
               :remote-host *echo-address*
               :remote-port *echo-port*)
