@@ -12,6 +12,8 @@
 ** New features
 - Add support for abstract UNIX addresses (patch by Julian Stecklina)
 - UNIX addresses are now printed as strings. Abstract addresses have a leading #\@
+- Add an rough implementation of Unicode, UCHARS and USTRINGS: names and patch
+  by Tobias Rittweiler
 ** Bug fixes:
 - EVENT-DISPATCH now calculates the distance to the next timer correctly
   (reported by Ariel Badichi)
