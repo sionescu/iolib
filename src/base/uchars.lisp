@@ -55,9 +55,7 @@
   (etypecase thing
     (uchar thing)
     ((ustring 1) (aref thing 0))
-    ((or character
-         string
-         symbol)
+    (character-designator
      (char-to-uchar (character thing)))))
 
 

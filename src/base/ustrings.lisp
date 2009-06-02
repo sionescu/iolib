@@ -22,7 +22,7 @@
      (if new (copy-seq thing) thing))
     (uchar
      (make-ustring 1 :initial-element thing))
-    ((or string symbol character)
+    (string-designator
      (string-to-ustring thing))
     (vector
      (coerce thing 'ustring))))
