@@ -8,17 +8,14 @@
 (deftype function-designator ()
   '(or symbol function))
 
-(defun string-designator-of-length-one (thing)
-  (let ((string
-         (typecase thing
-           (string thing)
-           (symbol (symbol-name thing)))))
-    (if (and string (= 1 (length string)))
-        (char string 0)
-        nil)))
+(defun symbol-with-name-of-length-one (thing)
+  (if (and (symbolp thing)
+           (= 1 (length (symbol-name thing))))
+      (char (symbol-name thing) 0)
+      nil))
 
 (deftype character-designator ()
-  '(or character (satisfies string-designator-of-length-one)))
+  '(or character (string 1) (satisfies symbol-with-name-of-length-one)))
 
 (deftype string-designator ()
   '(or character string symbol))
