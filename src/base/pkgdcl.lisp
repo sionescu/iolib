@@ -47,6 +47,7 @@
    #:timeout-designator #:positive-timeout-designator
    #:decode-timeout #:normalize-timeout #:clamp-timeout
    ;; Uchars
+   #:uchar-designator
    #:uchar-code-limit #:uchar
    #:code-uchar #:uchar-code
    #:char-to-uchar #:uchar-to-char
@@ -60,6 +61,7 @@
    #:upper-case-uchar-p #:lower-case-uchar-p #:both-case-uchar-p
    #:uchar-upcase #:uchar-downcase
    ;; Ustrings
+   #:ustring-designator
    #:make-ustring #:string-to-ustring #:ustring #:ustringp
    #:ustring= #:ustring/= #:ustring< #:ustring> #:ustring<= #:ustring>=
    #:ustring-equal #:ustring-not-equal #:ustring-lessp
