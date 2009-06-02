@@ -18,6 +18,7 @@
    #:production-only #:production-only*
    ;; Types
    #:function-designator
+   #:character-designator
    ;; RETURN*
    #:return* #:lambda* #:defun #:defmethod
    #:defmacro #:define-compiler-macro
