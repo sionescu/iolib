@@ -19,3 +19,6 @@
 
 (deftype character-designator ()
   '(or character (satisfies string-designator-of-length-one)))
+
+(deftype string-designator ()
+  '(or character string symbol))
