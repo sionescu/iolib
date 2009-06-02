@@ -45,8 +45,11 @@
   (code-char uchar))
 
 (defun digit-uchar (digit &optional (radix 10))
-  (if-let (char (digit-char digit radix))
-    (char-to-uchar char)))
+  (check-type digit unsigned-byte)
+  (check-type radix (integer 2 36))
+  (if (< digit radix)
+      (+ digit #x30)
+      nil))
 
 (defun uchar (thing)
   (etypecase thing
