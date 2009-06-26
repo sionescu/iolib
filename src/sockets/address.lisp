@@ -338,10 +338,10 @@ returned unmodified."
           (address-name address)))
 
 (defmethod print-object ((address ipv4-address) stream)
-  (format stream "@~A" (address-to-string address)))
+  (format stream "#/ip/~A" (address-to-string address)))
 
 (defmethod print-object ((address ipv6-address) stream)
-  (format stream "@~A" (address-to-string address)))
+  (format stream "#/ip/~A" (address-to-string address)))
 
 (defmethod print-object ((address local-address) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
@@ -350,8 +350,7 @@ returned unmodified."
 
 ;;;; Reader Macro
 
-(defun read-literal-ip-address (stream &optional c n)
-  (declare (ignore c n))
+(define-literal-reader ip (stream)
   (loop :with sstr := (make-string-output-stream)
         :for char := (read-char stream nil nil)
         :while char
@@ -364,9 +363,6 @@ returned unmodified."
         :finally (return (or (ensure-address (get-output-stream-string sstr)
                                              :errorp nil)
                              (error 'reader-error :stream stream)))))
-
-(define-syntax ip-address
-  (set-macro-character #\@ 'read-literal-ip-address t))
 
 ;;;; Equality Methods
 
