@@ -36,6 +36,9 @@
    #:define-syntax
    #:enable-reader-macro #:enable-reader-macro*
    #:disable-reader-macro #:disable-reader-macro*
+   #:read-literals #:define-literal-reader
+   #:unknown-literal-read-syntax
+   #:unknown-literal-read-syntax-name
    ;; SPLIT-SEQUENCE
    #:split-sequence #:split-sequence-if #:split-sequence-if-not
    ;; Misc

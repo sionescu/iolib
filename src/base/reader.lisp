@@ -37,3 +37,41 @@
 (defmacro define-syntax (name &body body)
   `(defmethod enable-reader-macro* ((name (eql ',name)))
      ,@body))
+
+
+;; Literal object dispatcher
+
+(define-condition unknown-literal-read-syntax (reader-error)
+  ((name :initarg name :accessor unknown-literal-read-syntax-name))
+  (:report (lambda (s c)
+             (format s "Unknown literal read syntax: ~S"
+                     (unknown-literal-read-syntax-name c)))))
+
+(defconstant +read-literal-dispatch-char+ #\#)
+(defconstant +read-literal-sub-char+ #\/)
+
+(defun read-literal-dispatcher (stream char arg)
+  (declare (ignore char arg))
+  (let* ((literal-kind
+          (with-output-to-string (s)
+            (loop :for c := (read-char stream t nil t) :do
+                  (cond
+                    ((char= c +read-literal-sub-char+)
+                     (loop-finish))
+                    (t (write-char c s))))))
+         (actual-reader
+          (getf (symbol-plist (read-from-string literal-kind))
+                'read-literal-fn)))
+    (if (functionp actual-reader)
+        (funcall actual-reader stream)
+        (error 'unknown-literal-read-syntax
+               :stream stream
+               :name actual-reader))))
+
+(set-dispatch-macro-character +read-literal-dispatch-char+
+                              +read-literal-sub-char+
+                              'read-literal-dispatcher)
+
+(defmacro define-literal-reader (name (stream) &body body)
+  `(setf (getf (symbol-plist ',name) 'read-literal-fn)
+         (lambda (,stream) ,@body)))
