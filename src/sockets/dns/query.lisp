@@ -264,7 +264,6 @@
         (receive-tcp-dns-message socket #'remtime)))))
 
 (defun do-one-dns-query (name type search ns repeat timeout)
-  (declare (optimize (debug 3)))
   ;; TODO: implement search
   (declare (ignore search))
   (let* ((query (prepare-query name type))

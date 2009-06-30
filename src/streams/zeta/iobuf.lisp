@@ -5,7 +5,8 @@
 
 (in-package :iolib.zeta-streams)
 
-(declaim (optimize speed))
+(eval-when (:compile-toplevel)
+  (declaim (optimize speed)))
 
 ;;;-------------------------------------------------------------------------
 ;;; Foreign Buffers
