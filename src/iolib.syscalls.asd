@@ -23,6 +23,7 @@
    (:file "designators")
    (:file "early")
    (cffi-grovel:wrapper-file "ffi-wrappers"
-     :pathname #+unix "ffi-wrappers-unix")
+     :pathname #+unix "ffi-wrappers-unix"
+     :soname "libiolib-syscalls")
    (:file "ffi-functions"
      :pathname #+unix "ffi-functions-unix")))
