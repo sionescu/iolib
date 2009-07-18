@@ -15,7 +15,7 @@
    (:file "debug" :depends-on ("pkgdcl" "return-star"))
    (:file "conditions" :depends-on ("pkgdcl" "return-star"))
    (:file "defobsolete" :depends-on ("pkgdcl" "return-star"))
-   (:file "reader" :depends-on ("pkgdcl" "return-star"))
+   (:file "reader" :depends-on ("pkgdcl" "return-star" "conditions"))
    (:file "sequence" :depends-on ("pkgdcl" "return-star"))
    (:file "matching" :depends-on ("pkgdcl" "return-star"))
    (:file "time" :depends-on ("pkgdcl" "return-star"))

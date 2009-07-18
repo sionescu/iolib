@@ -41,12 +41,6 @@
 
 ;; Literal object dispatcher
 
-(define-condition unknown-literal-syntax (reader-error)
-  ((name :initarg :name :accessor unknown-literal-syntax-name))
-  (:report (lambda (s c)
-             (format s "Unknown literal read syntax: ~S"
-                     (unknown-literal-syntax-name c)))))
-
 (defconstant +read-literal-dispatch-char+ #\#)
 (defconstant +read-literal-sub-char+ #\/)
 

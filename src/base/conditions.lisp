@@ -5,6 +5,10 @@
 
 (in-package :iolib.base)
 
+;;;-------------------------------------------------------------------------
+;;; Subtype Errors
+;;;-------------------------------------------------------------------------
+
 (define-condition subtype-error (error)
   ((datum :initarg :type :reader subtype-error-datum)
    (expected-supertype :initarg :expected-supertype
@@ -14,7 +18,18 @@
      (format stream "~S is not a recognizable subtype of ~S"
              (subtype-error-datum condition)
              (subtype-error-expected-supertype condition)))))
+
 
+;;;-------------------------------------------------------------------------
+;;; Literal Syntax Errors
+;;;-------------------------------------------------------------------------
+
+(define-condition unknown-literal-syntax (reader-error)
+  ((name :initarg :name :reader unknown-literal-syntax-name))
+  (:report (lambda (condition stream)
+             (format stream "Unknown literal read syntax: ~S"
+                     (unknown-literal-syntax-name condition)))))
+
 
 ;;;-------------------------------------------------------------------------
 ;;; Bugs
