@@ -379,8 +379,10 @@
 (test alpha-uchar-p.3
   (is-true
    (loop :for i :from 0 :to 255
-         :always (eql (alpha-uchar-p i)
-                      (alpha-char-p (code-char i))))))
+         :always (let ((a-c-p (alpha-uchar-p i)))
+                   (if (alpha-char-p (code-char i))
+                       (uchar= a-c-p i)
+                       (null a-c-p))))))
 
 (test alpha-uchar-p.error.1
   (signals type-error
@@ -414,8 +416,10 @@
 (test alphanumeric-uchar-p.1
   (is-true
    (loop :for i :from 0 :to 255
-         :always (eql (alphanumeric-uchar-p i)
-                      (alphanumericp (code-char i))))))
+         :always (let ((a-c-p (alphanumeric-uchar-p i)))
+                   (if (alphanumericp (code-char i))
+                       (uchar= a-c-p i)
+                       (null a-c-p))))))
 
 (test alphanumeric-uchar-p.error.1
   (signals type-error
@@ -425,8 +429,10 @@
 (test graphic-uchar-p.1
   (is-true
    (loop :for i :from 0 :to 255
-         :always (eql (graphic-uchar-p i)
-                      (graphic-char-p (code-char i))))))
+         :always (let ((g-c-p (graphic-uchar-p i)))
+                   (if (graphic-char-p (code-char i))
+                       (uchar= g-c-p i)
+                       (null g-c-p))))))
 
 (test graphic-uchar-p.error.1
   (signals type-error
@@ -436,8 +442,10 @@
 (test upper-case-uchar-p.1
   (is-true
    (loop :for i :from 0 :to 255
-         :always (eql (upper-case-uchar-p i)
-                      (upper-case-p (code-char i))))))
+         :always (let ((u-c-p (upper-case-uchar-p i)))
+                   (if (upper-case-p (code-char i))
+                       (uchar= u-c-p i)
+                       (null u-c-p))))))
 
 (test upper-case-uchar-p.error.1
   (signals type-error
@@ -447,8 +455,10 @@
 (test lower-case-uchar-p.1
   (is-true
    (loop :for i :from 0 :to 255
-         :always (eql (lower-case-uchar-p i)
-                      (lower-case-p (code-char i))))))
+         :always (let ((l-c-p (lower-case-uchar-p i)))
+                   (if (lower-case-p (code-char i))
+                       (uchar= l-c-p i)
+                       (null l-c-p))))))
 
 (test lower-case-uchar-p.error.1
   (signals type-error
@@ -458,8 +468,10 @@
 (test both-case-uchar-p.1
   (is-true
    (loop :for i :from 0 :to 255
-         :always (eql (both-case-uchar-p i)
-                      (both-case-p (code-char i))))))
+         :always (let ((b-c-p (both-case-uchar-p i)))
+                   (if (both-case-p (code-char i))
+                       (uchar= i b-c-p)
+                       (null b-c-p))))))
 
 (test both-case-uchar-p.error.1
   (signals type-error

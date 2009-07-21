@@ -70,12 +70,16 @@
 ;;;-------------------------------------------------------------------------
 
 (defun ucharp (uchar)
-  (typep uchar 'uchar))
+  (if (typep uchar 'uchar)
+      uchar
+      nil))
 
 (defun unicode-uchar-p (uchar)
   (check-type uchar uchar)
-  (or (< uchar #xD800)
-      (> uchar #xDFFF)))
+  (if (or (< uchar #xD800)
+          (> uchar #xDFFF))
+      uchar
+      nil))
 
 (defun uchar/= (uchar &rest more-uchars)
   (check-type uchar uchar)
@@ -113,31 +117,43 @@
   (define-uchar-comparison uchar-not-lessp    >= :key uchar-downcase))
 
 (defun alpha-uchar-p (uchar)
-  (and (unicode-uchar-p uchar)
-       (alpha-char-p (uchar-to-char uchar))))
+  (if (and (unicode-uchar-p uchar)
+           (alpha-char-p (uchar-to-char uchar)))
+      uchar
+      nil))
 
 (defun alphanumeric-uchar-p (uchar)
-  (and (unicode-uchar-p uchar)
-       (alphanumericp (uchar-to-char uchar))))
+  (if (and (unicode-uchar-p uchar)
+           (alphanumericp (uchar-to-char uchar)))
+      uchar
+      nil))
 
 (defun digit-uchar-p (uchar &optional (radix 10))
   (digit-char-p (uchar-to-char uchar) radix))
 
 (defun graphic-uchar-p (uchar)
-  (and (unicode-uchar-p uchar)
-       (graphic-char-p (uchar-to-char uchar))))
+  (if (and (unicode-uchar-p uchar)
+           (graphic-char-p (uchar-to-char uchar)))
+      uchar
+      nil))
 
 (defun upper-case-uchar-p (uchar)
-  (and (unicode-uchar-p uchar)
-       (upper-case-p (uchar-to-char uchar))))
+  (if (and (unicode-uchar-p uchar)
+           (upper-case-p (uchar-to-char uchar)))
+      uchar
+      nil))
 
 (defun lower-case-uchar-p (uchar)
-  (and (unicode-uchar-p uchar)
-       (lower-case-p (uchar-to-char uchar))))
+  (if (and (unicode-uchar-p uchar)
+           (lower-case-p (uchar-to-char uchar)))
+      uchar
+      nil))
 
 (defun both-case-uchar-p (uchar)
-  (and (unicode-uchar-p uchar)
-       (both-case-p (uchar-to-char uchar))))
+  (if (and (unicode-uchar-p uchar)
+           (both-case-p (uchar-to-char uchar)))
+      uchar
+      nil))
 
 
 ;;;-------------------------------------------------------------------------
