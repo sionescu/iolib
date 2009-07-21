@@ -338,12 +338,10 @@ returned unmodified."
           (address-name address)))
 
 (defmethod print-object ((address ipv4-address) stream)
-  (let ((*print-case* :downcase))
-    (format stream "#/~S/~A" 'ip (address-to-string address))))
+  (format stream "#/ip/~A" (address-to-string address)))
 
 (defmethod print-object ((address ipv6-address) stream)
-  (let ((*print-case* :downcase))
-    (format stream "#/~S/~A" 'ip (address-to-string address))))
+  (format stream "#/ip/~A" (address-to-string address)))
 
 (defmethod print-object ((address local-address) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
