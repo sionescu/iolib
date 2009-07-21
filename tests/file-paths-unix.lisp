@@ -180,3 +180,19 @@
 (test file-path.expand-user.8
   (is-file-path (file-path "/~root" :as-directory t :expand-user t)
                 ((:absolute) "~root")))
+
+(test file-path.expand-user.9
+  (is-file-path (file-path "~root/a" :expand-user nil)
+                ((:relative "~root") "a")))
+
+(test file-path.expand-user.10
+  (is-file-path (file-path "~root/a" :as-directory t :expand-user nil)
+                ((:relative "~root") "a")))
+
+(test file-path.expand-user.11
+  (is-file-path (file-path "~root/a" :expand-user t)
+                ((:absolute "root") "a")))
+
+(test file-path.expand-user.12
+  (is-file-path (file-path "~root/a" :as-directory t :expand-user t)
+                ((:absolute "root") "a")))

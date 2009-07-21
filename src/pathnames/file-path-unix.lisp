@@ -141,7 +141,7 @@
            (nth-value 5 (isys:%sys-getpwuid (ustring-to-string* uid)))))
     (unless (uchar= (char-to-uchar #\~) (aref pathspec 0))
       (return* pathspec))
-    (destructuring-bind (first &optional rest)
+    (destructuring-bind (first &rest rest)
         (split-directory-namestring pathspec)
       (let ((homedir
              (cond
@@ -158,8 +158,7 @@
                (t
                 (bug "The pathspec is suppose to start with a ~S" #\~)))))
         (if homedir
-            (join/ustring +directory-delimiter+
-                          (ustring homedir) (mapcar #'ustring rest))
+            (apply #'join/ustring +directory-delimiter+ (ustring homedir) rest)
             pathspec)))))
 
 (defmethod expand-user-directory ((path unix-path))
