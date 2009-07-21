@@ -236,3 +236,16 @@
   (if (unicode-uchar-p uchar)
       (char-name (uchar-to-char uchar))
       (format nil "Non-Unicode uchar #x~X" uchar)))
+
+
+;;;-------------------------------------------------------------------------
+;;; Misc
+;;;-------------------------------------------------------------------------
+
+(defun join/ustring (connector &rest ustrings)
+  (let ((c (ustring connector)))
+    (concatenate 'ustring (car ustrings)
+                 (reduce (lambda (str1 str2)
+                           (concatenate 'ustring str1 c str2))
+                         (cdr ustrings)
+                         :initial-value (load-time-value (make-ustring 0))))))
