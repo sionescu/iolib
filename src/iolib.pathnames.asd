@@ -6,7 +6,7 @@
   :description "New pathnames."
   :author "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:iolib.base :iolib.syscalls :cl-ppcre)
+  :depends-on (:iolib.base :iolib.syscalls)
   :pathname (merge-pathnames #p"pathnames/" *load-truename*)
   :serial t
   :components
