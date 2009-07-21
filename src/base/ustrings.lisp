@@ -134,7 +134,8 @@
           :for sindex :from 0 :do
           (setf (char string sindex)
                 (uchar-to-char (or (unicode-uchar-p uchar)
-                                   (- uchar #xD800)))))))
+                                   (- uchar #xD800)))))
+    string))
 
 (defun ustring-upcase (ustring &key (start 0) end)
   (check-bounds ustring start end)
