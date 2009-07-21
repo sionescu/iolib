@@ -42,7 +42,7 @@
    #:split-sequence #:split-sequence-if #:split-sequence-if-not
    ;; Misc
    #:function-name #:function-name-p
-   #:check-bounds #:join
+   #:check-bounds #:join #:join/ustring
    ;; Matching
    #:multiple-value-case #:flags-case
    ;; Time
