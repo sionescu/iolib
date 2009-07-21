@@ -126,6 +126,16 @@
   ;; FIXME: inefficient
   (map 'string #'uchar-to-char (subseq ustring start end)))
 
+(defun ustring-to-string* (ustring &key (start 0) end)
+  (check-bounds ustring start end)
+  (let ((string (make-string (- end start))))
+    (loop :for i :from start :below end
+          :for uchar := (aref ustring i)
+          :for sindex :from 0 :do
+          (setf (char string sindex)
+                (uchar-to-char (or (unicode-uchar-p uchar)
+                                   (- uchar #xD800)))))))
+
 (defun ustring-upcase (ustring &key (start 0) end)
   (check-bounds ustring start end)
   (nustring-upcase (ustring ustring :new t)

@@ -68,7 +68,7 @@
    #:ustring= #:ustring/= #:ustring< #:ustring> #:ustring<= #:ustring>=
    #:ustring-equal #:ustring-not-equal #:ustring-lessp
    #:ustring-greaterp #:ustring-not-greaterp #:ustring-not-lessp
-   #:ustring-to-string
+   #:ustring-to-string #:ustring-to-string*
    #:ustring-upcase #:ustring-downcase #:ustring-capitalize
    #:nustring-upcase #:nustring-downcase #:nustring-capitalize
    #:ustring-trim #:ustring-left-trim #:ustring-right-trim
