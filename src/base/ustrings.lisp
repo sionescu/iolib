@@ -250,4 +250,4 @@
                  (reduce (lambda (str1 str2)
                            (concatenate 'ustring str1 c str2))
                          (cdr ustrings)
-                         :initial-value (load-time-value (make-ustring 0))))))
+                         :initial-value (make-ustring 0)))))
