@@ -11,29 +11,38 @@
   (:export
    ;; Classes
    #:file-path
-   #:unix-path
+   #+unix    #:unix-path
+   #+windows #:unc-path
 
    ;; Accessors
    #:file-path-host
    #:file-path-device
    #:file-path-directory
-   #:file-path-name
-   #:file-path-directory-delimiter
-   #:file-path-alternative-delimiter
-   #:file-path-execution-path-delimiter
+   #:file-path-file
    #:file-path-namestring
 
    ;; Constructors
    #:make-file-path
-   #:parse-file-path
    #:file-path
 
    ;; Operations
    #:merge-file-paths
    #:enough-file-path
-   #:concatenate-paths
+   #:expand-user-directory
 
    ;; Predicates
    #:file-path-p
    #:file-path-absolute-p
-   #:file-path-relative-p))
+   #:file-path-relative-p
+
+   ;; Conditions
+   #:invalid-file-path
+
+   ;; Constants
+   #:+directory-delimiter+
+   #:+alternative-delimiter+
+   #:+execution-path-delimiter+
+
+   ;; Specials
+   #:*default-file-path-defaults*
+   #:*default-execution-path*))

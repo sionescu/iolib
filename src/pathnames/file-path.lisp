@@ -14,8 +14,22 @@
    (device :initarg :device)
    (directory :initarg :directory
               :initform nil)
-   (name :initarg :name
-         :initform nil)))
+   (file :initarg :file
+         :initform nil)
+   (trailing-delimiter :initarg :trailing-delimiter
+                       :initform nil
+                       :reader file-path-trailing-delimiter)))
+
+(define-condition invalid-file-path (isys:iolib-error)
+  ((path :initarg :path :reader invalid-file-path-path)
+   (reason :initform nil :initarg :reason :reader invalid-file-path-reason))
+  (:report (lambda (condition stream)
+             (format stream "Invalid file path: ~S."
+                     (ustring-to-string*
+                      (ustring
+                       (invalid-file-path-path condition))))
+             (when-let (reason (invalid-file-path-reason condition))
+               (format stream "~%~A." reason)))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -28,24 +42,19 @@
     #+windows 'unc-path))
 
 (defconstant +directory-delimiter+
-  #+unix    #\/
-  #+windows #\\)
+  #+unix    (uchar #\/)
+  #+windows (uchar #\\))
 
 (defconstant +alternative-delimiter+
   #+unix    nil
-  #+windows #\/)
+  #+windows (uchar #\/))
 
-(defconstant (+split-directories-regex+ :test 'string=)
-  (if +alternative-delimiter+
-      (format nil "(~C|~C)" +directory-delimiter+ +alternative-delimiter+)
-      (string +directory-delimiter+)))
-
-(defconstant (+absolute-directory-regex+ :test 'string=)
-  (format nil "^~A" +split-directories-regex+))
+(defconstant (+directory-delimiters+ :test #'equal)
+  (list* +directory-delimiter+ +alternative-delimiter+))
 
 (defconstant +execution-path-delimiter+
-  #+unix    #\:
-  #+windows #\;)
+  #+unix    (uchar #\:)
+  #+windows (uchar #\;))
 
 (declaim (special *default-file-path-defaults*))
 
@@ -56,37 +65,31 @@
 
 ;;; Accessors
 
-(defgeneric file-path-host (path))
+(defgeneric file-path-host (path &key namestring))
 
-(defgeneric file-path-device (path))
+(defgeneric file-path-device (path &key namestring))
 
 (defgeneric file-path-directory (path &key namestring))
 
-(defgeneric file-path-name (path))
+(defgeneric file-path-file (path &key namestring))
 
 (defgeneric file-path-namestring (path))
 
 ;;; Operations
 
-(defgeneric make-file-path (&key host device directory name defaults))
+(defgeneric make-file-path (&key host device directory file defaults))
 
 (defgeneric merge-file-paths (path &optional defaults))
 
 (defgeneric enough-file-path (path &optional defaults))
 
-(defgeneric concatenate-paths (&rest paths))
-
-(defgeneric parse-file-path (namestring &key start end
-                             as-directory expand-user))
-
-(defgeneric file-path (pathspec))
-
-;;; Internal functions
+(defgeneric file-path (pathspec &key start end as-directory expand-user))
 
 (defgeneric expand-user-directory (path))
 
-(defgeneric %file-path-directory-namestring (path &key trailing-delimiter
-                                                  print-dot))
+;;; Internal functions
+
+(defgeneric %file-path-directory-namestring (path &key print-dot))
 
 (defgeneric %expand-user-directory (pathspec))
 
@@ -95,19 +98,26 @@
 ;;; Accessors
 ;;;-------------------------------------------------------------------------
 
-(defmethod file-path-host ((path file-path))
-  (slot-value path 'host))
+(defmethod file-path-host ((path file-path) &key namestring)
+  (if namestring
+      (%file-path-host-namestring path)
+      (slot-value path 'host)))
 
-(defmethod file-path-device ((path file-path))
-  (slot-value path 'device))
+(defmethod file-path-device ((path file-path) &key namestring)
+  (if namestring
+      (%file-path-device-namestring path)
+      (slot-value path 'device)))
 
 (defmethod file-path-directory ((path file-path) &key namestring)
   (if namestring
-      (%file-path-directory-namestring path :print-dot t)
+      (%file-path-directory-namestring path :print-dot t
+                                       :trailing-delimiter t)
       (slot-value path 'directory)))
 
-(defmethod file-path-name ((path file-path))
-  (slot-value path 'name))
+(defmethod file-path-file ((path file-path) &key namestring)
+  (if namestring
+      (%file-path-file-namestring path)
+      (slot-value path 'file)))
 
 
 ;;;-------------------------------------------------------------------------
@@ -115,17 +125,37 @@
 ;;;-------------------------------------------------------------------------
 
 (defun directory-name-p (name)
-  (and (stringp name) (not (ppcre:scan +split-directories-regex+ name))))
+  (or (stringp name) (ustringp name)))
 
 (defun file-path-directory-p (directory)
   (and (consp directory)
        (member (car directory) '(:absolute :relative))
        (every #'directory-name-p (cdr directory))))
 
-(defmethod initialize-instance :after ((path file-path) &key directory name)
+(defmethod initialize-instance :after ((path file-path) &key directory file)
   (check-type directory (or null (eql :unspecific)
                             (satisfies file-path-directory-p)))
-  (check-type name (or null (eql :unspecific) string)))
+  (check-type file (or null (eql :unspecific) string ustring))
+  (flet ((null-error ()
+           (error 'invalid-file-path :path ""
+                  :reason "Null filenames are not valid"))
+         (slash-error (path)
+           (error 'invalid-file-path :path (ustring-to-string* (ustring path))
+                  :reason "Filenames cannot contain directory delimiters(#\\ and #\/)"))
+         (delimp (path)
+           (find-if (lambda (c) (member c +directory-delimiters+)) (ustring path))))
+    (dolist (dir (list* file (cdr directory)))
+      (when dir
+        (when (zerop (length dir)) (null-error))
+        (when (delimp file) (slash-error file)))))
+  (setf (slot-value path 'file)
+        (if (or (stringp file) (ustringp file))
+            (ustring file)
+            file))
+  (setf (slot-value path 'directory)
+        (if (consp directory)
+            (list* (car directory) (mapcar #'ustring (cdr directory)))
+            directory)))
 
 
 ;;;-------------------------------------------------------------------------
@@ -148,24 +178,32 @@
 ;;; Operations
 ;;;-------------------------------------------------------------------------
 
-(defmethod make-file-path (&key host device directory name defaults)
+(defmethod make-file-path (&key (host nil hostp) (device nil devicep)
+                           (directory nil directoryp) (file nil filep)
+                           defaults)
   (check-type defaults (or null file-path))
   (make-instance '#.+file-path-host-type+
-                 :host (or host
-                           (if defaults
-                               (file-path-host defaults)
-                               (file-path-host *default-file-path-defaults*)))
-                 :device (or device
-                             (and defaults (file-path-device defaults)))
-                 :directory (or directory
-                                (and defaults (file-path-directory defaults)))
-                 :name (or name
-                           (and defaults (file-path-name defaults)))))
+                 :host (cond (hostp    host)
+                             (defaults (file-path-host defaults))
+                             (t        (file-path-host
+                                        *default-file-path-defaults*)))
+                 :device (cond (devicep  device)
+                               (defaults (file-path-device defaults))
+                               (t        (file-path-device
+                                          *default-file-path-defaults*)))
+                 :directory (cond (directoryp directory)
+                                  (defaults   (file-path-directory defaults))
+                                  (t          (file-path-directory
+                                               *default-file-path-defaults*)))
+                 :file (cond (filep    file)
+                             (defaults (file-path-file defaults))
+                             (t        (file-path-file
+                                        *default-file-path-defaults*)))))
 
 (defmethod merge-file-paths ((path file-path) &optional
                              (defaults *default-file-path-defaults*))
   (check-type defaults file-path)
-  (make-instance (class-of path)
+  (make-instance '#.+file-path-host-type+
                  :host (or (file-path-host path)
                            (file-path-host defaults))
                  :device (or (file-path-device path)
@@ -173,32 +211,17 @@
                  :directory (or (let ((dir (file-path-directory path)))
                                   (when (and dir (eql :relative (car dir))
                                              (listp (file-path-directory defaults)))
-                                    (append dir (file-path-directory defaults))))
+                                    (append (file-path-directory defaults) (cdr dir))))
                                 (file-path-directory defaults))
-                 :name (or (file-path-name path)
-                           (file-path-name defaults))))
-
-(defmethod concatenate-paths (&rest paths)
-  (when (null paths) (return* nil))
-  (assert (every #'file-path-p paths))
-  (let ((as-directory
-         (not (stringp (file-path-name (lastcar paths)))))
-        (big-namestring
-         (apply #'join +directory-delimiter+
-                (mapcar #'file-path-namestring paths))))
-    (parse-file-path big-namestring :as-directory as-directory)))
-
-(defmethod file-path ((pathspec file-path))
-  pathspec)
-
-(defmethod file-path ((pathspec string))
-  (parse-file-path pathspec))
+                 :name (or (file-path-file path)
+                           (file-path-file defaults))))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; PRINT-OBJECT
 ;;;-------------------------------------------------------------------------
 
+;; TODO: read&print using #/path/"..."
 (defmethod print-object ((path file-path) stream)
   (print-unreadable-object (path stream :type t)
     (format stream "~S" (file-path-namestring path))))
