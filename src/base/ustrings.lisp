@@ -122,11 +122,13 @@
 ;;;-------------------------------------------------------------------------
 
 (defun ustring-to-string (ustring &key (start 0) end)
+  (check-type ustring ustring)
   (check-bounds ustring start end)
   ;; FIXME: inefficient
   (map 'string #'uchar-to-char (subseq ustring start end)))
 
 (defun ustring-to-string* (ustring &key (start 0) end)
+  (check-type ustring ustring)
   (check-bounds ustring start end)
   (let ((string (make-string (- end start))))
     (loop :for i :from start :below end
