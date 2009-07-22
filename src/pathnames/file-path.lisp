@@ -223,5 +223,9 @@
 
 ;; TODO: read&print using #/path/"..."
 (defmethod print-object ((path file-path) stream)
-  (print-unreadable-object (path stream :type t)
-    (format stream "~S" (file-path-namestring path))))
+  (format stream "#/p/~S" (file-path-namestring path)))
+
+(define-literal-reader p (stream)
+  (let ((token (read stream)))
+    (check-type token string)
+    (file-path token)))

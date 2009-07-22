@@ -25,6 +25,9 @@
    #:make-file-path
    #:file-path
 
+   ;; Named reader
+   #:p
+
    ;; Operations
    #:merge-file-paths
    #:enough-file-path
