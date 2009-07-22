@@ -20,6 +20,7 @@
                          (cdr (file-path-directory ,p))
                          ',(cdr directory)))
              (ustring= (file-path-file ,p) ',file))))))
+
 
 (test file-path.null.1
   (signals invalid-file-path
@@ -36,6 +37,7 @@
 (test file-path.null.4
   (signals invalid-file-path
     (file-path "" :as-directory t :expand-user t)))
+
 
 (test file-path.root.1
   (is-file-path (file-path "/")
@@ -52,6 +54,7 @@
 (test file-path.root.4
   (is-file-path (file-path "/" :as-directory t :expand-user t)
                 ((:absolute) nil)))
+
 
 (test file-path.relative.1
   (is-file-path (file-path "a")
@@ -100,6 +103,7 @@
 (test file-path.relative.12
   (is-file-path (file-path "a/b" :as-directory t :expand-user t)
                 ((:relative "a") "b")))
+
 
 (test file-path.absolute.1
   (is-file-path (file-path "/a")
@@ -148,6 +152,7 @@
 (test file-path.absolute.12
   (is-file-path (file-path "/a/b" :as-directory t :expand-user t)
                 ((:absolute "a") "b")))
+
 
 (test file-path.expand-user.1
   (is-file-path (file-path "~root" :expand-user nil)
