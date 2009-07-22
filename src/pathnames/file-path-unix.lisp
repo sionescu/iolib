@@ -113,11 +113,13 @@
     (error 'invalid-file-path
            :path pathspec
            :reason "Paths of null length are not valid"))
-  (when (ustring= pathspec "~") (setf as-directory t))
   (let* ((actual-namestring (subseq (ustring pathspec) start end))
          (expansion (or (when expand-user
-                          (ignore-some-conditions (isys:syscall-error)
-                            (%expand-user-directory actual-namestring)))
+                          (prog1
+                              (ignore-some-conditions (isys:syscall-error)
+                                (%expand-user-directory actual-namestring))
+                            (when (ustring= pathspec "~")
+                              (setf as-directory t))))
                         actual-namestring))
          (components (split-directory-namestring expansion))
          (directory-type (if (absolute-namestring-p expansion)
@@ -184,7 +186,7 @@
   (or (ignore-some-conditions (isys:syscall-error)
         (file-path (isys:%sys-getcwd) :as-directory t))
       (ignore-some-conditions (isys:syscall-error)
-        (file-path (%expand-user-directory "~") :as-directory t))
+        (file-path "~"))
       (file-path "/")))
 
 (defparameter *default-execution-path*
