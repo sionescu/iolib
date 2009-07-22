@@ -119,8 +119,7 @@
                           (ignore-some-conditions (isys:syscall-error)
                             (%expand-user-directory actual-namestring)))
                         actual-namestring))
-         (components (remove "." (split-directory-namestring expansion)
-                             :test #'ustring=))
+         (components (split-directory-namestring expansion))
          (directory-type (if (absolute-namestring-p expansion)
                              :absolute
                              :relative))
