@@ -221,7 +221,6 @@
 ;;; PRINT-OBJECT
 ;;;-------------------------------------------------------------------------
 
-;; TODO: read&print using #/path/"..."
 (defmethod print-object ((path file-path) stream)
   (format stream "#/p/~S" (file-path-namestring path)))
 
