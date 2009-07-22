@@ -196,3 +196,34 @@
 (test file-path.expand-user.12
   (is-file-path (file-path "~root/a" :as-directory t :expand-user t)
                 ((:absolute "root") "a")))
+
+
+(test file-path.namestring.1
+  (is (string= "/" (file-path-namestring (file-path "/")))))
+
+(test file-path.namestring.2
+  (is (string= "/." (file-path-namestring (file-path "/.")))))
+
+(test file-path.namestring.3
+  (is (string= "/.." (file-path-namestring (file-path "/..")))))
+
+(test file-path.namestring.4
+  (is (string= "." (file-path-namestring (file-path ".")))))
+
+(test file-path.namestring.5
+  (is (string= "./" (file-path-namestring (file-path "./")))))
+
+(test file-path.namestring.6
+  (is (string= "../." (file-path-namestring (file-path "../.")))))
+
+(test file-path.namestring.7
+  (is (string= ".././" (file-path-namestring (file-path ".././")))))
+
+(test file-path.namestring.8
+  (is (string= "../.." (file-path-namestring (file-path "../..")))))
+
+(test file-path.namestring.9
+  (is (string= "a/./b" (file-path-namestring (file-path "a/./b")))))
+
+(test file-path.namestring.10
+  (is (string= "a/../b" (file-path-namestring (file-path "a/../b")))))
