@@ -22,8 +22,9 @@
    #:file-path-namestring
 
    ;; Constructors
-   #:make-file-path
    #:file-path
+   #:make-file-path
+   #:parse-file-path
 
    ;; Named reader
    #:p

@@ -106,8 +106,7 @@
 (defun absolute-namestring-p (namestring)
   (uchar= +directory-delimiter+ (aref namestring 0)))
 
-(defmethod file-path (pathspec &key (start 0) end as-directory (expand-user t))
-  (when (file-path-p pathspec) (return* pathspec))
+(defmethod parse-file-path (pathspec &key (start 0) end as-directory (expand-user t))
   (check-type pathspec (or string ustring))
   (when (zerop (length pathspec))
     (error 'invalid-file-path
@@ -184,13 +183,13 @@
 
 (defparameter *default-file-path-defaults*
   (or (ignore-some-conditions (isys:syscall-error)
-        (file-path (isys:%sys-getcwd) :as-directory t))
+        (parse-file-path (isys:%sys-getcwd) :as-directory t))
       (ignore-some-conditions (isys:syscall-error)
-        (file-path "~"))
-      (file-path "/")))
+        (parse-file-path "~"))
+      (parse-file-path "/")))
 
 (defparameter *default-execution-path*
   (mapcar (lambda (p)
-            (file-path p :as-directory t))
+            (parse-file-path p :as-directory t))
           (split-sequence +execution-path-delimiter+ (isys:%sys-getenv "PATH")
                           :remove-empty-subseqs t)))

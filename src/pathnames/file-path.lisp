@@ -83,7 +83,9 @@
 
 (defgeneric enough-file-path (path &optional defaults))
 
-(defgeneric file-path (pathspec &key start end as-directory expand-user))
+(defgeneric file-path (pathspec))
+
+(defgeneric parse-file-path (pathspec &key start end as-directory expand-user))
 
 (defgeneric expand-user-directory (path))
 
@@ -177,6 +179,12 @@
 ;;;-------------------------------------------------------------------------
 ;;; Operations
 ;;;-------------------------------------------------------------------------
+
+(defmethod file-path ((pathspec file-path))
+  pathspec)
+
+(defmethod file-path (pathspec)
+  (parse-file-path pathspec))
 
 (defmethod make-file-path (&key (host nil hostp) (device nil devicep)
                            (directory nil directoryp) (file nil filep)
