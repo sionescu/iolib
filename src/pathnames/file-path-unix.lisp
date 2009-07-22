@@ -113,6 +113,7 @@
     (error 'invalid-file-path
            :path pathspec
            :reason "Paths of null length are not valid"))
+  (when (ustring= pathspec "~") (setf as-directory t))
   (let* ((actual-namestring (subseq (ustring pathspec) start end))
          (expansion (or (when expand-user
                           (ignore-some-conditions (isys:syscall-error)
