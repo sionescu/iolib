@@ -34,7 +34,6 @@
    ;; Operations
    #:merge-file-paths
    #:enough-file-path
-   #:expand-user-directory
 
    ;; Predicates
    #:file-path-p

@@ -161,20 +161,6 @@
         (if homedir
             (apply #'join/ustring +directory-delimiter+ (ustring homedir) rest)
             pathspec)))))
-
-(defmethod expand-user-directory ((path unix-path))
-  (with-slots (directory)
-      path
-    (assert (and (consp directory)
-                 (eql :relative (first directory))
-                 (stringp (second directory))))
-    (let ((dirs (split-directory-namestring
-                 (handler-case
-                     (%expand-user-directory (second directory))
-                   (isys:syscall-error () (return* path))))))
-      (setf directory
-            (append (list :absolute) dirs (cddr directory)))))
-  (values path))
 
 
 ;;;-------------------------------------------------------------------------
