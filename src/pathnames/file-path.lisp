@@ -217,6 +217,9 @@
 (defmethod file-path (pathspec)
   (parse-file-path pathspec))
 
+(defmethod file-path ((pathspec pathname))
+  (parse-file-path (namestring pathspec)))
+
 (defmethod make-file-path (&key (host nil hostp) (device nil devicep)
                            (directory nil directoryp) (file nil filep)
                            defaults)
