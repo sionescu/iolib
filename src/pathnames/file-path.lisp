@@ -93,7 +93,14 @@
 
 ;;; Internal functions
 
-(defgeneric %file-path-directory-namestring (path &key print-dot))
+(defgeneric %file-path-host-namestring (path))
+
+(defgeneric %file-path-device-namestring (path))
+
+(defgeneric %file-path-directory-namestring (path &key print-dot
+                                             trailing-delimiter))
+
+(defgeneric %file-path-file-namestring (path))
 
 (defgeneric %expand-user-directory (pathspec))
 
