@@ -261,7 +261,10 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod print-object ((path file-path) stream)
-  (format stream "#/p/~S" (file-path-namestring path)))
+  (let ((ns (file-path-namestring path)))
+    (if *print-escape*
+        (format stream "#/p/~S" ns)
+        (write-string ns stream))))
 
 (define-literal-reader p (stream)
   (let ((token (read stream)))
