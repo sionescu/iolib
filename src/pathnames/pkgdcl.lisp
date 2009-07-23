@@ -19,6 +19,7 @@
    #:file-path-device
    #:file-path-directory
    #:file-path-file
+   #:file-path-type
    #:file-path-namestring
 
    ;; Constructors

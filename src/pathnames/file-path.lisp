@@ -73,6 +73,8 @@
 
 (defgeneric file-path-file (path &key namestring))
 
+(defgeneric file-path-type (path))
+
 (defgeneric file-path-namestring (path))
 
 ;;; Operations
@@ -120,6 +122,12 @@
   (if namestring
       (%file-path-file-namestring path)
       (slot-value path 'file)))
+
+(defmethod file-path-type ((path file-path))
+  (when-let* ((file (slot-value path 'file))
+              (type (cadr (split-sequence (char-to-uchar #\.) file
+                                          :from-end t :count 2))))
+    (ustring-to-string* type)))
 
 
 ;;;-------------------------------------------------------------------------
