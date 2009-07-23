@@ -123,11 +123,21 @@
       (%file-path-file-namestring path)
       (slot-value path 'file)))
 
+(defun split-name/type (file)
+  (let* ((file (ustring-to-string* file))
+         (dotpos (position #\. file :start 1 :from-end t)))
+    (if (null dotpos)
+        (values file nil)
+        (values (subseq file 0 dotpos)
+                (subseq file (1+ dotpos))))))
+
+(defmethod file-path-name ((path file-path))
+  (when-let ((file (slot-value path 'file)))
+    (nth-value 0 (split-name/type file))))
+
 (defmethod file-path-type ((path file-path))
-  (when-let* ((file (slot-value path 'file))
-              (type (cadr (split-sequence (char-to-uchar #\.) file
-                                          :from-end t :count 2))))
-    (ustring-to-string* type)))
+  (when-let ((file (slot-value path 'file)))
+    (nth-value 1 (split-name/type file))))
 
 
 ;;;-------------------------------------------------------------------------

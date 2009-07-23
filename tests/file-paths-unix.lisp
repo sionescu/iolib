@@ -234,6 +234,22 @@
   (is (string= "a/../b" (file-path-namestring (file-path "a/../b")))))
 
 
+(test file-path.name.1
+  (is (eql nil (file-path-name (file-path "/")))))
+
+(test file-path.name.2
+  (is (string= "a" (file-path-name (file-path "a")))))
+
+(test file-path.name.3
+  (is (string= "a" (file-path-name (file-path "a.")))))
+
+(test file-path.name.4
+  (is (string= ".a" (file-path-name (file-path ".a")))))
+
+(test file-path.name.4
+  (is (string= "a" (file-path-name (file-path "a.b")))))
+
+
 (test file-path.type.1
   (is (eql nil (file-path-type (file-path "/")))))
 
@@ -244,7 +260,7 @@
   (is (string= "" (file-path-type (file-path "a.")))))
 
 (test file-path.type.4
-  (is (string= "a" (file-path-type (file-path ".a")))))
+  (is (string= nil (file-path-type (file-path ".a")))))
 
 (test file-path.type.4
   (is (string= "b" (file-path-type (file-path "a.b")))))
