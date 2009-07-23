@@ -147,10 +147,19 @@
 (defun directory-name-p (name)
   (or (stringp name) (ustringp name)))
 
+(defun relative-dir-p (dir)
+  (and (listp dir) (not (eql :root (car dir)))))
+
 (defun file-path-directory-p (directory)
   (and (consp directory)
-       (member (car directory) '(:absolute :relative))
+       (or (eql :root (car directory))
+           (directory-name-p (car directory)))
        (every #'directory-name-p (cdr directory))))
+
+(defun split-root/dirs (dir)
+  (if (eql :root (car dir))
+      (values :root (cdr dir))
+      (values nil   dir)))
 
 (defmethod initialize-instance :after ((path file-path) &key directory file)
   (check-type directory (or null (eql :unspecific)
@@ -164,17 +173,21 @@
                   :reason "Filenames cannot contain directory delimiters(#\\ and #\/)"))
          (delimp (path)
            (find-if (lambda (c) (member c +directory-delimiters+)) (ustring path))))
-    (dolist (dir (list* file (cdr directory)))
-      (when dir
-        (when (zerop (length dir)) (null-error))
-        (when (delimp file) (slash-error file)))))
+    (dolist (dir (remove-if (lambda (c) (member c '(nil :root)))
+                            (list* file directory)))
+      (when (zerop (length dir)) (null-error))
+      (when (delimp file) (slash-error file))))
   (setf (slot-value path 'file)
         (if (or (stringp file) (ustringp file))
             (ustring file)
             file))
   (setf (slot-value path 'directory)
         (if (consp directory)
-            (list* (car directory) (mapcar #'ustring (cdr directory)))
+            (multiple-value-bind (root dirs)
+                (split-root/dirs directory)
+              (if (eql :root root)
+                  (cons :root (mapcar #'ustring dirs))
+                  (mapcar #'ustring dirs)))
             directory)))
 
 
@@ -185,13 +198,13 @@
 (defun file-path-p (thing)
   (typep thing 'file-path))
 
-(defun file-path-absolute-p (thing)
-  (and (file-path-p thing)
-       (eql :absolute (car (file-path-directory thing)))))
+(defun file-path-absolute-p (path)
+  (check-type path file-path)
+  (not (relative-dir-p (file-path-directory path))))
 
-(defun file-path-relative-p (thing)
-  (and (file-path-p thing)
-       (eql :relative (car (file-path-directory thing)))))
+(defun file-path-relative-p (path)
+  (check-type path file-path)
+  (relative-dir-p (file-path-directory path)))
 
 
 ;;;-------------------------------------------------------------------------
@@ -234,10 +247,10 @@
                            (file-path-host defaults))
                  :device (or (file-path-device path)
                              (file-path-device defaults))
-                 :directory (or (let ((dir (file-path-directory path)))
-                                  (when (and dir (eql :relative (car dir))
-                                             (listp (file-path-directory defaults)))
-                                    (append (file-path-directory defaults) (cdr dir))))
+                 :directory (or (when (and (relative-dir-p (file-path-directory path))
+                                           (listp (file-path-directory defaults)))
+                                  (append (file-path-directory defaults)
+                                          (file-path-directory path)))
                                 (file-path-directory defaults))
                  :name (or (file-path-file path)
                            (file-path-file defaults))))

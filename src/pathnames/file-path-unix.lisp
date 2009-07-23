@@ -45,16 +45,15 @@
          (file-path-relative-p defaults))
      path)
     (t
-     (multiple-value-bind (dirtype enough-directory)
-         (if (equal (cadr (file-path-directory path))
-                    (cadr (file-path-directory defaults)))
-             (values :relative
-                     (loop :for rest1 :on (cddr (file-path-directory path))
-                           :for rest2 :on (cddr (file-path-directory defaults))
-                           :if (not (equal (car rest1) (car rest2))) :do (loop-finish)
-                           :finally (return rest1)))
-             (values :absolute (cdr (file-path-directory path))))
-       (make-instance 'unix-path :directory (list* dirtype enough-directory)
+     (let ((enough-directory
+            (if (ustring= (cadr (file-path-directory path))
+                          (cadr (file-path-directory defaults)))
+                (loop :for rest1 :on (cddr (file-path-directory path))
+                      :for rest2 :on (cddr (file-path-directory defaults))
+                      :if (not (equal (car rest1) (car rest2))) :do (loop-finish)
+                      :finally (return rest1))
+                (list* :root (cdr (file-path-directory path))))))
+       (make-instance 'unix-path :directory enough-directory
                       :file (file-path-file path))))))
 
 (defmethod %file-path-host-namestring ((path unix-path))
@@ -69,13 +68,11 @@
       path
     (with-output-to-string (stream)
       (when (consp directory)
-        (destructuring-bind (directory-type &rest dirs)
-            directory
-          (ecase directory-type
-            (:absolute
-             (princ (uchar-to-char +directory-delimiter+) stream))
-            (:relative
-             (when (and (null dirs) print-dot) (princ "." stream))))
+        (multiple-value-bind (root dirs)
+            (split-root/dirs directory)
+          (if (eql :root root)
+              (princ (uchar-to-char +directory-delimiter+) stream)
+              (when (and (null dirs) print-dot) (princ "." stream)))
           (let ((namestring
                  (apply #'join/ustring +directory-delimiter+
                         (if trailing-delimiter (append dirs (list (ustring ""))) dirs))))
@@ -121,15 +118,14 @@
                               (setf as-directory t))))
                         actual-namestring))
          (components (split-directory-namestring expansion))
-         (directory-type (if (absolute-namestring-p expansion)
-                             :absolute
-                             :relative))
          (trailing-delimiter-p (or as-directory
                                    (uchar= +directory-delimiter+
                                            (aref actual-namestring
                                                  (1- (length actual-namestring)))))))
     (make-instance 'unix-path
-                   :directory (cons directory-type (butlast components))
+                   :directory (if (absolute-namestring-p expansion)
+                                  (cons :root (butlast components))
+                                  (butlast components))
                    :file (lastcar components)
                    :trailing-delimiter trailing-delimiter-p)))
 
