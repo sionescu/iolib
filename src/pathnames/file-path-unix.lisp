@@ -170,5 +170,5 @@
 (defparameter *default-execution-path*
   (mapcar (lambda (p)
             (parse-file-path p :as-directory t))
-          (split-sequence +execution-path-delimiter+ (isys:%sys-getenv "PATH")
+          (split-sequence +execution-path-delimiter+ (ustring (isys:%sys-getenv "PATH"))
                           :remove-empty-subseqs t)))

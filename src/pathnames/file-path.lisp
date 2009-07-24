@@ -81,7 +81,7 @@
 
 ;;; Operations
 
-(defgeneric make-file-path (&key host device directory file defaults))
+(defgeneric make-file-path (&key host device components defaults))
 
 (defgeneric merge-file-paths (path &optional defaults))
 
@@ -211,11 +211,11 @@
 
 (defun absolute-file-path-p (path)
   (check-type path file-path)
-  (absolute-p (file-path-directory path)))
+  (absolute-p (slot-value path 'components)))
 
-(defun absolute-file-path-p (path)
+(defun relative-file-path-p (path)
   (check-type path file-path)
-  (not (absolute-p (file-path-directory path))))
+  (not (absolute-p (slot-value path 'components))))
 
 
 ;;;-------------------------------------------------------------------------
