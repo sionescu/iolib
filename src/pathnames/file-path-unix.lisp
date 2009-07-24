@@ -60,25 +60,29 @@
   "")
 
 (defun %components-namestring (components print-dot trailing-delimiter)
-  (with-output-to-string (stream)
-    (multiple-value-bind (root dirs)
-        (split-root/nodes components)
-      (if (eql :root root)
-          (princ (uchar-to-char +directory-delimiter+) stream)
-          (when (and (null dirs) print-dot) (princ "." stream)))
-      (let ((namestring
-             (apply #'join/ustring +directory-delimiter+
-                    (if trailing-delimiter (append dirs (list (ustring ""))) dirs))))
-        (princ (ustring-to-string* namestring) stream)))))
+  (multiple-value-bind (root dirs)
+      (split-root/nodes components)
+    (let ((delimstr (ustring +directory-delimiter+))
+          (nullstr (ustring "")))
+      (concatenate 'ustring
+                   (if (eql :root root)
+                       delimstr
+                       (if (and (null dirs) print-dot)
+                           (ustring ".")
+                           nullstr))
+                   (apply #'join/ustring +directory-delimiter+ dirs)
+                   (if (and dirs trailing-delimiter) delimstr nullstr)))))
 
 (defmethod %file-path-components-namestring ((path unix-path) &key print-dot
                                              trailing-delimiter)
-  (%components-namestring (slot-value path 'components)
-                          print-dot trailing-delimiter))
+  (ustring-to-string*
+   (%components-namestring (slot-value path 'components)
+                           print-dot trailing-delimiter)))
 
 (defmethod %file-path-directory-namestring ((path unix-path))
   (if-let (dir (%file-path-directory path))
-    (%components-namestring dir t t)
+    (ustring-to-string*
+     (%components-namestring dir t t))
     ""))
 
 (defmethod %file-path-file-namestring ((path unix-path))
@@ -87,6 +91,12 @@
     ""))
 
 (defmethod file-path-namestring ((path unix-path))
+  (with-slots (components trailing-delimiter)
+      path
+    (ustring-to-string*
+     (%components-namestring components t trailing-delimiter))))
+
+(defmethod file-path-namestring/ustring ((path unix-path))
   (with-slots (components trailing-delimiter)
       path
     (%components-namestring components t trailing-delimiter)))
