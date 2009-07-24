@@ -24,7 +24,7 @@
                        :reader file-path-trailing-delimiter)))
 
 (deftype file-path-designator ()
-  '(or #.+file-path-host-type+ string ustring))
+  `(or ,+file-path-host-type+ string ustring))
 
 (define-condition invalid-file-path (isys:iolib-error)
   ((path :initarg :path :reader invalid-file-path-path)
