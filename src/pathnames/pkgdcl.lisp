@@ -37,8 +37,8 @@
 
    ;; Predicates
    #:file-path-p
-   #:file-path-absolute-p
-   #:file-path-relative-p
+   #:absolute-file-path-p
+   #:relative-file-path-p
 
    ;; Conditions
    #:invalid-file-path

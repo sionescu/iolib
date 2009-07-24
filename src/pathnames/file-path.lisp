@@ -205,13 +205,16 @@
 (defun file-path-p (thing)
   (typep thing 'file-path))
 
-(defun file-path-absolute-p (path)
-  (check-type path file-path)
-  (not (relative-dir-p (file-path-directory path))))
+(defun relative-p (dir)
+  (not (eql :root (car dir))))
 
-(defun file-path-relative-p (path)
+(defun absolute-file-path-p (path)
   (check-type path file-path)
-  (relative-dir-p (file-path-directory path)))
+  (not (relative-p (file-path-directory path))))
+
+(defun relative-file-path-p (path)
+  (check-type path file-path)
+  (relative-p (file-path-directory path)))
 
 
 ;;;-------------------------------------------------------------------------
