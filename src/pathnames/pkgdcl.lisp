@@ -9,8 +9,8 @@
   (:nicknames #:ipath)
   (:use :iolib.base)
   (:export
-   ;; Classes
-   #:file-path
+   ;; Classes and types
+   #:file-path #:file-path-designator
    #+unix    #:unix-path
    #+windows #:unc-path
 

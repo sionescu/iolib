@@ -9,6 +9,11 @@
 ;;; Classes and Types
 ;;;-------------------------------------------------------------------------
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defconstant +file-path-host-type+
+    #+unix    'unix-path
+    #+windows 'unc-path))
+
 (defclass file-path ()
   ((host :initarg :host)
    (device :initarg :device)
@@ -17,6 +22,9 @@
    (trailing-delimiter :initarg :trailing-delimiter
                        :initform nil
                        :reader file-path-trailing-delimiter)))
+
+(deftype file-path-designator ()
+  '(or #.+file-path-host-type+ string ustring))
 
 (define-condition invalid-file-path (isys:iolib-error)
   ((path :initarg :path :reader invalid-file-path-path)
@@ -33,11 +41,6 @@
 ;;;-------------------------------------------------------------------------
 ;;; Constants
 ;;;-------------------------------------------------------------------------
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defconstant +file-path-host-type+
-    #+unix    'unix-path
-    #+windows 'unc-path))
 
 (defconstant +directory-delimiter+
   #+unix    (uchar #\/)
