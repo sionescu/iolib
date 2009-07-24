@@ -12,10 +12,8 @@
 (defclass file-path ()
   ((host :initarg :host)
    (device :initarg :device)
-   (directory :initarg :directory
-              :initform nil)
-   (file :initarg :file
-         :initform nil)
+   (components :initarg :components
+               :initform nil)
    (trailing-delimiter :initarg :trailing-delimiter
                        :initform nil
                        :reader file-path-trailing-delimiter)))
@@ -69,11 +67,15 @@
 
 (defgeneric file-path-device (path &key namestring))
 
+(defgeneric file-path-components (path &key namestring))
+
 (defgeneric file-path-directory (path &key namestring))
 
 (defgeneric file-path-file (path &key namestring))
 
-(defgeneric file-path-type (path))
+(defgeneric file-path-file-name (path))
+
+(defgeneric file-path-file-type (path))
 
 (defgeneric file-path-namestring (path))
 
@@ -97,8 +99,10 @@
 
 (defgeneric %file-path-device-namestring (path))
 
-(defgeneric %file-path-directory-namestring (path &key print-dot
-                                             trailing-delimiter))
+(defgeneric %file-path-components-namestring
+    (path &key print-dot trailing-delimiter))
+
+(defgeneric %file-path-directory-namestring (path))
 
 (defgeneric %file-path-file-namestring (path))
 
@@ -119,16 +123,38 @@
       (%file-path-device-namestring path)
       (slot-value path 'device)))
 
+(defmethod file-path-components ((path file-path) &key namestring)
+  (if namestring
+      (%file-path-components-namestring
+       path
+       :print-dot t
+       :trailing-delimiter (file-path-trailing-delimiter path))
+      (slot-value path 'components)))
+
+(defun split-root/nodes (dir)
+  (if (eql :root (car dir))
+      (values :root (cdr dir))
+      (values nil   dir)))
+
+(defun %file-path-directory (path)
+  (let ((components (slot-value path 'components)))
+    (multiple-value-bind (root nodes)
+        (split-root/nodes components)
+      (cons root (butlast nodes)))))
+
 (defmethod file-path-directory ((path file-path) &key namestring)
   (if namestring
-      (%file-path-directory-namestring path :print-dot t
-                                       :trailing-delimiter t)
-      (slot-value path 'directory)))
+      (%file-path-directory-namestring path)
+      (%file-path-directory path)))
+
+(defun %file-path-file (path)
+  (let ((components (slot-value path 'components)))
+    (lastcar (nth-value 1 (split-root/nodes components)))))
 
 (defmethod file-path-file ((path file-path) &key namestring)
   (if namestring
       (%file-path-file-namestring path)
-      (slot-value path 'file)))
+      (%file-path-file path)))
 
 (defun split-name/type (file)
   (let* ((file (ustring-to-string* file))
@@ -139,11 +165,11 @@
                 (subseq file (1+ dotpos))))))
 
 (defmethod file-path-name ((path file-path))
-  (when-let ((file (slot-value path 'file)))
+  (when-let (file (%file-path-file path))
     (nth-value 0 (split-name/type file))))
 
 (defmethod file-path-type ((path file-path))
-  (when-let ((file (slot-value path 'file)))
+  (when-let (file (%file-path-file path))
     (nth-value 1 (split-name/type file))))
 
 
@@ -151,51 +177,26 @@
 ;;; Constructors
 ;;;-------------------------------------------------------------------------
 
-(defun directory-name-p (name)
-  (or (stringp name) (ustringp name)))
+(defun valid-component-types-p (components)
+  (multiple-value-bind (root nodes)
+      (split-root/nodes components)
+    (and (member root '(nil :root))
+         (every #'(lambda (n)
+                    (or (stringp n) (ustringp n)))
+                nodes))))
 
-(defun relative-dir-p (dir)
-  (and (listp dir) (not (eql :root (car dir)))))
-
-(defun file-path-directory-p (directory)
-  (and (consp directory)
-       (or (eql :root (car directory))
-           (directory-name-p (car directory)))
-       (every #'directory-name-p (cdr directory))))
-
-(defun split-root/dirs (dir)
-  (if (eql :root (car dir))
-      (values :root (cdr dir))
-      (values nil   dir)))
-
-(defmethod initialize-instance :after ((path file-path) &key directory file)
-  (check-type directory (or null (eql :unspecific)
-                            (satisfies file-path-directory-p)))
-  (check-type file (or null (eql :unspecific) string ustring))
-  (flet ((null-error ()
-           (error 'invalid-file-path :path ""
-                  :reason "Null filenames are not valid"))
-         (slash-error (path)
-           (error 'invalid-file-path :path (ustring-to-string* (ustring path))
-                  :reason "Filenames cannot contain directory delimiters(#\\ and #\/)"))
-         (delimp (path)
-           (find-if (lambda (c) (member c +directory-delimiters+)) (ustring path))))
-    (dolist (dir (remove-if (lambda (c) (member c '(nil :root)))
-                            (list* file directory)))
-      (when (zerop (length dir)) (null-error))
-      (when (delimp file) (slash-error file))))
-  (setf (slot-value path 'file)
-        (if (or (stringp file) (ustringp file))
-            (ustring file)
-            file))
-  (setf (slot-value path 'directory)
-        (if (consp directory)
-            (multiple-value-bind (root dirs)
-                (split-root/dirs directory)
-              (if (eql :root root)
-                  (cons :root (mapcar #'ustring dirs))
-                  (mapcar #'ustring dirs)))
-            directory)))
+(defmethod initialize-instance :after ((path file-path) &key components)
+  (check-type components (and (not null) (satisfies valid-component-types-p)))
+  (setf (slot-value path 'components)
+        (mapcar (lambda (n) (if (eql :root n) :root (ustring n)))
+                components))
+  (dolist (node (cdr (slot-value path 'components)))
+    (when (zerop (length node))
+      (error 'invalid-file-path :path ""
+             :reason "Null filenames are not valid"))
+    (when (find-if (lambda (c) (member c +directory-delimiters+)) node)
+      (error 'invalid-file-path :path node
+             :reason "Path components cannot contain directory delimiters(#\\ and #\/)"))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -205,16 +206,16 @@
 (defun file-path-p (thing)
   (typep thing 'file-path))
 
-(defun relative-p (dir)
-  (not (eql :root (car dir))))
+(defun absolute-p (dir)
+  (eql :root (car dir)))
 
 (defun absolute-file-path-p (path)
   (check-type path file-path)
-  (not (relative-p (file-path-directory path))))
+  (absolute-p (file-path-directory path)))
 
-(defun relative-file-path-p (path)
+(defun absolute-file-path-p (path)
   (check-type path file-path)
-  (relative-p (file-path-directory path)))
+  (not (absolute-p (file-path-directory path))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -231,8 +232,7 @@
   (parse-file-path (namestring pathspec)))
 
 (defmethod make-file-path (&key (host nil hostp) (device nil devicep)
-                           (directory nil directoryp) (file nil filep)
-                           defaults)
+                           (components nil componentsp) defaults)
   (check-type defaults (or null file-path))
   (make-instance '#.+file-path-host-type+
                  :host (cond (hostp    host)
@@ -243,14 +243,10 @@
                                (defaults (file-path-device defaults))
                                (t        (file-path-device
                                           *default-file-path-defaults*)))
-                 :directory (cond (directoryp directory)
-                                  (defaults   (file-path-directory defaults))
-                                  (t          (file-path-directory
-                                               *default-file-path-defaults*)))
-                 :file (cond (filep    file)
-                             (defaults (file-path-file defaults))
-                             (t        (file-path-file
-                                        *default-file-path-defaults*)))))
+                 :components (cond (componentsp components)
+                                   (defaults   (file-path-components defaults))
+                                   (t          (file-path-components
+                                                *default-file-path-defaults*)))))
 
 (defmethod merge-file-paths ((path file-path) &optional
                              (defaults *default-file-path-defaults*))
@@ -260,13 +256,10 @@
                            (file-path-host defaults))
                  :device (or (file-path-device path)
                              (file-path-device defaults))
-                 :directory (or (when (and (relative-dir-p (file-path-directory path))
-                                           (listp (file-path-directory defaults)))
-                                  (append (file-path-directory defaults)
-                                          (file-path-directory path)))
-                                (file-path-directory defaults))
-                 :name (or (file-path-file path)
-                           (file-path-file defaults))))
+                 :components (if (absolute-p (file-path-components path))
+                                 (append (file-path-components defaults)
+                                         (file-path-components path))
+                                 (file-path-components defaults))))
 
 
 ;;;-------------------------------------------------------------------------

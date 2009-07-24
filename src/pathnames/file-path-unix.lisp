@@ -41,20 +41,19 @@
 (defmethod enough-file-path ((path unix-path) &optional
                              (defaults *default-file-path-defaults*))
   (cond
-    ((or (file-path-relative-p path)
-         (file-path-relative-p defaults))
+    ((or (relative-file-path-p path)
+         (relative-file-path-p defaults))
      path)
     (t
-     (let ((enough-directory
-            (if (ustring= (cadr (file-path-directory path))
-                          (cadr (file-path-directory defaults)))
-                (loop :for rest1 :on (cddr (file-path-directory path))
-                      :for rest2 :on (cddr (file-path-directory defaults))
+     (let ((enough-components
+            (if (ustring= (cadr (file-path-components path))
+                          (cadr (file-path-components defaults)))
+                (loop :for rest1 :on (cddr (file-path-components path))
+                      :for rest2 :on (cddr (file-path-components defaults))
                       :if (not (equal (car rest1) (car rest2))) :do (loop-finish)
                       :finally (return rest1))
-                (list* :root (cdr (file-path-directory path))))))
-       (make-instance 'unix-path :directory enough-directory
-                      :file (file-path-file path))))))
+                (list* :root (cdr (file-path-components path))))))
+       (make-instance 'unix-path :components enough-components)))))
 
 (defmethod %file-path-host-namestring ((path unix-path))
   "")
@@ -62,38 +61,37 @@
 (defmethod %file-path-device-namestring ((path unix-path))
   "")
 
-(defmethod %file-path-directory-namestring ((path unix-path) &key print-dot
-                                            trailing-delimiter)
-  (with-slots (directory)
-      path
-    (with-output-to-string (stream)
-      (when (consp directory)
-        (multiple-value-bind (root dirs)
-            (split-root/dirs directory)
-          (if (eql :root root)
-              (princ (uchar-to-char +directory-delimiter+) stream)
-              (when (and (null dirs) print-dot) (princ "." stream)))
-          (let ((namestring
-                 (apply #'join/ustring +directory-delimiter+
-                        (if trailing-delimiter (append dirs (list (ustring ""))) dirs))))
-            (princ (ustring-to-string* namestring) stream)))))))
+(defun %components-namestring (components print-dot trailing-delimiter)
+  (with-output-to-string (stream)
+    (multiple-value-bind (root dirs)
+        (split-root/nodes components)
+      (if (eql :root root)
+          (princ (uchar-to-char +directory-delimiter+) stream)
+          (when (and (null dirs) print-dot) (princ "." stream)))
+      (let ((namestring
+             (apply #'join/ustring +directory-delimiter+
+                    (if trailing-delimiter (append dirs (list (ustring ""))) dirs))))
+        (princ (ustring-to-string* namestring) stream)))))
+
+(defmethod %file-path-components-namestring ((path unix-path) &key print-dot
+                                             trailing-delimiter)
+  (%components-namestring (slot-value path 'components)
+                          print-dot trailing-delimiter))
+
+(defmethod %file-path-directory-namestring ((path unix-path))
+  (if-let (dir (%file-path-directory path))
+    (%components-namestring dir t t)
+    ""))
 
 (defmethod %file-path-file-namestring ((path unix-path))
-  (let ((file (slot-value path 'file)))
-    (if (member file '(nil :unspecific))
-        ""
-        (ustring-to-string* file))))
+  (if-let (file (%file-path-file path))
+    (ustring-to-string* file)
+    ""))
 
 (defmethod file-path-namestring ((path unix-path))
-  (with-slots (directory file trailing-delimiter)
+  (with-slots (components trailing-delimiter)
       path
-    (with-output-to-string (stream)
-      (princ (%file-path-directory-namestring path :trailing-delimiter t)
-             stream)
-      (when (ustringp file)
-        (princ (ustring-to-string* file) stream)
-        (when trailing-delimiter
-          (princ (uchar-to-char +directory-delimiter+) stream))))))
+    (%components-namestring components t trailing-delimiter)))
 
 (defun split-directory-namestring (namestring)
   (split-sequence-if (lambda (c) (uchar= c +directory-delimiter+))
@@ -123,10 +121,9 @@
                                            (aref actual-namestring
                                                  (1- (length actual-namestring)))))))
     (make-instance 'unix-path
-                   :directory (if (absolute-namestring-p expansion)
-                                  (cons :root (butlast components))
-                                  (butlast components))
-                   :file (lastcar components)
+                   :components (if (absolute-namestring-p expansion)
+                                   (cons :root components)
+                                   components)
                    :trailing-delimiter trailing-delimiter-p)))
 
 (defmethod %expand-user-directory (pathspec)

@@ -17,10 +17,11 @@
    ;; Accessors
    #:file-path-host
    #:file-path-device
+   #:file-path-components
    #:file-path-directory
    #:file-path-file
-   #:file-path-name
-   #:file-path-type
+   #:file-path-file-name
+   #:file-path-file-type
    #:file-path-namestring
 
    ;; Constructors
