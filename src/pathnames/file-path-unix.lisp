@@ -45,15 +45,13 @@
          (relative-file-path-p defaults))
      path)
     (t
-     (let ((enough-components
-            (if (ustring= (cadr (file-path-components path))
-                          (cadr (file-path-components defaults)))
-                (loop :for rest1 :on (cddr (file-path-components path))
-                      :for rest2 :on (cddr (file-path-components defaults))
-                      :if (not (equal (car rest1) (car rest2))) :do (loop-finish)
-                      :finally (return rest1))
-                (list* :root (cdr (file-path-components path))))))
-       (make-instance 'unix-path :components enough-components)))))
+     (let* ((dir (cdr (slot-value path 'components)))
+            (mismatch
+             (mismatch dir (cdr (slot-value defaults 'components))
+                       :test #'ustring=)))
+       (if mismatch
+           (make-instance 'unix-path :components (subseq dir mismatch))
+           (make-instance 'unix-path :components (list :root)))))))
 
 (defmethod %file-path-host-namestring ((path unix-path))
   "")
