@@ -91,6 +91,9 @@
       path
     (%components-namestring components t trailing-delimiter)))
 
+(defmethod file-path-namestring (pathspec)
+  (file-path-namestring (file-path pathspec)))
+
 (defun split-directory-namestring (namestring)
   (split-sequence-if (lambda (c) (uchar= c +directory-delimiter+))
                      namestring
