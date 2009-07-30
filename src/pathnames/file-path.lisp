@@ -167,11 +167,11 @@
         (values (subseq file 0 dotpos)
                 (subseq file (1+ dotpos))))))
 
-(defmethod file-path-name ((path file-path))
+(defmethod file-path-file-name ((path file-path))
   (when-let (file (%file-path-file path))
     (nth-value 0 (split-name/type file))))
 
-(defmethod file-path-type ((path file-path))
+(defmethod file-path-file-type ((path file-path))
   (when-let (file (%file-path-file path))
     (nth-value 1 (split-name/type file))))
 

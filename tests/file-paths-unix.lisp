@@ -236,32 +236,32 @@
 
 
 (test file-path.name.1
-  (is (eql nil (file-path-name (file-path "/")))))
+  (is (eql nil (file-path-file-name (file-path "/")))))
 
 (test file-path.name.2
-  (is (string= "a" (file-path-name (file-path "a")))))
+  (is (string= "a" (file-path-file-name (file-path "a")))))
 
 (test file-path.name.3
-  (is (string= "a" (file-path-name (file-path "a.")))))
+  (is (string= "a" (file-path-file-name (file-path "a.")))))
 
 (test file-path.name.4
-  (is (string= ".a" (file-path-name (file-path ".a")))))
+  (is (string= ".a" (file-path-file-name (file-path ".a")))))
 
 (test file-path.name.4
-  (is (string= "a" (file-path-name (file-path "a.b")))))
+  (is (string= "a" (file-path-file-name (file-path "a.b")))))
 
 
 (test file-path.type.1
-  (is (eql nil (file-path-type (file-path "/")))))
+  (is (eql nil (file-path-file-type (file-path "/")))))
 
 (test file-path.type.2
-  (is (eql nil (file-path-type (file-path "a")))))
+  (is (eql nil (file-path-file-type (file-path "a")))))
 
 (test file-path.type.3
-  (is (string= "" (file-path-type (file-path "a.")))))
+  (is (string= "" (file-path-file-type (file-path "a.")))))
 
 (test file-path.type.4
-  (is (string= nil (file-path-type (file-path ".a")))))
+  (is (string= nil (file-path-file-type (file-path ".a")))))
 
 (test file-path.type.4
-  (is (string= "b" (file-path-type (file-path "a.b")))))
+  (is (string= "b" (file-path-file-type (file-path "a.b")))))
