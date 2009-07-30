@@ -79,9 +79,13 @@ host part of ADDRESS.")
         (inet-address-network-portion address netmask)))
 
 (defmethod print-object ((network ipv4-network) stream)
-  (format stream "@~A/~A"
-          (address-to-string (address-of network))
-          (cidr-of network)))
+  (let ((namestring
+         (format nil "~A/~A"
+                 (address-to-string (address-of network))
+                 (cidr-of network))))
+    (if *print-escape*
+        (format stream "#/net/~A" namestring)
+        (write-string namestring stream))))
 
 (defgeneric ipv4-network= (net1 net2)
   (:documentation "Returns T if the addresses and the netmasks of the

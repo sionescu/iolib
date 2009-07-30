@@ -209,5 +209,5 @@
    #:*dns-search-domain*
 
    ;; Miscellaneous
-   #:ip
+   #:ip #:net
    ))
