@@ -76,10 +76,10 @@
 
 (defun unicode-uchar-p (uchar)
   (check-type uchar uchar)
-  (if (or (< uchar #xD800)
-          (> uchar #xDFFF))
-      uchar
-      nil))
+  (if (or (<= #xD800   uchar #xDFFF)
+          (<= #x110000 uchar #x1100FF))
+      nil
+      uchar))
 
 (defun uchar/= (uchar &rest more-uchars)
   (check-type uchar uchar)
