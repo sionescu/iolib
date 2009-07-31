@@ -10,7 +10,7 @@
 ;;;-------------------------------------------------------------------------
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defconstant uchar-code-limit #x110000))
+  (defconstant uchar-code-limit (+ #x110000 #xFF)))
 
 
 ;;;-------------------------------------------------------------------------
@@ -18,7 +18,7 @@
 ;;;-------------------------------------------------------------------------
 
 (deftype uchar ()
-  '(mod #.uchar-code-limit))
+  `(mod ,uchar-code-limit))
 
 (deftype ustring (&optional (size '*))
   `(simple-array uchar (,size)))
@@ -36,7 +36,7 @@
 
 ;; FIXME: USELESS ?
 (defun code-uchar (code)
-  (check-type code (mod #.uchar-code-limit))
+  (check-type code uchar)
   code)
 
 ;; FIXME: USELESS ?
