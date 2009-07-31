@@ -22,3 +22,11 @@
                            (concatenate 'string str1 c str2))
                          (cdr strings)
                          :initial-value ""))))
+
+(defmacro shrink-vector (str size)
+  #+allegro `(excl::.primcall 'sys::shrink-svector ,str ,size)
+  #+cmu `(lisp::shrink-vector ,str ,size)
+  #+lispworks `(system::shrink-vector$vector ,str ,size)
+  #+sbcl `(sb-kernel:shrink-vector ,str ,size)
+  #+scl `(common-lisp::shrink-vector ,str ,size)
+  #-(or allegro cmu lispworks sbcl scl) `(subseq ,str 0 ,size))
