@@ -135,8 +135,11 @@
           :for uchar := (aref ustring i)
           :for sindex :from 0 :do
           (setf (char string sindex)
-                (uchar-to-char (or (unicode-uchar-p uchar)
-                                   (- uchar #xD800)))))
+                (uchar-to-char
+                 (cond
+                   ((<= #xD800   uchar #xDFFF)   (logand uchar #x7FF))
+                   ((<= #x110000 uchar #x1100FF) (logand uchar #xFF))
+                   (t                            uchar)))))
     string))
 
 (defun ustring-upcase (ustring &key (start 0) end)
