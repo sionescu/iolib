@@ -9,7 +9,7 @@
   :description "Syscalls and foreign types."
   :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
   :licence "MIT"
-  :depends-on (:iolib.base :cffi :cffi-grovel :trivial-features)
+  :depends-on (:trivial-features :cffi :cffi-grovel :iolib.base)
   :pathname (merge-pathnames "syscalls/" *load-truename*)
   :serial t
   :components
@@ -20,6 +20,7 @@
    (:file "conditions")
    (:file "os-conditions"
      :pathname #+unix "os-conditions-unix")
+   (:file "ustring-cstring")
    (:file "designators")
    (:file "early")
    (cffi-grovel:wrapper-file "ffi-wrappers"
