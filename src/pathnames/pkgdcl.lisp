@@ -23,6 +23,7 @@
    #:file-path-file-name
    #:file-path-file-type
    #:file-path-namestring
+   #:file-path-trailing-delimiter
 
    ;; Constructors
    #:file-path

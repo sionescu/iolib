@@ -137,8 +137,7 @@
                                    components)
                    :trailing-delimiter trailing-delimiter-p)))
 
-(defmethod %expand-user-directory (pathspec)
-  (check-type pathspec ustring)
+(defun %expand-user-directory (pathspec)
   (flet ((user-homedir (user)
            ;; TODO: use our own babel ustring<->UTF8 codec instead of u-t-s*
            (nth-value 5 (isys:%sys-getpwnam (ustring-to-string* user))))

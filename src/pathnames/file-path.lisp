@@ -66,35 +66,33 @@
 
 ;;; Accessors
 
-(defgeneric file-path-host (path &key namestring))
+(defgeneric file-path-host (pathspec &key namestring))
 
-(defgeneric file-path-device (path &key namestring))
+(defgeneric file-path-device (pathspec &key namestring))
 
-(defgeneric file-path-components (path &key namestring))
+(defgeneric file-path-components (pathspec &key namestring))
 
-(defgeneric file-path-directory (path &key namestring))
+(defgeneric file-path-directory (pathspec &key namestring))
 
-(defgeneric file-path-file (path &key namestring))
+(defgeneric file-path-file (pathspec &key namestring))
 
-(defgeneric file-path-file-name (path))
+(defgeneric file-path-file-name (pathspec))
 
-(defgeneric file-path-file-type (path))
+(defgeneric file-path-file-type (pathspec))
 
-(defgeneric file-path-namestring (path))
+(defgeneric file-path-namestring (pathspec))
 
 ;;; Operations
 
-(defgeneric make-file-path (&key host device components defaults))
+(defgeneric make-file-path (&key host device components defaults trailing-delimiter))
 
-(defgeneric merge-file-paths (path &optional defaults))
+(defgeneric merge-file-paths (pathspec &optional defaults))
 
-(defgeneric enough-file-path (path &optional defaults))
+(defgeneric enough-file-path (pathspec &optional defaults))
 
 (defgeneric file-path (pathspec))
 
 (defgeneric parse-file-path (pathspec &key start end as-directory expand-user))
-
-(defgeneric expand-user-directory (path))
 
 ;;; Internal functions
 
@@ -110,31 +108,32 @@
 (defgeneric %file-path-directory-namestring (path))
 
 (defgeneric %file-path-file-namestring (path))
-
-(defgeneric %expand-user-directory (pathspec))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; Accessors
 ;;;-------------------------------------------------------------------------
 
-(defmethod file-path-host ((path file-path) &key namestring)
-  (if namestring
-      (%file-path-host-namestring path)
-      (slot-value path 'host)))
+(defmethod file-path-host (pathspec &key namestring)
+  (let ((path (file-path pathspec)))
+    (if namestring
+        (%file-path-host-namestring path)
+        (slot-value path 'host))))
 
-(defmethod file-path-device ((path file-path) &key namestring)
-  (if namestring
-      (%file-path-device-namestring path)
-      (slot-value path 'device)))
+(defmethod file-path-device (pathspec &key namestring)
+  (let ((path (file-path pathspec)))
+    (if namestring
+        (%file-path-device-namestring path)
+        (slot-value path 'device))))
 
-(defmethod file-path-components ((path file-path) &key namestring)
-  (if namestring
-      (%file-path-components-namestring
-       path
-       :print-dot t
-       :trailing-delimiter (file-path-trailing-delimiter path))
-      (slot-value path 'components)))
+(defmethod file-path-components (pathspec &key namestring)
+  (let ((path (file-path pathspec)))
+    (if namestring
+       (%file-path-components-namestring
+        path
+        :print-dot t
+        :trailing-delimiter (file-path-trailing-delimiter path))
+       (slot-value path 'components))))
 
 (defun split-root/nodes (dir)
   (if (eql :root (car dir))
@@ -147,19 +146,21 @@
         (split-root/nodes components)
       (cons root (butlast nodes)))))
 
-(defmethod file-path-directory ((path file-path) &key namestring)
-  (if namestring
-      (%file-path-directory-namestring path)
-      (%file-path-directory path)))
+(defmethod file-path-directory (pathspec &key namestring)
+  (let ((path (file-path pathspec)))
+    (if namestring
+       (%file-path-directory-namestring path)
+       (%file-path-directory path))))
 
 (defun %file-path-file (path)
   (let ((components (slot-value path 'components)))
     (lastcar (nth-value 1 (split-root/nodes components)))))
 
-(defmethod file-path-file ((path file-path) &key namestring)
-  (if namestring
-      (%file-path-file-namestring path)
-      (%file-path-file path)))
+(defmethod file-path-file (pathspec &key namestring)
+  (let ((path (file-path pathspec)))
+    (if namestring
+       (%file-path-file-namestring path)
+       (%file-path-file path))))
 
 (defun split-name/type (file)
   (let* ((file (ustring-to-string* file))
@@ -169,13 +170,15 @@
         (values (subseq file 0 dotpos)
                 (subseq file (1+ dotpos))))))
 
-(defmethod file-path-file-name ((path file-path))
-  (when-let (file (%file-path-file path))
-    (nth-value 0 (split-name/type file))))
+(defmethod file-path-file-name (pathspec)
+  (let ((path (file-path pathspec)))
+    (when-let (file (%file-path-file path))
+     (nth-value 0 (split-name/type file)))))
 
-(defmethod file-path-file-type ((path file-path))
-  (when-let (file (%file-path-file path))
-    (nth-value 1 (split-name/type file))))
+(defmethod file-path-file-type (pathspec)
+  (let ((path (file-path pathspec)))
+    (when-let (file (%file-path-file path))
+     (nth-value 1 (split-name/type file)))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -227,8 +230,8 @@
 ;;; Operations
 ;;;-------------------------------------------------------------------------
 
-(defmethod file-path ((pathspec file-path))
-  pathspec)
+(defmethod file-path ((path file-path))
+  path)
 
 (defmethod file-path (pathspec)
   (parse-file-path pathspec))
