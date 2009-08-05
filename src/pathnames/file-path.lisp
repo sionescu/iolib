@@ -98,6 +98,8 @@
 
 ;;; Internal functions
 
+(defgeneric file-path-namestring/ustring (path))
+
 (defgeneric %file-path-host-namestring (path))
 
 (defgeneric %file-path-device-namestring (path))
