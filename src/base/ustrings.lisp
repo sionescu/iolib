@@ -16,8 +16,10 @@
 (define-compiler-macro make-ustring (&whole whole size &key (initial-element 0))
   (cond
     ((and (constantp size) (constantp initial-element))
-     (check-type initial-element uchar)
-     (make-array size :element-type 'uchar :initial-element initial-element))
+     (let ((sz (eval size))
+           (el (eval initial-element)))
+       (assert (typep el 'uchar))
+       (make-array sz :element-type 'uchar :initial-element el)))
     (t whole)))
 
 (defun string-to-ustring (string)
@@ -25,7 +27,7 @@
 
 (define-compiler-macro string-to-ustring (&whole whole string)
   (if (constantp string)
-      (map 'simple-ustring #'char-to-uchar (string string))
+      (map 'simple-ustring #'char-to-uchar (string (eval string)))
       whole))
 
 (defun %ustring (thing new)
@@ -45,7 +47,7 @@
 (define-compiler-macro ustring (&whole whole thing &key new)
   (cond
     ((and (constantp thing) (constantp new))
-     (%ustring thing new))
+     (%ustring (eval thing) (eval new)))
     (t whole)))
 
 
