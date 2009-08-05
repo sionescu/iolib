@@ -67,27 +67,28 @@
                             (mode *default-open-mode*))
       initargs
     ;; FIXME: use new pathnames
-    (check-type filename string)
-    (setf (file-device-filename device) (copy-seq filename))
-    (labels ((handle-error (c)
-               (posix-file-error c filename "opening"))
-             (try-delete ()
-               (handler-case
-                   (%sys-unlink filename)
-                 (syscall-error (c) (handle-error c))))
-             (try-open (&optional (retry-on-delete t))
-               (handler-case
-                   (%sys-open filename flags mode)
-                 (eexist (c)
-                   (cond ((and retry-on-delete delete-if-exists)
-                          (try-delete) (try-open nil))
-                         (t (handle-error c))))
-                 (syscall-error (c)
-                   (handle-error c))
-                 (:no-error (fd) fd))))
-      (let ((fd (or handle (try-open))))
-        (%set-fd-nonblock fd)
-        (setf (device-handle device) fd))))
+    (let* ((path (file-path filename))
+           (namestring (iolib.pathnames::file-path-namestring/ustring path)))
+      (setf (file-device-filename device) path)
+      (labels ((handle-error (c)
+                 (posix-file-error c filename "opening"))
+               (try-delete ()
+                 (handler-case
+                     (%sys-unlink namestring)
+                   (syscall-error (c) (handle-error c))))
+               (try-open (&optional (retry-on-delete t))
+                 (handler-case
+                     (%sys-open namestring flags mode)
+                   (eexist (c)
+                     (cond ((and retry-on-delete delete-if-exists)
+                            (try-delete) (try-open nil))
+                           (t (handle-error c))))
+                   (syscall-error (c)
+                     (handle-error c))
+                   (:no-error (fd) fd))))
+        (let ((fd (or handle (try-open))))
+          (%set-fd-nonblock fd)
+          (setf (device-handle device) fd)))))
   (values device))
 
 
@@ -209,7 +210,7 @@
                               truncate append extra-flags))
     (handler-case
         (make-instance 'file-zeta-stream
-                       :filename (namestring filename)
+                       :filename filename
                        :flags (logior flags extra-flags)
                        :mode mode
                        :delete-if-exists (eql :delete if-exists)

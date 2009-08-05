@@ -23,7 +23,7 @@
 (defsyscall (%%sys-strerror-r (#+linux "__xpg_strerror_r" "strerror_r"))
     :int
   (errnum :int)
-  (buf    :string)
+  (buf    :pointer)
   (buflen size-t))
 
 (defentrypoint %sys-strerror (&optional (err (%sys-errno)))
@@ -117,7 +117,7 @@ The two memory areas may overlap."
 
 (defsyscall (%%sys-open (#+linux "open64" "open"))
     (:int :restart t)
-  (path  filename-designator)
+  (path  ustring)
   (flags :int)
   (mode  mode-t))
 
@@ -131,7 +131,7 @@ The two memory areas may overlap."
 (defsyscall (%sys-creat (#+linux "creat64" "creat"))
     (:int :restart t)
   "Create file PATH with permissions MODE and return the new FD."
-  (path filename-designator)
+  (path ustring)
   (mode mode-t))
 
 (defsyscall (%%sys-pipe "pipe") :int
@@ -146,7 +146,7 @@ The two memory areas may overlap."
 
 (defsyscall (%sys-mkfifo "mkfifo") :int
   "Create a FIFO (named pipe) with name PATH and permissions MODE."
-  (path filename-designator)
+  (path ustring)
   (mode mode-t))
 
 (defsyscall (%sys-umask "umask") mode-t
@@ -163,13 +163,13 @@ to the argument OFFSET according to the directive WHENCE."
 
 (defsyscall (%sys-access "access") :int
   "Check whether the file PATH can be accessed using mode MODE."
-  (path filename-designator)
+  (path ustring)
   (mode :int))
 
 (defsyscall (%sys-truncate (#+linux "truncate64" "truncate"))
     (:int :restart t)
   "Truncate the file PATH to a size of precisely LENGTH octets."
-  (path   filename-designator)
+  (path   ustring)
   (length off-t))
 
 (defsyscall (%sys-ftruncate (#+linux "ftruncate64" "ftruncate"))
@@ -180,38 +180,38 @@ to the argument OFFSET according to the directive WHENCE."
 
 (defsyscall (%sys-rename "rename") :int
   "Rename file named by OLDPATH to NEWPATH."
-  (oldpath filename-designator)
-  (newpath filename-designator))
+  (oldpath ustring)
+  (newpath ustring))
 
 (defsyscall (%sys-link "link") :int
   "Create a hard link from file OLDPATH to NEWPATH."
-  (oldpath filename-designator)
-  (newpath filename-designator))
+  (oldpath ustring)
+  (newpath ustring))
 
 (defsyscall (%sys-symlink "symlink") :int
   "Create a symbolic link from file OLDPATH to NEWPATH."
-  (oldpath filename-designator)
-  (newpath filename-designator))
+  (oldpath ustring)
+  (newpath ustring))
 
 (defsyscall (%%sys-readlink "readlink") ssize-t
-  (path    filename-designator)
+  (path    ustring)
   (buf     :pointer)
   (bufsize size-t))
 
 (defentrypoint %sys-readlink (path)
   "Read the file name pointed by the symbolic link PATH."
-  (with-foreign-pointer (buf 4096 bufsize)
+  (with-foreign-pointer (buf +cstring-path-max+ bufsize)
     (let ((count (%%sys-readlink path buf bufsize)))
-      (values (foreign-string-to-lisp buf :count count)))))
+      (cstring-to-ustring buf count))))
 
 (defsyscall (%sys-unlink "unlink") :int
   "Delete the file PATH from the file system."
-  (path filename-designator))
+  (path ustring))
 
 (defsyscall (%sys-chown "chown")
     (:int :restart t)
   "Change ownership of file PATH to uid OWNER and gid GROUP(dereferences symlinks)."
-  (path  filename-designator)
+  (path  ustring)
   (owner uid-t)
   (group uid-t))
 
@@ -225,14 +225,14 @@ to the argument OFFSET according to the directive WHENCE."
 (defsyscall (%sys-lchown "lchown")
     (:int :restart t)
   "Change ownership of a file PATH to uid OWNER and gid GROUP(does not dereference symlinks)."
-  (path  filename-designator)
+  (path  ustring)
   (owner uid-t)
   (group uid-t))
 
 (defsyscall (%sys-chmod "chmod")
     (:int :restart t)
   "Change permissions of file PATH to mode MODE."
-  (path filename-designator)
+  (path ustring)
   (mode mode-t))
 
 (defsyscall (%sys-fchmod "fchmod")
@@ -252,7 +252,7 @@ to the argument OFFSET according to the directive WHENCE."
     :int
   #+linux
   (version   :int)
-  (file-name filename-designator)
+  (file-name ustring)
   (buf       :pointer))
 
 (defsyscall (%%sys-fstat (#+linux "__fxstat64" "fstat"))
@@ -266,7 +266,7 @@ to the argument OFFSET according to the directive WHENCE."
     :int
   #+linux
   (version   :int)
-  (file-name filename-designator)
+  (file-name ustring)
   (buf       :pointer))
 
 ;;; If necessary for performance reasons, we can add an optional
@@ -297,13 +297,15 @@ to the argument OFFSET according to the directive WHENCE."
   (fd :int))
 
 (defsyscall (%%sys-mkstemp (#+linux "mkstemp64" "mkstemp")) :int
-  (template filename-designator))
+  (template :pointer))
 
 (defentrypoint %sys-mkstemp (&optional (template ""))
-  "Generate a unique temporary filename from TEMPLATE."
-  (let ((template (concatenate 'string template "XXXXXX")))
-    (with-foreign-string (ptr (filename template))
-      (values (%%sys-mkstemp ptr) (foreign-string-to-lisp ptr)))))
+  "Generate a unique temporary filename from TEMPLATE.
+Return two values: the file descriptor and the path of the temporary file."
+  (let ((template (concatenate 'simple-ustring
+                               (ustring template) (ustring "XXXXXX"))))
+    (with-ustring-to-cstring (ptr template)
+      (values (%%sys-mkstemp ptr) (cstring-to-ustring ptr)))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -312,39 +314,39 @@ to the argument OFFSET according to the directive WHENCE."
 
 (defsyscall (%sys-mkdir "mkdir") :int
   "Create directory PATH with permissions MODE."
-  (path filename-designator)
+  (path ustring)
   (mode mode-t))
 
 (defsyscall (%sys-rmdir "rmdir") :int
   "Delete directory PATH."
-  (path filename-designator))
+  (path ustring))
 
 (defsyscall (%sys-chdir "chdir") :int
   "Change the current working directory to PATH."
-  (path filename-designator))
+  (path ustring))
 
 (defsyscall (%sys-fchdir "fchdir")
     (:int :restart t :handle fd)
   "Change the current working directory to the directory referenced by FD."
   (fd :int))
 
-(defsyscall (%%sys-getcwd "getcwd") :string
+(defsyscall (%%sys-getcwd "getcwd") :pointer
   (buf :pointer)
   (size size-t))
 
 (defentrypoint %sys-getcwd ()
   "Return the current working directory as a string."
-  (with-foreign-pointer (buf path-max size)
-    (%%sys-getcwd buf size)))
+  (with-cstring-to-ustring (buf +cstring-path-max+ bufsize)
+    (%%sys-getcwd buf bufsize)))
 
-(defsyscall (%%sys-mkdtemp "mkdtemp") :int
-  (template filename-designator))
+(defsyscall (%%sys-mkdtemp "mkdtemp") ustring
+  (template ustring))
 
 (defentrypoint %sys-mkdtemp (&optional (template ""))
   "Generate a unique temporary filename from TEMPLATE."
-  (let ((template (concatenate 'string template "XXXXXX")))
-    (with-foreign-string (ptr (filename template))
-      (values (%%sys-mkdtemp ptr) (foreign-string-to-lisp ptr)))))
+  (let ((template (concatenate 'simple-ustring
+                               (ustring template) (ustring "XXXXXX"))))
+    (%%sys-mkdtemp template)))
 
 
 ;;;-------------------------------------------------------------------------
@@ -541,7 +543,7 @@ to the argument OFFSET according to the directive WHENCE."
 
 (defsyscall (%sys-opendir "opendir") :pointer
   "Open directory PATH for listing of its contents."
-  (path filename-designator))
+  (path ustring))
 
 (defsyscall (%sys-closedir "closedir") :int
   "Close directory DIR when done listing its contents."
@@ -562,7 +564,7 @@ to the argument OFFSET according to the directive WHENCE."
     (if (null-pointer-p (mem-ref result :pointer))
         nil
         (with-foreign-slots ((name type fileno) entry dirent)
-          (values (foreign-string-to-lisp name) type fileno)))))
+          (values (cstring-to-ustring name) type fileno)))))
 
 (defsyscall (%sys-rewinddir "rewinddir") :void
   "Rewind directory DIR."

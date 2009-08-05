@@ -6,6 +6,6 @@
 (in-package :common-lisp-user)
 
 (defpackage :iolib.zeta-streams
-  (:use :iolib.base :iolib.syscalls :cffi)
+  (:use :iolib.base :iolib.syscalls :iolib.pathnames :cffi)
   (:export
    ))
