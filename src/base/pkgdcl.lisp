@@ -65,6 +65,7 @@
    ;; Ustrings
    #:ustring-designator
    #:make-ustring #:string-to-ustring #:ustring #:ustringp
+   #:simple-ustring #:simple-ustring-p #:complex-ustring #:complex-ustring-p
    #:ustring= #:ustring/= #:ustring< #:ustring> #:ustring<= #:ustring>=
    #:ustring-equal #:ustring-not-equal #:ustring-lessp
    #:ustring-greaterp #:ustring-not-greaterp #:ustring-not-lessp

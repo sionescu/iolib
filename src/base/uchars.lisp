@@ -20,8 +20,14 @@
 (deftype uchar ()
   `(mod ,uchar-code-limit))
 
-(deftype ustring (&optional (size '*))
+(deftype simple-ustring (&optional (size '*))
   `(simple-array uchar (,size)))
+
+(deftype complex-ustring (&optional (size '*))
+  `(and (vector uchar ,size) (not simple-array)))
+
+(deftype ustring (&optional (size '*))
+  `(or (simple-ustring ,size) (complex-ustring ,size)))
 
 (deftype uchar-designator ()
   '(or uchar (ustring 1) character-designator))

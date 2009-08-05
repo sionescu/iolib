@@ -14,7 +14,7 @@
   (make-array size :element-type 'uchar :initial-element initial-element))
 
 (defun string-to-ustring (string)
-  (map 'ustring #'char-to-uchar (string string)))
+  (map 'simple-ustring #'char-to-uchar (string string)))
 
 (defun ustring (thing &key new)
   (etypecase thing
@@ -25,7 +25,7 @@
     (string-designator
      (string-to-ustring thing))
     (vector
-     (coerce thing 'ustring))))
+     (coerce thing 'simple-ustring))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -34,6 +34,12 @@
 
 (defun ustringp (ustring)
   (typep ustring 'ustring))
+
+(defun simple-ustring-p (ustring)
+  (typep ustring 'simple-ustring))
+
+(defun complex-ustring-p (ustring)
+  (typep ustring 'complex-ustring))
 
 (defmacro with-ustrings ((&rest ustrings) &body body)
   `(let ,(loop :for ustring :in ustrings
