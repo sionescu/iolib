@@ -64,69 +64,28 @@
 ;;; Generic Functions
 ;;;-------------------------------------------------------------------------
 
-;;; Accessors
-
-(defgeneric file-path-host (pathspec &key namestring))
-
-(defgeneric file-path-device (pathspec &key namestring))
-
-(defgeneric file-path-components (pathspec &key namestring))
-
-(defgeneric file-path-directory (pathspec &key namestring))
-
-(defgeneric file-path-file (pathspec &key namestring))
-
-(defgeneric file-path-file-name (pathspec))
-
-(defgeneric file-path-file-type (pathspec))
-
-(defgeneric file-path-namestring (pathspec))
-
-;;; Operations
-
-(defgeneric make-file-path (&key host device components defaults trailing-delimiter))
-
-(defgeneric merge-file-paths (pathspec &optional defaults))
-
-(defgeneric enough-file-path (pathspec &optional defaults))
-
 (defgeneric file-path (pathspec))
 
-(defgeneric parse-file-path (pathspec &key start end as-directory expand-user))
-
-;;; Internal functions
-
-(defgeneric file-path-namestring/ustring (path))
-
-(defgeneric %file-path-host-namestring (path))
-
-(defgeneric %file-path-device-namestring (path))
-
-(defgeneric %file-path-components-namestring
-    (path &key print-dot trailing-delimiter))
-
-(defgeneric %file-path-directory-namestring (path))
-
-(defgeneric %file-path-file-namestring (path))
+(defgeneric file-path-namestring (path))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; Accessors
 ;;;-------------------------------------------------------------------------
 
-(defmethod file-path-host (pathspec &key namestring)
+(defun file-path-host (pathspec &key namestring)
   (let ((path (file-path pathspec)))
     (if namestring
         (%file-path-host-namestring path)
         (slot-value path 'host))))
 
-(defmethod file-path-device (pathspec &key namestring)
+(defun file-path-device (pathspec &key namestring)
   (let ((path (file-path pathspec)))
     (if namestring
         (%file-path-device-namestring path)
         (slot-value path 'device))))
 
-(defmethod file-path-components (pathspec &key namestring)
+(defun file-path-components (pathspec &key namestring)
   (let ((path (file-path pathspec)))
     (if namestring
        (%file-path-components-namestring
@@ -146,7 +105,7 @@
         (split-root/nodes components)
       (cons root (butlast nodes)))))
 
-(defmethod file-path-directory (pathspec &key namestring)
+(defun file-path-directory (pathspec &key namestring)
   (let ((path (file-path pathspec)))
     (if namestring
        (%file-path-directory-namestring path)
@@ -156,7 +115,7 @@
   (let ((components (slot-value path 'components)))
     (lastcar (nth-value 1 (split-root/nodes components)))))
 
-(defmethod file-path-file (pathspec &key namestring)
+(defun file-path-file (pathspec &key namestring)
   (let ((path (file-path pathspec)))
     (if namestring
        (%file-path-file-namestring path)
@@ -170,12 +129,12 @@
         (values (subseq file 0 dotpos)
                 (subseq file (1+ dotpos))))))
 
-(defmethod file-path-file-name (pathspec)
+(defun file-path-file-name (pathspec)
   (let ((path (file-path pathspec)))
     (when-let (file (%file-path-file path))
      (nth-value 0 (split-name/type file)))))
 
-(defmethod file-path-file-type (pathspec)
+(defun file-path-file-type (pathspec)
   (let ((path (file-path pathspec)))
     (when-let (file (%file-path-file path))
      (nth-value 1 (split-name/type file)))))
@@ -239,9 +198,9 @@
 (defmethod file-path ((pathspec pathname))
   (parse-file-path (namestring pathspec)))
 
-(defmethod make-file-path (&key (host nil hostp) (device nil devicep)
-                           (components nil componentsp)
-                           (defaults nil defaultsp) trailing-delimiter)
+(defun make-file-path (&key (host nil hostp) (device nil devicep)
+                       (components nil componentsp)
+                       (defaults nil defaultsp) trailing-delimiter)
   (let ((defaults (and defaultsp (file-path defaults))))
     (make-instance '#.+file-path-host-type+
                    :host (cond (hostp     host)
@@ -254,8 +213,8 @@
                                      (defaultsp   (file-path-components defaults)))
                    :trailing-delimiter trailing-delimiter)))
 
-(defmethod merge-file-paths (pathspec &optional
-                             (defaults *default-file-path-defaults*))
+(defun merge-file-paths (pathspec &optional
+                         (defaults *default-file-path-defaults*))
   (let ((path (file-path pathspec))
         (defaults (file-path defaults)))
     (make-instance '#.+file-path-host-type+

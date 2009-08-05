@@ -38,25 +38,29 @@
 ;;; Operations
 ;;;-------------------------------------------------------------------------
 
-(defmethod enough-file-path ((path unix-path) &optional
-                             (defaults *default-file-path-defaults*))
-  (cond
-    ((or (relative-file-path-p path)
-         (relative-file-path-p defaults))
-     path)
-    (t
-     (let* ((dir (cdr (slot-value path 'components)))
-            (mismatch
-             (mismatch dir (cdr (slot-value defaults 'components))
-                       :test #'ustring=)))
-       (if mismatch
-           (make-instance 'unix-path :components (subseq dir mismatch))
-           (make-instance 'unix-path :components (list :root)))))))
+(defun enough-file-path (pathspec &optional
+                         (defaults *default-file-path-defaults*))
+  (let ((path (file-path pathspec))
+        (defaults (file-path defaults)))
+    (cond
+      ((or (relative-file-path-p path)
+           (relative-file-path-p defaults))
+       path)
+      (t
+       (let* ((dir (cdr (slot-value path 'components)))
+              (mismatch
+               (mismatch dir (cdr (slot-value defaults 'components))
+                         :test #'ustring=)))
+         (if mismatch
+             (make-instance 'unix-path :components (subseq dir mismatch))
+             (make-instance 'unix-path :components (list :root))))))))
 
-(defmethod %file-path-host-namestring ((path unix-path))
+(defun %file-path-host-namestring (path)
+  (declare (ignore path))
   "")
 
-(defmethod %file-path-device-namestring ((path unix-path))
+(defun %file-path-device-namestring (path)
+  (declare (ignore path))
   "")
 
 (defun %components-namestring (components print-dot trailing-delimiter)
@@ -73,19 +77,18 @@
                    (apply #'join/ustring +directory-delimiter+ dirs)
                    (if (and dirs trailing-delimiter) delimstr nullstr)))))
 
-(defmethod %file-path-components-namestring ((path unix-path) &key print-dot
-                                             trailing-delimiter)
+(defun %file-path-components-namestring (path &key print-dot trailing-delimiter)
   (ustring-to-string*
    (%components-namestring (slot-value path 'components)
                            print-dot trailing-delimiter)))
 
-(defmethod %file-path-directory-namestring ((path unix-path))
+(defun %file-path-directory-namestring (path)
   (if-let (dir (%file-path-directory path))
     (ustring-to-string*
      (%components-namestring dir t t))
     ""))
 
-(defmethod %file-path-file-namestring ((path unix-path))
+(defun %file-path-file-namestring (path)
   (if-let (file (%file-path-file path))
     (ustring-to-string* file)
     ""))
@@ -96,7 +99,7 @@
     (ustring-to-string*
      (%components-namestring components t trailing-delimiter))))
 
-(defmethod file-path-namestring/ustring ((path unix-path))
+(defun file-path-namestring/ustring (path)
   (with-slots (components trailing-delimiter)
       path
     (%components-namestring components t trailing-delimiter)))
@@ -112,7 +115,7 @@
 (defun absolute-namestring-p (namestring)
   (uchar= +directory-delimiter+ (aref namestring 0)))
 
-(defmethod parse-file-path (pathspec &key (start 0) end as-directory (expand-user t))
+(defun parse-file-path (pathspec &key (start 0) end as-directory (expand-user t))
   (check-type pathspec (or string ustring))
   (when (zerop (length pathspec))
     (error 'invalid-file-path
