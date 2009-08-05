@@ -147,3 +147,40 @@
   `(with-foreign-pointer (,var ,size ,size-var)
      (progn ,@body
        (cstring-to-ustring ,var ,size-var))))
+
+
+;;; Automatic Conversion of Foreign Strings to Ustrings
+;;; Initially copied from cffi/src/string.lisp
+
+(define-foreign-type cstring-type ()
+  (;; Should we free after translating from foreign?
+   (free-from-foreign :initarg :free-from-foreign
+                      :reader cstring-free-from-foreign-p
+                      :initform nil :type boolean)
+   ;; Should we free after translating to foreign?
+   (free-to-foreign :initarg :free-to-foreign
+                    :reader cstring-free-to-foreign-p
+                    :initform t :type boolean))
+  (:actual-type :pointer)
+  (:simple-parser ustring))
+
+;; TODO: use EXPAND-TO-FOREIGN
+(defmethod translate-to-foreign (s (type cstring-type))
+  (let ((s (etypecase s
+             (ustring s)
+             (string (string-to-ustring s)))))
+    (values (cstring-alloc s)
+            (cstring-free-to-foreign-p type))))
+
+(defmethod translate-from-foreign (ptr (type cstring-type))
+  (unwind-protect
+       (if (null-pointer-p ptr)
+           nil
+           (cstring-to-ustring ptr))
+    (when (and (cstring-free-from-foreign-p type)
+               (not (null-pointer-p ptr)))
+      (foreign-free ptr))))
+
+(defmethod free-translated-object (ptr (type cstring-type) free-p)
+  (when free-p
+    (foreign-free ptr)))
