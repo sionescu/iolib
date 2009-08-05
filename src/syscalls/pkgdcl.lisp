@@ -30,8 +30,6 @@
    #:native-namestring
 
    ;; Type Designators
-   #:filename
-   #:filename-designator
    #:pointer-or-nil
    #:pointer-or-nil-designator
    #:bool

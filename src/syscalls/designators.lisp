@@ -25,19 +25,6 @@
              (etypecase ,',name ,@',type-clauses))
            ,',cffi-type)))))
 
-(declaim (inline native-namestring))
-(defun native-namestring (pathname)
-  (cffi-sys:native-namestring pathname))
-
-;;; NATIVE-NAMESTRING should take care of complaining when FILENAME
-;;; is wild but I don't think it does on all Lisps, so let's check it
-;;; explicitly.
-(define-designator filename :string
-  (pathname (when (wild-pathname-p filename)
-              (syscall-error "Pathname is wild: ~S." filename))
-            (native-namestring (translate-logical-pathname filename)))
-  (string filename))
-
 (define-designator pointer-or-nil :pointer
   (null (null-pointer))
   (foreign-pointer pointer-or-nil))
