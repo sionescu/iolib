@@ -46,9 +46,6 @@
    ;; Password entries
    #:user-info
 
-   ;; Pathname utilities
-   #:absolute-file-path
-
    ;; Time
    #:get-monotonic-time
 
