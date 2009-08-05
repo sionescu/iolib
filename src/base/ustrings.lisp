@@ -13,10 +13,22 @@
   (check-type initial-element uchar)
   (make-array size :element-type 'uchar :initial-element initial-element))
 
+(define-compiler-macro make-ustring (&whole whole size &key (initial-element 0))
+  (cond
+    ((and (constantp size) (constantp initial-element))
+     (check-type initial-element uchar)
+     (make-array size :element-type 'uchar :initial-element initial-element))
+    (t whole)))
+
 (defun string-to-ustring (string)
   (map 'simple-ustring #'char-to-uchar (string string)))
 
-(defun ustring (thing &key new)
+(define-compiler-macro string-to-ustring (string)
+  (if (constantp string)
+      (map 'simple-ustring #'char-to-uchar (string string))
+      whole))
+
+(defun %ustring (thing new)
   (etypecase thing
     (ustring
      (if new (copy-seq thing) thing))
@@ -26,6 +38,15 @@
      (string-to-ustring thing))
     (vector
      (coerce thing 'simple-ustring))))
+
+(defun ustring (thing &key new)
+  (%ustring thing new))
+
+(define-compiler-macro ustring (&whole whole thing &key new)
+  (cond
+    ((and (constantp thing) (constantp new))
+     (%ustring thing new))
+    (t whole)))
 
 
 ;;;-------------------------------------------------------------------------
