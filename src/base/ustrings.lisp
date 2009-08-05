@@ -278,8 +278,8 @@
 
 (defun join/ustring (connector &rest ustrings)
   (let ((c (ustring connector)))
-    (concatenate 'ustring (car ustrings)
+    (concatenate 'simple-ustring (car ustrings)
                  (reduce (lambda (str1 str2)
-                           (concatenate 'ustring str1 c str2))
+                           (concatenate 'simple-ustring str1 c str2))
                          (cdr ustrings)
                          :initial-value (make-ustring 0)))))

@@ -64,7 +64,7 @@
       (split-root/nodes components)
     (let ((delimstr (ustring +directory-delimiter+))
           (nullstr (ustring "")))
-      (concatenate 'ustring
+      (concatenate 'simple-ustring
                    (if (eql :root root)
                        delimstr
                        (if (and (null dirs) print-dot)
