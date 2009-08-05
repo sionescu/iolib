@@ -34,10 +34,10 @@
   (etypecase thing
     (ustring
      (if new (copy-seq thing) thing))
-    (uchar
-     (make-ustring 1 :initial-element thing))
     (string-designator
      (string-to-ustring thing))
+    (uchar
+     (make-ustring 1 :initial-element thing))
     (vector
      (coerce thing 'simple-ustring))))
 
