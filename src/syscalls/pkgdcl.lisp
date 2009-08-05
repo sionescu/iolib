@@ -102,6 +102,7 @@
    #:%sys-link
    #:%sys-symlink
    #:%sys-readlink
+   #:%sys-realpath
    #:%sys-unlink
    #:%sys-chown
    #:%sys-fchown

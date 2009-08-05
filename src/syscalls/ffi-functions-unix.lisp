@@ -204,6 +204,15 @@ to the argument OFFSET according to the directive WHENCE."
     (let ((count (%%sys-readlink path buf bufsize)))
       (cstring-to-ustring buf count))))
 
+(defsyscall (%%sys-realpath "realpath") ustring
+  (path          ustring)
+  (resolved-path :pointer))
+
+(defentrypoint %sys-realpath (path)
+  "Read the file name pointed by the symbolic link PATH."
+  (with-foreign-pointer (buf +cstring-path-max+)
+    (%%sys-realpath path buf)))
+
 (defsyscall (%sys-unlink "unlink") :int
   "Delete the file PATH from the file system."
   (path ustring))
