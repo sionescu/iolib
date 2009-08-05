@@ -232,7 +232,7 @@ Signals an error if PATHSPEC is wild."
   (get-file-kind (merge-file-paths pathspec) follow-symlinks))
 
 (defun file-exists-p (pathspec &optional file-kind)
-  "Checks whether the file named by the pathname designator
+  "Checks whether the file named by the file-path designator
 PATHSPEC exists, if this is the case and FILE-KIND is specified
 it also checks the file kind. If the tests succeed, return two values:
 truename and file kind of PATHSPEC, NIL otherwise.
@@ -247,19 +247,19 @@ Follows symbolic links."
               actual-kind))))
 
 (defun regular-file-exists-p (pathspec)
-  "Checks whether the file named by the pathname designator
+  "Checks whether the file named by the file-path designator
 PATHSPEC exists and is a regular file. Returns its truename
 if this is the case, NIL otherwise. Follows symbolic links."
   (nth-value 0 (file-exists-p pathspec :regular-file)))
 
 (defun directory-exists-p (pathspec)
-  "Checks whether the file named by the pathname designator
+  "Checks whether the file named by the file-path designator
 PATHSPEC exists and is a directory.  Returns its truename
 if this is the case, NIL otherwise.  Follows symbolic links."
   (nth-value 0 (file-exists-p pathspec :directory)))
 
 (defun good-symlink-exists-p (pathspec)
-  "Checks whether the file named by the pathname designator
+  "Checks whether the file named by the file-path designator
 PATHSPEC exists and is a symlink pointing to an existent file."
   (eq :broken (nth-value 1 (file-kind pathspec :follow-symlinks t))))
 
@@ -276,10 +276,10 @@ PATHSPEC exists and is a symlink pointing to an existent file."
 ;;;; Symbolic and hard links
 
 (defun read-link (pathspec)
-  "Returns the pathname pointed to by the symbolic link
+  "Returns the file-path pointed to by the symbolic link
 designated by PATHSPEC.  If the link is relative, then the
-returned pathname is relative to the link, not
-*DEFAULT-PATHNAME-DEFAULTS*.
+returned file-path is relative to the link, not
+*DEFAULT-FILE-PATH-DEFAULTS*.
 
 Signals an error if PATHSPEC is wild, or does not designate a
 symbolic link."
@@ -293,7 +293,7 @@ symbolic link."
 (defun make-link (link target &key hard)
   "Creates LINK that points to TARGET.  Defaults to a symbolic
 link, but giving a non-NIL value to the keyword argument :HARD
-creates a hard link.  Returns the pathname of the link.
+creates a hard link.  Returns the file-path of the link.
 
 Relative targets are resolved against the link.  Relative links
 are resolved against *DEFAULT-FILE-PATH-DEFAULTS*.
