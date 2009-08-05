@@ -240,21 +240,19 @@
   (parse-file-path (namestring pathspec)))
 
 (defmethod make-file-path (&key (host nil hostp) (device nil devicep)
-                           (components nil componentsp) defaults)
-  (check-type defaults (or null file-path))
-  (make-instance '#.+file-path-host-type+
-                 :host (cond (hostp    host)
-                             (defaults (file-path-host defaults))
-                             (t        (file-path-host
-                                        *default-file-path-defaults*)))
-                 :device (cond (devicep  device)
-                               (defaults (file-path-device defaults))
-                               (t        (file-path-device
-                                          *default-file-path-defaults*)))
-                 :components (cond (componentsp components)
-                                   (defaults   (file-path-components defaults))
-                                   (t          (file-path-components
-                                                *default-file-path-defaults*)))))
+                           (components nil componentsp)
+                           (defaults nil defaultsp) trailing-delimiter)
+  (let ((defaults (and defaultsp (file-path defaults))))
+    (make-instance '#.+file-path-host-type+
+                   :host (cond (hostp     host)
+                               (defaultsp (file-path-host defaults))
+                               (t         (file-path-host
+                                           *default-file-path-defaults*)))
+                   :device (cond (devicep   device)
+                                 (defaultsp (file-path-device defaults)))
+                   :components (cond (componentsp components)
+                                     (defaultsp   (file-path-components defaults)))
+                   :trailing-delimiter trailing-delimiter)))
 
 (defmethod merge-file-paths ((path file-path) &optional
                              (defaults *default-file-path-defaults*))
