@@ -14,13 +14,13 @@
   :serial t
   :components
   ((:file "pkgdcl")
+   (:file "ustring-cstring")
    ;; Platform-specific files
    (cffi-grovel:grovel-file "ffi-types"
      :pathname #+unix "ffi-types-unix")
    (:file "conditions")
    (:file "os-conditions"
      :pathname #+unix "os-conditions-unix")
-   (:file "ustring-cstring")
    (:file "designators")
    (:file "early")
    (cffi-grovel:wrapper-file "ffi-wrappers"
