@@ -6,6 +6,9 @@
 
 (in-package :iolib.syscalls)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defconstant +cstring-path-max+ 65535))
+
 (defun ustring-to-cstring (ustring c-ptr c-len)
   (let ((index 0))
     (labels
