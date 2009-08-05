@@ -61,6 +61,11 @@
 
    ;; USTRING <-> CSTRING
    #:+cstring-path-max+
+   #:cstring-to-ustring
+   #:ustring-to-cstring
+   #:with-cstring-to-ustring
+   #:with-ustring-to-cstring
+
 ;;;--------------------------------------------------------------------------
 ;;; Syscalls
 ;;;--------------------------------------------------------------------------
