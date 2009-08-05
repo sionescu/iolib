@@ -41,6 +41,8 @@
 
 (defun default-error-predicate (base-type)
   (case base-type
+    (ustring
+     '(lambda (s) (null s)))
     (:string
      '(lambda (s) (not (stringp s))))
     (t
