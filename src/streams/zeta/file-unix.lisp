@@ -63,6 +63,7 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod device-open ((device file-device) slot-names initargs)
+  (declare (ignore slot-names))
   (destructuring-bind (&key handle filename flags delete-if-exists
                             (mode *default-open-mode*))
       initargs

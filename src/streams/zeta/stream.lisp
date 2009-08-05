@@ -156,6 +156,7 @@
   (plusp (iobuf-available-octets (slot-value stream 'output-iobuf))))
 
 (defmethod (setf zstream-dirtyp) (value (stream dual-channel-zstream))
+  (declare (ignore value))
   (values nil))
 
 (defmethod zstream-device ((stream device-zstream))
