@@ -138,16 +138,47 @@ is wild or does not designate a directory."
 
 ;;;; File-path manipulations
 
-(defun absolute-file-path (pathspec &optional
-                           (default *default-file-path-defaults*))
+(defun absolute-file-path (pathspec defaults)
+  (let ((path (file-path pathspec)))
+    (if (absolute-file-path-p path)
+        path
+        (let ((tmp (merge-file-paths path defaults)))
+          (if (relative-file-path-p tmp)
+              (merge-file-paths tmp (current-directory))
+              tmp)))))
+
+(defun strip-dots (path)
+  (multiple-value-bind (root nodes)
+      (iolib.pathnames::split-root/nodes
+       (remove (ustring ".") (file-path-components path)
+               :test #'ustring=))
+    (let (new-components)
+      (dolist (n nodes)
+        (if (ustring= n (ustring ".."))
+            (pop new-components)
+            (push n new-components)))
+      (make-file-path :components (if root
+                                      (cons root (nreverse new-components))
+                                      (nreverse new-components))
+                      :defaults path
+                      :trailing-delimiter (file-path-trailing-delimiter path)))))
+
+(defun resolve-symlinks (path)
+  (let ((namestring (iolib.pathnames::file-path-namestring/ustring path)))
+    (%sys-realpath namestring)))
+
+(defun resolve-file-path (pathspec &key
+                          (defaults *default-file-path-defaults*)
+                          (canonicalize t))
   "Returns an absolute file-path corresponding to PATHSPEC by
-merging it with DEFAULT, and (CURRENT-DIRECTORY) if necessary."
-  (if (file-path-absolute-p pathspec)
-      pathspec
-      (let ((tmp (merge-file-paths pathspec default)))
-        (if (file-path-relative-p tmp)
-            (merge-file-paths tmp (current-directory))
-            tmp))))
+merging it with DEFAULT, and (CURRENT-DIRECTORY) if necessary.
+If CANONICALIZE is non-NIL, the path is canonicalised: if it is :STRIP-DOTS,
+then just remove «.» and «..», otherwise symlinks are resolved too."
+  (let ((absolute-file-path (absolute-file-path pathspec defaults)))
+    (case canonicalize
+      ((nil)       absolute-file-path)
+      (:strip-dots (strip-dots absolute-file-path))
+      (t           (resolve-symlinks absolute-file-path)))))
 
 
 ;;;; File kind
@@ -206,12 +237,13 @@ PATHSPEC exists, if this is the case and FILE-KIND is specified
 it also checks the file kind. If the tests succeed, return two values:
 truename and file kind of PATHSPEC, NIL otherwise.
 Follows symbolic links."
-  (let* ((follow (unless (eq file-kind :symbolic-link) t))
-         (actual-kind (file-kind pathspec :follow-symlinks follow)))
+  (let* ((path (file-path pathspec))
+         (follow (unless (eq file-kind :symbolic-link) t))
+         (actual-kind (file-kind path :follow-symlinks follow)))
     (when (and actual-kind
                (if file-kind (eql file-kind actual-kind) t))
       ;; TODO: add resolve-file-path
-      (values (truename (file-path-namestring pathspec))
+      (values (resolve-file-path path)
               actual-kind))))
 
 (defun regular-file-exists-p (pathspec)
@@ -269,9 +301,8 @@ are resolved against *DEFAULT-FILE-PATH-DEFAULTS*.
 Signals an error if either target or link is wild, target does
 not exist, or link exists already."
   (let ((link (file-path link))
-        (target (file-path target))
-        (old (current-directory)))
-    (with-current-directory (absolute-pathname *default-pathname-defaults*)
+        (target (file-path target)))
+    (with-current-directory (absolute-file-path *default-file-path-defaults* nil)
       ;; KLUDGE: We merge against link for hard links only,
       ;; since symlink does the right thing once we are in
       ;; the correct directory.

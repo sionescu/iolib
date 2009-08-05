@@ -6,7 +6,7 @@
 (in-package :common-lisp-user)
 
 (defpackage :iolib.os
-  (:use :iolib.base :cffi :iolib.syscalls :iolib.pathnames)
+  (:use :iolib.base :iolib.syscalls :iolib.pathnames :cffi)
   (:export
 
    ;; Evironment
