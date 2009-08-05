@@ -23,7 +23,7 @@
 (defun string-to-ustring (string)
   (map 'simple-ustring #'char-to-uchar (string string)))
 
-(define-compiler-macro string-to-ustring (string)
+(define-compiler-macro string-to-ustring (&whole whole string)
   (if (constantp string)
       (map 'simple-ustring #'char-to-uchar (string string))
       whole))
