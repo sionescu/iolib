@@ -254,18 +254,20 @@
                                      (defaultsp   (file-path-components defaults)))
                    :trailing-delimiter trailing-delimiter)))
 
-(defmethod merge-file-paths ((path file-path) &optional
+(defmethod merge-file-paths (pathspec &optional
                              (defaults *default-file-path-defaults*))
-  (check-type defaults file-path)
-  (make-instance '#.+file-path-host-type+
-                 :host (or (file-path-host path)
-                           (file-path-host defaults))
-                 :device (or (file-path-device path)
-                             (file-path-device defaults))
-                 :components (if (absolute-p (file-path-components path))
-                                 (append (file-path-components defaults)
-                                         (file-path-components path))
-                                 (file-path-components defaults))))
+  (let ((path (file-path pathspec))
+        (defaults (file-path defaults)))
+    (make-instance '#.+file-path-host-type+
+                   :host (or (file-path-host path)
+                             (file-path-host defaults))
+                   :device (or (file-path-device path)
+                               (file-path-device defaults))
+                   :components (if (absolute-p (file-path-components path))
+                                   (file-path-components path)
+                                   (append (file-path-components defaults)
+                                           (file-path-components path)))
+                   :trailing-delimiter (file-path-trailing-delimiter path))))
 
 
 ;;;-------------------------------------------------------------------------
