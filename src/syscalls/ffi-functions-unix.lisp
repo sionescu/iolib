@@ -982,7 +982,7 @@ The environment variable is overwritten only if overwrite it non-NIL."
 
 (defun funcall-getpw (fn arg)
   (with-foreign-objects ((pw 'passwd-entry) (pwp :pointer))
-    (with-foreign-pointer (buf 4096 bufsize)
+    (with-foreign-pointer (buf +cstring-path-max+ bufsize)
       (with-foreign-slots ((name passwd uid gid gecos dir shell) pw passwd-entry)
         (funcall fn arg pw buf bufsize pwp)
         (if (null-pointer-p (mem-ref pwp :pointer))
@@ -1022,9 +1022,10 @@ The environment variable is overwritten only if overwrite it non-NIL."
   (bufsize size-t)
   (result  :pointer))
 
+;; FIXME: return group members too
 (defun funcall-getgr (fn arg)
   (with-foreign-objects ((gr 'group-entry) (grp :pointer))
-    (with-foreign-pointer (buf 4096 bufsize)
+    (with-foreign-pointer (buf +cstring-path-max+ bufsize)
       (with-foreign-slots ((name passwd gid) gr group-entry)
         (funcall fn arg gr buf bufsize grp)
         (if (null-pointer-p (mem-ref grp :pointer))
