@@ -234,19 +234,19 @@
 
 (defun ustring-trim (ustring uchar-bag)
   (let* ((ustring (ustring ustring))
-         (uchar-bag (map 'ustring #'uchar uchar-bag))
+         (uchar-bag (map 'simple-ustring #'uchar uchar-bag))
          (left  (%ustring-left-trim  ustring uchar-bag))
          (right (%ustring-right-trim ustring uchar-bag)))
     (subseq ustring left (1+ right))))
 
 (defun ustring-left-trim (ustring uchar-bag)
   (let* ((ustring (ustring ustring))
-         (uchar-bag (map 'ustring #'uchar uchar-bag))
+         (uchar-bag (map 'simple-ustring #'uchar uchar-bag))
          (left (%ustring-left-trim ustring uchar-bag)))
     (subseq ustring left)))
 
 (defun ustring-right-trim (ustring uchar-bag &aux (ustring (ustring ustring)))
-  (let* ((uchar-bag (map 'ustring #'uchar uchar-bag))
+  (let* ((uchar-bag (map 'simple-ustring #'uchar uchar-bag))
          (right (%ustring-right-trim ustring uchar-bag)))
     (subseq ustring 0 (1+ right))))
 
