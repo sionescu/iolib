@@ -115,7 +115,7 @@
   (let ((index 0) (uindex 0)
         (ustring (make-array c-len :element-type 'uchar)))
     (declare (type cstr-offset index uindex)
-             (type ustring ustring))
+             (type simple-ustring ustring))
     (flet ((input-char ()
              (prog1 (mem-aref c-ptr :unsigned-char index)
                (incf index)))
