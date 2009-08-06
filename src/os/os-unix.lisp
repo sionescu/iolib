@@ -164,8 +164,11 @@ is wild or does not designate a directory."
                       :trailing-delimiter (file-path-trailing-delimiter path)))))
 
 (defun resolve-symlinks (path)
-  (let ((namestring (file-path-namestring/ustring path)))
-    (%sys-realpath namestring)))
+  (let* ((namestring (file-path-namestring/ustring path))
+         (dirp (uchar= +directory-delimiter+
+                       (aref namestring (1- (length namestring)))))
+         (realpath (%sys-realpath namestring)))
+    (parse-file-path realpath :as-directory dirp)))
 
 (defun resolve-file-path (pathspec &key
                           (defaults *default-file-path-defaults*)
