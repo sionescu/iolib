@@ -149,14 +149,14 @@ is wild or does not designate a directory."
 
 (defun strip-dots (path)
   (multiple-value-bind (root nodes)
-      (iolib.pathnames::split-root/nodes
-       (remove (ustring ".") (file-path-components path)
-               :test #'ustring=))
+      (split-root/nodes (file-path-components path))
     (let (new-components)
       (dolist (n nodes)
-        (if (ustring= n (ustring ".."))
-            (pop new-components)
-            (push n new-components)))
+        (cond
+          ((ustring= n (ustring ".")))
+          ((ustring= n (ustring ".."))
+           (pop new-components))
+          (t (push n new-components))))
       (make-file-path :components (if root
                                       (cons root (nreverse new-components))
                                       (nreverse new-components))
