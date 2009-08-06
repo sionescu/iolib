@@ -124,7 +124,7 @@ is wild or does not designate a directory."
 
 (defun (setf current-directory) (pathspec)
   (let ((path (file-path pathspec)))
-    (%sys-chdir (iolib.pathnames::file-path-namestring/ustring path))))
+    (%sys-chdir (file-path-namestring/ustring path))))
 
 (defmacro with-current-directory (pathspec &body body)
   (with-gensyms (old)
@@ -164,7 +164,7 @@ is wild or does not designate a directory."
                       :trailing-delimiter (file-path-trailing-delimiter path)))))
 
 (defun resolve-symlinks (path)
-  (let ((namestring (iolib.pathnames::file-path-namestring/ustring path)))
+  (let ((namestring (file-path-namestring/ustring path)))
     (%sys-realpath namestring)))
 
 (defun resolve-file-path (pathspec &key
@@ -188,7 +188,7 @@ then just remove «.» and «..», otherwise symlinks are resolved too."
 ;;;        wrapping POSIX-ERRORs or making sure that some
 ;;;        POSIX-ERRORS subclass FILE-ERROR
 (defun get-file-kind (file follow-p)
-  (let ((namestring (iolib.pathnames::file-path-namestring/ustring file)))
+  (let ((namestring (file-path-namestring/ustring file)))
     (handler-case
         (let ((mode (stat-mode
                      (if follow-p
@@ -287,7 +287,7 @@ symbolic link."
   ;; big enough to fit the link's name.  OTOH, NIX:READLINK stack
   ;; allocates on most lisps.
   (file-path (%sys-readlink
-              (iolib.pathnames::file-path-namestring/ustring
+              (file-path-namestring/ustring
                (absolute-file-path pathspec *default-file-path-defaults*)))))
 
 (defun make-link (link target &key hard)
@@ -307,11 +307,11 @@ not exist, or link exists already."
       ;; since symlink does the right thing once we are in
       ;; the correct directory.
       (if hard
-          (%sys-link (iolib.pathnames::file-path-namestring/ustring
+          (%sys-link (file-path-namestring/ustring
                       (merge-file-paths target link))
                      link)
-          (%sys-symlink (iolib.pathnames::file-path-namestring/ustring target)
-                        (iolib.pathnames::file-path-namestring/ustring link)))
+          (%sys-symlink (file-path-namestring/ustring target)
+                        (file-path-namestring/ustring link)))
       link)))
 
 
@@ -347,13 +347,13 @@ Permission symbols consist of :USER-READ, :USER-WRITE, :USER-EXEC,
 
 Both signal an error if PATHSPEC is wild, or doesn't designate an
 existing file."
-  (let ((mode (stat-mode (%sys-stat (iolib.pathnames::file-path-namestring/ustring pathspec)))))
+  (let ((mode (stat-mode (%sys-stat (file-path-namestring/ustring pathspec)))))
     (loop :for (name . value) :in +permissions+
           :when (plusp (logand mode value))
           :collect name)))
 
 (defun (setf file-permissions) (perms pathspec)
-  (%sys-chmod (iolib.pathnames::file-path-namestring/ustring pathspec)
+  (%sys-chmod (file-path-namestring/ustring pathspec)
               (reduce (lambda (a b)
                         (logior a (cdr (assoc b +permissions+))))
                       perms :initial-value 0)))

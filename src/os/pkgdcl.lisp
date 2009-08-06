@@ -7,6 +7,7 @@
 
 (defpackage :iolib.os
   (:use :iolib.base :iolib.syscalls :iolib.pathnames :cffi)
+  (:import-from :iolib.pathnames #:file-path-namestring/ustring)
   (:export
 
    ;; Evironment

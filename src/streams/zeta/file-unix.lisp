@@ -69,7 +69,7 @@
       initargs
     ;; FIXME: use new pathnames
     (let* ((path (file-path filename))
-           (namestring (iolib.pathnames::file-path-namestring/ustring path)))
+           (namestring (file-path-namestring/ustring path)))
       (setf (file-device-filename device) path)
       (labels ((handle-error (c)
                  (posix-file-error c filename "opening"))
