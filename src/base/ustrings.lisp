@@ -119,7 +119,7 @@
 
 
 (macrolet
-    ((define-ustring-comparison (name test equality &optional lessp equalp)
+    ((define-ustring-comparison (name test equality lessp equalp)
        `(defun ,name (ustring1 ustring2 &key (start1 0) end1 (start2 0) end2)
           (with-ustrings ((ustring1 start1 end1) (ustring2 start2 end2))
             (let ((len1 (- end1 start1))
@@ -136,10 +136,10 @@
                                    index
                                    nil))
                 ((,(if lessp '< '>) len1 len2) index)))))))
-  (define-ustring-comparison ustring<             uchar<             uchar=      t    )
-  (define-ustring-comparison ustring-lessp        uchar-lessp        uchar-equal t    )
-  (define-ustring-comparison ustring>             uchar>             uchar=           )
-  (define-ustring-comparison ustring-greaterp     uchar-greaterp     uchar-equal      )
+  (define-ustring-comparison ustring<             uchar<             uchar=      t   nil)
+  (define-ustring-comparison ustring-lessp        uchar-lessp        uchar-equal t   nil)
+  (define-ustring-comparison ustring>             uchar>             uchar=      nil nil)
+  (define-ustring-comparison ustring-greaterp     uchar-greaterp     uchar-equal nil nil)
   (define-ustring-comparison ustring<=            uchar<=            uchar=      t   t)
   (define-ustring-comparison ustring-not-greaterp uchar-not-greaterp uchar-equal t   t)
   (define-ustring-comparison ustring>=            uchar>=            uchar=      nil t)
