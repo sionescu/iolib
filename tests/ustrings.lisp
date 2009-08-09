@@ -19,19 +19,27 @@
 
 (test make-ustring.error.1
   (signals type-error
-    (make-ustring -1 :initial-element 40)))
+    (locally
+        (declare (notinline make-ustring))
+      (make-ustring -1 :initial-element 40))))
 
 (test make-ustring.error.2
   (signals type-error
-    (make-ustring 1 :initial-element -1)))
+    (locally
+        (declare (notinline make-ustring))
+      (make-ustring 1 :initial-element -1))))
 
 (test make-ustring.error.3
   (signals type-error
-    (make-ustring 1 :initial-element uchar-code-limit)))
+    (locally
+        (declare (notinline make-ustring))
+      (make-ustring 1 :initial-element uchar-code-limit))))
 
-(test make-ustring.error.3
+(test make-ustring.error.4
   (signals type-error
-    (make-ustring 1 :initial-element #\a)))
+    (locally
+        (declare (notinline make-ustring))
+      (make-ustring 1 :initial-element #\a))))
 
 
 (test string-to-ustring.1
