@@ -117,7 +117,6 @@
                                nil
                                i)))))
 
-
 (macrolet
     ((define-ustring-comparison (name test equality lessp equalp)
        `(defun ,name (ustring1 ustring2 &key (start1 0) end1 (start2 0) end2)
