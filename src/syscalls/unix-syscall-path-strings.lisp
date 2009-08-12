@@ -9,11 +9,11 @@
 (in-package :iolib.syscalls)
 
 (eval-when (:compile-toplevel :load-toplevel)
-  #+#.(cl:if (cl:<= cl:char-code-limit #xFF) '(:and) '(:or))
+  #+#.(cl:if (cl:<= cl:char-code-limit #x100) '(:and) '(:or))
   (pushnew :8bit-chars *features*)
-  #+#.(cl:if (cl:> #xFF cl:char-code-limit #x10000) '(:and) '(:or))
+  #+#.(cl:if (cl:<= #x101 cl:char-code-limit #x10000) '(:and) '(:or))
   (pushnew :16bit-chars *features*)
-  #+#.(cl:if (cl:> cl:char-code-limit #xFFFF) '(:and) '(:or))
+  #+#.(cl:if (cl:> cl:char-code-limit #x10000) '(:and) '(:or))
   (pushnew :21bit-chars *features*))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -43,6 +43,7 @@
                (output-octet (logior #xE0 (ldb (byte 4 12) code)))
                (output-octet (logior #x80 (ldb (byte 6 6) code)))
                (output-octet (logior #x80 (ldb (byte 6 0) code))))
+              #+21bit-chars
               ((< code #x110000)
                (output-octet (logior #xF0 (ldb (byte 3 18) code)))
                (output-octet (logior #x80 (ldb (byte 6 12) code)))
@@ -63,6 +64,7 @@
                ((<  code #x80)     1)
                ((<  code #x800)    2)
                ((<  code #x10000)  3)
+               #+21bit-chars
                ((<  code #x110000) 4))))
 
 (defun cstring-alloc (sstring)
@@ -135,6 +137,7 @@
           (#xE0 (when (< c #xA0) (return* nil)))
           (#xED (when (> c #x9F) (return* nil)))
           (#xF0 (when (< c #x90) (return* nil)))
+          #-16bit-chars
           (#xF4 (when (> c #x8F) (return* nil)))
           (t    (when (< c #x80) (return* nil)))))
       (when (>= len 1) (when (<= #x80 srchr #xC1) (return* nil)))
