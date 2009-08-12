@@ -47,8 +47,7 @@
                (output-octet (logior #xF0 (ldb (byte 3 18) code)))
                (output-octet (logior #x80 (ldb (byte 6 12) code)))
                (output-octet (logior #x80 (ldb (byte 6 6) code)))
-               (output-octet (logior #x80 (ldb (byte 6 0) code))))
-              (t (bug "Code points should not be larger than ~S" #x10FFFF)))
+               (output-octet (logior #x80 (ldb (byte 6 0) code)))))
             :finally (output-octet 0))
       (values c-ptr index))))
 
@@ -64,8 +63,7 @@
                ((<  code #x80)     1)
                ((<  code #x800)    2)
                ((<  code #x10000)  3)
-               ((<  code #x110000) 4)
-               (t (bug "Code points should not be larger than ~S" #x10FFFF)))))
+               ((<  code #x110000) 4))))
 
 (defun cstring-alloc (sstring)
   "Allocate a null-terminated foreign buffer containing SSTRING."
