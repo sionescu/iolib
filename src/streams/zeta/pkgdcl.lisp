@@ -7,6 +7,5 @@
 
 (defpackage :iolib.zeta-streams
   (:use :iolib.base :iolib.syscalls :iolib.pathnames :cffi)
-  (:import-from :iolib.pathnames #:file-path-namestring/ustring)
   (:export
    ))

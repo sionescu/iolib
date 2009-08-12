@@ -124,7 +124,7 @@ is wild or does not designate a directory."
 
 (defun (setf current-directory) (pathspec)
   (let ((path (file-path pathspec)))
-    (%sys-chdir (file-path-namestring/ustring path))))
+    (%sys-chdir (file-path-namestring path))))
 
 (defmacro with-current-directory (pathspec &body body)
   (with-gensyms (old)
@@ -153,8 +153,8 @@ is wild or does not designate a directory."
     (let (new-components)
       (dolist (n nodes)
         (cond
-          ((ustring= n (ustring ".")))
-          ((ustring= n (ustring ".."))
+          ((string= n "."))
+          ((string= n "..")
            (pop new-components))
           (t (push n new-components))))
       (make-file-path :components (if root
@@ -164,9 +164,9 @@ is wild or does not designate a directory."
                       :trailing-delimiter (file-path-trailing-delimiter path)))))
 
 (defun resolve-symlinks (path)
-  (let* ((namestring (file-path-namestring/ustring path))
-         (dirp (uchar= +directory-delimiter+
-                       (aref namestring (1- (length namestring)))))
+  (let* ((namestring (file-path-namestring path))
+         (dirp (char= +directory-delimiter+
+                      (aref namestring (1- (length namestring)))))
          (realpath (%sys-realpath namestring)))
     (parse-file-path realpath :as-directory dirp)))
 
@@ -191,7 +191,7 @@ then just remove «.» and «..», otherwise symlinks are resolved too."
 ;;;        wrapping POSIX-ERRORs or making sure that some
 ;;;        POSIX-ERRORS subclass FILE-ERROR
 (defun get-file-kind (file follow-p)
-  (let ((namestring (file-path-namestring/ustring file)))
+  (let ((namestring (file-path-namestring file)))
     (handler-case
         (let ((mode (stat-mode
                      (if follow-p
@@ -290,7 +290,7 @@ symbolic link."
   ;; big enough to fit the link's name.  OTOH, NIX:READLINK stack
   ;; allocates on most lisps.
   (file-path (%sys-readlink
-              (file-path-namestring/ustring
+              (file-path-namestring
                (absolute-file-path pathspec *default-file-path-defaults*)))))
 
 (defun make-link (link target &key hard)
@@ -310,11 +310,11 @@ not exist, or link exists already."
       ;; since symlink does the right thing once we are in
       ;; the correct directory.
       (if hard
-          (%sys-link (file-path-namestring/ustring
+          (%sys-link (file-path-namestring
                       (merge-file-paths target link))
                      link)
-          (%sys-symlink (file-path-namestring/ustring target)
-                        (file-path-namestring/ustring link)))
+          (%sys-symlink (file-path-namestring target)
+                        (file-path-namestring link)))
       link)))
 
 
@@ -350,13 +350,13 @@ Permission symbols consist of :USER-READ, :USER-WRITE, :USER-EXEC,
 
 Both signal an error if PATHSPEC is wild, or doesn't designate an
 existing file."
-  (let ((mode (stat-mode (%sys-stat (file-path-namestring/ustring pathspec)))))
+  (let ((mode (stat-mode (%sys-stat (file-path-namestring pathspec)))))
     (loop :for (name . value) :in +permissions+
           :when (plusp (logand mode value))
           :collect name)))
 
 (defun (setf file-permissions) (perms pathspec)
-  (%sys-chmod (file-path-namestring/ustring pathspec)
+  (%sys-chmod (file-path-namestring pathspec)
               (reduce (lambda (a b)
                         (logior a (cdr (assoc b +permissions+))))
                       perms :initial-value 0)))

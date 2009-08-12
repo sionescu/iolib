@@ -50,7 +50,7 @@
        (let* ((dir (cdr (slot-value path 'components)))
               (mismatch
                (mismatch dir (cdr (slot-value defaults 'components))
-                         :test #'ustring=)))
+                         :test #'string=)))
          (if mismatch
              (make-instance 'unix-path :components (subseq dir mismatch))
              (make-instance 'unix-path :components (list :root))))))))
@@ -66,40 +66,32 @@
 (defun %components-namestring (components print-dot trailing-delimiter)
   (multiple-value-bind (root dirs)
       (split-root/nodes components)
-    (let ((delimstr (ustring +directory-delimiter+))
-          (nullstr (ustring "")))
-      (concatenate 'simple-ustring
+    (let ((delimstr (string +directory-delimiter+))
+          (nullstr ""))
+      (concatenate 'string
                    (if (eql :root root)
                        delimstr
                        (if (and (null dirs) print-dot)
-                           (ustring ".")
+                           "."
                            nullstr))
-                   (apply #'join/ustring +directory-delimiter+ dirs)
+                   (apply #'join +directory-delimiter+ dirs)
                    (if (and dirs trailing-delimiter) delimstr nullstr)))))
 
 (defun %file-path-components-namestring (path &key print-dot trailing-delimiter)
-  (ustring-to-string*
-   (%components-namestring (slot-value path 'components)
-                           print-dot trailing-delimiter)))
+  (%components-namestring (slot-value path 'components)
+                          print-dot trailing-delimiter))
 
 (defun %file-path-directory-namestring (path)
   (if-let (dir (%file-path-directory path))
-    (ustring-to-string*
-     (%components-namestring dir t t))
+    (%components-namestring dir t t)
     ""))
 
 (defun %file-path-file-namestring (path)
   (if-let (file (%file-path-file path))
-    (ustring-to-string* file)
+    file
     ""))
 
 (defmethod file-path-namestring ((path unix-path))
-  (with-slots (components trailing-delimiter)
-      path
-    (ustring-to-string*
-     (%components-namestring components t trailing-delimiter))))
-
-(defun file-path-namestring/ustring (path)
   (with-slots (components trailing-delimiter)
       path
     (%components-namestring components t trailing-delimiter)))
@@ -108,32 +100,32 @@
   (file-path-namestring (file-path pathspec)))
 
 (defun split-directory-namestring (namestring)
-  (split-sequence-if (lambda (c) (uchar= c +directory-delimiter+))
+  (split-sequence-if (lambda (c) (char= c +directory-delimiter+))
                      namestring
                      :remove-empty-subseqs t))
 
 (defun absolute-namestring-p (namestring)
-  (uchar= +directory-delimiter+ (aref namestring 0)))
+  (char= +directory-delimiter+ (aref namestring 0)))
 
 (defun parse-file-path (pathspec &key (start 0) end as-directory (expand-user t))
-  (check-type pathspec (or string ustring))
+  (check-type pathspec string)
   (when (zerop (length pathspec))
     (error 'invalid-file-path
            :path pathspec
            :reason "Paths of null length are not valid"))
-  (let* ((actual-namestring (subseq (ustring pathspec) start end))
+  (let* ((actual-namestring (subseq pathspec start end))
          (expansion (or (when expand-user
                           (prog1
                               (ignore-some-conditions (isys:syscall-error)
                                 (%expand-user-directory actual-namestring))
-                            (when (ustring= pathspec "~")
+                            (when (string= pathspec "~")
                               (setf as-directory t))))
                         actual-namestring))
          (components (split-directory-namestring expansion))
          (trailing-delimiter-p (or as-directory
-                                   (uchar= +directory-delimiter+
-                                           (aref actual-namestring
-                                                 (1- (length actual-namestring)))))))
+                                   (char= +directory-delimiter+
+                                          (aref actual-namestring
+                                                (1- (length actual-namestring)))))))
     (make-instance 'unix-path
                    :components (if (absolute-namestring-p expansion)
                                    (cons :root components)
@@ -142,17 +134,16 @@
 
 (defun %expand-user-directory (pathspec)
   (flet ((user-homedir (user)
-           ;; TODO: use our own babel ustring<->UTF8 codec instead of u-t-s*
-           (nth-value 5 (isys:%sys-getpwnam (ustring-to-string* user))))
+           (nth-value 5 (isys:%sys-getpwnam user)))
          (uid-homedir (uid)
-           (nth-value 5 (isys:%sys-getpwuid (ustring-to-string* uid)))))
-    (unless (uchar= (char-to-uchar #\~) (aref pathspec 0))
+           (nth-value 5 (isys:%sys-getpwuid uid))))
+    (unless (char= #\~ (aref pathspec 0))
       (return* pathspec))
     (destructuring-bind (first &rest rest)
         (split-directory-namestring pathspec)
       (let ((homedir
              (cond
-               ((ustring= "~" first)
+               ((string= "~" first)
                 (or (isys:%sys-getenv "HOME")
                     (let ((username
                            (or (isys:%sys-getenv "USER")
@@ -160,12 +151,12 @@
                       (if username
                           (user-homedir username)
                           (uid-homedir (isys:%sys-getuid))))))
-               ((uchar= (char-to-uchar #\~) (aref first 0))
+               ((char= #\~ (aref first 0))
                 (user-homedir (subseq first 1)))
                (t
                 (bug "The pathspec is suppose to start with a ~S" #\~)))))
         (if homedir
-            (apply #'join/ustring +directory-delimiter+ (ustring homedir) rest)
+            (apply #'join +directory-delimiter+ homedir rest)
             pathspec)))))
 
 
@@ -184,5 +175,5 @@
   (mapcar (lambda (p)
             (parse-file-path p :as-directory t))
           (split-sequence +execution-path-delimiter+
-                          (ustring (isys:%sys-getenv "PATH"))
+                          (isys:%sys-getenv "PATH")
                           :remove-empty-subseqs t)))

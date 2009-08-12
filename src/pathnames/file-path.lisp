@@ -24,16 +24,14 @@
                        :reader file-path-trailing-delimiter)))
 
 (deftype file-path-designator ()
-  `(or ,+file-path-host-type+ string ustring))
+  `(or ,+file-path-host-type+ string))
 
 (define-condition invalid-file-path (isys:iolib-error)
   ((path :initarg :path :reader invalid-file-path-path)
    (reason :initform nil :initarg :reason :reader invalid-file-path-reason))
   (:report (lambda (condition stream)
              (format stream "Invalid file path: ~S."
-                     (ustring-to-string*
-                      (ustring
-                       (invalid-file-path-path condition))))
+                     (invalid-file-path-path condition))
              (when-let (reason (invalid-file-path-reason condition))
                (format stream "~%~A." reason)))))
 
@@ -43,19 +41,19 @@
 ;;;-------------------------------------------------------------------------
 
 (defconstant +directory-delimiter+
-  #+unix    (uchar #\/)
-  #+windows (uchar #\\))
+  #+unix    #\/
+  #+windows #\\)
 
 (defconstant +alternative-delimiter+
   #+unix    nil
-  #+windows (uchar #\/))
+  #+windows #\/)
 
 (defconstant (+directory-delimiters+ :test #'equal)
   (list* +directory-delimiter+ +alternative-delimiter+))
 
 (defconstant +execution-path-delimiter+
-  #+unix    (uchar #\:)
-  #+windows (uchar #\;))
+  #+unix    #\:
+  #+windows #\;)
 
 (declaim (special *default-file-path-defaults*))
 
@@ -122,8 +120,7 @@
        (%file-path-file path))))
 
 (defun split-name/type (file)
-  (let* ((file (ustring-to-string* file))
-         (dotpos (position #\. file :start 1 :from-end t)))
+  (let* ((dotpos (position #\. file :start 1 :from-end t)))
     (if (null dotpos)
         (values file nil)
         (values (subseq file 0 dotpos)
@@ -148,15 +145,11 @@
   (multiple-value-bind (root nodes)
       (split-root/nodes components)
     (and (member root '(nil :root))
-         (every #'(lambda (n)
-                    (or (stringp n) (ustringp n)))
-                nodes))))
+         (every #'stringp nodes))))
 
 (defmethod initialize-instance :after ((path file-path) &key components)
   (check-type components (and (not null) (satisfies valid-component-types-p)))
-  (setf (slot-value path 'components)
-        (mapcar (lambda (n) (if (eql :root n) :root (ustring n)))
-                components))
+  (setf (slot-value path 'components) components)
   (dolist (node (cdr (slot-value path 'components)))
     (when (zerop (length node))
       (error 'invalid-file-path :path ""

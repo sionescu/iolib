@@ -59,12 +59,12 @@
    #:defcfun*
    #:defsyscall
 
-   ;; USTRING <-> CSTRING
+   ;; SSTRING <-> CSTRING
    #:+cstring-path-max+
-   #:cstring-to-ustring
-   #:ustring-to-cstring
-   #:with-cstring-to-ustring
-   #:with-ustring-to-cstring
+   #:cstring-to-sstring
+   #:sstring-to-cstring
+   #:with-cstring-to-sstring
+   #:with-sstring-to-cstring
 
 ;;;--------------------------------------------------------------------------
 ;;; Syscalls

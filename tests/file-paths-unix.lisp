@@ -18,7 +18,7 @@
                   (every #'(lambda (x y)
                              (typecase x
                                (keyword (eql x y))
-                               (ustring (ustring= x y))))
+                               (string (string= x y))))
                          (file-path-components ,p)
                          ',components)))))))
 

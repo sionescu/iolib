@@ -14,7 +14,9 @@
   :serial t
   :components
   ((:file "pkgdcl")
-   (:file "ustring-cstring")
+   #+unix
+   (:file "syscall-path-strings"
+     :pathname "unix-syscall-path-strings")
    ;; Platform-specific files
    (cffi-grovel:grovel-file "ffi-types"
      :pathname #+unix "ffi-types-unix")

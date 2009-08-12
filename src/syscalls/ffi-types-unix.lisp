@@ -610,19 +610,19 @@
 ;;; from pwd.h
 
 (cstruct passwd-entry "struct passwd"
-  (name   "pw_name"   :type ustring)
-  (passwd "pw_passwd" :type ustring)
+  (name   "pw_name"   :type sstring)
+  (passwd "pw_passwd" :type sstring)
   (uid    "pw_uid"    :type uid-t)
   (gid    "pw_gid"    :type gid-t)
-  (gecos  "pw_gecos"  :type ustring)
-  (dir    "pw_dir"    :type ustring)
-  (shell  "pw_shell"  :type ustring))
+  (gecos  "pw_gecos"  :type sstring)
+  (dir    "pw_dir"    :type sstring)
+  (shell  "pw_shell"  :type sstring))
 
 
 ;;; from grp.h
 
 (cstruct group-entry "struct group"
-  (name   "gr_name"   :type ustring)
-  (passwd "gr_passwd" :type ustring)
+  (name   "gr_name"   :type sstring)
+  (passwd "gr_passwd" :type sstring)
   (gid    "gr_gid"    :type gid-t)
   (mem    "gr_mem"    :type :pointer))
