@@ -50,7 +50,7 @@
                          (external-format :default))
   (declare (ignore if-does-not-exist))
   ;; move OPEN to INITIALIZE-INSTANCE
-  (let ((fd (isys:%sys-open path
+  (let ((fd (isys:%sys-open (namestring path)
                             (logior (ecase direction
                                       (:input isys:o-rdonly)
                                       (:output (logior isys:o-creat isys:o-wronly))
