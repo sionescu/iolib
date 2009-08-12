@@ -42,37 +42,12 @@
    #:split-sequence #:split-sequence-if #:split-sequence-if-not
    ;; Misc
    #:function-name #:function-name-p
-   #:check-bounds #:join #:join/ustring #:shrink-vector
+   #:check-bounds #:join #:shrink-vector
    ;; Matching
    #:multiple-value-case #:flags-case
    ;; Time
    #:timeout-designator #:positive-timeout-designator
    #:decode-timeout #:normalize-timeout #:clamp-timeout
-   ;; Uchars
-   #:uchar-designator
-   #:uchar-code-limit #:uchar
-   #:code-uchar #:uchar-code
-   #:char-to-uchar #:uchar-to-char
-   #:name-uchar #:uchar-name
-   #:digit-uchar
-   #:ucharp #:unicode-uchar-p
-   #:uchar= #:uchar/= #:uchar< #:uchar> #:uchar<= #:uchar>=
-   #:uchar-equal #:uchar-not-equal #:uchar-lessp
-   #:uchar-greaterp #:uchar-not-greaterp #:uchar-not-lessp
-   #:alpha-uchar-p #:alphanumeric-uchar-p #:digit-uchar-p #:graphic-uchar-p
-   #:upper-case-uchar-p #:lower-case-uchar-p #:both-case-uchar-p
-   #:uchar-upcase #:uchar-downcase
-   ;; Ustrings
-   #:ustring-designator
-   #:make-ustring #:string-to-ustring #:ustring #:ustringp
-   #:simple-ustring #:simple-ustring-p #:complex-ustring #:complex-ustring-p
-   #:ustring= #:ustring/= #:ustring< #:ustring> #:ustring<= #:ustring>=
-   #:ustring-equal #:ustring-not-equal #:ustring-lessp
-   #:ustring-greaterp #:ustring-not-greaterp #:ustring-not-lessp
-   #:ustring-to-string #:ustring-to-string*
-   #:ustring-upcase #:ustring-downcase #:ustring-capitalize
-   #:nustring-upcase #:nustring-downcase #:nustring-capitalize
-   #:ustring-trim #:ustring-left-trim #:ustring-right-trim
    ))
 
 (flet ((gather-external-symbols (&rest packages)

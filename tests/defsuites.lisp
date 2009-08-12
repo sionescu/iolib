@@ -10,9 +10,6 @@
 
 (def-suite :iolib.base :in :iolib)
 
-(def-suite :iolib.base.uchars :in :iolib.base)
-(def-suite :iolib.base.ustrings :in :iolib.base)
-
 (def-suite :iolib.pathnames :in :iolib)
 
 (def-suite :iolib.multiplex :in :iolib)

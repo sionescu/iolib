@@ -9,8 +9,6 @@
   ((:file "pkgdcl")
    (:file "defsuites" :depends-on ("pkgdcl"))
    (:file "base" :depends-on ("pkgdcl" "defsuites"))
-   (:file "uchars" :depends-on ("pkgdcl" "defsuites"))
-   (:file "ustrings" :depends-on ("pkgdcl" "defsuites" "uchars"))
    (:file "file-paths-os" :depends-on ("pkgdcl" "defsuites")
           :pathname #+unix "file-paths-unix")
    (:file "events" :depends-on ("pkgdcl" "defsuites"))
