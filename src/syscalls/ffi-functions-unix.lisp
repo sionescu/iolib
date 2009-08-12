@@ -915,7 +915,7 @@ as indicated by WHICH and WHO to VALUE."
 
 (defsyscall (%sys-setenv "setenv") :int
   "Changes the value of environment variable NAME to VALUE.
-The environment variable is overwritten only if overwrite it non-NIL."
+The environment variable is overwritten only if overwrite is not NIL."
   (name      :string)
   (value     :string)
   (overwrite bool-designator))
