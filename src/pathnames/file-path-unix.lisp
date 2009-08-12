@@ -82,14 +82,7 @@
                           print-dot trailing-delimiter))
 
 (defun %file-path-directory-namestring (path)
-  (if-let (dir (%file-path-directory path))
-    (%components-namestring dir t t)
-    ""))
-
-(defun %file-path-file-namestring (path)
-  (if-let (file (%file-path-file path))
-    file
-    ""))
+  (%components-namestring (%file-path-directory path) t t))
 
 (defmethod file-path-namestring ((path unix-path))
   (with-slots (components trailing-delimiter)

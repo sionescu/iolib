@@ -101,40 +101,45 @@
   (let ((components (slot-value path 'components)))
     (multiple-value-bind (root nodes)
         (split-root/nodes components)
-      (cons root (butlast nodes)))))
+      (if root
+          (cons root (butlast nodes))
+          (or (butlast nodes)
+              (list "."))))))
 
 (defun file-path-directory (pathspec &key namestring)
   (let ((path (file-path pathspec)))
     (if namestring
-       (%file-path-directory-namestring path)
-       (%file-path-directory path))))
-
-(defun %file-path-file (path)
-  (let ((components (slot-value path 'components)))
-    (lastcar (nth-value 1 (split-root/nodes components)))))
+        (%file-path-directory-namestring path)
+        (%file-path-directory path))))
 
 (defun file-path-file (pathspec &key namestring)
-  (let ((path (file-path pathspec)))
-    (if namestring
-       (%file-path-file-namestring path)
-       (%file-path-file path))))
+  (declare (ignore namestring))
+  (let* ((path (file-path pathspec))
+         (components (slot-value path 'components)))
+    (or (lastcar (nth-value 1 (split-root/nodes components)))
+        ".")))
 
 (defun split-name/type (file)
   (let* ((dotpos (position #\. file :start 1 :from-end t)))
-    (if (null dotpos)
-        (values file nil)
-        (values (subseq file 0 dotpos)
-                (subseq file (1+ dotpos))))))
+    (cond
+      ((null dotpos)
+       (values file nil))
+      ((= (1+ dotpos) (length file))
+       (values (subseq file 0 dotpos) nil))
+      (t (values (subseq file 0 dotpos)
+                 (subseq file (1+ dotpos)))))))
 
 (defun file-path-file-name (pathspec)
-  (let ((path (file-path pathspec)))
-    (when-let (file (%file-path-file path))
-     (nth-value 0 (split-name/type file)))))
+  (let* ((file (file-path-file pathspec)))
+    (switch (file :test #'string=)
+      ("." ".." file)
+      (t (nth-value 0 (split-name/type file))))))
 
 (defun file-path-file-type (pathspec)
-  (let ((path (file-path pathspec)))
-    (when-let (file (%file-path-file path))
-     (nth-value 1 (split-name/type file)))))
+  (let* ((file (file-path-file pathspec)))
+    (switch (file :test #'string=)
+      ("." ".." nil)
+      (t (nth-value 1 (split-name/type file))))))
 
 
 ;;;-------------------------------------------------------------------------

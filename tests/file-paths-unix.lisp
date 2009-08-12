@@ -205,63 +205,207 @@
 
 
 (test file-path.namestring.1
-  (is (string= "/" (file-path-namestring (file-path "/")))))
+  (is (equal "/" (file-path-namestring (file-path "/")))))
 
 (test file-path.namestring.2
-  (is (string= "/." (file-path-namestring (file-path "/.")))))
+  (is (equal "/." (file-path-namestring (file-path "/.")))))
 
 (test file-path.namestring.3
-  (is (string= "/.." (file-path-namestring (file-path "/..")))))
+  (is (equal "/.." (file-path-namestring (file-path "/..")))))
 
 (test file-path.namestring.4
-  (is (string= "." (file-path-namestring (file-path ".")))))
+  (is (equal "." (file-path-namestring (file-path ".")))))
 
 (test file-path.namestring.5
-  (is (string= "./" (file-path-namestring (file-path "./")))))
+  (is (equal "./" (file-path-namestring (file-path "./")))))
 
 (test file-path.namestring.6
-  (is (string= "../." (file-path-namestring (file-path "../.")))))
+  (is (equal "../." (file-path-namestring (file-path "../.")))))
 
 (test file-path.namestring.7
-  (is (string= ".././" (file-path-namestring (file-path ".././")))))
+  (is (equal ".././" (file-path-namestring (file-path ".././")))))
 
 (test file-path.namestring.8
-  (is (string= "../.." (file-path-namestring (file-path "../..")))))
+  (is (equal "../.." (file-path-namestring (file-path "../..")))))
 
 (test file-path.namestring.9
-  (is (string= "a/./b" (file-path-namestring (file-path "a/./b")))))
+  (is (equal "a/./b" (file-path-namestring (file-path "a/./b")))))
 
 (test file-path.namestring.10
-  (is (string= "a/../b" (file-path-namestring (file-path "a/../b")))))
+  (is (equal "a/../b" (file-path-namestring (file-path "a/../b")))))
 
 
-(test file-path.name.1
-  (is (eql nil (file-path-file-name (file-path "/")))))
+(test file-path.directory.1
+  (is (equal '(:root) (file-path-directory (file-path "/")))))
 
-(test file-path.name.2
-  (is (string= "a" (file-path-file-name (file-path "a")))))
+(test file-path.directory.2
+  (is (equal '(:root) (file-path-directory (file-path "/.")))))
 
-(test file-path.name.3
-  (is (string= "a" (file-path-file-name (file-path "a.")))))
+(test file-path.directory.3
+  (is (equal '(:root) (file-path-directory (file-path "/..")))))
 
-(test file-path.name.4
-  (is (string= ".a" (file-path-file-name (file-path ".a")))))
+(test file-path.directory.4
+  (is (equal '(".") (file-path-directory (file-path ".")))))
 
-(test file-path.name.4
-  (is (string= "a" (file-path-file-name (file-path "a.b")))))
+(test file-path.directory.5
+  (is (equal '(".") (file-path-directory (file-path "./")))))
+
+(test file-path.directory.6
+  (is (equal '(".") (file-path-directory (file-path "..")))))
+
+(test file-path.directory.7
+  (is (equal '(".") (file-path-directory (file-path "../")))))
+
+(test file-path.directory.8
+  (is (equal '("..") (file-path-directory (file-path "../.")))))
+
+(test file-path.directory.9
+  (is (equal '("..") (file-path-directory (file-path ".././")))))
+
+(test file-path.directory.10
+  (is (equal '("..") (file-path-directory (file-path "../..")))))
+
+(test file-path.directory.11
+  (is (equal '("..") (file-path-directory (file-path "../../")))))
+
+(test file-path.directory.12
+  (is (equal '("a" ".") (file-path-directory (file-path "a/./b")))))
+
+(test file-path.directory.13
+  (is (equal '("a" "..") (file-path-directory (file-path "a/../b")))))
 
 
-(test file-path.type.1
+(test file-path.directory-namestring.1
+  (is (equal "/" (file-path-directory (file-path "/") :namestring t))))
+
+(test file-path.directory-namestring.2
+  (is (equal "/" (file-path-directory (file-path "/.") :namestring t))))
+
+(test file-path.directory-namestring.3
+  (is (equal "/" (file-path-directory (file-path "/..") :namestring t))))
+
+(test file-path.directory-namestring.4
+  (is (equal "./" (file-path-directory (file-path ".") :namestring t))))
+
+(test file-path.directory-namestring.5
+  (is (equal "./" (file-path-directory (file-path "./") :namestring t))))
+
+(test file-path.directory-namestring.6
+  (is (equal "./" (file-path-directory (file-path "..") :namestring t))))
+
+(test file-path.directory-namestring.7
+  (is (equal "./" (file-path-directory (file-path "../") :namestring t))))
+
+(test file-path.directory-namestring.8
+  (is (equal "../" (file-path-directory (file-path "../.") :namestring t))))
+
+(test file-path.directory-namestring.9
+  (is (equal "../" (file-path-directory (file-path ".././") :namestring t))))
+
+(test file-path.directory-namestring.10
+  (is (equal "../" (file-path-directory (file-path "../..") :namestring t))))
+
+(test file-path.directory-namestring.11
+  (is (equal "../" (file-path-directory (file-path "../../") :namestring t))))
+
+(test file-path.directory-namestring.12
+  (is (equal "a/./" (file-path-directory (file-path "a/./b") :namestring t))))
+
+(test file-path.directory-namestring.13
+  (is (equal "a/../" (file-path-directory (file-path "a/../b") :namestring t))))
+
+
+(test file-path.file.1
+  (is (equal "." (file-path-file (file-path "/")))))
+
+(test file-path.file.2
+  (is (equal "." (file-path-file (file-path "/.")))))
+
+(test file-path.file.3
+  (is (equal ".." (file-path-file (file-path "/..")))))
+
+(test file-path.file.4
+  (is (equal "." (file-path-file (file-path ".")))))
+
+(test file-path.file.5
+  (is (equal "." (file-path-file (file-path "./")))))
+
+(test file-path.file.6
+  (is (equal ".." (file-path-file (file-path "..")))))
+
+(test file-path.file.7
+  (is (equal ".." (file-path-file (file-path "../")))))
+
+(test file-path.file.8
+  (is (equal "." (file-path-file (file-path "../.")))))
+
+(test file-path.file.9
+  (is (equal "." (file-path-file (file-path ".././")))))
+
+(test file-path.file.10
+  (is (equal ".." (file-path-file (file-path "../..")))))
+
+(test file-path.file.11
+  (is (equal ".." (file-path-file (file-path "../../")))))
+
+(test file-path.file.12
+  (is (equal "b" (file-path-file (file-path "a/./b")))))
+
+(test file-path.file.13
+  (is (equal "b" (file-path-file (file-path "a/../b")))))
+
+
+(test file-path.file-name.1
+  (is (equal "." (file-path-file-name (file-path "/")))))
+
+(test file-path.file-name.2
+  (is (equal "." (file-path-file-name (file-path ".")))))
+
+(test file-path.file-name.3
+  (is (equal "." (file-path-file-name (file-path "./")))))
+
+(test file-path.file-name.4
+  (is (equal "." (file-path-file-name (file-path "..")))))
+
+(test file-path.file-name.5
+  (is (equal "." (file-path-file-name (file-path "../")))))
+
+(test file-path.file-name.6
+  (is (equal "a" (file-path-file-name (file-path "a")))))
+
+(test file-path.file-name.7
+  (is (equal "a" (file-path-file-name (file-path "a.")))))
+
+(test file-path.file-name.8
+  (is (equal ".a" (file-path-file-name (file-path ".a")))))
+
+(test file-path.file-name.9
+  (is (equal "a" (file-path-file-name (file-path "a.b")))))
+
+
+(test file-path.file-type.1
   (is (eql nil (file-path-file-type (file-path "/")))))
 
-(test file-path.type.2
+(test file-path.file-type.2
+  (is (eql nil (file-path-file-type (file-path ".")))))
+
+(test file-path.file-type.3
+  (is (eql nil (file-path-file-type (file-path "./")))))
+
+(test file-path.file-type.4
+  (is (eql nil (file-path-file-type (file-path "..")))))
+
+(test file-path.file-type.5
+  (is (eql nil (file-path-file-type (file-path "../")))))
+
+(test file-path.file-type.6
   (is (eql nil (file-path-file-type (file-path "a")))))
 
-(test file-path.type.3
-  (is (string= "" (file-path-file-type (file-path "a.")))))
+(test file-path.file-type.7
+  (is (eql nil (file-path-file-type (file-path "a.")))))
 
-(test file-path.type.4
-  (is (string= nil (file-path-file-type (file-path ".a")))))
+(test file-path.file-type.8
+  (is (eql nil (file-path-file-type (file-path ".a")))))
 
-(test file-path.type.4
-  (is (string= "b" (file-path-file-type (file-path "a.b")))))
+(test file-path.file-type.9
+  (is (equal "b" (file-path-file-type (file-path "a.b")))))
