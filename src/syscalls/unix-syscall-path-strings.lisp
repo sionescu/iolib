@@ -1,8 +1,10 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
 ;;; --- Strings used for decoding Unix pathnames: invalid UTF8 octets
-;;;     are encoded in the invalid range #x110000 - #x1100FF.
+;;;     are #\Null-escaped.
 ;;;
+;;; TODO: add 8bit-chars versions of SSTRING-TO-CSTRING,
+;;;       COUNT-SSTRING-OCTETS and CSTRING-TO-SSTRING
 
 (in-package :iolib.syscalls)
 
