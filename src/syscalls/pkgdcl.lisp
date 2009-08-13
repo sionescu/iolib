@@ -315,6 +315,17 @@
    #:s-ifsock
    #:path-max
 
+   ;; READDIR()
+   #:dt-unknown
+   #:dt-fifo
+   #:dt-chr
+   #:dt-dir
+   #:dt-blk
+   #:dt-reg
+   #:dt-lnk
+   #:dt-sock
+   #:dt-wht
+
    ;; KILL()
    #:sighup
    #:sigquit
