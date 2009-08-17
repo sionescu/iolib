@@ -195,36 +195,6 @@
 
 (defmethod file-path ((pathspec pathname))
   (parse-file-path (namestring pathspec)))
-
-(defun make-file-path (&key (host nil hostp) (device nil devicep)
-                       (components nil componentsp)
-                       (defaults nil defaultsp) trailing-delimiter)
-  (let ((defaults (and defaultsp (file-path defaults))))
-    (make-instance '#.+file-path-host-type+
-                   :host (cond (hostp     host)
-                               (defaultsp (file-path-host defaults))
-                               (t         (file-path-host
-                                           *default-file-path-defaults*)))
-                   :device (cond (devicep   device)
-                                 (defaultsp (file-path-device defaults)))
-                   :components (cond (componentsp components)
-                                     (defaultsp   (file-path-components defaults)))
-                   :trailing-delimiter trailing-delimiter)))
-
-(defun merge-file-paths (pathspec &optional
-                         (defaults *default-file-path-defaults*))
-  (let ((path (file-path pathspec))
-        (defaults (file-path defaults)))
-    (make-instance '#.+file-path-host-type+
-                   :host (or (file-path-host path)
-                             (file-path-host defaults))
-                   :device (or (file-path-device path)
-                               (file-path-device defaults))
-                   :components (if (absolute-p (file-path-components path))
-                                   (file-path-components path)
-                                   (append (file-path-components defaults)
-                                           (file-path-components path)))
-                   :trailing-delimiter (file-path-trailing-delimiter path))))
 
 
 ;;;-------------------------------------------------------------------------

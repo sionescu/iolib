@@ -39,6 +39,27 @@
 ;;; Operations
 ;;;-------------------------------------------------------------------------
 
+(defun make-file-path (&key host device (components nil componentsp)
+                       (defaults nil defaultsp) trailing-delimiter)
+  (declare (ignore host device))
+  (let ((defaults (and defaultsp (file-path defaults))))
+    (make-instance 'unix-path
+                   :components (cond (componentsp components)
+                                     (defaultsp
+                                      (file-path-components defaults)))
+                   :trailing-delimiter trailing-delimiter)))
+
+(defun merge-file-paths (pathspec &optional
+                         (defaults *default-file-path-defaults*))
+  (let ((path (file-path pathspec))
+        (defaults (file-path defaults)))
+    (if (absolute-file-path-p path)
+        path
+        (make-instance 'unix-path
+                       :components (append (file-path-components defaults)
+                                           (file-path-components path))
+                       :trailing-delimiter (file-path-trailing-delimiter path)))))
+
 (defun enough-file-path (pathspec &optional
                          (defaults *default-file-path-defaults*))
   (let ((path (file-path pathspec))
