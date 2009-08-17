@@ -22,6 +22,7 @@
 (defmethod initialize-instance :after ((path unix-path) &key)
   (with-slots (host device)
       path
+    (unless device (setf device :unspecific))
     (check-type host (eql :unspecific))
     (check-type device (eql :unspecific))))
 
