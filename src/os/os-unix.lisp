@@ -143,9 +143,9 @@ is wild or does not designate a directory."
     (if (absolute-file-path-p path)
         path
         (let ((tmp (merge-file-paths path defaults)))
-          (if (relative-file-path-p tmp)
-              (merge-file-paths tmp (current-directory))
-              tmp)))))
+          (if (absolute-file-path-p tmp)
+              tmp
+              (merge-file-paths tmp (current-directory)))))))
 
 (defun strip-dots (path)
   (multiple-value-bind (root nodes)
