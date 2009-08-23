@@ -62,20 +62,20 @@
                          earg))
                    type-args expanded-args)))
     (if-let (data (gethash option-name *set-socket-options*))
-            (destructuring-bind (type level optname) data
-              (let ((glist (make-gensym-list (length (socktype-args type)))))
-                (values nil nil glist
-                        `(,(socktype-setter type)
-                           (fd-of ,socket) ,level ,optname
-                           ,@(%make-arglist (socktype-args type) glist))
-                        socket)))
-            (values nil nil nil
-                    (case if-does-not-exist
-                      (:error
-                       `(error 'socket-option-not-supported-error
-                               :message ,(format nil "Unsupported socket option: ~S"
-                                                 option-name)))
-                      (nil nil))))))
+      (destructuring-bind (type level optname) data
+        (let ((glist (make-gensym-list (length (socktype-args type)))))
+          (values nil nil glist
+                  `(,(socktype-setter type)
+                     (fd-of ,socket) ,level ,optname
+                     ,@(%make-arglist (socktype-args type) glist))
+                  socket)))
+      (values nil nil nil
+              (case if-does-not-exist
+                (:error
+                 `(error 'socket-option-not-supported-error
+                         :message ,(format nil "Unsupported socket option: ~S"
+                                           option-name)))
+                (nil nil))))))
 
 (defmacro define-socket-option (name action optname level argtype os)
   (let ((eql-name (make-keyword name)))
