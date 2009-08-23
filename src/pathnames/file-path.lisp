@@ -26,7 +26,7 @@
 (deftype file-path-designator ()
   `(or ,+file-path-host-type+ string))
 
-(define-condition invalid-file-path (isys:iolib-error)
+(define-condition invalid-file-path (isys:iolib-error type-error)
   ((path :initarg :path :reader invalid-file-path-path)
    (reason :initform nil :initarg :reason :reader invalid-file-path-reason))
   (:report (lambda (condition stream)
