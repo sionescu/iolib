@@ -245,7 +245,6 @@ Follows symbolic links."
          (actual-kind (file-kind path :follow-symlinks follow)))
     (when (and actual-kind
                (if file-kind (eql file-kind actual-kind) t))
-      ;; TODO: add resolve-file-path
       (values (resolve-file-path path)
               actual-kind))))
 

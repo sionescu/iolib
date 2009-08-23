@@ -36,7 +36,6 @@
 
 (in-package :iolib.sockets)
 
-;;; TODO: check if I didn't miss any from CL-POSIX.  --luis
 (constantenum socket-error-values
   ((:eprotonosupport "EPROTONOSUPPORT"))
   ((:esocktnosupport "ESOCKTNOSUPPORT"))
