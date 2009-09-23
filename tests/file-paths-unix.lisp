@@ -29,15 +29,7 @@
 
 (test file-path.null.2
   (signals invalid-file-path
-    (parse-file-path "" :as-directory t)))
-
-(test file-path.null.3
-  (signals invalid-file-path
     (parse-file-path "" :expand-user t)))
-
-(test file-path.null.4
-  (signals invalid-file-path
-    (parse-file-path "" :as-directory t :expand-user t)))
 
 
 (test file-path.root.1
@@ -45,15 +37,7 @@
                 (:root)))
 
 (test file-path.root.2
-  (is-file-path (parse-file-path "/" :as-directory t)
-                (:root)))
-
-(test file-path.root.3
   (is-file-path (parse-file-path "/" :expand-user t)
-                (:root)))
-
-(test file-path.root.4
-  (is-file-path (parse-file-path "/" :as-directory t :expand-user t)
                 (:root)))
 
 
@@ -62,47 +46,23 @@
                 ("a")))
 
 (test file-path.relative.2
-  (is-file-path (parse-file-path "a" :as-directory t)
-                ("a")))
-
-(test file-path.relative.3
   (is-file-path (parse-file-path "a" :expand-user t)
                 ("a")))
 
-(test file-path.relative.4
-  (is-file-path (parse-file-path "a" :as-directory t :expand-user t)
-                ("a")))
-
-(test file-path.relative.5
+(test file-path.relative.3
   (is-file-path (parse-file-path "a/")
                 ("a")))
 
-(test file-path.relative.6
-  (is-file-path (parse-file-path "a/" :as-directory t)
-                ("a")))
-
-(test file-path.relative.7
+(test file-path.relative.4
   (is-file-path (parse-file-path "a/" :expand-user t)
                 ("a")))
 
-(test file-path.relative.8
-  (is-file-path (parse-file-path "a/" :as-directory t :expand-user t)
-                ("a")))
-
-(test file-path.relative.9
+(test file-path.relative.5
   (is-file-path (parse-file-path "a/b")
                 ("a" "b")))
 
-(test file-path.relative.10
-  (is-file-path (parse-file-path "a/b" :as-directory t)
-                ("a" "b")))
-
-(test file-path.relative.11
+(test file-path.relative.6
   (is-file-path (parse-file-path "a/b" :expand-user t)
-                ("a" "b")))
-
-(test file-path.relative.12
-  (is-file-path (parse-file-path "a/b" :as-directory t :expand-user t)
                 ("a" "b")))
 
 
@@ -111,47 +71,23 @@
                 (:root "a")))
 
 (test file-path.absolute.2
-  (is-file-path (parse-file-path "/a" :as-directory t)
-                (:root "a")))
-
-(test file-path.absolute.3
   (is-file-path (parse-file-path "/a" :expand-user t)
                 (:root "a")))
 
-(test file-path.absolute.4
-  (is-file-path (parse-file-path "/a" :as-directory t :expand-user t)
-                (:root "a")))
-
-(test file-path.absolute.5
+(test file-path.absolute.3
   (is-file-path (parse-file-path "/a/")
                 (:root "a")))
 
-(test file-path.absolute.6
-  (is-file-path (parse-file-path "/a/" :as-directory t)
-                (:root "a")))
-
-(test file-path.absolute.7
+(test file-path.absolute.4
   (is-file-path (parse-file-path "/a/" :expand-user t)
                 (:root "a")))
 
-(test file-path.absolute.8
-  (is-file-path (parse-file-path "/a/" :as-directory t :expand-user t)
-                (:root "a")))
-
-(test file-path.absolute.9
+(test file-path.absolute.5
   (is-file-path (parse-file-path "/a/b")
                 (:root "a" "b")))
 
-(test file-path.absolute.10
-  (is-file-path (parse-file-path "/a/b" :as-directory t)
-                (:root "a" "b")))
-
-(test file-path.absolute.11
+(test file-path.absolute.6
   (is-file-path (parse-file-path "/a/b" :expand-user t)
-                (:root "a" "b")))
-
-(test file-path.absolute.12
-  (is-file-path (parse-file-path "/a/b" :as-directory t :expand-user t)
                 (:root "a" "b")))
 
 
@@ -160,47 +96,23 @@
                 ("~root")))
 
 (test file-path.expand-user.2
-  (is-file-path (parse-file-path "~root" :as-directory t :expand-user nil)
-                ("~root")))
-
-(test file-path.expand-user.3
   (is-file-path (parse-file-path "~root" :expand-user t)
                 (:root "root")))
 
-(test file-path.expand-user.4
-  (is-file-path (parse-file-path "~root" :as-directory t :expand-user t)
-                (:root "root")))
-
-(test file-path.expand-user.5
+(test file-path.expand-user.3
   (is-file-path (parse-file-path "/~root")
                 (:root "~root")))
 
-(test file-path.expand-user.6
-  (is-file-path (parse-file-path "/~root" :as-directory t)
-                (:root "~root")))
-
-(test file-path.expand-user.7
+(test file-path.expand-user.4
   (is-file-path (parse-file-path "/~root" :expand-user t)
                 (:root "~root")))
 
-(test file-path.expand-user.8
-  (is-file-path (parse-file-path "/~root" :as-directory t :expand-user t)
-                (:root "~root")))
-
-(test file-path.expand-user.9
+(test file-path.expand-user.5
   (is-file-path (parse-file-path "~root/a" :expand-user nil)
                 ("~root" "a")))
 
-(test file-path.expand-user.10
-  (is-file-path (parse-file-path "~root/a" :as-directory t :expand-user nil)
-                ("~root" "a")))
-
-(test file-path.expand-user.11
+(test file-path.expand-user.6
   (is-file-path (parse-file-path "~root/a" :expand-user t)
-                (:root "root" "a")))
-
-(test file-path.expand-user.12
-  (is-file-path (parse-file-path "~root/a" :as-directory t :expand-user t)
                 (:root "root" "a")))
 
 

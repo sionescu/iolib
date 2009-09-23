@@ -119,7 +119,7 @@ directory to the PATHSPEC.  An error is signalled if the PATHSPEC
 is wild or does not designate a directory."
   (let ((cwd (%sys-getcwd)))
     (if cwd
-        (parse-file-path cwd :as-directory t :expand-user nil)
+        (parse-file-path cwd :expand-user nil)
         (syscall-error "Could not get current directory."))))
 
 (defun (setf current-directory) (pathspec)
@@ -165,10 +165,8 @@ is wild or does not designate a directory."
 
 (defun resolve-symlinks (path)
   (let* ((namestring (file-path-namestring path))
-         (dirp (char= +directory-delimiter+
-                      (aref namestring (1- (length namestring)))))
          (realpath (%sys-realpath namestring)))
-    (parse-file-path realpath :as-directory dirp)))
+    (parse-file-path realpath)))
 
 (defun resolve-file-path (pathspec &key
                           (defaults *default-file-path-defaults*)
@@ -272,7 +270,7 @@ PATHSPEC exists and is a symlink pointing to an existent file."
   (let ((system-tmpdir (or (environment-variable "TMPDIR")
                            (environment-variable "TMP")
                            "/tmp")))
-    (parse-file-path system-tmpdir :as-directory t :expand-user nil)))
+    (parse-file-path system-tmpdir :expand-user nil)))
 
 
 ;;;; Symbolic and hard links

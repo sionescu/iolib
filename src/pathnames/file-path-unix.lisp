@@ -122,7 +122,7 @@
 (defun absolute-namestring-p (namestring)
   (char= +directory-delimiter+ (aref namestring 0)))
 
-(defun parse-file-path (pathspec &key (start 0) end as-directory (expand-user t))
+(defun parse-file-path (pathspec &key (start 0) end (expand-user t))
   (check-type pathspec string)
   (when (zerop (length pathspec))
     (error 'invalid-file-path
@@ -130,17 +130,13 @@
            :reason "Paths of null length are not valid"))
   (let* ((actual-namestring (subseq pathspec start end))
          (expansion (or (when expand-user
-                          (prog1
-                              (ignore-some-conditions (isys:syscall-error)
-                                (%expand-user-directory actual-namestring))
-                            (when (string= pathspec "~")
-                              (setf as-directory t))))
+                          (ignore-some-conditions (isys:syscall-error)
+                            (%expand-user-directory actual-namestring)))
                         actual-namestring))
          (components (split-directory-namestring expansion))
-         (trailing-delimiter-p (or as-directory
-                                   (char= +directory-delimiter+
-                                          (aref actual-namestring
-                                                (1- (length actual-namestring)))))))
+         (trailing-delimiter-p (char= +directory-delimiter+
+                                      (aref actual-namestring
+                                            (1- (length actual-namestring))))))
     (make-instance 'unix-path
                    :components (if (absolute-namestring-p expansion)
                                    (cons :root components)
@@ -181,14 +177,13 @@
 
 (defparameter *default-file-path-defaults*
   (or (ignore-some-conditions (isys:syscall-error)
-        (parse-file-path (isys:%sys-getcwd) :as-directory t))
+        (parse-file-path (isys:%sys-getcwd)))
       (ignore-some-conditions (isys:syscall-error)
         (parse-file-path "~"))
       (parse-file-path "/")))
 
 (defparameter *default-execution-path*
-  (mapcar (lambda (p)
-            (parse-file-path p :as-directory t))
+  (mapcar #'parse-file-path
           (split-sequence +execution-path-delimiter+
                           (isys:%sys-getenv "PATH")
                           :remove-empty-subseqs t)))
