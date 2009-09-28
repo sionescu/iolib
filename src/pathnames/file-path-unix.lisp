@@ -127,7 +127,7 @@
   (when (zerop (length pathspec))
     (error 'invalid-file-path
            :path pathspec
-           :reason "Paths of null length are not valid"))
+           :reason "Null paths are not valid"))
   (let* ((actual-namestring (subseq pathspec start end))
          (expansion (or (when expand-user
                           (ignore-some-conditions (isys:syscall-error)
