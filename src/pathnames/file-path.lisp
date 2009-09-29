@@ -18,10 +18,7 @@
   ((host :initarg :host)
    (device :initarg :device)
    (components :initarg :components
-               :initform nil)
-   (trailing-delimiter :initarg :trailing-delimiter
-                       :initform nil
-                       :reader file-path-trailing-delimiter)))
+               :initform nil)))
 
 (deftype file-path-designator ()
   `(or ,+file-path-host-type+ string))
@@ -86,10 +83,7 @@
 (defun file-path-components (pathspec &key namestring)
   (let ((path (file-path pathspec)))
     (if namestring
-       (%file-path-components-namestring
-        path
-        :print-dot t
-        :trailing-delimiter (file-path-trailing-delimiter path))
+       (%file-path-components-namestring path)
        (slot-value path 'components))))
 
 (defun split-root/nodes (dir)

@@ -40,14 +40,13 @@
 ;;;-------------------------------------------------------------------------
 
 (defun make-file-path (&key host device (components nil componentsp)
-                       (defaults nil defaultsp) trailing-delimiter)
+                       (defaults nil defaultsp))
   (declare (ignore host device))
   (let ((defaults (and defaultsp (file-path defaults))))
     (make-instance 'unix-path
                    :components (cond (componentsp components)
                                      (defaultsp
-                                      (file-path-components defaults)))
-                   :trailing-delimiter trailing-delimiter)))
+                                      (file-path-components defaults))))))
 
 (defun merge-file-paths (pathspec &optional
                          (defaults *default-file-path-defaults*))
@@ -57,8 +56,7 @@
         path
         (make-instance 'unix-path
                        :components (append (file-path-components defaults)
-                                           (file-path-components path))
-                       :trailing-delimiter (file-path-trailing-delimiter path)))))
+                                           (file-path-components path))))))
 
 (defun enough-file-path (pathspec &optional
                          (defaults *default-file-path-defaults*))
@@ -85,7 +83,7 @@
   (declare (ignore path))
   "")
 
-(defun %components-namestring (components print-dot trailing-delimiter)
+(defun %components-namestring (components)
   (multiple-value-bind (root dirs)
       (split-root/nodes components)
     (let ((delimstr (string +directory-delimiter+))
@@ -93,23 +91,19 @@
       (concatenate 'string
                    (if (eql :root root)
                        delimstr
-                       (if (and (null dirs) print-dot)
+                       (if (null dirs)
                            "."
                            nullstr))
-                   (apply #'join +directory-delimiter+ dirs)
-                   (if (and dirs trailing-delimiter) delimstr nullstr)))))
+                   (apply #'join +directory-delimiter+ dirs)))))
 
-(defun %file-path-components-namestring (path &key print-dot trailing-delimiter)
-  (%components-namestring (slot-value path 'components)
-                          print-dot trailing-delimiter))
+(defun %file-path-components-namestring (path)
+  (%components-namestring (slot-value path 'components)))
 
 (defun %file-path-directory-namestring (path)
-  (%components-namestring (%file-path-directory path) t t))
+  (%components-namestring (%file-path-directory path)))
 
 (defmethod file-path-namestring ((path unix-path))
-  (with-slots (components trailing-delimiter)
-      path
-    (%components-namestring components t trailing-delimiter)))
+  (%components-namestring (slot-value path 'components)))
 
 (defmethod file-path-namestring (pathspec)
   (file-path-namestring (file-path pathspec)))
@@ -133,15 +127,11 @@
                           (ignore-some-conditions (isys:syscall-error)
                             (%expand-user-directory actual-namestring)))
                         actual-namestring))
-         (components (split-directory-namestring expansion))
-         (trailing-delimiter-p (char= +directory-delimiter+
-                                      (aref actual-namestring
-                                            (1- (length actual-namestring))))))
+         (components (split-directory-namestring expansion)))
     (make-instance 'unix-path
                    :components (if (absolute-namestring-p expansion)
                                    (cons :root components)
-                                   components)
-                   :trailing-delimiter trailing-delimiter-p)))
+                                   components))))
 
 (defun %expand-user-directory (pathspec)
   (flet ((user-homedir (user)

@@ -160,8 +160,7 @@ is not a directory."
       (make-file-path :components (if root
                                       (cons root (nreverse new-components))
                                       (nreverse new-components))
-                      :defaults path
-                      :trailing-delimiter (file-path-trailing-delimiter path)))))
+                      :defaults path))))
 
 (defun resolve-symlinks (path)
   (let* ((namestring (file-path-namestring path))

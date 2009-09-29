@@ -129,13 +129,13 @@
   (is (equal "." (file-path-namestring (file-path ".")))))
 
 (test file-path.namestring.5
-  (is (equal "./" (file-path-namestring (file-path "./")))))
+  (is (equal "." (file-path-namestring (file-path "./")))))
 
 (test file-path.namestring.6
   (is (equal "../." (file-path-namestring (file-path "../.")))))
 
 (test file-path.namestring.7
-  (is (equal ".././" (file-path-namestring (file-path ".././")))))
+  (is (equal "../." (file-path-namestring (file-path ".././")))))
 
 (test file-path.namestring.8
   (is (equal "../.." (file-path-namestring (file-path "../..")))))
@@ -197,34 +197,34 @@
   (is (equal "/" (file-path-directory (file-path "/..") :namestring t))))
 
 (test file-path.directory-namestring.4
-  (is (equal "./" (file-path-directory (file-path ".") :namestring t))))
+  (is (equal "." (file-path-directory (file-path ".") :namestring t))))
 
 (test file-path.directory-namestring.5
-  (is (equal "./" (file-path-directory (file-path "./") :namestring t))))
+  (is (equal "." (file-path-directory (file-path "./") :namestring t))))
 
 (test file-path.directory-namestring.6
-  (is (equal "./" (file-path-directory (file-path "..") :namestring t))))
+  (is (equal "." (file-path-directory (file-path "..") :namestring t))))
 
 (test file-path.directory-namestring.7
-  (is (equal "./" (file-path-directory (file-path "../") :namestring t))))
+  (is (equal "." (file-path-directory (file-path "../") :namestring t))))
 
 (test file-path.directory-namestring.8
-  (is (equal "../" (file-path-directory (file-path "../.") :namestring t))))
+  (is (equal ".." (file-path-directory (file-path "../.") :namestring t))))
 
 (test file-path.directory-namestring.9
-  (is (equal "../" (file-path-directory (file-path ".././") :namestring t))))
+  (is (equal ".." (file-path-directory (file-path ".././") :namestring t))))
 
 (test file-path.directory-namestring.10
-  (is (equal "../" (file-path-directory (file-path "../..") :namestring t))))
+  (is (equal ".." (file-path-directory (file-path "../..") :namestring t))))
 
 (test file-path.directory-namestring.11
-  (is (equal "../" (file-path-directory (file-path "../../") :namestring t))))
+  (is (equal ".." (file-path-directory (file-path "../../") :namestring t))))
 
 (test file-path.directory-namestring.12
-  (is (equal "a/./" (file-path-directory (file-path "a/./b") :namestring t))))
+  (is (equal "a/." (file-path-directory (file-path "a/./b") :namestring t))))
 
 (test file-path.directory-namestring.13
-  (is (equal "a/../" (file-path-directory (file-path "a/../b") :namestring t))))
+  (is (equal "a/.." (file-path-directory (file-path "a/../b") :namestring t))))
 
 
 (test file-path.file.1
