@@ -34,8 +34,9 @@
    #:file-kind
 
    ;; Symlinks
-   #:read-link
-   #:make-link
+   #:read-symlink
+   #:make-symlink
+   #:make-hardlink
 
    ;; Permissions
    #:file-permissions

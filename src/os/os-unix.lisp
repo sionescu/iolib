@@ -272,7 +272,7 @@ PATHSPEC exists and is a symlink pointing to an existent file."
 
 ;;;; Symbolic and hard links
 
-(defun read-link (pathspec)
+(defun read-symlink (pathspec)
   "Returns the file-path pointed to by the symbolic link
 designated by PATHSPEC.  If the link is relative, then the
 returned file-path is relative to the link, not
@@ -280,33 +280,43 @@ returned file-path is relative to the link, not
 
 Signals an error if PATHSPEC is not a symbolic link."
   ;; Note: the previous version tried much harder to provide a buffer
-  ;; big enough to fit the link's name.  OTOH, NIX:READLINK stack
+  ;; big enough to fit the link's name.  OTOH, %SYS-READLINK stack
   ;; allocates on most lisps.
   (file-path (%sys-readlink
               (file-path-namestring
                (absolute-file-path pathspec *default-file-path-defaults*)))))
 
-(defun make-link (link target &key hard)
-  "Creates LINK that points to TARGET.  Defaults to a symbolic
-link, but giving a non-NIL value to the keyword argument :HARD
-creates a hard link.  Returns the file-path of the link.
+(defun make-symlink (link target)
+  "Creates symbolic LINK that points to TARGET.
+Returns the file-path of the link.
 
 Relative targets are resolved against the link.  Relative links
 are resolved against *DEFAULT-FILE-PATH-DEFAULTS*.
 
-Signals an error if target does not exist, or link exists already."
+Signals an error if TARGET does not exist, or LINK exists already."
   (let ((link (file-path link))
         (target (file-path target)))
-    (with-current-directory (absolute-file-path *default-file-path-defaults* nil)
-      ;; KLUDGE: We merge against link for hard links only,
-      ;; since symlink does the right thing once we are in
-      ;; the correct directory.
-      (if hard
-          (%sys-link (file-path-namestring
-                      (merge-file-paths target link))
-                     link)
-          (%sys-symlink (file-path-namestring target)
-                        (file-path-namestring link)))
+    (with-current-directory
+        (absolute-file-path *default-file-path-defaults* nil)
+      (%sys-symlink (file-path-namestring target)
+                    (file-path-namestring link))
+      link)))
+
+(defun make-hardlink (link target)
+  "Creates hard LINK that points to TARGET.
+Returns the file-path of the link.
+
+Relative targets are resolved against the link.  Relative links
+are resolved against *DEFAULT-FILE-PATH-DEFAULTS*.
+
+Signals an error if TARGET does not exist, or LINK exists already."
+  (let ((link (file-path link))
+        (target (file-path target)))
+    (with-current-directory
+        (absolute-file-path *default-file-path-defaults* nil)
+      (%sys-link (file-path-namestring
+                  (merge-file-paths target link))
+                 link)
       link)))
 
 
