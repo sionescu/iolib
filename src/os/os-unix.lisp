@@ -115,8 +115,8 @@ directory, which may or may not correspond to
 *DEFAULT-FILE-PATH-DEFAULTS*.
 
 SETF CURRENT-DIRECTORY changes the operating system's current
-directory to the PATHSPEC.  An error is signalled if the PATHSPEC
-is wild or does not designate a directory."
+directory to the PATHSPEC.  An error is signalled if PATHSPEC
+is not a directory."
   (let ((cwd (%sys-getcwd)))
     (if cwd
         (parse-file-path cwd :expand-user nil)
@@ -227,9 +227,7 @@ Possible file-kinds in addition to NIL are: :REGULAR-FILE,
 :SYMBOLIC-LINK, :DIRECTORY, :PIPE, :SOCKET, :CHARACTER-DEVICE, and
 :BLOCK-DEVICE.
 If FOLLOW-SYMLINKS is non-NIL and PATHSPEC designates a broken symlink
-returns :BROKEN as second value.
-
-Signals an error if PATHSPEC is wild."
+returns :BROKEN as second value."
   (get-file-kind (merge-file-paths pathspec) follow-symlinks))
 
 (defun file-exists-p (pathspec &optional file-kind)
@@ -281,8 +279,7 @@ designated by PATHSPEC.  If the link is relative, then the
 returned file-path is relative to the link, not
 *DEFAULT-FILE-PATH-DEFAULTS*.
 
-Signals an error if PATHSPEC is wild, or does not designate a
-symbolic link."
+Signals an error if PATHSPEC is not a symbolic link."
   ;; Note: the previous version tried much harder to provide a buffer
   ;; big enough to fit the link's name.  OTOH, NIX:READLINK stack
   ;; allocates on most lisps.
@@ -298,8 +295,7 @@ creates a hard link.  Returns the file-path of the link.
 Relative targets are resolved against the link.  Relative links
 are resolved against *DEFAULT-FILE-PATH-DEFAULTS*.
 
-Signals an error if either target or link is wild, target does
-not exist, or link exists already."
+Signals an error if target does not exist, or link exists already."
   (let ((link (file-path link))
         (target (file-path target)))
     (with-current-directory (absolute-file-path *default-file-path-defaults* nil)
@@ -345,8 +341,7 @@ Permission symbols consist of :USER-READ, :USER-WRITE, :USER-EXEC,
 :GROUP-READ, :GROUP-WRITE, :GROUP-EXEC, :OTHER-READ, :OTHER-WRITE,
 :OTHER-EXEC, :SET-USER-ID, :SET-GROUP-ID, and :STICKY.
 
-Both signal an error if PATHSPEC is wild, or doesn't designate an
-existing file."
+Both signal an error if PATHSPEC doesn't designate an existing file."
   (let ((mode (stat-mode (%sys-stat (file-path-namestring pathspec)))))
     (loop :for (name . value) :in +permissions+
           :when (plusp (logand mode value))
