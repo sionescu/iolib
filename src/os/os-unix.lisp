@@ -434,61 +434,59 @@ If ABSOLUTE-PATHS is not NIL the files' paths are merged with PATHSPEC."
                                     entry))))
 
 (defun walk-directory (directory fn &key (if-does-not-exist :error)
-                       (follow-symlinks :target) (order :directory-first)
+                       follow-symlinks (order :directory-first)
                        (mindepth 1) (maxdepth 65535)
                        (test (constantly t)) (key #'identity))
   "Recursively applies the function FN to all files within the
 directory named by the FILE-PATH designator DIRNAME and all of
 the files and directories contained within.  Returns T on success."
-  (let ((follow-inner-links
-         (and follow-symlinks (not (eql :target follow-symlinks)))))
-    (labels ((walk (name depth parent)
-               (incf depth)
-               (let* ((kind
-                       (file-kind name :follow-symlinks follow-inner-links))
-                      (path-components
-                       (revappend parent (file-path-components name)))
-                      (path (make-file-path :components path-components))
-                     (name-key (funcall key path)))
-                 (case kind
-                   (:directory
-                    (when (and (funcall test name-key)
-                               (< depth maxdepth))
-                      (ecase order
-                        (:directory-first
-                         (when (<= mindepth depth)
-                           (funcall fn name-key kind))
-                         (walkdir name depth parent))
-                        (:depth-first
-                         (walkdir name depth parent)
-                         (when (<= mindepth depth)
-                           (funcall fn name-key kind))))))
-                   (t (when (and (funcall test name-key)
-                                 (<= mindepth depth))
-                        (funcall fn name-key)))))
-               (decf depth))
-             (walkdir (name depth parent)
-               (mapdir (lambda (dir)
-                         (walk dir (1+ depth)
-                               (if (plusp depth)
-                                   (cons (file-path-file name) parent)
-                                   parent)))
-                       name)))
-      (handler-case
-          (let* ((directory (file-path directory))
-                 (ns (file-path-namestring directory))
-                 (kind
-                  (file-kind directory :follow-symlinks follow-symlinks)))
-            (unless (eq :directory kind)
-              (isys:syscall-error "~S is not a directory" directory))
-            (walk ns -1 ()) t)
-        ;; FIXME: Handle all possible syscall errors
-        (isys:enoent ()
-          (ecase if-does-not-exist
-            (:error (isys:syscall-error "Directory ~S does not exist" directory))
-            ((nil)  nil)))
-        (isys:eacces ()
-          (isys:syscall-error "Search permission is denied for ~S" directory))))))
+  (labels ((walk (name depth parent)
+             (incf depth)
+             (let* ((kind
+                     (file-kind name :follow-symlinks follow-symlinks))
+                    (path-components
+                     (revappend parent (file-path-components name)))
+                    (path (make-file-path :components path-components))
+                    (name-key (funcall key path kind)))
+               (case kind
+                 (:directory
+                  (when (and (funcall test name-key kind)
+                             (< depth maxdepth))
+                    (ecase order
+                      (:directory-first
+                       (when (<= mindepth depth)
+                         (funcall fn name-key kind))
+                       (walkdir name depth parent))
+                      (:depth-first
+                       (walkdir name depth parent)
+                       (when (<= mindepth depth)
+                         (funcall fn name-key kind))))))
+                 (t (when (and (funcall test name-key kind)
+                               (<= mindepth depth))
+                      (funcall fn name-key kind)))))
+             (decf depth))
+           (walkdir (name depth parent)
+             (mapdir (lambda (dir)
+                       (walk dir (1+ depth)
+                             (if (plusp depth)
+                                 (cons (file-path-file name) parent)
+                                 parent)))
+                     name)))
+    (handler-case
+        (let* ((directory (file-path directory))
+               (ns (file-path-namestring directory))
+               (kind
+                (file-kind directory :follow-symlinks t)))
+          (unless (eql :directory kind)
+            (isys:syscall-error "~S is not a directory" directory))
+          (walk ns -1 ()) t)
+      ;; FIXME: Handle all possible syscall errors
+      (isys:enoent ()
+        (ecase if-does-not-exist
+          (:error (isys:syscall-error "Directory ~S does not exist" directory))
+          ((nil)  nil)))
+      (isys:eacces ()
+        (isys:syscall-error "Search permission is denied for ~S" directory)))))
 
 
 ;;;; User information
