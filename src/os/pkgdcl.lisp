@@ -6,7 +6,7 @@
 (in-package :common-lisp-user)
 
 (defpackage :iolib.os
-  (:use :iolib.base :iolib.syscalls :iolib.pathnames :cffi)
+  (:use :iolib.base :iolib.pathnames :cffi)
   (:import-from :iolib.pathnames #:split-root/nodes)
   (:export
 

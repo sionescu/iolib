@@ -36,7 +36,7 @@ symbols or strings. Signals an error on failure."
        (check-type env environment)
        (%envar env name))
       (t
-       (%sys-getenv name)))))
+       (isys:%sys-getenv name)))))
 
 (defun (setf environment-variable) (value name &key env (overwrite t))
   (check-type value string)
@@ -48,7 +48,7 @@ symbols or strings. Signals an error on failure."
                  (null (nth-value 1 (%envar env name))))
          (setf (%envar env name) value)))
       (t
-       (%sys-setenv (string name) value overwrite))))
+       (isys:%sys-setenv (string name) value overwrite))))
   value)
 
 (defun makunbound-environment-variable (name &key env)
@@ -62,13 +62,13 @@ failure."
        (check-type env environment)
        (%remvar env name))
       (t
-       (%sys-unsetenv (string name)))))
+       (isys:%sys-unsetenv (string name)))))
   (values name))
 
 (defun %environment ()
   (loop :with env := (make-instance 'environment)
         :for i :from 0 :by 1
-        :for string := (mem-aref *environ* :string i)
+        :for string := (mem-aref isys:*environ* :string i)
         :for split := (position #\= string)
         :while string :do
         (let ((var (subseq string 0 split))
@@ -117,14 +117,14 @@ directory, which may or may not correspond to
 SETF CURRENT-DIRECTORY changes the operating system's current
 directory to the PATHSPEC.  An error is signalled if PATHSPEC
 is not a directory."
-  (let ((cwd (%sys-getcwd)))
+  (let ((cwd (isys:%sys-getcwd)))
     (if cwd
         (parse-file-path cwd :expand-user nil)
-        (syscall-error "Could not get current directory."))))
+        (isys:syscall-error "Could not get current directory."))))
 
 (defun (setf current-directory) (pathspec)
   (let ((path (file-path pathspec)))
-    (%sys-chdir (file-path-namestring path))))
+    (isys:%sys-chdir (file-path-namestring path))))
 
 (defmacro with-current-directory (pathspec &body body)
   (with-gensyms (old)
@@ -164,7 +164,7 @@ is not a directory."
 
 (defun resolve-symlinks (path)
   (let* ((namestring (file-path-namestring path))
-         (realpath (%sys-realpath namestring)))
+         (realpath (isys:%sys-realpath namestring)))
     (parse-file-path realpath)))
 
 (defun resolve-file-path (pathspec &key
@@ -190,18 +190,18 @@ then just remove «.» and «..», otherwise symlinks are resolved too."
 (defun get-file-kind (file follow-p)
   (let ((namestring (file-path-namestring file)))
     (handler-case
-        (let ((mode (stat-mode
+        (let ((mode (isys:stat-mode
                      (if follow-p
-                         (%sys-stat namestring)
-                         (%sys-lstat namestring)))))
-          (switch ((logand s-ifmt mode) :test #'=)
-            (s-ifdir  :directory)
-            (s-ifchr  :character-device)
-            (s-ifblk  :block-device)
-            (s-ifreg  :regular-file)
-            (s-iflnk  :symbolic-link)
-            (s-ifsock :socket)
-            (s-ififo  :pipe)
+                         (isys:%sys-stat namestring)
+                         (isys:%sys-lstat namestring)))))
+          (switch ((logand isys:s-ifmt mode) :test #'=)
+            (isys:s-ifdir  :directory)
+            (isys:s-ifchr  :character-device)
+            (isys:s-ifblk  :block-device)
+            (isys:s-ifreg  :regular-file)
+            (isys:s-iflnk  :symbolic-link)
+            (isys:s-ifsock :socket)
+            (isys:s-ififo  :pipe)
             (t (bug "Unknown file mode: ~A." mode))))
       ((or enoent eloop) ()
         (cond
@@ -209,7 +209,7 @@ then just remove «.» and «..», otherwise symlinks are resolved too."
           ;; or it is a broken symlink
           (follow-p
            (handler-case
-               (%sys-lstat namestring)
+               (isys:%sys-lstat namestring)
              ((or enoent eloop) ())
              (:no-error (stat)
                (declare (ignore stat))
@@ -282,7 +282,7 @@ Signals an error if PATHSPEC is not a symbolic link."
   ;; Note: the previous version tried much harder to provide a buffer
   ;; big enough to fit the link's name.  OTOH, %SYS-READLINK stack
   ;; allocates on most lisps.
-  (file-path (%sys-readlink
+  (file-path (isys:%sys-readlink
               (file-path-namestring
                (absolute-file-path pathspec *default-file-path-defaults*)))))
 
@@ -298,8 +298,8 @@ Signals an error if TARGET does not exist, or LINK exists already."
         (target (file-path target)))
     (with-current-directory
         (absolute-file-path *default-file-path-defaults* nil)
-      (%sys-symlink (file-path-namestring target)
-                    (file-path-namestring link))
+      (isys:%sys-symlink (file-path-namestring target)
+                         (file-path-namestring link))
       link)))
 
 (defun make-hardlink (link target)
@@ -314,27 +314,27 @@ Signals an error if TARGET does not exist, or LINK exists already."
         (target (file-path target)))
     (with-current-directory
         (absolute-file-path *default-file-path-defaults* nil)
-      (%sys-link (file-path-namestring
-                  (merge-file-paths target link))
-                 link)
+      (isys:%sys-link (file-path-namestring
+                       (merge-file-paths target link))
+                      link)
       link)))
 
 
 ;;;; File permissions
 
 (defconstant (+permissions+ :test #'equal)
-  `((:user-read    . ,s-irusr)
-    (:user-write   . ,s-iwusr)
-    (:user-exec    . ,s-ixusr)
-    (:group-read   . ,s-irgrp)
-    (:group-write  . ,s-iwgrp)
-    (:group-exec   . ,s-ixgrp)
-    (:other-read   . ,s-iroth)
-    (:other-write  . ,s-iwoth)
-    (:other-exec   . ,s-ixoth)
-    (:set-user-id  . ,s-isuid)
-    (:set-group-id . ,s-isgid)
-    (:sticky       . ,s-isvtx)))
+  `((:user-read    . ,isys:s-irusr)
+    (:user-write   . ,isys:s-iwusr)
+    (:user-exec    . ,isys:s-ixusr)
+    (:group-read   . ,isys:s-irgrp)
+    (:group-write  . ,isys:s-iwgrp)
+    (:group-exec   . ,isys:s-ixgrp)
+    (:other-read   . ,isys:s-iroth)
+    (:other-write  . ,isys:s-iwoth)
+    (:other-exec   . ,isys:s-ixoth)
+    (:set-user-id  . ,isys:s-isuid)
+    (:set-group-id . ,isys:s-isgid)
+    (:sticky       . ,isys:s-isvtx)))
 
 (defun file-permissions (pathspec)
   "FILE-PERMISSIONS returns a list of keywords identifying the
@@ -351,16 +351,17 @@ Permission symbols consist of :USER-READ, :USER-WRITE, :USER-EXEC,
 :OTHER-EXEC, :SET-USER-ID, :SET-GROUP-ID, and :STICKY.
 
 Both signal an error if PATHSPEC doesn't designate an existing file."
-  (let ((mode (stat-mode (%sys-stat (file-path-namestring pathspec)))))
+  (let ((mode (isys:stat-mode
+               (isys:%sys-stat (file-path-namestring pathspec)))))
     (loop :for (name . value) :in +permissions+
           :when (plusp (logand mode value))
           :collect name)))
 
 (defun (setf file-permissions) (perms pathspec)
-  (%sys-chmod (file-path-namestring pathspec)
-              (reduce (lambda (a b)
-                        (logior a (cdr (assoc b +permissions+))))
-                      perms :initial-value 0)))
+  (isys:%sys-chmod (file-path-namestring pathspec)
+                   (reduce (lambda (a b)
+                             (logior a (cdr (assoc b +permissions+))))
+                           perms :initial-value 0)))
 
 
 ;;;; User information
@@ -370,8 +371,8 @@ Both signal an error if PATHSPEC doesn't designate an existing file."
 numerical user ID, as an assoc-list."
   (multiple-value-bind (name password uid gid gecos home shell)
       (etypecase id
-        (string  (%sys-getpwnam id))
-        (integer (%sys-getpwuid id)))
+        (string  (isys:%sys-getpwnam id))
+        (integer (isys:%sys-getpwuid id)))
     (declare (ignore password))
     (unless (null name)
       (list (cons :name name)
