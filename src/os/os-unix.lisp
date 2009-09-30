@@ -447,7 +447,7 @@ the files and directories contained within.  Returns T on success."
                     (path-components
                      (revappend parent (file-path-components name)))
                     (path (make-file-path :components path-components))
-                    (name-key (funcall key path kind)))
+                    (name-key (funcall key path)))
                (case kind
                  (:directory
                   (when (and (funcall test name-key kind)
@@ -455,15 +455,15 @@ the files and directories contained within.  Returns T on success."
                     (ecase directories
                       (:before
                        (when (<= mindepth depth)
-                         (funcall fn name-key kind))
+                         (callfn name-key kind))
                        (walkdir name depth parent))
                       (:after
                        (walkdir name depth parent)
                        (when (<= mindepth depth)
-                         (funcall fn name-key kind))))))
+                         (callfn name-key kind))))))
                  (t (when (and (funcall test name-key kind)
                                (<= mindepth depth))
-                      (funcall fn name-key kind)))))
+                      (callfn name-key kind)))))
              (decf depth))
            (walkdir (name depth parent)
              (mapdir (lambda (dir)
@@ -471,7 +471,12 @@ the files and directories contained within.  Returns T on success."
                              (if (plusp depth)
                                  (cons (file-path-file name) parent)
                                  parent)))
-                     name)))
+                     name))
+           (callfn (key kind)
+             (restart-case
+                 (funcall fn key kind)
+               (ignore-file-system-error ()
+                 :report "Ignore file system error and continue"))))
     (handler-case
         (let* ((directory (file-path directory))
                (ns (file-path-namestring directory))
