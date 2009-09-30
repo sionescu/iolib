@@ -440,10 +440,8 @@ If ABSOLUTE-PATHS is not NIL the files' paths are merged with PATHSPEC."
   "Recursively applies the function FN to all files within the
 directory named by the FILE-PATH designator DIRNAME and all of
 the files and directories contained within.  Returns T on success."
-  (let* ((directory (file-path directory))
-         (ns (file-path-namestring directory))
-         (follow-inner-links
-          (and follow-symlinks (not (eql :target follow-symlinks)))))
+  (let ((follow-inner-links
+         (and follow-symlinks (not (eql :target follow-symlinks)))))
     (labels ((walk (name depth parent)
                (incf depth)
                (let* ((kind
@@ -459,12 +457,12 @@ the files and directories contained within.  Returns T on success."
                       (ecase order
                         (:directory-first
                          (when (<= mindepth depth)
-                           (funcall fn name-key))
+                           (funcall fn name-key kind))
                          (walkdir name depth parent))
                         (:depth-first
                          (walkdir name depth parent)
                          (when (<= mindepth depth)
-                           (funcall fn name-key))))))
+                           (funcall fn name-key kind))))))
                    (t (when (and (funcall test name-key)
                                  (<= mindepth depth))
                         (funcall fn name-key)))))
@@ -477,8 +475,10 @@ the files and directories contained within.  Returns T on success."
                                    parent)))
                        name)))
       (handler-case
-          (let ((kind
-                 (file-kind directory :follow-symlinks follow-symlinks)))
+          (let* ((directory (file-path directory))
+                 (ns (file-path-namestring directory))
+                 (kind
+                  (file-kind directory :follow-symlinks follow-symlinks)))
             (unless (eq :directory kind)
               (isys:syscall-error "~S is not a directory" directory))
             (walk ns -1 ()) t)
@@ -486,7 +486,7 @@ the files and directories contained within.  Returns T on success."
         (isys:enoent ()
           (ecase if-does-not-exist
             (:error (isys:syscall-error "Directory ~S does not exist" directory))
-            (nil    nil)))
+            ((nil)  nil)))
         (isys:eacces ()
           (isys:syscall-error "Search permission is denied for ~S" directory))))))
 
