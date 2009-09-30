@@ -16,12 +16,12 @@
          (error (err)
            (push (cons mux err) failed-list))))))
 
-(test timeout.1
+(test (timeout.1 :compile-at :definition-time)
   (is-false
    (with-event-base/for-each-mux (base)
      (event-dispatch base :timeout 0))))
 
-(test timeout.2
+(test (timeout.2 :compile-at :definition-time)
   (is-false
    (with-event-base/for-each-mux (base)
      (let ((cb nil))
@@ -29,7 +29,7 @@
        (event-dispatch base :timeout 0)
        (assert (null cb))))))
 
-(test timeout.3
+(test (timeout.3 :compile-at :definition-time)
   (is-false
    (with-event-base/for-each-mux (base)
      (let ((cb nil))
@@ -39,7 +39,7 @@
 
 ;;; regression test: timeouts' absolute times used used to be
 ;;; incremented with the relative time ad infinitum.
-(test timeout.4
+(test (timeout.4 :compile-at :definition-time)
   (is-false
    (with-event-base/for-each-mux (base)
      (let ((cb nil))
@@ -66,7 +66,7 @@
 
 ;;; FIXME: doesn't work with SELECT.
 ;;;        where ? it works here, on Linux. SIONESCU 2007.12.02
-(test event-base-with-open-sockets
+(test (event-base-with-open-sockets :compile-at :definition-time)
   (is-true
    (block test
      (with-event-base (base)

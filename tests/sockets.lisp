@@ -14,110 +14,110 @@
 ;;;; Addresses
 
 ;;; a real address
-(test address-to-vector.1
+(test (address-to-vector.1 :compile-at :definition-time)
   (is (equalp (address-to-vector "127.0.0.1")
               (values #(127 0 0 1) :ipv4))))
 
 ;;; and an address with bit 8 set on some octets
-(test address-to-vector.2
+(test (address-to-vector.2 :compile-at :definition-time)
   (is (equalp (address-to-vector "242.1.211.3")
               (values #(242 1 211 3) :ipv4))))
 
-(test address-to-vector.3
+(test (address-to-vector.3 :compile-at :definition-time)
   (is (equalp (address-to-vector "::")
               (values #(0 0 0 0 0 0 0 0) :ipv6))))
 
 ;;; RT: used to return the PARSE-ERROR as a secondary value.
-(test string-address-to-vector.1
+(test (string-address-to-vector.1 :compile-at :definition-time)
   (is-false (string-address-to-vector "256.0.0.1")))
 
 ;;; RT: should only ignore PARSE-ERRORs.
-(test string-address-to-vector.2
+(test (string-address-to-vector.2 :compile-at :definition-time)
   (signals type-error
     (string-address-to-vector 'not-a-string)))
 
 ;;; RT: should signal a PARSE-ERROR when given an invalid string.
-(test ensure-address.1
+(test (ensure-address.1 :compile-at :definition-time)
   (signals parse-error
     (ensure-address "ff0x::114")))
 
 ;;; ditto
-(test ensure-address.2
+(test (ensure-address.2 :compile-at :definition-time)
   (signals parse-error
     (ensure-address "127.0.256.1")))
 
-(test ensure-address.3
+(test (ensure-address.3 :compile-at :definition-time)
   (is-false
    (or (ensure-address "ff0x::114" :errorp nil)
        (ensure-address "127.0.256.1" :errorp nil))))
 
-(test integer-to-dotted-and-back
+(test (integer-to-dotted-and-back :compile-at :definition-time)
   (is-true
    (every (lambda (s) (string= s (integer-to-dotted (dotted-to-integer s))))
           '("0.0.255.0" "0.255.255.0" "0.255.255.1"))))
 
-(test integer-to-dotted.1
+(test (integer-to-dotted.1 :compile-at :definition-time)
   (is (string= (integer-to-dotted 0)
                "0.0.0.0")))
 
-(test integer-to-dotted.2
+(test (integer-to-dotted.2 :compile-at :definition-time)
   (is (string= (integer-to-dotted +max-ipv4-value+)
                "255.255.255.255")))
 
-(test integer-to-dotted.3
+(test (integer-to-dotted.3 :compile-at :definition-time)
   (signals type-error
     (integer-to-dotted (1+ +max-ipv4-value+))))
 
-(test integer-to-dotted.4
+(test (integer-to-dotted.4 :compile-at :definition-time)
   (signals type-error
     (integer-to-dotted -1)))
 
-(test dotted-to-vector.1
+(test (dotted-to-vector.1 :compile-at :definition-time)
   (is (equalp (mapcar #'dotted-to-vector '("255.255.255.255" "0.0.0.0" "127.0.0.1"))
               '(#(255 255 255 255) #(0 0 0 0) #(127 0 0 1)))))
 
-(test dotted-to-vector.2
+(test (dotted-to-vector.2 :compile-at :definition-time)
   (signals parse-error
     (dotted-to-vector "127.0.0.0.0")))
 
-(test dotted-to-vector.3
+(test (dotted-to-vector.3 :compile-at :definition-time)
   (signals type-error
     (dotted-to-vector 'not-a-string)))
 
-(test vector-to-dotted.1
+(test (vector-to-dotted.1 :compile-at :definition-time)
   (is (equalp (mapcar #'vector-to-dotted '(#(255 255 255 255) #(0 0 0 0) (127 0 0 1)))
               '("255.255.255.255" "0.0.0.0" "127.0.0.1"))))
 
-(test vector-to-dotted.2
+(test (vector-to-dotted.2 :compile-at :definition-time)
   (signals type-error
     (vector-to-dotted #(127 0 0 256))))
 
-(test address-to-string.1
+(test (address-to-string.1 :compile-at :definition-time)
   (is (equalp (mapcar (lambda (x) (address-to-string (make-address x)))
                       '(#(127 0 0 1) #(255 255 255 255) #(0 0 0 0 0 0 0 0)
                         #(0 0 0 0 0 0 0 1) #(1 0 0 0 0 0 0 0)))
               '("127.0.0.1" "255.255.255.255" "::" "::1" "1::"))))
 
-(test vector-to-colon-separated.1
+(test (vector-to-colon-separated.1 :compile-at :definition-time)
   (is (equalp (let ((ip  #(0 0 0 255 255 255 0 0)))
                 (values (vector-to-colon-separated ip)
                         (vector-to-colon-separated ip :downcase)
                         (vector-to-colon-separated ip :upcase)))
               (values "::ff:ff:ff:0:" "::ff:ff:ff:0:" "::FF:FF:FF:0:"))))
 
-(test vector-to-colon-separated.2
+(test (vector-to-colon-separated.2 :compile-at :definition-time)
   (is (string= (vector-to-colon-separated #(1 2 3 4 5 0 6 7))
                "1:2:3:4:5::6:7")))
 
-(test vector-to-colon-separated.3
+(test (vector-to-colon-separated.3 :compile-at :definition-time)
   (is (string= (vector-to-colon-separated #(0 2 3 4 5 0 6 7))
                ":2:3:4:5::6:7")))
 
-(test vector-to-colon-separated.4
+(test (vector-to-colon-separated.4 :compile-at :definition-time)
   (is (string= (vector-to-colon-separated #(1 2 3 4 5 0 6 0))
                "1:2:3:4:5::6:")))
 
-(test colon-separated-to-vector.1
+(test (colon-separated-to-vector.1 :compile-at :definition-time)
   (is (equalp (mapcar #'colon-separated-to-vector
                       '(":ff::ff:" "::" "::1" "1::" ":2:3:4:5:6:7:8" "1:2:3:4:5:6:7:"
                         ":1::2:" "::127.0.0.1" ":1::127.0.0.1"))
@@ -131,13 +131,13 @@
                 #(0 0 0 0 0 0 #x7f00 1)
                 #(0 1 0 0 0 0 #x7f00 1)))))
 
-(test address=.1
+(test (address=.1 :compile-at :definition-time)
   (is-true (address= +ipv4-loopback+ (make-address #(127 0 0 1)))))
 
-(test address=.2
+(test (address=.2 :compile-at :definition-time)
   (is-true (address= +ipv6-loopback+ (ensure-address "::1"))))
 
-(test copy-address.1
+(test (copy-address.1 :compile-at :definition-time)
   (is-true (loop for designator in (list "127.0.0.1" +max-ipv4-value+ "::" "::1")
               for addr1 = (ensure-address designator)
               for addr2 = (ensure-address designator)
@@ -146,35 +146,35 @@
                           (address= addr1 addr3)
                           (address= addr2 addr3)))))
 
-(test make-address.1
+(test (make-address.1 :compile-at :definition-time)
   (signals type-error
     (make-address 'not-a-valid-designator)))
 
-(test address.unspecified.1
+(test (address.unspecified.1 :compile-at :definition-time)
   (is-true (every #'inet-address-unspecified-p
                   (mapcar #'ensure-address '("0.0.0.0" "::" "0:0:0:0:0:0:0:0")))))
 
-(test address.loopback.1
+(test (address.loopback.1 :compile-at :definition-time)
   (is-true (every #'inet-address-loopback-p
                   (mapcar #'ensure-address '("127.0.0.1" "::1" "0:0::1")))))
 
-(test address.multicast.1
+(test (address.multicast.1 :compile-at :definition-time)
   (is-true (every #'inet-address-multicast-p
                   (mapcar #'ensure-address
                           '("224.0.0.0" "224.1.2.3" "232.0.0.127" "239.255.255.255"
                             "ff02::2" "ff0a::114" "ff05::1:3")))))
 
-(test address.ipv6-ipv4-mapped.1
+(test (address.ipv6-ipv4-mapped.1 :compile-at :definition-time)
   (is-true (ipv6-ipv4-mapped-p (ensure-address "::ffff:127.0.0.1"))))
 
-(test address.ipv6.1
+(test (address.ipv6.1 :compile-at :definition-time)
   (is (equalp (address-to-vector "::1.2.3.4")
               (values #(0 0 0 0 0 0 #x0102 #x0304) :ipv6))))
 
 ;;;; Host Lookup
 
 #-no-internet-available
-(test lookup-hostname.1
+(test (lookup-hostname.1 :compile-at :definition-time)
   (is (equalp (multiple-value-bind (address addresses truename)
                   (lookup-hostname "a.root-servers.net" :ipv6 nil)
                 (declare (ignore addresses))
@@ -183,73 +183,73 @@
               (values t "a.root-servers.net"))))
 
 #-no-internet-available
-(test lookup-hostname.2
+(test (lookup-hostname.2 :compile-at :definition-time)
   (is-true (string= (nth-value 2 (lookup-hostname #(198 41 0 4)))
                     "a.root-servers.net")))
 
 ;;; These days lots of people seem to be using DNS servers that don't
 ;;; report resolving failures for non-existing domains.  This test
 ;;; will fail there.
-(test lookup-hostname.3
+(test (lookup-hostname.3 :compile-at :definition-time)
   (signals resolver-no-name-error
     (lookup-hostname "foo.tninkpad.telent.net.")))
 
-(test lookup-hostname.4
+(test (lookup-hostname.4 :compile-at :definition-time)
   (is-true (address-equal-p (lookup-hostname #(127 0 0 1) :ipv6 nil)
                             #(127 0 0 1))))
 
-(test lookup-hostname.5
+(test (lookup-hostname.5 :compile-at :definition-time)
   (signals parse-error
     (lookup-hostname #(127 0 0))))
 
-(test lookup-hostname.6
+(test (lookup-hostname.6 :compile-at :definition-time)
   (signals resolver-no-name-error
     (lookup-hostname #(127 0 0 1) :ipv6 :ipv6)))
 
 ;;;; Service Lookup
 
-(test lookup-service.1
+(test (lookup-service.1 :compile-at :definition-time)
   (is (equalp (lookup-service "ssh")
               (values 22 "ssh" :tcp))))
 
-(test lookup-service.2
+(test (lookup-service.2 :compile-at :definition-time)
   (is (equalp (lookup-service 22 :udp)
               (values 22 "ssh" :udp))))
 
 ;;; looks up a reserved service port
-(test lookup-service.3
+(test (lookup-service.3 :compile-at :definition-time)
   ;; TODO: check for a more specific error.
   (signals unknown-service
     (lookup-service 1024)))
 
 ;;;; Protocol Lookup
 
-(test lookup-protocol.1
+(test (lookup-protocol.1 :compile-at :definition-time)
   (is (equalp (multiple-value-bind (number name)
                   (lookup-protocol "tcp")
                 (values number name))
               (values 6 "tcp"))))
 
-(test lookup-protocol.2
+(test (lookup-protocol.2 :compile-at :definition-time)
   (is (equalp (multiple-value-bind (number name)
                   (lookup-protocol "udp")
                 (values number name))
               (values 17 "udp"))))
 
-(test lookup-protocol.3
+(test (lookup-protocol.3 :compile-at :definition-time)
   (signals unknown-protocol
     (lookup-protocol "nonexistent-protocol")))
 
-(test lookup-protocol.4
+(test (lookup-protocol.4 :compile-at :definition-time)
   (is-true (string= (nth-value 1 (lookup-protocol 6))
                     "tcp")))
 
 ;;;; Network Interfaces
 
-(test list-network-interfaces.1
+(test (list-network-interfaces.1 :compile-at :definition-time)
   (is-true (<= 1 (length (list-network-interfaces)))))
 
-(test network-interfaces.1
+(test (network-interfaces.1 :compile-at :definition-time)
   (is-true
    (flet ((nif-equal (if1 if2)
             (check-type if1 cons)
@@ -267,7 +267,7 @@
   (signals error
     (make-socket :this-kw-arg-doesnt-exist t)))
 
-(test make-socket.2
+(test (make-socket.2 :compile-at :definition-time)
   (is (equalp (with-open-socket (s :address-family :ipv4)
                 (values (socket-connected-p s)
                         (socket-open-p s)
@@ -276,7 +276,7 @@
                         (socket-protocol s)))
               (values nil t t :ipv4 :default)))) ; why isn't it :TCP?
 
-(test make-socket.3
+(test (make-socket.3 :compile-at :definition-time)
   (is-true (with-open-socket (s :address-family :ipv4)
              (typep s 'socket))))
 
@@ -284,7 +284,7 @@
 ;;; way to make sure the bind succeeded than trying it twice, let me
 ;;; know. 1974 has no special significance, unless you're the same age
 ;;; as me.
-(test inet.socket-bind.1
+(test (inet.socket-bind.1 :compile-at :definition-time)
   (signals socket-address-in-use-error
     (with-open-socket (s1 :address-family :ipv4 :connect :passive
                           :local-host #(127 0 0 1) :local-port 1974)
@@ -292,7 +292,7 @@
                             :local-host #(127 0 0 1) :local-port 1974)
         (values s1 s2)))))
 
-(test sockopt.1
+(test (sockopt.1 :compile-at :definition-time)
   (is-true (with-open-socket (s :address-family :ipv4)
              (setf (socket-option s :reuse-address) t)
              (socket-option s :reuse-address))))
@@ -307,7 +307,7 @@
         ((or (>= i (length buffer)) (not c) (eq c eof)) i)
       (setf (elt buffer i) c))))
 
-(test simple-tcp-client
+(test (simple-tcp-client :compile-at :definition-time)
   (is-true
    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                         :address-family :ipv4)
@@ -319,7 +319,7 @@
          ;; (format t "~&Got ~S back from TCP echo server~%" data)
          (> (length data) 0))))))
 
-(test sockaddr-return-type
+(test (sockaddr-return-type :compile-at :definition-time)
   (is-true
    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                         :address-family :ipv4)
@@ -333,7 +333,7 @@
 ;;; FIXME: figure out why this test blocks with the inetd services on
 ;;; my machines, on both Darwin and Linux/x86-64.  Works with
 ;;; echo-server.c though --luis
-(test simple-udp-client.1
+(test (simple-udp-client.1 :compile-at :definition-time)
   (is-true
    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                         :type :datagram :address-family :ipv4)
@@ -342,7 +342,7 @@
      (let ((nbytes (nth-value 1 (receive-from s :size 200))))
        (plusp nbytes)))))
 
-(test simple-udp-client.2
+(test (simple-udp-client.2 :compile-at :definition-time)
   (is-true
    (with-open-socket (s :type :datagram :address-family :ipv4)
      (setf (socket-option s :receive-timeout) *echo-timeout*)
@@ -352,7 +352,7 @@
      (let ((nbytes (nth-value 1 (receive-from s :size 200))))
        (plusp nbytes)))))
 
-(test simple-local-sockets
+(test (simple-local-sockets :compile-at :definition-time)
   (is (string= (let ((file (namestring
                             (make-pathname :name "local-socket" :type nil
                                            :defaults (truename
@@ -376,7 +376,7 @@
      ,@body))
 
 #-no-internet-available
-(test simple-http-client
+(test (simple-http-client :compile-at :definition-time)
   (is-true
    (with-http-stream (s "www.google.com" 80 "HEAD /")
      (let ((data (make-string 200)))
@@ -385,7 +385,7 @@
        (> (length data) 0)))))
 
 #-no-internet-available
-(test sockopt-receive-buffer
+(test (sockopt-receive-buffer :compile-at :definition-time)
   ;; on Linux x86, the receive buffer size appears to be doubled in the
   ;; kernel: we set a size of x and then getsockopt() returns 2x.
   ;; This is why we compare with >= instead of =
@@ -397,16 +397,16 @@
        (and (> (length data) 0)
             (>= (socket-option s :receive-buffer) 1975))))))
 
-(test socket-open-p.1
+(test (socket-open-p.1 :compile-at :definition-time)
   (is-true (with-open-socket (s)
              (socket-open-p s))))
 
-(test socket-open-p.2
+(test (socket-open-p.2 :compile-at :definition-time)
   (is-true (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                                 :address-family :ipv4)
              (socket-open-p s))))
 
-(test socket-open-p.3
+(test (socket-open-p.3 :compile-at :definition-time)
   (is-false (with-open-socket (s)
               (close s)
               (socket-open-p s))))

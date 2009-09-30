@@ -181,7 +181,7 @@
             (format *error-output* "~&;;   Test failed!!!~%")
             (return* nil)))))))
 
-(test big-stream-comparision-test
+(test (big-stream-comparision-test :compile-at :definition-time)
   (is-false
    (let ((args-list (loop :for (file-name symbols) :in *test-files*
                           :nconc (create-test-combinations file-name symbols))))
