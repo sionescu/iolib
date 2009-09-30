@@ -20,11 +20,11 @@
    #:with-current-directory
    ;; #:delete-directory
    ;; #:delete-directory-and-files
-   ;; #:directory-exists-p
-   ;; #:list-directory
-   ;; #:mapdir
-   ;; #:walk-directory
-   ;; #:with-directory-iterator
+   #:directory-exists-p
+   #:list-directory
+   #:mapdir
+   #:walk-directory
+   #:with-directory-iterator
 
    ;; Files
    #:resolve-file-path

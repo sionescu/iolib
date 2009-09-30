@@ -364,6 +364,133 @@ Both signal an error if PATHSPEC doesn't designate an existing file."
                            perms :initial-value 0)))
 
 
+;;;; Directory access
+
+(defmacro with-directory-iterator ((iterator pathspec) &body body)
+  "PATHSPEC must be a valid directory designator:
+*DEFAULT-FILE-PATH-DEFAULTS* is bound, and (CURRENT-DIRECTORY) is set
+to the designated directory for the dynamic scope of the body.
+
+Within the lexical scope of the body, ITERATOR is defined via
+macrolet such that successive invocations of (ITERATOR) return
+the directory entries, one by one.  Both files and directories
+are returned, except '.' and '..'.  The order of entries is not
+guaranteed.  The entries are returned as relative file-paths
+against the designated directory.  Entries that are symbolic
+links are not resolved, but links that point to directories are
+interpreted as directory designators.  Once all entries have been
+returned, further invocations of (ITERATOR) will all return NIL.
+
+The value returned is the value of the last form evaluated in
+body.  Signals an error if PATHSPEC is not a directory."
+  (with-unique-names (one-iter)
+    `(call-with-directory-iterator
+      ,pathspec
+      (lambda (,one-iter)
+        (declare (type function ,one-iter))
+        (macrolet ((,iterator ()
+                     `(funcall ,',one-iter)))
+          ,@body)))))
+
+(defun call-with-directory-iterator (pathspec fn)
+  (let* ((dir (resolve-file-path pathspec :canonicalize nil))
+         (dp (isys:%sys-opendir (file-path-namestring dir))))
+    (labels ((one-iter ()
+               (let ((name (isys:%sys-readdir dp)))
+                 (unless (null name)
+                   (cond
+                     ((member name '("." "..") :test #'string=)
+                      (one-iter))
+                     (t
+                      (parse-file-path name)))))))
+      (with-current-directory dir
+        (unwind-protect
+             (let ((*default-file-path-defaults* dir))
+               (funcall fn #'one-iter))
+          (isys:%sys-closedir dp))))))
+
+(defun mapdir (function pathspec)
+  "Applies function to each entry in directory designated by
+PATHSPEC in turn and returns a list of the results.  Binds
+*DEFAULT-FILE-PATH-DEFAULTS* to the directory designated by
+pathspec round to function call.
+
+If PATHSPEC designates a symbolic link, it is implicitly resolved.
+
+Signals an error if PATHSPEC is not a directory."
+  (with-directory-iterator (next pathspec)
+    (loop :for entry := (next)
+          :while entry
+          :collect (funcall function entry))))
+
+(defun list-directory (pathspec &key absolute-paths)
+  "Returns a fresh list of file-paths corresponding to all files
+within the directory named by PATHSPEC.
+If ABSOLUTE-PATHS is not NIL the files' paths are merged with PATHSPEC."
+  (with-directory-iterator (next pathspec)
+    (loop :for entry := (next)
+          :while entry :collect (if absolute-paths
+                                    (merge-file-paths entry pathspec)
+                                    entry))))
+
+(defun walk-directory (directory fn &key (if-does-not-exist :error)
+                       (follow-symlinks :target) (order :directory-first)
+                       (mindepth 1) (maxdepth 65535)
+                       (test (constantly t)) (key #'identity))
+  "Recursively applies the function FN to all files within the
+directory named by the FILE-PATH designator DIRNAME and all of
+the files and directories contained within.  Returns T on success."
+  (let* ((directory (file-path directory))
+         (ns (file-path-namestring directory))
+         (follow-inner-links
+          (and follow-symlinks (not (eql :target follow-symlinks)))))
+    (labels ((walk (name depth parent)
+               (incf depth)
+               (let* ((kind
+                       (file-kind name :follow-symlinks follow-inner-links))
+                      (path-components
+                       (revappend parent (file-path-components name)))
+                      (path (make-file-path :components path-components))
+                     (name-key (funcall key path)))
+                 (case kind
+                   (:directory
+                    (when (and (funcall test name-key)
+                               (< depth maxdepth))
+                      (ecase order
+                        (:directory-first
+                         (when (<= mindepth depth)
+                           (funcall fn name-key))
+                         (walkdir name depth parent))
+                        (:depth-first
+                         (walkdir name depth parent)
+                         (when (<= mindepth depth)
+                           (funcall fn name-key))))))
+                   (t (when (and (funcall test name-key)
+                                 (<= mindepth depth))
+                        (funcall fn name-key)))))
+               (decf depth))
+             (walkdir (name depth parent)
+               (mapdir (lambda (dir)
+                         (walk dir (1+ depth)
+                               (if (plusp depth)
+                                   (cons (file-path-file name) parent)
+                                   parent)))
+                       name)))
+      (handler-case
+          (let ((kind
+                 (file-kind directory :follow-symlinks follow-symlinks)))
+            (unless (eq :directory kind)
+              (isys:syscall-error "~S is not a directory" directory))
+            (walk ns -1 ()) t)
+        ;; FIXME: Handle all possible syscall errors
+        (isys:enoent ()
+          (ecase if-does-not-exist
+            (:error (isys:syscall-error "Directory ~S does not exist" directory))
+            (nil    nil)))
+        (isys:eacces ()
+          (isys:syscall-error "Search permission is denied for ~S" directory))))))
+
+
 ;;;; User information
 
 (defun user-info (id)
