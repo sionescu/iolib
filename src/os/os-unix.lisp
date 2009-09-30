@@ -203,14 +203,14 @@ then just remove «.» and «..», otherwise symlinks are resolved too."
             (isys:s-ifsock :socket)
             (isys:s-ififo  :pipe)
             (t (bug "Unknown file mode: ~A." mode))))
-      ((or enoent eloop) ()
+      ((or isys:enoent isys:eloop) ()
         (cond
           ;; stat() returned ENOENT: either FILE does not exist
           ;; or it is a broken symlink
           (follow-p
            (handler-case
                (isys:%sys-lstat namestring)
-             ((or enoent eloop) ())
+             ((or isys:enoent isys:eloop) ())
              (:no-error (stat)
                (declare (ignore stat))
                (values :symbolic-link :broken))))
