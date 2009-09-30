@@ -434,7 +434,7 @@ If ABSOLUTE-PATHS is not NIL the files' paths are merged with PATHSPEC."
                                     entry))))
 
 (defun walk-directory (directory fn &key (if-does-not-exist :error)
-                       follow-symlinks (order :directory-first)
+                       follow-symlinks (directories :before)
                        (mindepth 1) (maxdepth 65535)
                        (test (constantly t)) (key #'identity))
   "Recursively applies the function FN to all files within the
@@ -452,12 +452,12 @@ the files and directories contained within.  Returns T on success."
                  (:directory
                   (when (and (funcall test name-key kind)
                              (< depth maxdepth))
-                    (ecase order
-                      (:directory-first
+                    (ecase directories
+                      (:before
                        (when (<= mindepth depth)
                          (funcall fn name-key kind))
                        (walkdir name depth parent))
-                      (:depth-first
+                      (:after
                        (walkdir name depth parent)
                        (when (<= mindepth depth)
                          (funcall fn name-key kind))))))
@@ -483,10 +483,12 @@ the files and directories contained within.  Returns T on success."
       ;; FIXME: Handle all possible syscall errors
       (isys:enoent ()
         (ecase if-does-not-exist
-          (:error (isys:syscall-error "Directory ~S does not exist" directory))
+          (:error (isys:syscall-error "Directory ~S does not exist"
+                                      directory))
           ((nil)  nil)))
       (isys:eacces ()
-        (isys:syscall-error "Search permission is denied for ~S" directory)))))
+        (isys:syscall-error "Search permission is denied for ~S"
+                            directory)))))
 
 
 ;;;; User information
