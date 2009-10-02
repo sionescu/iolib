@@ -444,26 +444,24 @@ the files and directories contained within.  Returns T on success."
              (incf depth)
              (let* ((kind
                      (file-kind name :follow-symlinks follow-symlinks))
-                    (path-components
-                     (revappend parent (file-path-components name)))
-                    (path (make-file-path :components path-components))
-                    (name-key (funcall key path)))
+                    (name-key (funcall key name)))
                (case kind
                  (:directory
-                  (when (and (funcall test name-key kind)
-                             (< depth maxdepth))
+                  (when (and (<= depth maxdepth)
+                             (or (zerop depth)
+                                 (funcall test name-key kind)))
                     (ecase directories
                       (:before
-                       (when (<= mindepth depth)
-                         (callfn name-key kind))
+                       (when (< mindepth depth)
+                         (callfn name-key kind parent))
                        (walkdir name depth parent))
                       (:after
                        (walkdir name depth parent)
-                       (when (<= mindepth depth)
-                         (callfn name-key kind))))))
+                       (when (< mindepth depth)
+                         (callfn name-key kind parent))))))
                  (t (when (and (funcall test name-key kind)
-                               (<= mindepth depth))
-                      (callfn name-key kind)))))
+                               (< mindepth depth))
+                      (callfn name-key kind parent)))))
              (decf depth))
            (walkdir (name depth parent)
              (mapdir (lambda (dir)
@@ -472,9 +470,12 @@ the files and directories contained within.  Returns T on success."
                                  (cons (file-path-file name) parent)
                                  parent)))
                      name))
-           (callfn (key kind)
+           (callfn (key kind parent)
              (restart-case
-                 (funcall fn key kind)
+                 (let ((components
+                        (reverse (or parent (list ".")))))
+                   (funcall fn key kind
+                            (make-file-path :components components)))
                (ignore-file-system-error ()
                  :report "Ignore file system error and continue"))))
     (handler-case
