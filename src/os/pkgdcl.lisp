@@ -18,8 +18,7 @@
    ;; Directories
    #:current-directory
    #:with-current-directory
-   ;; #:delete-directory
-   ;; #:delete-directory-and-files
+   #:delete-files
    #:directory-exists-p
    #:list-directory
    #:mapdir

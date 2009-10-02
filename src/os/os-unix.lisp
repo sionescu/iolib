@@ -494,6 +494,25 @@ the files and directories contained within.  Returns T on success."
       (isys:eacces ()
         (isys:syscall-error "Search permission is denied for ~S"
                             directory)))))
+
+(defun delete-files (pathspec &key recursive)
+  (labels ((%delete-file (file)
+             (isys:%sys-unlink (file-path-namestring file)))
+           (%delete-directory (directory)
+             (isys:%sys-rmdir (file-path-namestring directory))))
+    (let* ((pathspec (file-path pathspec))
+           (kind (file-kind pathspec :follow-symlinks t)))
+      (case kind
+        (:directory
+         (if recursive
+             (walk-directory pathspec
+                             (lambda (name kind)
+                               (case kind
+                                 (:directory (%delete-directory name))
+                                 (t          (%delete-file name))))
+                             :directories :after)
+             (%delete-directory pathspec)))
+        (t (%delete-file pathspec))))))
 
 
 ;;;; User information
