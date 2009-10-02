@@ -478,23 +478,21 @@ the files and directories contained within.  Returns T on success."
                             (make-file-path :components components)))
                (ignore-file-system-error ()
                  :report "Ignore file system error and continue"))))
-    (handler-case
-        (let* ((directory (file-path directory))
-               (ns (file-path-namestring directory))
-               (kind
-                (file-kind directory :follow-symlinks t)))
-          (unless (eql :directory kind)
-            (isys:syscall-error "~S is not a directory" directory))
-          (walk ns -1 ()) t)
-      ;; FIXME: Handle all possible syscall errors
-      (isys:enoent ()
-        (ecase if-does-not-exist
-          (:error (isys:syscall-error "Directory ~S does not exist"
-                                      directory))
-          ((nil)  nil)))
-      (isys:eacces ()
-        (isys:syscall-error "Search permission is denied for ~S"
-                            directory)))))
+    (let* ((directory (file-path directory))
+           (kind
+            (handler-case
+                (file-kind directory :follow-symlinks t)
+              (isys:enoent ()
+                (ecase if-does-not-exist
+                  (:error (isys:syscall-error "Directory ~S does not exist"
+                                              directory))
+                  ((nil)  (return* nil))))
+              (isys:eacces ()
+                (isys:syscall-error "Search permission is denied for ~S"
+                                    directory)))))
+      (unless (eql :directory kind)
+        (isys:syscall-error "~S is not a directory" directory))
+      (walk directory -1 ()) t)))
 
 (defun delete-files (pathspec &key recursive)
   (labels ((%delete-file (file)
