@@ -138,7 +138,8 @@ is not a directory."
 
 ;;;; File-path manipulations
 
-(defun absolute-file-path (pathspec defaults)
+(defun absolute-file-path (pathspec &optional
+                           (defaults *default-file-path-defaults*))
   (let ((path (file-path pathspec)))
     (if (absolute-file-path-p path)
         path

@@ -26,6 +26,7 @@
    #:with-directory-iterator
 
    ;; Files
+   #:absolute-file-path
    #:resolve-file-path
    #:file-exists-p
    #:good-symlink-exists-p
