@@ -440,6 +440,7 @@ If ABSOLUTE-PATHS is not NIL the files' paths are merged with PATHSPEC."
   "Recursively applies the function FN to all files within the
 directory named by the FILE-PATH designator DIRNAME and all of
 the files and directories contained within.  Returns T on success."
+  (assert (<= 0 mindepth maxdepth))
   (labels ((walk (name depth parent)
              (incf depth)
              (let* ((kind
