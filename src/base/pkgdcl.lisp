@@ -19,7 +19,6 @@
    ;; Types
    #:function-designator
    #:character-designator
-   #:string-designator
    ;; RETURN*
    #:return* #:lambda* #:defun #:defmethod
    #:defmacro #:define-compiler-macro
