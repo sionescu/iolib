@@ -254,9 +254,6 @@ to the argument OFFSET according to the directive WHENCE."
 
 (define-c-struct-wrapper stat ())
 
-#+linux
-(defconstant +stat-version+ 3)
-
 (defsyscall (%%sys-stat (#+linux "__xstat64" "stat"))
     :int
   #+linux
