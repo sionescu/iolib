@@ -423,15 +423,12 @@ Signals an error if PATHSPEC is not a directory."
           :while entry
           :collect (funcall function entry))))
 
-(defun list-directory (pathspec &key absolute-paths)
+(defun list-directory (pathspec)
   "Returns a fresh list of file-paths corresponding to all files
-within the directory named by PATHSPEC.
-If ABSOLUTE-PATHS is not NIL the files' paths are merged with PATHSPEC."
+within the directory named by PATHSPEC."
   (with-directory-iterator (next pathspec)
     (loop :for entry := (next)
-          :while entry :collect (if absolute-paths
-                                    (merge-file-paths entry pathspec)
-                                    entry))))
+          :while entry :collect entry)))
 
 (defun walk-directory (directory fn &key (if-does-not-exist :error)
                        follow-symlinks (directories :before)
