@@ -404,11 +404,10 @@ body.  Signals an error if PATHSPEC is not a directory."
                       (one-iter))
                      (t
                       (parse-file-path name)))))))
-      (with-current-directory dir
-        (unwind-protect
-             (let ((*default-file-path-defaults* dir))
-               (funcall fn #'one-iter))
-          (isys:%sys-closedir dp))))))
+      (unwind-protect
+           (let ((*default-file-path-defaults* dir))
+             (funcall fn #'one-iter))
+        (isys:%sys-closedir dp)))))
 
 (defun mapdir (function pathspec)
   "Applies function to each entry in directory designated by
