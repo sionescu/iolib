@@ -31,10 +31,11 @@
                  :input-buffer-size input-buffer-size
                  :output-buffer-size output-buffer-size))
 
-(define-compiler-macro create-socket (&whole form family type connect external-format
+(define-compiler-macro create-socket (&whole form &environment env
+                                      family type connect external-format
                                       &key fd input-buffer-size output-buffer-size)
   (cond
-    ((and (constantp family) (constantp type) (constantp connect))
+    ((and (constantp family env) (constantp type env) (constantp connect env))
      `(make-instance ',(select-socket-class family type connect :default)
                      :address-family ,family :file-descriptor ,fd
                      :external-format ,external-format
@@ -245,12 +246,13 @@ call CLOSE with :ABORT T on `VAR'."
         ((:local :datagram)
          (%make-local-datagram-active-socket args :local external-format))))))
 
-(define-compiler-macro make-socket (&whole form &rest args &key (address-family :internet) (type :stream)
+(define-compiler-macro make-socket (&whole form &environment env &rest args
+                                    &key (address-family :internet) (type :stream)
                                     (connect :active) (ipv6 '*ipv6* ipv6p)
                                     (external-format :default) &allow-other-keys)
   (when (eql :file address-family) (setf address-family :local))
   (cond
-    ((and (constantp address-family) (constantp type) (constantp connect))
+    ((and (constantp address-family env) (constantp type env) (constantp connect env))
      (check-type address-family (member :internet :local :ipv4 :ipv6) "one of :INTERNET, :LOCAL(or :FILE), :IPV4 or :IPV6")
      (check-type type (member :stream :datagram) "either :STREAM or :DATAGRAM")
      (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")

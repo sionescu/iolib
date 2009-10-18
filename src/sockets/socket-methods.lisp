@@ -481,10 +481,10 @@
     (%send-to (fd-of socket) ss (if remote-filename t) buffer start end
               (or flags (compute-flags *sendto-flags* args)))))
 
-(define-compiler-macro send-to (&whole form socket buffer &rest args
+(define-compiler-macro send-to (&whole form &environment env socket buffer &rest args
                                 &key (start 0) end (remote-host nil host-p) (remote-port 0 port-p)
                                 (remote-filename nil file-p) flags (ipv6 '*ipv6* ipv6-p) &allow-other-keys)
-  (let ((flags-val (compute-flags *sendto-flags* args)))
+  (let ((flags-val (compute-flags *sendto-flags* args env)))
     (cond
       ((and (not flags) flags-val)
        (append
@@ -561,9 +561,9 @@
       (multiple-value-call #'values buffer nbytes
                            (sockaddr-storage->sockaddr ss)))))
 
-(define-compiler-macro receive-from (&whole form socket &rest args
+(define-compiler-macro receive-from (&whole form &environment env socket &rest args
                                      &key buffer size (start 0) end flags &allow-other-keys)
-  (let ((flags-val (compute-flags *recvfrom-flags* args)))
+  (let ((flags-val (compute-flags *recvfrom-flags* args env)))
     (cond
       ((and (not flags) flags-val)
        `(receive-from ,socket :buffer ,buffer :start ,start :end ,end

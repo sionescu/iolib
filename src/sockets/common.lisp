@@ -198,14 +198,14 @@
     ((t)   nil)
     (t     wait)))
 
-(defun compute-flags (flags args)
+(defun compute-flags (flags args &optional env)
   (loop :with flag-combination := 0
         :for cons :on args :by #'cddr
         :for flag := (car cons)
         :for val := (cadr cons)
         :for const := (cdr (assoc flag flags))
         :when const
-        :do (when (not (constantp val)) (return* nil))
+        :do (when (not (constantp val env)) (return* nil))
             (setf flag-combination (logior flag-combination const))
         :finally (return flag-combination)))
 
