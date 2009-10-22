@@ -20,6 +20,7 @@
   (defconstant +cstring-path-max+ 65535))
 
 (defun sstring-to-cstring (sstring c-ptr)
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
   (let ((index 0))
     (flet ((output-octet (octet)
              (setf (cffi:mem-aref c-ptr :unsigned-char index) octet)
@@ -53,6 +54,7 @@
       (values c-ptr index))))
 
 (defun count-sstring-octets (sstring)
+  (declare (optimize (speed 3) (safety 0) (debug 0)))
   (loop :with len := (length sstring)
         :with end-offset := (1- len)
         :for i :below len
@@ -83,6 +85,7 @@
 (deftype cstr-offset ()
   `(integer 0 ,(1+ +cstring-path-max+)))
 
+(declaim (inline utf8-extra-bytes))
 (defun utf8-extra-bytes (code)
   (declare (type (unsigned-byte 8) code)
            (optimize (speed 3) (safety 0) (debug 0)))
@@ -111,6 +114,7 @@
                '(simple-array (unsigned-byte 8) (256))))))
     (aref (the (simple-array (unsigned-byte 8) (256)) vec) code)))
 
+(declaim (inline offsets-from-utf8))
 (defun offsets-from-utf8 (extra-bytes)
   (declare (type (mod 4) extra-bytes)
            (optimize (speed 3) (safety 0) (debug 0)))
@@ -119,6 +123,7 @@
                       '(simple-array (unsigned-byte 26) (4))))))
     (aref (the (simple-array (unsigned-byte 26) (4)) vec) extra-bytes)))
 
+(declaim (inline legal-utf8-cstring))
 (defun legal-utf8-cstring (ptr start len)
   (declare (type cstr-offset start len)
            (optimize (speed 3) (safety 0) (debug 0)))
