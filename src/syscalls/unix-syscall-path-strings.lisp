@@ -69,7 +69,7 @@
 
 (defun cstring-alloc (sstring)
   "Allocate a null-terminated foreign buffer containing SSTRING."
-  (let* ((length (count-sstring-octets Sstring))
+  (let* ((length (count-sstring-octets sstring))
          (ptr (foreign-alloc :char :count (1+ length))))
     (sstring-to-cstring sstring ptr)))
 
@@ -191,7 +191,7 @@
        (cstring-to-sstring ,var ,size-var))))
 
 
-;;; Automatic Conversion of Foreign Strings to Sstrings
+;;; Automatic Conversion of Foreign Strings to sstrings
 ;;; Initially copied from cffi/src/string.lisp
 
 (define-foreign-type cstring-type ()
