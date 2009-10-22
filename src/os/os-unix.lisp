@@ -439,40 +439,38 @@ directory named by the FILE-PATH designator DIRNAME and all of
 the files and directories contained within.  Returns T on success."
   (assert (<= 0 mindepth maxdepth))
   (labels ((walk (name depth parent)
-             (incf depth)
-             (let ((kind
-                    (file-kind name :follow-symlinks follow-symlinks))
-                   (name-key (funcall key name)))
-               (case kind
-                 (:directory
-                  (when (and (<= depth maxdepth)
-                             (or (zerop depth)
-                                 (funcall test name-key kind)))
-                    (ecase directories
-                      (:before
-                       (when (< mindepth depth)
-                         (callfn name-key kind (or parent (list "."))))
-                       (walkdir name depth parent))
-                      (:after
-                       (walkdir name depth parent)
-                       (when (< mindepth depth)
-                         (callfn name-key kind (or parent (list "."))))))))
-                 (t (when (and (funcall test name-key kind)
-                               (< mindepth depth))
-                      (callfn name-key kind (or parent (list ".")))))))
-             (decf depth))
+             (let* ((kind
+                     (file-kind name :follow-symlinks follow-symlinks))
+                    (name-key (funcall key name)))
+               (flet ((maybe-callfn ()
+                        (when (and (<= mindepth depth maxdepth)
+                                   (funcall test name-key kind))
+                          (callfn name-key kind parent depth)))
+                      (maybe-walkdir ()
+                        (when (or (< depth mindepth)
+                                  (and (< depth maxdepth)
+                                       (funcall test name-key kind)))
+                          (walkdir name depth parent))))
+                 (case kind
+                   (:directory
+                    (when (eql :before directories) (maybe-callfn))
+                    (maybe-walkdir)
+                    (when (eql :after directories) (maybe-callfn)))
+                   (t (maybe-callfn))))))
            (walkdir (name depth parent)
              (mapdir (lambda (dir)
                        (walk dir (1+ depth)
-                             (if (plusp depth)
-                                 (cons (file-path-file name) parent)
-                                 parent)))
+                             (cond
+                               ((zerop depth) (list "."))
+                               ((plusp depth)
+                                (cons (file-path-file name) parent))
+                               (t parent))))
                      name))
-           (callfn (key kind parent)
+           (callfn (key kind parent depth)
              (restart-case
                  (let ((parent
                         (and parent (make-file-path :components (reverse parent)))))
-                   (funcall fn key kind parent))
+                   (funcall fn key kind parent depth))
                (ignore-file-system-error ()
                  :report "Ignore file system error and continue"))))
     (let* ((directory (file-path directory))
@@ -489,14 +487,7 @@ the files and directories contained within.  Returns T on success."
                                     directory)))))
       (unless (eql :directory kind)
         (isys:syscall-error "~S is not a directory" directory))
-      (let ((name-key (funcall key directory)))
-        (ecase directories
-          (:before
-           (when (zerop mindepth) (callfn name-key :directory nil))
-           (when (plusp maxdepth) (walk directory -1 nil)))
-          (:after
-           (when (plusp maxdepth) (walk directory -1 nil))
-           (when (zerop mindepth) (callfn name-key :directory nil)))))
+      (walk directory 0 nil)
       t)))
 
 (defun delete-files (pathspec &key recursive)
