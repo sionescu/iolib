@@ -7,8 +7,8 @@
 
 (asdf:defsystem :iolib.sockets
   :description "Socket library."
-  :author "Stelian Ionescu <sionescu@common-lisp.net>"
-  :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
+  :author "Stelian Ionescu <sionescu@cddr.org>"
+  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :iolib.streams
                :babel :cffi :cffi-grovel :bordeaux-threads)

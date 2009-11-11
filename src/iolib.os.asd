@@ -4,7 +4,7 @@
 
 (asdf:defsystem :iolib.os
   :description "OS interface."
-  :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
+  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :iolib.pathnames)
   :pathname (merge-pathnames "os/" *load-truename*)

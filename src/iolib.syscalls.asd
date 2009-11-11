@@ -7,7 +7,7 @@
 
 (asdf:defsystem :iolib.syscalls
   :description "Syscalls and foreign types."
-  :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
+  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:trivial-features :cffi :cffi-grovel :iolib.base)
   :pathname (merge-pathnames "syscalls/" *load-truename*)

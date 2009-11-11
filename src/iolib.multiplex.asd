@@ -4,8 +4,8 @@
 
 (asdf:defsystem :iolib.multiplex
   :description "I/O multiplexing library."
-  :author "Stelian Ionescu <sionescu@common-lisp.net>"
-  :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
+  :author "Stelian Ionescu <sionescu@cddr.org>"
+  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :cffi)
   :pathname (merge-pathnames #p"multiplex/" *load-truename*)

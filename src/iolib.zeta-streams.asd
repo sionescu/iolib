@@ -5,7 +5,7 @@
 
 (asdf:defsystem :iolib.zeta-streams
   :description "Zeta streams."
-  :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
+  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :iolib.pathnames :cffi :bordeaux-threads)
   :pathname (merge-pathnames #p"streams/zeta/" *load-truename*)

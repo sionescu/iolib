@@ -4,7 +4,7 @@
 
 (asdf:defsystem :iolib.pathnames
   :description "New pathnames."
-  :author "Stelian Ionescu <sionescu@common-lisp.net>"
+  :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls)
   :pathname (merge-pathnames #p"pathnames/" *load-truename*)

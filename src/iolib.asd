@@ -4,8 +4,8 @@
 
 (asdf:defsystem :iolib
   :description "I/O library."
-  :author "Stelian Ionescu <sionescu@common-lisp.net>"
-  :maintainer "Stelian Ionescu <sionescu@common-lisp.net>"
+  :author "Stelian Ionescu <sionescu@cddr.org>"
+  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :version "0.6.0-dev"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.multiplex :iolib.streams :iolib.sockets)
