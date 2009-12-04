@@ -77,7 +77,7 @@ failure."
         :finally (return env)))
 
 (defun environment (&optional env)
-  "If ENV is non-NIL, ENVIRONMENT copies ENV, otherwise returns the
+  "If ENV is an ENVIRONMENT instance it is copied, otherwise return the
 current global environment.
 SETF ENVIRONMENT replaces the contents of the global environment
 with that of its argument.
