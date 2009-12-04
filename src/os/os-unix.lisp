@@ -62,7 +62,8 @@ failure."
        (%remvar env name))))
   (values name))
 
-(defun %environment ()
+(defun environment ()
+  "Return the current global environment."
   (loop :with env := (make-instance 'environment)
         :for i :from 0 :by 1
         :for string := (mem-aref isys:*environ* :string i)
@@ -73,24 +74,13 @@ failure."
           (setf (environment-variable var :env env) val))
         :finally (return env)))
 
-(defun environment (&optional env)
-  "If ENV is an ENVIRONMENT instance it is copied, otherwise return the
-current global environment.
-SETF ENVIRONMENT replaces the contents of the global environment
+(defun (setf environment) (newenv)
+  "SETF ENVIRONMENT replaces the contents of the global environment
 with that of its argument.
 
 Often it is preferable to use SETF ENVIRONMENT-VARIABLE and
 MAKUNBOUND-ENVIRONMENT-VARIABLE to modify the environment instead
 of SETF ENVIRONMENT."
-  (etypecase env
-    (null
-     (%environment))
-    (environment
-     (make-instance 'environment
-                    :variables (copy-hash-table
-                                (environment-variables env))))))
-
-(defun (setf environment) (newenv)
   (check-type newenv environment)
   (let ((oldenv (environment)))
     (maphash (lambda (k v)
