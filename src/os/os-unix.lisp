@@ -31,24 +31,22 @@ SETF ENVIRONMENT-VARIABLE sets the environment variable
 identified by NAME to VALUE.  Both NAME and VALUE can be either a
 symbols or strings. Signals an error on failure."
   (let ((name (string name)))
-    (cond
-      (env
-       (check-type env environment)
-       (%envar env name))
-      (t
-       (isys:%sys-getenv name)))))
+    (etypecase env
+      (null
+       (isys:%sys-getenv name))
+      (environment
+       (%envar env name)))))
 
 (defun (setf environment-variable) (value name &key env (overwrite t))
-  (check-type value string)
-  (let ((name (string name)))
-    (cond
-      (env
-       (check-type env environment)
+  (let ((value (string value))
+        (name (string name)))
+    (etypecase env
+      (null
+       (isys:%sys-setenv (string name) value overwrite))
+      (environment
        (when (or overwrite
                  (null (nth-value 1 (%envar env name))))
-         (setf (%envar env name) value)))
-      (t
-       (isys:%sys-setenv (string name) value overwrite))))
+         (setf (%envar env name) value)))))
   value)
 
 (defun makunbound-environment-variable (name &key env)
@@ -57,12 +55,11 @@ current environment.  NAME can be either a string or a symbol.
 Returns the string designated by NAME.  Signals an error on
 failure."
   (let ((name (string name)))
-    (cond
-      (env
-       (check-type env environment)
-       (%remvar env name))
-      (t
-       (isys:%sys-unsetenv (string name)))))
+    (etypecase env
+      (null
+       (isys:%sys-unsetenv (string name)))
+      (environment
+       (%remvar env name))))
   (values name))
 
 (defun %environment ()
@@ -85,14 +82,13 @@ with that of its argument.
 Often it is preferable to use SETF ENVIRONMENT-VARIABLE and
 MAKUNBOUND-ENVIRONMENT-VARIABLE to modify the environment instead
 of SETF ENVIRONMENT."
-  (cond
-    (env
-     (check-type env environment)
+  (etypecase env
+    (null
+     (%environment))
+    (environment
      (make-instance 'environment
                     :variables (copy-hash-table
-                                (environment-variables env))))
-    (t
-     (%environment))))
+                                (environment-variables env))))))
 
 (defun (setf environment) (newenv)
   (check-type newenv environment)
