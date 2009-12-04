@@ -12,16 +12,6 @@
               :initform (make-hash-table :test #'equal)
               :accessor environment-variables)))
 
-(defun %envar (env name)
-  (gethash name (environment-variables env)))
-
-(defun (setf %envar) (value env name)
-  (setf (gethash name (environment-variables env))
-        value))
-
-(defun %remvar (env name)
-  (remhash name (environment-variables env)))
-
 (defun environment-variable (name &key env)
   "ENVIRONMENT-VARIABLE returns the environment variable
 identified by NAME, or NIL if one does not exist.  NAME can
@@ -35,7 +25,7 @@ symbols or strings. Signals an error on failure."
       (null
        (isys:%sys-getenv name))
       (environment
-       (%envar env name)))))
+       (gethash name (environment-variables env))))))
 
 (defun (setf environment-variable) (value name &key env (overwrite t))
   (let ((value (string value))
@@ -45,8 +35,9 @@ symbols or strings. Signals an error on failure."
        (isys:%sys-setenv (string name) value overwrite))
       (environment
        (when (or overwrite
-                 (null (nth-value 1 (%envar env name))))
-         (setf (%envar env name) value)))))
+                 (null (nth-value 1 (gethash name (environment-variables env)))))
+         (setf (gethash name (environment-variables env))
+               value)))))
   value)
 
 (defun makunbound-environment-variable (name &key env)
@@ -59,7 +50,7 @@ failure."
       (null
        (isys:%sys-unsetenv (string name)))
       (environment
-       (%remvar env name))))
+       (remhash name (environment-variables env)))))
   (values name))
 
 (defun environment ()
