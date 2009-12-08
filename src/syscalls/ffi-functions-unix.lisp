@@ -907,16 +907,10 @@ as indicated by WHICH and WHO to VALUE."
 
 (defentrypoint %sys-getenv (name)
   "Returns the value of environment variable NAME."
-  ;; FIXME: race condition
-  (setf (%sys-errno) 0)
-  (let ((retval (foreign-funcall "getenv" :string name :pointer))
-        (errno (%sys-errno)))
-    (cond
-      ((not (null-pointer-p retval))
-       (nth-value 0 (foreign-string-to-lisp retval)))
-      ((plusp errno)
-       (signal-syscall-error errno))
-      (t nil))))
+  (when (and (pointerp name) (null-pointer-p name))
+    (setf (%sys-errno) einval)
+    (signal-syscall-error))
+  (foreign-funcall "getenv" :string name :string))
 
 (defsyscall (%sys-setenv "setenv") :int
   "Changes the value of environment variable NAME to VALUE.
