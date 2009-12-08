@@ -12,6 +12,14 @@
               :initform (make-hash-table :test #'equal)
               :accessor environment-variables)))
 
+(defmethod print-object ((env environment) stream)
+  (print-unreadable-object (env stream :type t :identity nil)
+    (let ((keys (sort (hash-table-keys (environment-variables env))
+                      #'string-lessp)))
+      (format stream "~A variables: ~S ... ~S"
+              (length keys)
+              (car keys) (lastcar keys)))))
+
 (declaim (inline %getenv/obj %setenv/obj %unsetenv/obj))
 
 (defun %getenv/obj (env name)
