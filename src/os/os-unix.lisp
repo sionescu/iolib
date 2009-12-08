@@ -12,6 +12,20 @@
               :initform (make-hash-table :test #'equal)
               :accessor environment-variables)))
 
+(declaim (inline %getenv/obj %setenv/obj %unsetenv/obj))
+
+(defun %getenv/obj (env name)
+  (gethash name (environment-variables env)))
+
+(defun %setenv/obj (env name value overwrite)
+  (when (or overwrite
+            (not (nth-value 1 (%getenv/obj env name))))
+    (setf (gethash name (environment-variables env))
+          value)))
+
+(defun %unsetenv/obj (env name)
+  (remhash name (environment-variables env)))
+
 (defun environment-variable (name &key env)
   "ENVIRONMENT-VARIABLE returns the environment variable
 identified by NAME, or NIL if one does not exist.  NAME can
@@ -25,20 +39,17 @@ symbols or strings. Signals an error on failure."
       (null
        (isys:%sys-getenv name))
       (environment
-       (gethash name (environment-variables env))))))
+       (%getenv/obj env name)))))
 
 (defun (setf environment-variable) (value name &key env (overwrite t))
   (let ((value (string value))
         (name (string name)))
     (etypecase env
       (null
-       (isys:%sys-setenv (string name) value overwrite))
+       (isys:%sys-setenv name value overwrite))
       (environment
-       (when (or overwrite
-                 (null (nth-value 1 (gethash name (environment-variables env)))))
-         (setf (gethash name (environment-variables env))
-               value)))))
-  value)
+       (%setenv/obj env name value overwrite)))
+    value))
 
 (defun makunbound-environment-variable (name &key env)
   "Removes the environment variable identified by NAME from the
@@ -48,10 +59,10 @@ failure."
   (let ((name (string name)))
     (etypecase env
       (null
-       (isys:%sys-unsetenv (string name)))
+       (isys:%sys-unsetenv name))
       (environment
-       (remhash name (environment-variables env)))))
-  (values name))
+       (%unsetenv/obj env name)))
+    name))
 
 (defun environment ()
   "Return the current global environment."
@@ -60,9 +71,9 @@ failure."
         :for string := (mem-aref isys:*environ* :string i)
         :for split := (position #\= string)
         :while string :do
-        (let ((var (subseq string 0 split))
-              (val (subseq string (1+ split))))
-          (setf (environment-variable var :env env) val))
+        (let ((name (subseq string 0 split))
+              (value (subseq string (1+ split))))
+          (%setenv/obj env name value t))
         :finally (return env)))
 
 (defun (setf environment) (newenv)
