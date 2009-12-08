@@ -66,15 +66,17 @@ failure."
 
 (defun environment ()
   "Return the current global environment."
-  (loop :with env := (make-instance 'environment)
-        :for i :from 0 :by 1
-        :for string := (mem-aref isys:*environ* :string i)
-        :for split := (position #\= string)
-        :while string :do
-        (let ((name (subseq string 0 split))
-              (value (subseq string (1+ split))))
-          (%setenv/obj env name value t))
-        :finally (return env)))
+  (let ((env (make-instance 'environment))
+        (envptr isys:*environ*))
+    (unless (null-pointer-p envptr)
+      (loop :for i :from 0 :by 1
+            :for string := (mem-aref envptr :string i)
+            :for split := (position #\= string)
+            :while string :do
+            (let ((name (subseq string 0 split))
+                  (value (subseq string (1+ split))))
+              (%setenv/obj env name value t))))
+    env))
 
 (defun (setf environment) (newenv)
   "SETF ENVIRONMENT replaces the contents of the global environment
