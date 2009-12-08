@@ -20,18 +20,18 @@
               (length keys)
               (car keys) (lastcar keys)))))
 
-(declaim (inline %getenv/obj %setenv/obj %unsetenv/obj))
+(declaim (inline %obj-getenv %obj-setenv %obj-unsetenv))
 
-(defun %getenv/obj (env name)
+(defun %obj-getenv (env name)
   (gethash name (environment-variables env)))
 
-(defun %setenv/obj (env name value overwrite)
+(defun %obj-setenv (env name value overwrite)
   (when (or overwrite
-            (not (nth-value 1 (%getenv/obj env name))))
+            (not (nth-value 1 (%obj-getenv env name))))
     (setf (gethash name (environment-variables env))
           value)))
 
-(defun %unsetenv/obj (env name)
+(defun %obj-unsetenv (env name)
   (remhash name (environment-variables env)))
 
 (defun environment-variable (name &key env)
@@ -47,7 +47,7 @@ symbols or strings. Signals an error on failure."
       (null
        (isys:%sys-getenv name))
       (environment
-       (%getenv/obj env name)))))
+       (%obj-getenv env name)))))
 
 (defun (setf environment-variable) (value name &key env (overwrite t))
   (let ((value (string value))
@@ -56,7 +56,7 @@ symbols or strings. Signals an error on failure."
       (null
        (isys:%sys-setenv name value overwrite))
       (environment
-       (%setenv/obj env name value overwrite)))
+       (%obj-setenv env name value overwrite)))
     value))
 
 (defun makunbound-environment-variable (name &key env)
@@ -69,7 +69,7 @@ failure."
       (null
        (isys:%sys-unsetenv name))
       (environment
-       (%unsetenv/obj env name)))
+       (%obj-unsetenv env name)))
     name))
 
 (defun environment ()
@@ -83,7 +83,7 @@ failure."
             :while string :do
             (let ((name (subseq string 0 split))
                   (value (subseq string (1+ split))))
-              (%setenv/obj env name value t))))
+              (%obj-setenv env name value t))))
     env))
 
 (defun (setf environment) (newenv)
