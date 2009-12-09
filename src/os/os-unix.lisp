@@ -16,9 +16,11 @@
   (print-unreadable-object (env stream :type t :identity nil)
     (let ((keys (sort (hash-table-keys (environment-variables env))
                       #'string-lessp)))
-      (format stream "~A variables: ~S ... ~S"
-              (length keys)
-              (car keys) (lastcar keys)))))
+      (if keys
+          (format stream "~A variables: ~S ... ~S"
+                  (length keys)
+                  (car keys) (lastcar keys))
+          (format stream "empty")))))
 
 (declaim (inline %obj-getenv %obj-setenv %obj-unsetenv))
 
