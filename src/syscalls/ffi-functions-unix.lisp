@@ -94,6 +94,20 @@ The two memory areas may overlap."
   (buf   :pointer)
   (count size-t))
 
+(defsyscall (%sys-readv "readv")
+    (ssize-t :restart t :handle fd)
+  "Read from FD into the first IOVCNT buffers of the IOV array."
+  (fd     :int)
+  (iov    :pointer)
+  (iovcnt :int))
+
+(defsyscall (%sys-writev "writev")
+    (ssize-t :restart t :handle fd)
+  "Writes to FD the first IOVCNT buffers of the IOV array."
+  (fd     :int)
+  (iov    :pointer)
+  (iovcnt :int))
+
 (defsyscall (%sys-pread (#+linux "pread64" "pread"))
     (ssize-t :restart t :handle fd)
   "Read at most COUNT bytes from FD at offset OFFSET into the foreign area BUF."

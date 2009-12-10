@@ -87,6 +87,8 @@
    ;; Files
    #:%sys-read
    #:%sys-write
+   #:%sys-readv
+   #:%sys-writev
    #:%sys-pread
    #:%sys-pwrite
    #:%sys-open
