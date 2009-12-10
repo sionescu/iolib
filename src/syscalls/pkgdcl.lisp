@@ -211,6 +211,7 @@
    #:%sys-getenv
    #:%sys-setenv
    #:%sys-unsetenv
+   #:%sys-clearenv
 
    ;; Local info
    #:%sys-gethostname

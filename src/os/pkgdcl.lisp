@@ -14,6 +14,7 @@
    #:environment
    #:environment-variable
    #:makunbound-environment-variable
+   #:clear-environment
 
    ;; Directories
    #:current-directory

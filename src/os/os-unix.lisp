@@ -22,7 +22,7 @@
                   (car keys) (lastcar keys))
           (format stream "empty")))))
 
-(declaim (inline %obj-getenv %obj-setenv %obj-unsetenv))
+(declaim (inline %obj-getenv %obj-setenv %obj-unsetenv %obj-clearenv))
 
 (defun %obj-getenv (env name)
   (gethash name (environment-variables env)))
@@ -35,6 +35,9 @@
 
 (defun %obj-unsetenv (env name)
   (remhash name (environment-variables env)))
+
+(defun %obj-clearenv (env)
+  (clrhash (environment-variables env)))
 
 (defun environment-variable (name &key env)
   "ENVIRONMENT-VARIABLE returns the environment variable
@@ -73,6 +76,15 @@ failure."
       (environment
        (%obj-unsetenv env name)))
     name))
+
+(defun clear-environment (&key env)
+  "Removes all variables from an environment."
+  (etypecase env
+    (null
+     (isys:%sys-clearenv))
+    (environment
+     (%obj-clearenv env)
+     env)))
 
 (defun environment ()
   "Return the current global environment."

@@ -922,6 +922,18 @@ The environment variable is overwritten only if overwrite is not NIL."
 (defsyscall (%sys-unsetenv "unsetenv") :int
   "Removes the binding of environment variable NAME."
   (name :string))
+
+(defentrypoint %sys-clearenv ()
+  "Remove all name-value pairs from the environment and set the external
+variable *environ* to NULL."
+  (let ((envptr isys:*environ*))
+    (unless (null-pointer-p envptr)
+      (loop :for i :from 0 :by 1
+            :for string := (mem-aref envptr :string i)
+            :for name := (subseq string 0 (position #\= string))
+            :while name :do (isys:%sys-unsetenv name))
+      (setf (mem-ref envptr :pointer) (null-pointer)))
+    (values)))
 
 
 ;;;-------------------------------------------------------------------------
