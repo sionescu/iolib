@@ -108,14 +108,10 @@ Often it is preferable to use SETF ENVIRONMENT-VARIABLE and
 MAKUNBOUND-ENVIRONMENT-VARIABLE to modify the environment instead
 of SETF ENVIRONMENT."
   (check-type newenv environment)
-  (let ((oldenv (environment)))
-    (maphash (lambda (k v)
-               (setf (environment-variable k) v)
-               (makunbound-environment-variable k :env oldenv))
-             (environment-variables newenv))
-    (maphash (lambda (k v) (declare (ignore v))
-               (makunbound-environment-variable k))
-             (environment-variables oldenv)))
+  (isys:%sys-clearenv)
+  (maphash (lambda (k v)
+             (isys:%sys-setenv k v t))
+           (environment-variables newenv))
   newenv)
 
 
