@@ -109,8 +109,8 @@ MAKUNBOUND-ENVIRONMENT-VARIABLE to modify the environment instead
 of SETF ENVIRONMENT."
   (check-type newenv environment)
   (isys:%sys-clearenv)
-  (maphash (lambda (k v)
-             (isys:%sys-setenv k v t))
+  (maphash (lambda (name value)
+             (isys:%sys-setenv name value t))
            (environment-variables newenv))
   newenv)
 
