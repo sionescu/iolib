@@ -120,17 +120,16 @@ of SETF ENVIRONMENT."
 (defun current-directory ()
   "CURRENT-DIRECTORY returns the operating system's current
 directory, which may or may not correspond to
-*DEFAULT-FILE-PATH-DEFAULTS*.
-
-SETF CURRENT-DIRECTORY changes the operating system's current
-directory to the PATHSPEC.  An error is signalled if PATHSPEC
-is not a directory."
+*DEFAULT-FILE-PATH-DEFAULTS*."
   (let ((cwd (isys:%sys-getcwd)))
     (if cwd
         (parse-file-path cwd :expand-user nil)
         (isys:syscall-error "Could not get current directory."))))
 
 (defun (setf current-directory) (pathspec)
+  "SETF CURRENT-DIRECTORY changes the operating system's current
+directory to the PATHSPEC. An error is signalled if PATHSPEC
+is not a directory."
   (let ((path (file-path pathspec)))
     (isys:%sys-chdir (file-path-namestring path))))
 
