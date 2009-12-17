@@ -157,8 +157,8 @@
 
    ;; Directory walking
    #:%sys-opendir
-   #:%sys-fdopendir
-   #:%sys-dirfd
+   #-darwin #:%sys-fdopendir
+   #-darwin #:%sys-dirfd
    #:%sys-closedir
    #:%sys-readdir
    #:%sys-rewinddir
