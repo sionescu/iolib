@@ -279,7 +279,7 @@ within the extent of BODY.  Closes VAR."
                            (max-step *maximum-event-loop-step*))
   (declare (ignore timeout))
   (coercef min-step 'double-float)
-  (coercef max-step 'double-float)
+  (when max-step (coercef max-step 'double-float))
   (with-accessors ((mux mux-of) (fds fds-of) (exit-p exit-p)
                    (exit-when-empty exit-when-empty-p)
                    (timers timers-of) (fd-timers fd-timers-of)
