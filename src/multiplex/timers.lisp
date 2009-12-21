@@ -52,15 +52,11 @@
             (%timer-expire-time object)
             (%timer-one-shot object))))
 
-;; about 65 years
-(defconstant +far-into-the-future+ 2.0d9)
-
 (defun make-timer (function delay &key name one-shot)
   (flet ((abs-timeout (timeout)
            (+ (isys:%sys-get-monotonic-time)
               (normalize-timeout timeout))))
-    (let ((delay (or delay +far-into-the-future+))
-          (name (or name "(unnamed)")))
+    (let ((name (or name "(unnamed)")))
       (%make-timer name function (abs-timeout delay) delay one-shot))))
 
 (defun timer-name (timer)
