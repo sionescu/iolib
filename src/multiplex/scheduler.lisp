@@ -53,10 +53,8 @@
   (priority-queue-minimum schedule))
 
 (defun time-to-next-timer (schedule)
-  (let ((timer (peek-schedule schedule)))
-    (if timer
-        (%timer-expire-time timer)
-        +far-into-the-future+)))
+  (when-let ((timer (peek-schedule schedule)))
+    (%timer-expire-time timer)))
 
 ;;;
 ;;; Expiring timers

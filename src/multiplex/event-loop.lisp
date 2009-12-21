@@ -286,10 +286,14 @@ within the extent of BODY.  Closes VAR."
                    (expired-events expired-events-of))
       event-base
     (labels ((poll-timeout (now)
-               (clamp-timeout (- (min (time-to-next-timer timers)
-                                      (time-to-next-timer fd-timers))
-                                 now)
-                              min-step max-step))
+               (let* ((deadline1 (time-to-next-timer timers))
+                      (deadline2 (time-to-next-timer fd-timers))
+                      (deadline (if (and deadline1 deadline2)
+                                    (min deadline1 deadline2)
+                                    (or deadline1 deadline2))))
+                 (if deadline
+                     (clamp-timeout (- deadline now) min-step max-step)
+                     max-step)))
              (must-exit-loop-p ()
                (or exit-p
                    (and exit-when-empty
