@@ -162,6 +162,7 @@
   ((:ehostunreach "EHOSTUNREACH"))
   ((:enonet "ENONET") :optional t)
   ((:enobufs "ENOBUFS"))
+  ((:enotsup "ENOTSUP"))
   ((:eopnotsupp "EOPNOTSUPP")))
 
 
