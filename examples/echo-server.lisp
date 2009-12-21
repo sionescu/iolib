@@ -103,7 +103,7 @@
                 (progn
                   (setf *event-base* (make-instance 'iomux:event-base))
                   (with-open-stream (sock (start-echo-server host port))
-                    (declare (ignore sock))
+                    (declare (ignorable sock))
                     (iomux:event-dispatch *event-base* :timeout timeout)))
              (close-all-sockets)
              (close *event-base*))))
