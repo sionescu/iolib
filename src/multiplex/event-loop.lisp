@@ -264,8 +264,8 @@ within the extent of BODY.  Closes VAR."
 ;;; EVENT-DISPATCH
 ;;;-------------------------------------------------------------------------
 
-(defvar *minimum-event-loop-step* 0.5d0)
-(defvar *maximum-event-loop-step* 1.0d0)
+(defvar *minimum-event-loop-step* 0.0d0)
+(defvar *maximum-event-loop-step* nil)
 
 (defmethod event-dispatch :before
     ((event-base event-base) &key timeout one-shot min-step max-step)
