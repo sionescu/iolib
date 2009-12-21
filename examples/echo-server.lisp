@@ -27,7 +27,8 @@
 
 (defun close-socket (socket)
   (let ((fd (iolib.sockets:socket-os-fd socket)))
-    (ignore-errors (iomux:remove-fd-handlers *event-base* fd))
+    (ignore-some-conditions (isys:syscall-error)
+      (iomux:remove-fd-handlers *event-base* fd))
     (remove-socket socket)
     (close socket)))
 
@@ -84,7 +85,6 @@
     (unwind-protect-case ()
         (progn
           (setf (iolib.streams:fd-non-blocking socket) t)
-          (add-socket socket)
           (iomux:set-io-handler *event-base*
                                 (iolib.sockets:socket-os-fd socket)
                                 :read
@@ -103,6 +103,7 @@
                 (progn
                   (setf *event-base* (make-instance 'iomux:event-base))
                   (with-open-stream (sock (start-echo-server host port))
+                    (declare (ignore sock))
                     (iomux:event-dispatch *event-base* :timeout timeout)))
              (close-all-sockets)
              (close *event-base*))))
