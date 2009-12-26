@@ -16,7 +16,7 @@
 
 (defparameter *port* 9999)
 (defvar *event-base* nil)
-(defvar *sockets* (make-hash-table))
+(defvar *sockets* ())
 (defvar *counter* 0)
 
 (defun add-socket (socket)
@@ -63,7 +63,7 @@
   (lambda (fd event exception)
     (declare (ignore fd exception))
     (block nil
-      (when (eql :timeout event)
+      (when (eql :timeout exception)
         (warn "Got a server timeout!")
         (return))
       (let ((client (iolib.sockets:accept-connection socket)))
