@@ -343,9 +343,8 @@ within the extent of BODY.  Closes VAR."
           (setf writep (%dispatch-event fd-entry :write
                                         (if errorp :error nil) now)))
         (when errorp
-          (funcall (fd-entry-error-callback fd-entry)
-                   (fd-entry-fd fd-entry)
-                   :error)
+          (when-let ((callback (fd-entry-error-callback fd-entry)))
+            (funcall callback (fd-entry-fd fd-entry) :error))
           (setf readp t writep t))
         (when readp (push (fd-entry-read-handler fd-entry) deletion-list))
         (when writep (push (fd-entry-write-handler fd-entry) deletion-list)))
