@@ -128,4 +128,4 @@
         :when (and (or (isys:%sys-fd-isset fd read-fds)
                        (isys:%sys-fd-isset fd write-fds))
                    (fd-error-p fd))
-        :collect (cons fd :error)))
+        :collect (list fd (list :error))))
