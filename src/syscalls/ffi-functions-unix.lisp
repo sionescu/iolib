@@ -792,6 +792,11 @@ as indicated by WHICH and WHO to VALUE."
     (if (and (= retval -1) (/= errno 0))
         (signal-syscall-error errno)
         retval)))
+
+(defsyscall (%sys-exit "_exit") :void
+  "terminate the calling process"
+  (status :int))
+
 
 
 ;;;-------------------------------------------------------------------------
