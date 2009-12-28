@@ -61,7 +61,7 @@
 
 (defun make-listener-handler (socket)
   (lambda (fd event exception)
-    (declare (ignore fd exception))
+    (declare (ignore fd event))
     (block nil
       (when (eql :timeout exception)
         (warn "Got a server timeout!")
