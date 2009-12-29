@@ -42,6 +42,10 @@
    #:unknown-protocol
    #:unknown-service
 
+   ;; Restarts
+   #:ignore-syscall-error
+   #:retry-syscall
+
    ;; Condition Accessors
    #:error-code
    #:error-identifier
