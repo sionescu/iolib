@@ -1,8 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 
-(in-package :common-lisp-user)
-
-(asdf:defsystem :iolib.multiplex
+(defsystem :iolib.multiplex
   :description "I/O multiplexing library."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
@@ -29,13 +27,13 @@
 
    ;; Event sources
    (:file "backend-select"
-          :depends-on ("pkgdcl" "utils" "fd-entry" "multiplexer"))
+     :depends-on ("pkgdcl" "utils" "fd-entry" "multiplexer"))
    #+linux
    (:file "backend-epoll"
-          :depends-on ("pkgdcl" "utils" "fd-entry" "multiplexer"))
+     :depends-on ("pkgdcl" "utils" "fd-entry" "multiplexer"))
    #+bsd
    (:file "backend-kqueue"
-          :depends-on ("pkgdcl" "utils" "fd-entry" "multiplexer"))
+     :depends-on ("pkgdcl" "utils" "fd-entry" "multiplexer"))
    (:file "detect"
-          :depends-on ("pkgdcl" "multiplexer" "backend-select"
-                       #+linux "backend-epoll" #+bsd "backend-kqueue"))))
+     :depends-on ("pkgdcl" "multiplexer" "backend-select"
+                  #+linux "backend-epoll" #+bsd "backend-kqueue"))))

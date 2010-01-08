@@ -1,9 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
-;;;
-;;; --- ASDF system definition.
-;;;
 
-(asdf:defsystem :iolib.zeta-streams
+(defsystem :iolib.zeta-streams
   :description "Zeta streams."
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
@@ -15,8 +12,7 @@
    (:file "conditions" :depends-on ("pkgdcl"))
 
    ;; Platform-specific files
-   (:file "ffi-functions"
-     :pathname #+unix "ffi-functions-unix"
+   (:file "ffi-functions" :pathname #+unix "ffi-functions-unix"
      :depends-on ("pkgdcl" "conditions"))
 
    ;; Device interface definition
@@ -29,6 +25,5 @@
    (:file "stream" :depends-on ("pkgdcl" "types" "conditions" "device" "iobuf"))
 
    ;; Devices
-   (:file "file"
-     :pathname #+unix "file-unix"
+   (:file "file" :pathname #+unix "file-unix"
      :depends-on ("pkgdcl" "types" "conditions" "ffi-functions" "device" "stream"))))
