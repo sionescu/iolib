@@ -340,7 +340,7 @@ returned unmodified."
 (defmethod print-object ((address inet-address) stream)
   (let ((namestring (address-to-string address)))
     (if *print-escape*
-        (format stream "#/ip/~A" namestring)
+        (format stream "#/~S/~A" 'ip namestring)
         (write-string namestring stream))))
 
 (defmethod print-object ((address local-address) stream)
