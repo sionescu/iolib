@@ -5,8 +5,8 @@
 
 (in-package :common-lisp-user)
 
-(defpackage net.trivial-sockets
-  (:use :iolib.base)
+(defpackage :net.trivial-sockets
+  (:use :iolib.base :iolib.sockets)
   (:export #:open-stream #:socket-error #:socket-nested-error
            #:unsupported #:unsupported-feature
            #:open-server #:close-server #:accept-connection
@@ -35,10 +35,10 @@
 ;;;;
 
 (defun resolve-hostname (name)
-  (let ((iolib.sockets:*ipv6* nil))
+  (let ((*ipv6* nil))
     (cond
-      ((eql :any name) iolib.sockets:+ipv4-unspecified+)
-      (t (nth-value 0 (iolib.sockets:ensure-hostname name))))))
+      ((eql :any name) +ipv4-unspecified+)
+      (t (nth-value 0 (ensure-hostname name))))))
 
 (defun open-stream (peer-host peer-port &key
                     (local-host :any) (local-port 0)
@@ -48,16 +48,16 @@
   (declare (ignore element-type))
   (unless (eql :tcp protocol)
     (error 'unsupported :feature `(:protocol ,protocol)))
-  (let ((iolib.sockets:*ipv6* nil))
+  (let ((*ipv6* nil))
     (handler-bind ((error (lambda (c) (error 'socket-error :nested-error c))))
-      (iolib.sockets:make-socket :address-family :internet
-                               :connect :active
-                               :type :stream
-                               :remote-host (resolve-hostname peer-host)
-                               :remote-port peer-port
-                               :local-host (resolve-hostname local-host)
-                               :local-port local-port
-                               :external-format external-format))))
+      (make-socket :address-family :internet
+                   :connect :active
+                   :type :stream
+                   :remote-host (resolve-hostname peer-host)
+                   :remote-port peer-port
+                   :local-host (resolve-hostname local-host)
+                   :local-port local-port
+                   :external-format external-format))))
 
 (defun open-server (&key (host :any) (port 0)
                     (reuse-address t)
@@ -66,17 +66,17 @@
   "Returns a SERVER object and the port that was bound, as multiple values."
   (unless (eql :tcp protocol)
     (error 'unsupported :feature `(:protocol ,protocol)))
-  (let ((iolib.sockets:*ipv6* nil))
+  (let ((*ipv6* nil))
     (handler-bind ((error (lambda (c) (error 'socket-error :nested-error c))))
-      (let* ((host (if (eql :any host) iolib.sockets:+ipv4-unspecified+ host))
-             (socket (iolib.sockets:make-socket :address-family :internet
-                                              :type :stream
-                                              :connect :passive
-                                              :local-host host
-                                              :local-port port
-                                              :reuse-address reuse-address
-                                              :backlog backlog)))
-        (values socket (iolib.sockets:local-port socket))))))
+      (let* ((host (if (eql :any host) +ipv4-unspecified+ host))
+             (socket (make-socket :address-family :internet
+                                  :type :stream
+                                  :connect :passive
+                                  :local-host host
+                                  :local-port port
+                                  :reuse-address reuse-address
+                                  :backlog backlog)))
+        (values socket (local-port socket))))))
 
 (defun close-server (server)
   (close server))
@@ -85,9 +85,9 @@
                           (external-format :default)
                           (element-type 'character))
   (declare (ignore element-type))       ; bivalent streams
-  (let ((iolib.sockets:*ipv6* nil))
+  (let ((*ipv6* nil))
     (handler-bind ((error (lambda (c) (error 'socket-error :nested-error c))))
-      (iolib.sockets:accept-connection socket :external-format external-format))))
+      (accept-connection socket :external-format external-format))))
 
 ;;;;
 ;;;; Utilities
