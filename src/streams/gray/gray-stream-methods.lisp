@@ -107,14 +107,14 @@
            (incf (iobuf-start ib) nbytes)
          :if (zerop octets-needed) :do (loop-finish)
          :else :do (iobuf-reset ib)
-         :when (eq :eof (%fill-ibuf read-fn fd ib)) :do (loop-finish)
+         :when (eql :eof (%fill-ibuf read-fn fd ib)) :do (loop-finish)
          :finally (return array-offset)))))
 
 (defun %read-into-string (stream string start end)
   (declare (type dual-channel-gray-stream stream))
   (loop :for offset :from start :below end
         :for char := (stream-read-char stream)
-     :if (eq char :eof) :do (loop-finish)
+     :if (eql :eof char) :do (loop-finish)
      :else :do (setf (char string offset) char)
      :finally (return offset)))
 
@@ -122,7 +122,7 @@
   (declare (type dual-channel-gray-stream stream))
   (loop :for offset :from start :below end
         :for octet := (stream-read-byte stream)
-     :if (eq octet :eof) :do (loop-finish)
+     :if (eql :eof octet) :do (loop-finish)
      :else :do (setf (aref vector offset) octet)
      :finally (return offset)))
 
@@ -212,7 +212,7 @@
     `(multiple-value-bind (,bytes-written ,hangup-p)
          (progn ,@body)
        (declare (ignore ,bytes-written))
-       (when (eq :hangup ,hangup-p)
+       (when (eql :hangup ,hangup-p)
          (error 'hangup :stream ,stream)))))
 
 (defmethod stream-clear-output ((stream dual-channel-gray-stream))
@@ -301,7 +301,7 @@
              (return* #\Newline)))
       (:crlf (when (= char-code (char-code #\Return))
                (when (and (= 1 (iobuf-length ib))
-                          (eq :eof (%fill-ibuf read-fn fd ib)))
+                          (eql :eof (%fill-ibuf read-fn fd ib)))
                  (incf (iobuf-start ib))
                  (return* #\Return))
                (when (= (bref ib (1+ start-off))
@@ -327,7 +327,7 @@
             (babel-encodings:enc-max-units-per-char encoding)))
       (flet ((fill-buf-or-eof ()
                (setf ret (%fill-ibuf read-fn fd ib))
-               (when (eq ret :eof)
+               (when (eql :eof ret)
                  (return* :eof))))
         (cond ((zerop (iobuf-length ib))
                (iobuf-reset ib)
@@ -393,13 +393,13 @@
                max-octets-per-char)
         (iobuf-copy-data-to-start ib))
       (when (and (iomux:fd-ready-p fd :input)
-                 (eq :eof (%fill-ibuf read-fn fd ib)))
+                 (eql :eof (%fill-ibuf read-fn fd ib)))
         (setf eof t))
       (when (zerop (iobuf-length ib))
         (return* (if eof :eof nil)))
       ;; line-end handling
       (let ((line-end (maybe-find-line-ending-no-hang fd ib ef)))
-        (cond ((eq :starvation line-end)
+        (cond ((eql :starvation line-end)
                (return* (if eof #\Return nil)))
               ((characterp line-end)
                (return* line-end))))
@@ -434,7 +434,7 @@
 
 (defmethod stream-peek-char ((stream dual-channel-gray-stream))
   (let ((char (stream-read-char stream)))
-    (cond ((eq char :eof) :eof)
+    (cond ((eql :eof char) :eof)
           (t (%stream-unread-char stream)
              (values char)))))
 
@@ -444,7 +444,7 @@
 (defmethod stream-listen ((stream dual-channel-gray-stream))
   (let ((char (stream-read-char-no-hang stream)))
     (cond ((characterp char) (stream-unread-char stream char) t)
-          ((eq char :eof) nil)
+          ((eql :eof char) nil)
           (t t))))
 
 ;;;; Character Output
@@ -512,7 +512,7 @@
       stream
     (flet ((fill-buf-or-eof ()
              (iobuf-reset ib)
-             (when (eq :eof (%fill-ibuf read-fn fd ib))
+             (when (eql :eof (%fill-ibuf read-fn fd ib))
                (return* :eof))))
       (when (zerop (iobuf-length ib))
         (fill-buf-or-eof))

@@ -244,7 +244,7 @@ it also checks the file kind. If the tests succeed, return two values:
 truename and file kind of PATHSPEC, NIL otherwise.
 Follows symbolic links."
   (let* ((path (file-path pathspec))
-         (follow (unless (eq file-kind :symbolic-link) t))
+         (follow (unless (eql :symbolic-link file-kind) t))
          (actual-kind (file-kind path :follow-symlinks follow)))
     (when (and actual-kind
                (if file-kind (eql file-kind actual-kind) t))
@@ -266,7 +266,7 @@ if this is the case, NIL otherwise.  Follows symbolic links."
 (defun good-symlink-exists-p (pathspec)
   "Checks whether the file named by the file-path designator
 PATHSPEC exists and is a symlink pointing to an existent file."
-  (eq :broken (nth-value 1 (file-kind pathspec :follow-symlinks t))))
+  (eql :broken (nth-value 1 (file-kind pathspec :follow-symlinks t))))
 
 
 ;;;; Temporary files

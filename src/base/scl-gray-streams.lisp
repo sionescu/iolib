@@ -69,7 +69,7 @@
         (index 0))
     (loop
        (let ((ch (stream-read-char stream)))
-         (cond ((eq :eof ch)
+         (cond ((eql :eof ch)
                 (return (values (lisp::shrink-vector res index) t)))
                (t
                 (when (char= ch #\newline)

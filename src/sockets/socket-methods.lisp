@@ -19,7 +19,7 @@
               (:datagram sock-dgram)))
         (sp (cond
               ((integerp protocol) protocol)
-              ((eq :default protocol) 0)
+              ((eql :default protocol) 0)
               (t (lookup-protocol protocol)))))
     (values sf st sp)))
 

@@ -231,7 +231,7 @@ call CLOSE with :ABORT T on `VAR'."
   (let ((args (remove-from-plist args :address-family :type :connect :external-format :ipv6)))
     (when (eql :ipv4 address-family) (setf ipv6 nil))
     (let ((*ipv6* ipv6))
-      (when (eq :internet address-family) (setf address-family +default-inet-address-family+))
+      (when (eql :internet address-family) (setf address-family +default-inet-address-family+))
       (multiple-value-case ((address-family type connect))
         (((:ipv4 :ipv6) :stream :active)
          (%make-internet-stream-active-socket args address-family external-format))

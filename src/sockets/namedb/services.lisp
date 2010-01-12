@@ -35,8 +35,8 @@
 (defun protocol-compatible-p (protocol thing)
   (case protocol
     (:any t)
-    (:tcp (eq :tcp (make-keyword (string-upcase thing))))
-    (:udp (eq :udp (make-keyword (string-upcase thing))))))
+    (:tcp (eql :tcp (make-keyword (string-upcase thing))))
+    (:udp (eql :udp (make-keyword (string-upcase thing))))))
 
 (defun find-service-in-parsed-lines (tokens predicate)
   (when (< (length tokens) 2) (error 'parse-error))

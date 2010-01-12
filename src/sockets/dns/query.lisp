@@ -116,7 +116,7 @@
 (defmethod %decode-response :around ((msg dns-message) question-type)
   (declare (ignore question-type))
   (let ((return-code (rcode-field msg)))
-    (if (eq :no-error return-code) ; no error
+    (if (eql :no-error return-code) ; no error
         (call-next-method)
         (values return-code))))
 
@@ -134,7 +134,7 @@
         (consumed 0))
     (loop :for i :below answer-count
           :for ans := (aref answer i) :do
-          (if (eq :cname (dns-record-type ans))
+          (if (eql :cname (dns-record-type ans))
               (setf (gethash (dns-record-name ans) cnames)
                     (dns-rr-data ans))
               (loop-finish))
@@ -312,7 +312,7 @@
       (start :udp))))
 
 (defun preprocess-dns-name (name type)
-  (if (eq :ptr type)
+  (if (eql :ptr type)
       (dns-ptr-name name)
       name))
 

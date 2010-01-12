@@ -8,14 +8,14 @@
 (macrolet
     ((defconduit (name &body clauses)
        (assert (= 1 (length clauses)))
-       (assert (eq (caar clauses) :use))
+       (assert (eql :use (caar clauses)))
        (flet ((get-symbols (packages)
                 (let (symbols)
                   (with-package-iterator (iterator packages :external)
                     (loop (multiple-value-bind (morep symbol) (iterator)
                             (unless morep (return))
                             (push symbol symbols))))
-                  (remove-duplicates symbols :test #'eq))))
+                  (remove-duplicates symbols))))
          `(defpackage ,name
             (:use #:common-lisp ,@(cdar clauses))
             (:export ,@(get-symbols (cdar clauses)))))))

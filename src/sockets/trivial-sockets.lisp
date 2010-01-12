@@ -37,7 +37,7 @@
 (defun resolve-hostname (name)
   (let ((iolib.sockets:*ipv6* nil))
     (cond
-      ((eq name :any) iolib.sockets:+ipv4-unspecified+)
+      ((eql :any name) iolib.sockets:+ipv4-unspecified+)
       (t (nth-value 0 (iolib.sockets:ensure-hostname name))))))
 
 (defun open-stream (peer-host peer-port &key
@@ -46,7 +46,7 @@
                     (element-type 'character)
                     (protocol :tcp))
   (declare (ignore element-type))
-  (unless (eq protocol :tcp)
+  (unless (eql :tcp protocol)
     (error 'unsupported :feature `(:protocol ,protocol)))
   (let ((iolib.sockets:*ipv6* nil))
     (handler-bind ((error (lambda (c) (error 'socket-error :nested-error c))))
@@ -64,11 +64,11 @@
                     (backlog 1)
                     (protocol :tcp))
   "Returns a SERVER object and the port that was bound, as multiple values."
-  (unless (eq protocol :tcp)
+  (unless (eql :tcp protocol)
     (error 'unsupported :feature `(:protocol ,protocol)))
   (let ((iolib.sockets:*ipv6* nil))
     (handler-bind ((error (lambda (c) (error 'socket-error :nested-error c))))
-      (let* ((host (if (eq host :any) iolib.sockets:+ipv4-unspecified+ host))
+      (let* ((host (if (eql :any host) iolib.sockets:+ipv4-unspecified+ host))
              (socket (iolib.sockets:make-socket :address-family :internet
                                               :type :stream
                                               :connect :passive

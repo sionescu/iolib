@@ -20,7 +20,7 @@
              (dns-flag-p reply :not-implemented))
          'resolver-fail-error)
         ((loop :for rr :across (dns-message-answer reply)
-               :never (eq query-type (dns-record-type rr)))
+               :never (eql query-type (dns-record-type rr)))
          'resolver-no-name-error)))
 
 (defun check-reply-for-errors (reply host query-type)
@@ -37,7 +37,7 @@
               (list (cons hostname address))))))
 
 (defun lookup-host-by-address (address ipv6)
-  (cond ((and (eq :ipv6 ipv6)
+  (cond ((and (eql :ipv6 ipv6)
               (ipv4-address-p address))
          (setf address (map-ipv4-address-to-ipv6 address)))
         ((and (member ipv6 '(nil t))
