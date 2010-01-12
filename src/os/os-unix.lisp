@@ -39,7 +39,7 @@
 (defun %obj-clearenv (env)
   (clrhash (environment-variables env)))
 
-(defun environment-variable (name &key env)
+(defun environment-variable (name &optional env)
   "ENVIRONMENT-VARIABLE returns the environment variable
 identified by NAME, or NIL if one does not exist.  NAME can
 either be a symbol or a string.
@@ -54,7 +54,7 @@ symbols or strings. Signals an error on failure."
       (environment
        (%obj-getenv env name)))))
 
-(defun (setf environment-variable) (value name &key env (overwrite t))
+(defun (setf environment-variable) (value name &optional env &key (overwrite t))
   (let ((value (string value))
         (name (string name)))
     (etypecase env
@@ -64,7 +64,7 @@ symbols or strings. Signals an error on failure."
        (%obj-setenv env name value overwrite)))
     value))
 
-(defun makunbound-environment-variable (name &key env)
+(defun makunbound-environment-variable (name &optional env)
   "Removes the environment variable identified by NAME from the
 current environment.  NAME can be either a string or a symbol.
 Returns the string designated by NAME.  Signals an error on
@@ -77,7 +77,7 @@ failure."
        (%obj-unsetenv env name)))
     name))
 
-(defun clear-environment (&key env)
+(defun clear-environment (&optional env)
   "Removes all variables from an environment."
   (etypecase env
     (null
