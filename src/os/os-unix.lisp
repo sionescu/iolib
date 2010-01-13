@@ -510,8 +510,8 @@ the files and directories contained within.  Returns T on success."
         (:directory
          (if recursive
              (walk-directory pathspec
-                             (lambda (name kind parent)
-                               (declare (ignore parent))
+                             (lambda (name kind parent depth)
+                               (declare (ignore parent depth))
                                (case kind
                                  (:directory (%delete-directory name))
                                  (t          (%delete-file name))))
