@@ -3,7 +3,7 @@
 ;;; --- Error conditions.
 ;;;
 
-(in-package :iolib.zeta-streams)
+(in-package :iolib.zstreams)
 
 (define-condition posix-file-error (file-error)
   ((action :initarg :action :reader posix-file-error-action)

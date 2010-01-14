@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 
-(defsystem :iolib.zeta-streams
+(defsystem :iolib.zstreams
   :description "Zeta streams."
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"

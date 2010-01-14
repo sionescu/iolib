@@ -3,7 +3,7 @@
 ;;; --- Zeta Streams.
 ;;;
 
-(in-package :iolib.zeta-streams)
+(in-package :iolib.zstreams)
 
 ;;;-------------------------------------------------------------------------
 ;;; Classes and Types

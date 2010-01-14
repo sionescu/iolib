@@ -3,7 +3,7 @@
 ;;; --- Various types.
 ;;;
 
-(in-package :iolib.zeta-streams)
+(in-package :iolib.zstreams)
 
 (deftype octet () '(unsigned-byte  8))
 (deftype ub8   () '(unsigned-byte  8))

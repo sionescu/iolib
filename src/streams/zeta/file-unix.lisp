@@ -3,7 +3,7 @@
 ;;; --- File devices.
 ;;;
 
-(in-package :iolib.zeta-streams)
+(in-package :iolib.zstreams)
 
 ;;;-------------------------------------------------------------------------
 ;;; Classes and Types

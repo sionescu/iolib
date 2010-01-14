@@ -3,7 +3,7 @@
 ;;; --- *NIX-specific routines.
 ;;;
 
-(in-package :iolib.zeta-streams)
+(in-package :iolib.zstreams)
 
 ;;;-------------------------------------------------------------------------
 ;;; FD polling
