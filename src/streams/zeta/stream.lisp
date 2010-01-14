@@ -230,7 +230,7 @@
           :finally (when unused
                      (warn "Invalid stream instance flag~P: ~{~S~^, ~}"
                            (length unused) unused))
-	      (return bits))))
+                   (return bits))))
 
 (defmacro with-zstream-class ((class-name &optional stream) &body body)
   (if stream
@@ -699,7 +699,7 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; MEMORY-ZSTREAM GROW
+;;; MEMORY-ZSTREAM GROWTH
 ;;;-------------------------------------------------------------------------
 
 (defmethod %ensure-buffer-capacity
