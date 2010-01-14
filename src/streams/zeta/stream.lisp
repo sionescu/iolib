@@ -329,9 +329,11 @@
     (cond
       (data
        (check-bounds data start end)
-       (when element-type
-         ;; FIXME: signal proper condition
-         (assert (subtypep element-type (array-element-type data))))
+       (when (and element-type
+                  (not (subtypep element-type (array-element-type data))))
+         (error 'subtype-error
+                :datum element-type
+                :expected-supertype (array-element-type data)))
        (setf data-vector
              (make-array (truncate (* adjust-size (length data)))
                          :element-type (or element-type
