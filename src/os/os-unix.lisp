@@ -41,12 +41,8 @@
 
 (defun environment-variable (name &optional env)
   "ENVIRONMENT-VARIABLE returns the environment variable
-identified by NAME, or NIL if one does not exist.  NAME can
-either be a symbol or a string.
-
-SETF ENVIRONMENT-VARIABLE sets the environment variable
-identified by NAME to VALUE.  Both NAME and VALUE can be either a
-symbols or strings. Signals an error on failure."
+identified by NAME, or NIL if one does not exist. NAME can
+either be a symbol or a string."
   (let ((name (string name)))
     (etypecase env
       (null
@@ -55,6 +51,9 @@ symbols or strings. Signals an error on failure."
        (%obj-getenv env name)))))
 
 (defun (setf environment-variable) (value name &optional env &key (overwrite t))
+  "SETF ENVIRONMENT-VARIABLE sets the environment variable
+identified by NAME to VALUE. Both NAME and VALUE can be either a
+symbols or strings. Signals an error on failure."
   (let ((value (string value))
         (name (string name)))
     (etypecase env
@@ -66,8 +65,8 @@ symbols or strings. Signals an error on failure."
 
 (defun makunbound-environment-variable (name &optional env)
   "Removes the environment variable identified by NAME from the
-current environment.  NAME can be either a string or a symbol.
-Returns the string designated by NAME.  Signals an error on
+current environment. NAME can be either a string or a symbol.
+Returns the string designated by NAME. Signals an error on
 failure."
   (let ((name (string name)))
     (etypecase env
@@ -227,7 +226,7 @@ then just remove «.» and «..», otherwise symlinks are resolved too."
 
 (defun file-kind (pathspec &key follow-symlinks)
   "Returns a keyword indicating the kind of file designated by PATHSPEC,
-or NIL if the file does not exist.  Does not follow symbolic
+or NIL if the file does not exist. Does not follow symbolic
 links by default.
 
 Possible file-kinds in addition to NIL are: :REGULAR-FILE,
@@ -259,8 +258,8 @@ if this is the case, NIL otherwise. Follows symbolic links."
 
 (defun directory-exists-p (pathspec)
   "Checks whether the file named by the file-path designator
-PATHSPEC exists and is a directory.  Returns its truename
-if this is the case, NIL otherwise.  Follows symbolic links."
+PATHSPEC exists and is a directory. Returns its truename
+if this is the case, NIL otherwise. Follows symbolic links."
   (nth-value 0 (file-exists-p pathspec :directory)))
 
 (defun good-symlink-exists-p (pathspec)
@@ -282,13 +281,13 @@ PATHSPEC exists and is a symlink pointing to an existent file."
 
 (defun read-symlink (pathspec)
   "Returns the file-path pointed to by the symbolic link
-designated by PATHSPEC.  If the link is relative, then the
+designated by PATHSPEC. If the link is relative, then the
 returned file-path is relative to the link, not
 *DEFAULT-FILE-PATH-DEFAULTS*.
 
 Signals an error if PATHSPEC is not a symbolic link."
   ;; Note: the previous version tried much harder to provide a buffer
-  ;; big enough to fit the link's name.  OTOH, %SYS-READLINK stack
+  ;; big enough to fit the link's name. OTOH, %SYS-READLINK stack
   ;; allocates on most lisps.
   (file-path (isys:%sys-readlink
               (file-path-namestring
@@ -298,7 +297,7 @@ Signals an error if PATHSPEC is not a symbolic link."
   "Creates symbolic LINK that points to TARGET.
 Returns the file-path of the link.
 
-Relative targets are resolved against the link.  Relative links
+Relative targets are resolved against the link. Relative links
 are resolved against *DEFAULT-FILE-PATH-DEFAULTS*.
 
 Signals an error if TARGET does not exist, or LINK exists already."
@@ -314,7 +313,7 @@ Signals an error if TARGET does not exist, or LINK exists already."
   "Creates hard LINK that points to TARGET.
 Returns the file-path of the link.
 
-Relative targets are resolved against the link.  Relative links
+Relative targets are resolved against the link. Relative links
 are resolved against *DEFAULT-FILE-PATH-DEFAULTS*.
 
 Signals an error if TARGET does not exist, or LINK exists already."
@@ -381,16 +380,16 @@ to the designated directory for the dynamic scope of the body.
 
 Within the lexical scope of the body, ITERATOR is defined via
 macrolet such that successive invocations of (ITERATOR) return
-the directory entries, one by one.  Both files and directories
-are returned, except '.' and '..'.  The order of entries is not
-guaranteed.  The entries are returned as relative file-paths
-against the designated directory.  Entries that are symbolic
+the directory entries, one by one. Both files and directories
+are returned, except '.' and '..'. The order of entries is not
+guaranteed. The entries are returned as relative file-paths
+against the designated directory. Entries that are symbolic
 links are not resolved, but links that point to directories are
-interpreted as directory designators.  Once all entries have been
+interpreted as directory designators. Once all entries have been
 returned, further invocations of (ITERATOR) will all return NIL.
 
 The value returned is the value of the last form evaluated in
-body.  Signals an error if PATHSPEC is not a directory."
+body. Signals an error if PATHSPEC is not a directory."
   (with-unique-names (one-iter)
     `(call-with-directory-iterator
       ,pathspec
@@ -418,7 +417,7 @@ body.  Signals an error if PATHSPEC is not a directory."
 
 (defun mapdir (function pathspec)
   "Applies function to each entry in directory designated by
-PATHSPEC in turn and returns a list of the results.  Binds
+PATHSPEC in turn and returns a list of the results. Binds
 *DEFAULT-FILE-PATH-DEFAULTS* to the directory designated by
 pathspec round to function call.
 
@@ -443,7 +442,7 @@ within the directory named by PATHSPEC."
                        (test (constantly t)) (key #'identity))
   "Recursively applies the function FN to all files within the
 directory named by the FILE-PATH designator DIRNAME and all of
-the files and directories contained within.  Returns T on success."
+the files and directories contained within. Returns T on success."
   (assert (<= 0 mindepth maxdepth))
   (labels ((walk (name depth parent)
              (let* ((kind
