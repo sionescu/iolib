@@ -306,7 +306,7 @@ within the extent of BODY.  Closes VAR."
         (setf expired-events nil)
         (setf (values eventsp deletion-list)
               (dispatch-fd-events-once event-base poll-timeout now))
-        (%remove-handlers event-base deletion-list)
+        (%remove-handlers event-base (delete nil deletion-list))
         (when (expire-pending-timers fd-timers now) (setf eventsp t))
         (dispatch-fd-timeouts expired-events)
         (when (expire-pending-timers timers now) (setf eventsp t))
@@ -352,13 +352,14 @@ within the extent of BODY.  Closes VAR."
 
 (defun %dispatch-event (fd-entry event-type errorp now)
   (let ((ev (fd-entry-handler fd-entry event-type)))
-    (funcall (fd-handler-callback ev)
-             (fd-entry-fd fd-entry)
-             event-type
-             (if errorp :error nil))
-    (when-let (timer (fd-handler-timer ev))
-      (reschedule-timer-relative-to-now timer now))
-    (fd-handler-one-shot-p ev)))
+    (when ev
+      (funcall (fd-handler-callback ev)
+               (fd-entry-fd fd-entry)
+               event-type
+               (if errorp :error nil))
+      (when-let (timer (fd-handler-timer ev))
+        (reschedule-timer-relative-to-now timer now))
+      (fd-handler-one-shot-p ev))))
 
 (defun dispatch-fd-timeouts (events)
   (dolist (ev events)
