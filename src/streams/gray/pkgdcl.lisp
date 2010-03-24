@@ -16,6 +16,7 @@
 
    ;; Conditions
    #:hangup
+   #:no-characters-to-unread
 
    ;; Types
    #:sb16

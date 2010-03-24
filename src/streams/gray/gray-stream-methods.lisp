@@ -424,8 +424,12 @@
       stream
     (symbol-macrolet ((start (iobuf-start ib)))
       (cond
-        ((> start unread-index) (setf start unread-index))
-        (t (error "No uncommitted character to unread")))))
+        ((> start unread-index)
+         (setf start unread-index))
+        ((= start unread-index)
+         (error 'no-characters-to-unread :stream stream))
+        (t (bug "On stream ~S the buffer start(~A) is less than the unread index(~A)."
+                stream start unread-index)))))
   nil)
 
 (defmethod stream-unread-char ((stream dual-channel-gray-stream) character)
