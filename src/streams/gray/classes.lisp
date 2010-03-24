@@ -99,6 +99,8 @@
   ((external-format :initform :default :initarg :external-format
                     :reader external-format-of
                     :documentation "placehold")
+   (eol-writer      :initform nil :type function
+                    :reader eol-writer-of)
    ;; Input buffer.
    (input-buffer :initform nil :type (or iobuf null)
                  :accessor input-buffer-of)

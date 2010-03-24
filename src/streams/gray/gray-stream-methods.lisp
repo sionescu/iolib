@@ -53,8 +53,13 @@
 
 (defmethod (setf external-format-of)
     (external-format (stream dual-channel-gray-stream))
-  (setf (slot-value stream 'external-format)
-        (babel:ensure-external-format external-format)))
+  (let ((canonical-ef (babel:ensure-external-format external-format)))
+    (setf (slot-value stream 'external-format) canonical-ef)
+    (setf (slot-value stream 'eol-writer)
+          (case (babel:external-format-eol-style canonical-ef)
+            (:lf   #'stream-write-lf)
+            (:crlf #'stream-write-crlf)
+            (:cr   #'stream-write-cr)))))
 
 ;;;; Input Methods
 
@@ -453,8 +458,7 @@
                               (character character))
   (flush-obuf-if-needed stream)
   (if (char= character #\Newline)
-      (%write-line-terminator
-       stream (babel:external-format-eol-style (external-format-of stream)))
+      (funcall (eol-writer-of stream) stream)
       ;; FIXME: avoid consing a string here. At worst, declare it dynamic-extent
       (stream-write-string stream (make-string 1 :initial-element character))))
 
@@ -470,20 +474,26 @@
 (defmethod stream-fresh-line ((stream dual-channel-gray-stream))
   (write-char #\Newline stream) t)
 
-(defconstant (+unix-line-terminator+ :test 'equalp)
-  (make-array 1 :element-type 'ub8 :initial-contents '(10)))
+(defun stream-write-lf (stream)
+  (declare (type dual-channel-gray-stream stream))
+  (%write-simple-array-ub8 stream
+                           (load-time-value
+                            (map 'ub8-sarray #'char-code '(#\Linefeed)))
+                           0 1))
 
-(defconstant (+dos-line-terminator+ :test 'equalp)
-  (make-array 2 :element-type 'ub8 :initial-contents '(13 10)))
+(defun stream-write-crlf (stream)
+  (declare (type dual-channel-gray-stream stream))
+  (%write-simple-array-ub8 stream
+                           (load-time-value
+                            (map 'ub8-sarray #'char-code '(#\Return #\Linefeed)))
+                           0 2))
 
-(defconstant (+mac-line-terminator+ :test 'equalp)
-  (make-array 1 :element-type 'ub8 :initial-contents '(13)))
-
-(defun %write-line-terminator (stream line-terminator)
-  (case line-terminator
-    (:lf (%write-simple-array-ub8 stream +unix-line-terminator+ 0 1))
-    (:cr (%write-simple-array-ub8 stream +mac-line-terminator+ 0 1))
-    (:crlf (%write-simple-array-ub8 stream +dos-line-terminator+ 0 2))))
+(defun stream-write-cr (stream)
+  (declare (type dual-channel-gray-stream stream))
+  (%write-simple-array-ub8 stream
+                           (load-time-value
+                            (map 'ub8-sarray #'char-code '(#\Return)))
+                           0 1))
 
 (declaim (inline %write-string-chunk))
 (defun %write-string-chunk (stream string start end encoding)
@@ -500,12 +510,11 @@
                                 (string string) &optional (start 0) end)
   (check-bounds string start end)
   (do* ((ef (external-format-of stream))
-        (encoding (babel:external-format-encoding ef))
-        (eol-style (babel:external-format-eol-style ef)))
+        (encoding (babel:external-format-encoding ef)))
       ((= start end))
     (case (char string start)
       (#\Newline
-       (%write-line-terminator stream eol-style)
+       (funcall (eol-writer-of stream) stream)
        (incf start))
       (t
        (setf start (%write-string-chunk stream string start end encoding)))))
