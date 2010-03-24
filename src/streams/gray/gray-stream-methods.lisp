@@ -58,10 +58,6 @@
 
 ;;;; Input Methods
 
-(defun %to-octets (buff start end ef)
-  (babel:string-to-octets buff :start start :end end
-                          :encoding (babel:external-format-encoding ef)))
-
 (defmethod stream-clear-input ((stream dual-channel-gray-stream))
   (with-accessors ((ib input-buffer-of))
       stream
@@ -489,23 +485,31 @@
     (:cr (%write-simple-array-ub8 stream +mac-line-terminator+ 0 1))
     (:crlf (%write-simple-array-ub8 stream +dos-line-terminator+ 0 2))))
 
+(declaim (inline %write-string-chunk))
+(defun %write-string-chunk (stream string start end encoding)
+  (let* ((chunk-end
+          (or (position #\Newline string :start start :end end) end))
+         (octets
+          (babel:string-to-octets string
+                                  :start start :end chunk-end
+                                  :encoding encoding)))
+    (%write-simple-array-ub8 stream octets 0 (length octets))
+    chunk-end))
+
 (defmethod stream-write-string ((stream dual-channel-gray-stream)
                                 (string string) &optional (start 0) end)
   (check-bounds string start end)
-  (when (< start end)
-    (let* ((octets nil)
-           (ef (external-format-of stream))
-           (line-terminator (babel:external-format-eol-style ef)))
-      (loop :for off1 := start :then (1+ off2)
-            :for nl-off := (position #\Newline string :start off1)
-            :for off2 := (or nl-off end)
-         :when nl-off :do (%write-line-terminator stream line-terminator)
-         :when (> off2 off1) :do
-         ;; FIXME: should probably convert directly to a foreign buffer?
-         (setf octets (%to-octets string off1 off2 ef))
-         (%write-simple-array-ub8 stream octets 0 (length octets))
-         :while (< off2 end))))
-  (values string))
+  (do* ((ef (external-format-of stream))
+        (encoding (babel:external-format-encoding ef))
+        (eol-style (babel:external-format-eol-style ef)))
+      ((= start end))
+    (case (char string start)
+      (#\Newline
+       (%write-line-terminator stream eol-style)
+       (incf start))
+      (t
+       (setf start (%write-string-chunk stream string start end encoding)))))
+  string)
 
 ;;;; Binary Input
 
