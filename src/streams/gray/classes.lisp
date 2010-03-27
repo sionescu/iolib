@@ -28,10 +28,10 @@
 (deftype buffer-index () '(unsigned-byte 24))
 
 (defstruct (iobuf (:constructor %make-iobuf ()))
-  (data (null-pointer) :type stream-buffer)
-  (size 0 :type buffer-index)
-  (start 0 :type buffer-index)
-  (end 0 :type buffer-index))
+  (data  (null-pointer) :type stream-buffer)
+  (size  0              :type buffer-index)
+  (start 0              :type buffer-index)
+  (end   0              :type buffer-index))
 
 ;;;; File-Descriptor Mixins
 
@@ -100,17 +100,16 @@
                     :reader external-format-of
                     :documentation "placehold")
    (eol-writer      :reader eol-writer-of)
-   ;; Input buffer.
+   (eol-finder      :reader eol-finder-of)
    (input-buffer :initform nil :type (or iobuf null)
                  :accessor input-buffer-of)
-   ;; Output buffer.
    (output-buffer :initform nil :type (or iobuf null)
                   :accessor output-buffer-of)
    ;; Flag used by stream-force-output.
    (dirty :initform nil :type boolean :accessor dirtyp)
    ;; Last read char buffer index.
-   (ibuf-unread-index :initform 0 :type buffer-index
-                      :accessor ibuf-unread-index-of))
+   (unread-index :initform 0 :type buffer-index
+                 :accessor unread-index-of))
   (:documentation "placeholder"))
 
 (defgeneric (setf external-format-of) (external-format stream)
