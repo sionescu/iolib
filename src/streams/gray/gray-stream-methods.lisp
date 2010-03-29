@@ -188,13 +188,13 @@
             (if eofp :eof nil)
             ;; At this point, there's at least one octet in the buffer
             (let ((line-end (funcall (eol-finder-of stream) ib fd read-fn t eofp)))
-              (cond (;; There's a CR but it's not EOF so we could still receive a LF
-                     (and (eql :incomplete line-end) (not eofp))
-                     nil)
+              (cond ((null line-end)
+                     (decode-one-char/no-hang ib encoding))
                     ((eql #\Newline line-end)
                      #\Newline)
-                    (t
-                     (decode-one-char/no-hang ib encoding)))))))))
+                    ;; There's a CR but it's not EOF so we could still receive a LF
+                    ((and (eql :incomplete line-end) (not eofp))
+                     nil))))))))
 
 (defun %stream-unread-char (stream)
   (declare (type dual-channel-gray-stream stream))
