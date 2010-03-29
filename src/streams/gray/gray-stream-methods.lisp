@@ -184,8 +184,8 @@
     (let ((encoding (babel:external-format-encoding ef)))
       (%stream-rewind-iobuf stream ib encoding)
       (let ((eofp (eql :eof (%fill-ibuf/no-hang ib fd read-fn))))
-        (if (and eofp (iobuf-empty-p ib))
-            :eof
+        (if (iobuf-empty-p ib)
+            (if eofp :eof nil)
             ;; At this point, there's at least one octet in the buffer
             (let ((line-end (funcall (eol-finder-of stream) ib fd read-fn t eofp)))
               (cond (;; There's a CR but it's not EOF so we could still receive a LF
