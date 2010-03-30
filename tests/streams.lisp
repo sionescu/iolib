@@ -61,6 +61,7 @@
                                       (:append isys:o-append)
                                       (:overwrite 0)))
                             (logior isys:s-irusr isys:s-iwusr))))
+    (setf (isys:%sys-fd-nonblock fd) t)
     (make-instance 'my-file-stream
                    :path path
                    :input-fd fd

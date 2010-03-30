@@ -5,24 +5,7 @@
 
 (in-package :iolib.streams)
 
-;;;; Types
-
-(deftype ub8  () '(unsigned-byte 8))
-(deftype ub16 () '(unsigned-byte 16))
-(deftype ub32 () '(unsigned-byte 32))
-(deftype sb8  () '(signed-byte 8))
-(deftype sb16 () '(signed-byte 16))
-(deftype sb32 () '(signed-byte 32))
-
-(deftype ub8-sarray (&optional (size '*))
-  `(simple-array ub8 (,size)))
-
-(deftype ub8-vector () '(vector ub8))
-
-(deftype ub16-sarray (&optional (size '*))
-  `(simple-array ub16 (,size)))
-
-;;;; Socket Buffers
+;;;; Stream Buffers
 
 (deftype stream-buffer () 'foreign-pointer)
 (deftype buffer-index () '(unsigned-byte 24))
@@ -52,14 +35,10 @@
    (write-fn :initform #'default-write-fn :initarg :write-fn :accessor write-fn-of))
   (:documentation "placeholder"))
 
-(defgeneric input-fd-non-blocking (socket)
-  (:documentation "placeholder"))
-
+(defgeneric input-fd-non-blocking (socket))
 (defgeneric (setf input-fd-non-blocking) (mode fd-mixin))
 
-(defgeneric output-fd-non-blocking (socket)
-  (:documentation "placeholder"))
-
+(defgeneric output-fd-non-blocking (socket))
 (defgeneric (setf output-fd-non-blocking) (mode fd-mixin))
 
 (defclass dual-channel-single-fd-mixin (dual-channel-fd-mixin)
@@ -83,9 +62,7 @@
       (setf fd-in fd fd-out fd)
       (values fd-in))))
 
-(defgeneric fd-non-blocking (fd-mixin)
-  (:documentation "placeholder"))
-
+(defgeneric fd-non-blocking (fd-mixin))
 (defgeneric (setf fd-non-blocking) (mode fd-mixin))
 
 ;;;; Bivalent Socket Gray Stream
@@ -99,8 +76,9 @@
   ((external-format :initform :default :initarg :external-format
                     :reader external-format-of
                     :documentation "placehold")
-   (eol-writer      :reader eol-writer-of)
-   (eol-finder      :reader eol-finder-of)
+   (eol-writer :reader eol-writer-of)
+   (eol-finder :reader eol-finder-of)
+   (eol-finder/no-hang :reader eol-finder/no-hang-of)
    (input-buffer :initform nil :type (or iobuf null)
                  :accessor input-buffer-of)
    (output-buffer :initform nil :type (or iobuf null)

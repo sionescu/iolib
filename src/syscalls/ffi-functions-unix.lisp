@@ -413,6 +413,19 @@ Return two values: the file descriptor and the path of the temporary file."
     ((pointerp arg) (%%sys-fcntl/pointer fd cmd arg))
     (t (error "Wrong argument to fcntl: ~S" arg))))
 
+(defentrypoint %sys-fd-nonblock (fd)
+  (let ((current-flags (%sys-fcntl fd f-getfl)))
+    (logtest o-nonblock current-flags)))
+
+(defentrypoint (setf %sys-fd-nonblock) (newmode fd)
+  (let* ((current-flags (%sys-fcntl fd f-getfl))
+         (new-flags (if newmode
+                        (logior current-flags o-nonblock)
+                        (logandc2 current-flags o-nonblock))))
+    (when (/= new-flags current-flags)
+      (%sys-fcntl fd f-setfl new-flags))
+    newmode))
+
 (defsyscall (%%sys-ioctl/noarg "ioctl")
     (:int :restart t :handle fd)
   "Send request REQUEST to file referenced by FD."

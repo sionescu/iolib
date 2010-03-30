@@ -9,7 +9,7 @@
 ;;; Input
 ;;;-------------------------------------------------------------------------
 
-(declaim (inline %read-once))
+(declaim (notinline %read-once))
 (defun %read-once (fd read-fn iobuf)
   (declare (type function read-fn)
            (type iobuf iobuf))
@@ -21,7 +21,7 @@
       (isys:ewouldblock ()
         (iomux:wait-until-fd-ready fd :input nil t)))))
 
-(declaim (inline %fill-ibuf))
+(declaim (notinline %fill-ibuf))
 (defun %fill-ibuf (iobuf fd read-fn)
   (declare (type iobuf iobuf))
   (let ((nbytes (%read-once fd read-fn iobuf)))
@@ -29,7 +29,7 @@
         :eof
         (progn (incf (iobuf-end iobuf) nbytes) nbytes))))
 
-(declaim (inline %read-once/no-hang))
+(declaim (notinline %read-once/no-hang))
 (defun %read-once/no-hang (fd read-fn iobuf)
   (declare (type function read-fn)
            (type iobuf iobuf))
@@ -38,7 +38,7 @@
                (iobuf-end-space-length iobuf))
     (isys:ewouldblock () nil)))
 
-(declaim (inline %fill-ibuf/no-hang))
+(declaim (notinline %fill-ibuf/no-hang))
 (defun %fill-ibuf/no-hang (iobuf fd read-fn)
   (declare (type iobuf iobuf))
   (let ((nbytes (%read-once/no-hang fd read-fn iobuf)))
@@ -185,35 +185,58 @@
 ;;; Character Input
 ;;;-------------------------------------------------------------------------
 
-(defun stream-find-lf (iobuf fd read-fn no-hang eofp)
-  (declare (ignore fd read-fn no-hang eofp)
+(defun stream-find-lf (iobuf fd read-fn)
+  (declare (ignore fd read-fn)
            (type iobuf iobuf))
   (debug-only (assert (plusp (iobuf-length iobuf))))
-  (when (= (iobuf-start-octet iobuf) #.(char-code #\Linefeed))
-    (incf (iobuf-start iobuf))
-    #\Newline))
+  (cond
+    ((= (iobuf-peek iobuf) #.(char-code #\Linefeed))
+     (incf (iobuf-start iobuf))
+     #\Newline)
+    (t nil)))
 
-(defun stream-find-cr (iobuf fd read-fn no-hang eofp)
-  (declare (ignore fd read-fn no-hang eofp)
+(setf (fdefinition 'stream-find-lf/no-hang) #'stream-find-lf)
+
+(defun stream-find-cr (iobuf fd read-fn)
+  (declare (ignore fd read-fn)
            (type iobuf iobuf))
   (debug-only (assert (plusp (iobuf-length iobuf))))
-  (when (= (iobuf-start-octet iobuf) #.(char-code #\Return))
-    (incf (iobuf-start iobuf))
-    #\Newline))
+  (cond
+    ((= (iobuf-peek iobuf) #.(char-code #\Return))
+     (incf (iobuf-start iobuf))
+     #\Newline)
+    (t nil)))
 
-(defun stream-find-crlf (iobuf fd read-fn no-hang eofp)
+(setf (fdefinition 'stream-find-cr/no-hang) #'stream-find-cr)
+
+(defun stream-find-crlf (iobuf fd read-fn)
   (declare (type iobuf iobuf))
   (debug-only (assert (plusp (iobuf-length iobuf))))
-  (flet ((eofp ()
-           (or eofp (eql :eof (%fill-ibuf iobuf fd read-fn)))))
-    (if (= 1 (iobuf-length iobuf))
-        (cond
-          (no-hang :incomplete)
-          ((eofp)  nil))
-        (when (and (= (iobuf-start-octet iobuf 0) #.(char-code #\Return))
-                   (= (iobuf-start-octet iobuf 1) #.(char-code #\Linefeed)))
-          (incf (iobuf-start iobuf) 2)
-          #\Newline))))
+  (cond
+    ((/= (iobuf-peek iobuf) #.(char-code #\Return))
+     nil)
+    ((and (= 1 (iobuf-length iobuf))
+          (eql :eof (%fill-ibuf iobuf fd read-fn)))
+     nil)
+    ((= (iobuf-peek iobuf 1) #.(char-code #\Linefeed))
+     (incf (iobuf-start iobuf) 2)
+     #\Newline)
+    (t nil)))
+
+(defun stream-find-crlf/no-hang (iobuf fd read-fn)
+  (declare (type iobuf iobuf))
+  (debug-only (assert (plusp (iobuf-length iobuf))))
+  (cond
+    ((/= (iobuf-peek iobuf) #.(char-code #\Return))
+     nil)
+    ((= 1 (iobuf-length iobuf))
+     (if (eql :eof (%fill-ibuf/no-hang iobuf fd read-fn))
+         nil
+         :incomplete))
+    ((= (iobuf-peek iobuf 1) #.(char-code #\Linefeed))
+     (incf (iobuf-start iobuf) 2)
+     #\Newline)
+    (t nil)))
 
 (defun maybe-rewind-iobuf (iobuf encoding)
   (let ((max-octets-per-char
@@ -227,7 +250,8 @@
       (iobuf-copy-data-to-start iobuf))))
 
 (defun decode-one-char (fd read-fn iobuf encoding)
-  (tagbody :start
+  (debug-only (assert (plusp (iobuf-length iobuf))))
+  (loop
      (handler-case
          (multiple-value-bind (str ret)
              (foreign-string-to-lisp (iobuf-data iobuf)
@@ -247,6 +271,7 @@
              (return* :eof)))))))
 
 (defun decode-one-char/no-hang (iobuf encoding)
+  (debug-only (assert (plusp (iobuf-length iobuf))))
   (handler-case
       (multiple-value-bind (string ret)
           (foreign-string-to-lisp (iobuf-data iobuf)

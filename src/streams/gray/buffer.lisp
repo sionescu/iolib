@@ -55,7 +55,7 @@
   (setf (iobuf-start iobuf) 0
         (iobuf-end iobuf)   0))
 
-(defun iobuf-start-octet (iobuf &optional (offset 0))
+(defun iobuf-peek (iobuf &optional (offset 0))
   (bref iobuf (+ (iobuf-start iobuf) offset)))
 
 (defun iobuf-copy-data-to-start (iobuf)

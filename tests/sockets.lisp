@@ -337,19 +337,23 @@
   (is-true
    (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
                         :type :datagram :address-family :ipv4)
-     (setf (socket-option s :receive-timeout) *echo-timeout*)
      (send-to s #(1 2 3 4 5))
-     (let ((nbytes (nth-value 1 (receive-from s :size 200))))
+     (let ((nbytes (nth-value 1 (handler-bind ((isys:ewouldblock
+                                                 (lambda (e) (declare (ignore e))
+                                                   (invoke-restart 'retry-syscall *echo-timeout*))))
+                                    (receive-from s :size 200)))))
        (plusp nbytes)))))
 
 (test (simple-udp-client.2 :compile-at :definition-time)
   (is-true
    (with-open-socket (s :type :datagram :address-family :ipv4)
-     (setf (socket-option s :receive-timeout) *echo-timeout*)
      (send-to s #(1 2 3 4 5)
               :remote-host *echo-address*
               :remote-port *echo-port*)
-     (let ((nbytes (nth-value 1 (receive-from s :size 200))))
+     (let ((nbytes (nth-value 1 (handler-bind ((isys:ewouldblock
+                                                 (lambda (e) (declare (ignore e))
+                                                   (invoke-restart 'retry-syscall *echo-timeout*))))
+                                    (receive-from s :size 200)))))
        (plusp nbytes)))))
 
 (test (simple-local-sockets :compile-at :definition-time)

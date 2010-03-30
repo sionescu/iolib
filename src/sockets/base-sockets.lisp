@@ -153,9 +153,21 @@ file descriptor in order for it to be valid in the receiving process."))
 (defgeneric receive-file-descriptor (socket)
   (:documentation "Receive a file descriptor as ancillary data through SOCKET."))
 
+(defun socket-read-fn (fd buffer nbytes)
+  (debug-only
+    (assert buffer)
+    (assert fd))
+  (%recvfrom fd buffer nbytes 0 (null-pointer) (null-pointer)))
+
+(defun socket-write-fn (fd buffer nbytes)
+  (debug-only
+    (assert buffer)
+    (assert fd))
+  (%sendto fd buffer nbytes 0 (null-pointer) 0))
+
 (defclass active-socket (socket dual-channel-gray-stream) ()
-  (:default-initargs :read-fn 'socket-read-fn
-                     :write-fn 'socket-write-fn)
+  (:default-initargs :read-fn #'socket-read-fn
+                     :write-fn #'socket-write-fn)
   (:documentation "Mixin class for active(client) sockets."))
 
 (defgeneric connect (socket address &key &allow-other-keys)

@@ -31,24 +31,13 @@
                                        (protocol :default))
   (with-accessors ((fd fd-of) (fam socket-address-family) (proto socket-protocol))
       socket
-    (setf fd (or file-descriptor
+    (setf fd (or (and file-descriptor (isys:%sys-dup file-descriptor))
                  (multiple-value-call #'%socket
                    (translate-make-socket-keywords-to-constants
-                    address-family type protocol))))
+                    address-family type protocol)))
+          (isys:%sys-fd-nonblock fd) t)
     (setf fam address-family
           proto protocol)))
-
-(defun socket-read-fn (fd buffer nbytes)
-  (debug-only
-    (assert buffer)
-    (assert fd))
-  (%recvfrom fd buffer nbytes 0 (null-pointer) (null-pointer)))
-
-(defun socket-write-fn (fd buffer nbytes)
-  (debug-only
-    (assert buffer)
-    (assert fd))
-  (%sendto fd buffer nbytes 0 (null-pointer) 0))
 
 (defmethod (setf external-format-of) (external-format (socket passive-socket))
   (setf (slot-value socket 'external-format)

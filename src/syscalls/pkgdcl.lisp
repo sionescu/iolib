@@ -131,6 +131,7 @@
    #:%sys-dup
    #:%sys-dup2
    #:%sys-fcntl
+   #:%sys-fd-nonblock
    #:%sys-ioctl
    #:%sys-fd-open-p
 

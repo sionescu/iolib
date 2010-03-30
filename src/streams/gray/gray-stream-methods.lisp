@@ -60,12 +60,17 @@
     (external-format (stream dual-channel-gray-stream))
   (let ((canonical-ef (babel:ensure-external-format external-format)))
     (setf (slot-value stream 'external-format) canonical-ef)
-    (setf (values (slot-value stream 'eol-writer)
-                  (slot-value stream 'eol-finder))
+    (setf (slot-value stream 'eol-writer)
           (case (babel:external-format-eol-style canonical-ef)
-            (:lf   (values #'stream-write-lf   #'stream-find-lf))
-            (:crlf (values #'stream-write-crlf #'stream-find-crlf))
-            (:cr   (values #'stream-write-cr   #'stream-find-cr))))))
+            (:lf   #'stream-write-lf)
+            (:crlf #'stream-write-crlf)
+            (:cr   #'stream-write-cr)))
+    (setf (values (slot-value stream 'eol-finder)
+                  (slot-value stream 'eol-finder/no-hang))
+          (case (babel:external-format-eol-style canonical-ef)
+            (:lf   (values #'stream-find-lf   #'stream-find-lf/no-hang))
+            (:crlf (values #'stream-find-crlf #'stream-find-crlf/no-hang))
+            (:cr   (values #'stream-find-cr   #'stream-find-cr/no-hang))))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -166,14 +171,17 @@
       stream
     (let ((encoding (babel:external-format-encoding ef)))
       (%stream-rewind-iobuf stream ib encoding)
-      (let ((eofp (eql :eof (%fill-ibuf ib fd read-fn))))
-        (if (and eofp (iobuf-empty-p ib))
-            :eof
-            ;; At this point, there's at least one octet in the buffer
-            (let ((line-end (funcall (eol-finder-of stream) ib fd read-fn nil eofp)))
-              (if (eql #\Newline line-end)
-                  #\Newline
-                  (decode-one-char fd read-fn ib encoding))))))))
+      (cond
+        ((and (iobuf-empty-p ib)
+              (eql :eof (%fill-ibuf ib fd read-fn)))
+         :eof)
+        (t
+         ;; At this point, there's at least one octet in the buffer
+         (debug-only (assert (not (iobuf-empty-p ib))))
+         (let ((line-end (funcall (eol-finder-of stream) ib fd read-fn)))
+           (if (eql #\Newline line-end)
+               #\Newline
+               (decode-one-char fd read-fn ib encoding))))))))
 
 (defmethod stream-read-char-no-hang ((stream dual-channel-gray-stream))
   (with-accessors ((fd input-fd-of)
@@ -183,18 +191,19 @@
       stream
     (let ((encoding (babel:external-format-encoding ef)))
       (%stream-rewind-iobuf stream ib encoding)
-      (let ((eofp (eql :eof (%fill-ibuf/no-hang ib fd read-fn))))
-        (if (iobuf-empty-p ib)
-            (if eofp :eof nil)
-            ;; At this point, there's at least one octet in the buffer
-            (let ((line-end (funcall (eol-finder-of stream) ib fd read-fn t eofp)))
-              (cond ((null line-end)
-                     (decode-one-char/no-hang ib encoding))
-                    ((eql #\Newline line-end)
-                     #\Newline)
-                    ;; There's a CR but it's not EOF so we could still receive a LF
-                    ((and (eql :incomplete line-end) (not eofp))
-                     nil))))))))
+      (when (iobuf-empty-p ib)
+        (let ((nbytes (%fill-ibuf/no-hang ib fd read-fn)))
+          (cond
+            ((eql :eof nbytes) (return* :eof))
+            ((zerop nbytes)    (return* nil)))))
+      ;; At this point, there's at least one octet in the buffer
+      (debug-only (assert (not (iobuf-empty-p ib))))
+      (let ((line-end (funcall (eol-finder/no-hang-of stream) ib fd read-fn)))
+        (case line-end
+          ((nil) (decode-one-char/no-hang ib encoding))
+          (#\Newline #\Newline)
+          ;; There's a CR but it's not EOF so we could still receive a LF
+          (:incomplete nil))))))
 
 (defun %stream-unread-char (stream)
   (declare (type dual-channel-gray-stream stream))

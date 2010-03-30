@@ -17,36 +17,29 @@
 
 ;;;; Get and Set O_NONBLOCK
 
-(defun %get-fd-nonblock-mode (fd)
-  (let ((current-flags (isys:%sys-fcntl fd isys:f-getfl)))
-    (logtest isys:o-nonblock current-flags)))
-
-(defun %set-fd-nonblock-mode (fd mode)
-  (let* ((current-flags (isys:%sys-fcntl fd isys:f-getfl))
-         (new-flags (if mode
-                        (logior current-flags isys:o-nonblock)
-                        (logandc2 current-flags isys:o-nonblock))))
-    (when (/= new-flags current-flags)
-      (isys:%sys-fcntl fd isys:f-setfl new-flags))
-    (values mode)))
-
 (defmethod input-fd-non-blocking ((fd-mixin dual-channel-fd-mixin))
-  (%get-fd-nonblock-mode (fd-of fd-mixin)))
+  (isys:%sys-fd-nonblock (fd-of fd-mixin)))
+(defobsolete input-fd-non-blocking "stream FDs are now always non-blocking.")
 
 (defmethod (setf input-fd-non-blocking) (mode (fd-mixin dual-channel-fd-mixin))
   (check-type mode boolean "a boolean value")
-  (%set-fd-nonblock-mode (fd-of fd-mixin) mode))
+  (setf (isys:%sys-fd-nonblock (fd-of fd-mixin)) mode))
+(defobsolete (setf input-fd-non-blocking) "stream FDs are now always non-blocking.")
 
 (defmethod output-fd-non-blocking ((fd-mixin dual-channel-fd-mixin))
-  (%get-fd-nonblock-mode (output-fd-of fd-mixin)))
+  (isys:%sys-fd-nonblock (output-fd-of fd-mixin)))
+(defobsolete output-fd-non-blocking "stream FDs are now always non-blocking.")
 
 (defmethod (setf output-fd-non-blocking) (mode (fd-mixin dual-channel-fd-mixin))
   (check-type mode boolean "a boolean value")
-  (%set-fd-nonblock-mode (output-fd-of fd-mixin) mode))
+  (setf (isys:%sys-fd-nonblock (output-fd-of fd-mixin)) mode))
+(defobsolete (setf output-fd-non-blocking) "stream FDs are now always non-blocking.")
 
 (defmethod fd-non-blocking ((fd-mixin dual-channel-single-fd-mixin))
-  (%get-fd-nonblock-mode (fd-of fd-mixin)))
+  (isys:%sys-fd-nonblock (fd-of fd-mixin)))
+(defobsolete fd-non-blocking "stream FDs are now always non-blocking.")
 
 (defmethod (setf fd-non-blocking) (mode (fd-mixin dual-channel-single-fd-mixin))
   (check-type mode boolean "a boolean value")
-  (%set-fd-nonblock-mode (fd-of fd-mixin) mode))
+  (setf (isys:%sys-fd-nonblock (fd-of fd-mixin)) mode))
+(defobsolete (setf fd-non-blocking) "stream FDs are now always non-blocking.")

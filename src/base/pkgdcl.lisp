@@ -19,6 +19,10 @@
    ;; Types
    #:function-designator
    #:character-designator
+   #:sb8 #:sb16 #:sb32 #:sb64
+   #:ub8 #:ub16 #:ub32 #:ub64
+   #:ub8-sarray #:ub16-sarray #:ub32-sarray #:ub64-sarray
+   #:ub8-vector #:ub16-vector #:ub32-vector #:ub64-vector
    ;; RETURN*
    #:return* #:lambda* #:defun #:defmethod
    #:defmacro #:define-compiler-macro

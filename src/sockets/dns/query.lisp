@@ -255,7 +255,6 @@
       (with-open-socket
           (socket :connect :active :type :stream
                   :ipv6 (ipv6-address-p nameserver))
-        (setf (fd-non-blocking socket) t)
         (handler-case
             (connect socket nameserver :port +dns-port+)
           (socket-connection-in-progress-error ()
