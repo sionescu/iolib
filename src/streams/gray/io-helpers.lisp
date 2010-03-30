@@ -214,17 +214,15 @@
           #\Newline))))
 
 (defun maybe-rewind-iobuf (iobuf encoding)
-  (if (iobuf-empty-p iobuf)
-      (iobuf-reset iobuf)
-      (let ((max-octets-per-char
-             (babel-encodings:enc-max-units-per-char encoding)))
-        ;; Some encodings such as CESU or Java's modified UTF-8 take
-        ;; as much as 6 bytes per character. Make sure we have enough
-        ;; space to collect read-ahead bytes if required.
-        (when (< (- (iobuf-size iobuf)
-                    (iobuf-start iobuf))
-                 max-octets-per-char)
-          (iobuf-copy-data-to-start iobuf)))))
+  (let ((max-octets-per-char
+         (babel-encodings:enc-max-units-per-char encoding)))
+    ;; Some encodings such as CESU or Java's modified UTF-8 take
+    ;; as much as 6 bytes per character. Make sure we have enough
+    ;; space to collect read-ahead bytes if required.
+    (when (< (- (iobuf-size iobuf)
+                (iobuf-start iobuf))
+             max-octets-per-char)
+      (iobuf-copy-data-to-start iobuf))))
 
 (defun decode-one-char (fd read-fn iobuf encoding)
   (tagbody :start
