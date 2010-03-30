@@ -9,21 +9,17 @@
 ;;; Input
 ;;;-------------------------------------------------------------------------
 
+(declaim (inline %read-once))
 (defun %read-once (fd read-fn iobuf)
-  (declare (inline iomux:wait-until-fd-ready))
+  (declare (type function read-fn)
+           (type iobuf iobuf))
   (loop
     (handler-case
         (return-from %read-once
           (funcall read-fn fd (iobuf-end-pointer iobuf)
                    (iobuf-end-space-length iobuf)))
-      (isys:ewouldblock (err)
-        (if (%get-fd-nonblock-mode fd)
-            (iomux:wait-until-fd-ready fd :input nil t)
-            ;; FIXME: big kludge.
-            ;; the only way to get EWOULDBLOCK on a blocking socket
-            ;; is when the user has set the RCV_TIMEO option, so
-            ;; the error object must be resignaled
-            (error err))))))
+      (isys:ewouldblock ()
+        (iomux:wait-until-fd-ready fd :input nil t)))))
 
 (declaim (inline %fill-ibuf))
 (defun %fill-ibuf (iobuf fd read-fn)
@@ -35,19 +31,25 @@
 
 (declaim (inline %read-once/no-hang))
 (defun %read-once/no-hang (fd read-fn iobuf)
-  (funcall read-fn fd (iobuf-end-pointer iobuf)
-           (iobuf-end-space-length iobuf)))
+  (declare (type function read-fn)
+           (type iobuf iobuf))
+  (handler-case
+      (funcall read-fn fd (iobuf-end-pointer iobuf)
+               (iobuf-end-space-length iobuf))
+    (isys:ewouldblock () nil)))
 
 (declaim (inline %fill-ibuf/no-hang))
 (defun %fill-ibuf/no-hang (iobuf fd read-fn)
-  (declare (type iobuf iobuf)
-           (inline iomux:fd-ready-p))
-  (if (iomux:fd-ready-p fd :input)
-      (let ((nbytes (%read-once/no-hang fd read-fn iobuf)))
-        (if (zerop nbytes)
-            :eof
-            (progn (incf (iobuf-end iobuf) nbytes) nbytes)))
-      0))
+  (declare (type iobuf iobuf))
+  (let ((nbytes (%read-once/no-hang fd read-fn iobuf)))
+    (cond
+      ((null nbytes)
+       0)
+      ((plusp nbytes)
+       (incf (iobuf-end iobuf) nbytes)
+       nbytes)
+      ((zerop nbytes)
+       :eof))))
 
 (defun %read-into-simple-array-ub8 (stream array start end)
   (declare (type dual-channel-gray-stream stream))
