@@ -33,11 +33,20 @@
         :eof
         (progn (incf (iobuf-end iobuf) nbytes) nbytes))))
 
+(declaim (inline %read-once/no-hang))
+(defun %read-once/no-hang (fd read-fn iobuf)
+  (funcall read-fn fd (iobuf-end-pointer iobuf)
+           (iobuf-end-space-length iobuf)))
+
 (declaim (inline %fill-ibuf/no-hang))
 (defun %fill-ibuf/no-hang (iobuf fd read-fn)
-  (declare (inline iomux:fd-ready-p))
+  (declare (type iobuf iobuf)
+           (inline iomux:fd-ready-p))
   (if (iomux:fd-ready-p fd :input)
-      (%fill-ibuf iobuf fd read-fn)
+      (let ((nbytes (%read-once/no-hang fd read-fn iobuf)))
+        (if (zerop nbytes)
+            :eof
+            (progn (incf (iobuf-end iobuf) nbytes) nbytes)))
       0))
 
 (defun %read-into-simple-array-ub8 (stream array start end)
