@@ -46,10 +46,10 @@
 (defclass dual-channel-fd-mixin ()
   ((input-fd  :initform nil :initarg :input-fd :accessor input-fd-of
               :documentation "placeholder")
-   (read-fn :initform 'default-read-fn :initarg :read-fn :accessor read-fn-of)
+   (read-fn :initform #'default-read-fn :initarg :read-fn :accessor read-fn-of)
    (output-fd :initform nil :initarg :output-fd :accessor output-fd-of
               :documentation "placeholder")
-   (write-fn :initform 'default-write-fn :initarg :write-fn :accessor write-fn-of))
+   (write-fn :initform #'default-write-fn :initarg :write-fn :accessor write-fn-of))
   (:documentation "placeholder"))
 
 (defgeneric input-fd-non-blocking (socket)
