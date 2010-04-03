@@ -5,15 +5,12 @@
 
 (in-package :iolib.sockets)
 
-(defvar *ipv6*
-  (handler-case (%socket af-inet6 sock-stream ipproto-ip)
-    (isys:eafnosupport () nil)
-    (:no-error (ret) (declare (ignore ret)) t))
+(defvar *ipv6* nil
   "Specifies the default behaviour with respect to IPv6:
 - nil   : Only IPv4 addresses are used.
 - :ipv6 : Only IPv6 addresses are used.
 - t     : If both IPv4 and IPv6 addresses are found they are returned in the best order possible (see RFC 3484).
-Default value is T.")
+Default value is NIL.")
 
 (deftype *ipv6*-type ()
   '(member t nil :ipv6))
