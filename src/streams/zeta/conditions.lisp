@@ -13,7 +13,7 @@
              (format stream "Error while ~A ~S: ~A"
                      (posix-file-error-action condition)
                      (file-error-pathname condition)
-                     (%sys-strerror (posix-file-error-code condition))))))
+                     (isys:strerror (posix-file-error-code condition))))))
 
 (defun posix-file-error (syscall-error filename action)
   (error 'posix-file-error

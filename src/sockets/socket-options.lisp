@@ -169,10 +169,10 @@
 #+linux
 (define-socket-option-helper (:set :ifreq-name) (fd level option interface)
   (with-foreign-object (optval 'ifreq)
-    (isys:%sys-bzero optval size-of-ifreq)
+    (isys:bzero optval size-of-ifreq)
     (with-foreign-slots ((name) optval ifreq)
       (with-foreign-string (ifname interface)
-        (isys:%sys-memcpy name ifname (min (length interface) (1- ifnamsiz)))))
+        (isys:memcpy name ifname (min (length interface) (1- ifnamsiz)))))
     (%setsockopt fd level option optval size-of-ifreq)
     (values interface)))
 

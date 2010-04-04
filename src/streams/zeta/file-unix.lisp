@@ -75,22 +75,22 @@
                  (posix-file-error c filename "opening"))
                (try-delete ()
                  (handler-case
-                     (%sys-unlink namestring)
-                   (syscall-error (c) (handle-error c))))
+                     (isys:unlink namestring)
+                   (isys:syscall-error (c) (handle-error c))))
                (try-open (&optional (retry-on-delete t))
                  (handler-case
-                     (%sys-open namestring flags mode)
-                   (eexist (c)
+                     (isys:open namestring flags mode)
+                   (isys:eexist (c)
                      (cond ((and retry-on-delete delete-if-exists)
                             (try-delete) (try-open nil))
                            (t (handle-error c))))
-                   (syscall-error (c)
+                   (isys:syscall-error (c)
                      (handle-error c))
                    (:no-error (fd) fd))))
         (let ((fd (or handle (try-open))))
           (%set-fd-nonblock fd)
           (setf (device-handle device) fd)))))
-  (values device))
+  device)
 
 
 ;;;-------------------------------------------------------------------------
@@ -99,7 +99,7 @@
 
 (defmethod relinquish ((device file-device) &key abort)
   (declare (ignore abort))
-  (%sys-close (device-handle device))
+  (isys:close (device-handle device))
   (setf (device-handle device) nil)
   (values device))
 
@@ -110,19 +110,19 @@
 
 (defmethod device-position ((device file-device))
   (handler-case
-      (%sys-lseek (device-handle device) 0 seek-cur)
-    (syscall-error (err)
+      (isys:lseek (device-handle device) 0 isys:seek-cur)
+    (isys:syscall-error (err)
       (posix-file-error err device "seeking on"))))
 
 (defmethod (setf device-position)
     (position (device file-device) &optional (from :start))
   (handler-case
-      (%sys-lseek (device-handle device) position
+      (isys:lseek (device-handle device) position
                   (ecase from
-                    (:start seek-set)
-                    (:current seek-cur)
-                    (:end seek-end)))
-    (syscall-error (err)
+                    (:start isys:seek-set)
+                    (:current isys:seek-cur)
+                    (:end isys:seek-end)))
+    (isys:syscall-error (err)
       (posix-file-error err device "seeking on"))))
 
 
@@ -132,14 +132,14 @@
 
 (defmethod device-length ((device file-device))
   (handler-case
-      (stat-size (%sys-fstat (device-handle device)))
-    (syscall-error (err)
+      (isys:stat-size (isys:fstat (device-handle device)))
+    (isys:syscall-error (err)
       (posix-file-error err device "getting status of"))))
 
 (defmethod (setf device-length) (length (device file-device))
   (handler-case
-      (%sys-ftruncate (device-handle device) length)
-    (syscall-error (err)
+      (isys:ftruncate (device-handle device) length)
+    (isys:syscall-error (err)
       (posix-file-error err device "truncating"))))
 
 
@@ -234,13 +234,13 @@
     (when (eql :default if-exists) (setf if-exists :overwrite))
     (ecase direction
       (:input
-       (add-flags o-rdonly)
+       (add-flags isys:o-rdonly)
        (check-type if-exists (member :overwrite :error-if-symlink))
        (check-type if-does-not-exist (member :default :error))
        (when (eql :default if-does-not-exist)
          (setf if-does-not-exist :error)))
       ((:output :io)
-       (add-flags (if (eql :io direction) o-rdwr o-wronly))
+       (add-flags (if (eql :io direction) isys:o-rdwr isys:o-wronly))
        (check-type if-exists file-if-exists)
        (check-type if-does-not-exist file-if-does-not-exist)
        (when (eql :default if-does-not-exist)
@@ -253,18 +253,18 @@
                `(setf flags (logior flags ,@%flags))))
     (case if-exists
       (:error
-       (unless (eql :input direction) (add-flags o-excl)))
+       (unless (eql :input direction) (add-flags isys:o-excl)))
       (:delete
-       (add-flags o-excl o-creat))
+       (add-flags isys:o-excl isys:o-creat))
       (:error-if-symlink
-       (add-flags o-nofollow)))
+       (add-flags isys:o-nofollow)))
     (case if-does-not-exist
-      (:create (add-flags o-creat)))
+      (:create (add-flags isys:o-creat)))
     (cond
       (truncate
-       (unless (eql :input direction) (add-flags o-trunc)))
+       (unless (eql :input direction) (add-flags isys:o-trunc)))
       (append
-       (when (eql :output direction) (add-flags o-append)))
+       (when (eql :output direction) (add-flags isys:o-append)))
       (extra-flags
        (add-flags extra-flags))))
   (values flags if-exists if-does-not-exist))

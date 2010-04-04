@@ -60,7 +60,7 @@
 
 (defun iobuf-copy-data-to-start (iobuf)
   (declare (type iobuf iobuf))
-  (isys:%sys-memmove
+  (isys:memmove
    (iobuf-data iobuf)
    (inc-pointer (iobuf-data iobuf)
                 (iobuf-start iobuf))
@@ -95,7 +95,7 @@
     (assert (<= (+ doff length) (iobuf-size dst))))
   (let ((dst-ptr (iobuf-data dst)))
     (with-pointer-to-vector-data (src-ptr src)
-      (isys:%sys-memcpy
+      (isys:memcpy
        (inc-pointer dst-ptr doff)
        (inc-pointer src-ptr soff)
        length))))
@@ -110,7 +110,7 @@
     (assert (<= (+ doff length) (length dst))))
   (let ((src-ptr (iobuf-data src)))
     (with-pointer-to-vector-data (dst-ptr dst)
-      (isys:%sys-memcpy
+      (isys:memcpy
        (inc-pointer dst-ptr doff)
        (inc-pointer src-ptr soff)
        length))))

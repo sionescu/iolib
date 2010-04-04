@@ -245,10 +245,10 @@
              (return (values input-buffer off))))))))
 
 (defun dns-query/tcp (buffer length nameserver timeout)
-  (let* ((t0 (isys:%sys-get-monotonic-time))
+  (let* ((t0 (isys:get-monotonic-time))
          (tend (+ t0 timeout)))
     (flet ((remtime ()
-             (let ((rem (- tend (isys:%sys-get-monotonic-time))))
+             (let ((rem (- tend (isys:get-monotonic-time))))
                (if (not (minusp rem))
                    rem
                    (error 'socket-connection-timeout-error)))))

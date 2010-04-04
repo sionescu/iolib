@@ -8,6 +8,7 @@
 (defpackage :iolib.syscalls
   (:nicknames #:isys)
   (:use :iolib.base :cffi)
+  (:shadow #:open #:close #:read #:write #:listen #:truncate #:ftruncate #:time)
   (:export
 
    ;;;--------------------------------------------------------------------------
@@ -304,165 +305,165 @@
    #:*environ*
 
    ;; Errno-related functions
-   #:%sys-strerror
-   #:%sys-errno
+   #:strerror
+   #:errno
 
    ;; Memory manipulation functions
-   #:%sys-memset
-   #:%sys-bzero
-   #:%sys-memcpy
-   #:%sys-memmove
+   #:memset
+   #:bzero
+   #:memcpy
+   #:memmove
 
    ;; Files
-   #:%sys-read
-   #:%sys-write
-   #:%sys-readv
-   #:%sys-writev
-   #:%sys-pread
-   #:%sys-pwrite
-   #:%sys-open
-   #:%sys-creat
-   #:%sys-pipe
-   #:%sys-mkfifo
-   #:%sys-umask
-   #:%sys-lseek
-   #:%sys-access
-   #:%sys-truncate
-   #:%sys-ftruncate
-   #:%sys-rename
-   #:%sys-link
-   #:%sys-symlink
-   #:%sys-readlink
-   #:%sys-realpath
-   #:%sys-unlink
-   #:%sys-chown
-   #:%sys-fchown
-   #:%sys-lchown
-   #:%sys-chmod
-   #:%sys-fchmod
-   #:%sys-stat
-   #:%sys-fstat
-   #:%sys-lstat
-   #:%sys-sync
-   #:%sys-fsync
-   #:%sys-mkstemp
+   #:read
+   #:write
+   #:readv
+   #:writev
+   #:pread
+   #:pwrite
+   #:open
+   #:creat
+   #:pipe
+   #:mkfifo
+   #:umask
+   #:lseek
+   #:access
+   #:truncate
+   #:ftruncate
+   #:rename
+   #:link
+   #:symlink
+   #:readlink
+   #:realpath
+   #:unlink
+   #:chown
+   #:fchown
+   #:lchown
+   #:chmod
+   #:fchmod
+   #:stat
+   #:fstat
+   #:lstat
+   #:sync
+   #:fsync
+   #:mkstemp
 
    ;; Directories
-   #:%sys-mkdir
-   #:%sys-rmdir
-   #:%sys-chdir
-   #:%sys-fchdir
-   #:%sys-getcwd
-   #:%sys-mkdtemp
+   #:mkdir
+   #:rmdir
+   #:chdir
+   #:fchdir
+   #:getcwd
+   #:mkdtemp
 
    ;; File descriptors
-   #:%sys-close
-   #:%sys-dup
-   #:%sys-dup2
-   #:%sys-fcntl
-   #:%sys-fd-nonblock
-   #:%sys-ioctl
-   #:%sys-fd-open-p
+   #:close
+   #:dup
+   #:dup2
+   #:fcntl
+   #:fd-nonblock
+   #:ioctl
+   #:fd-open-p
 
    ;; TTYs
-   #:%sys-posix-openpt
-   #:%sys-grantpt
-   #:%sys-unlockpt
-   #:%sys-ptsname
+   #:posix-openpt
+   #:grantpt
+   #:unlockpt
+   #:ptsname
 
    ;; I/O Polling
-   #:%sys-select
-   #:%sys-fd-zero
-   #:%sys-copy-fd-set
-   #:%sys-fd-isset
-   #:%sys-fd-clr
-   #:%sys-fd-set
-   #:%sys-poll
-   #+linux #:%sys-epoll-create
-   #+linux #:%sys-epoll-ctl
-   #+linux #:%sys-epoll-wait
-   #+bsd #:%sys-kqueue
-   #+bsd #:%sys-kevent
-   #+bsd #:%sys-ev-set
+   #:select
+   #:fd-zero
+   #:copy-fd-set
+   #:fd-isset
+   #:fd-clr
+   #:fd-set
+   #:poll
+   #+linux #:epoll-create
+   #+linux #:epoll-ctl
+   #+linux #:epoll-wait
+   #+bsd #:kqueue
+   #+bsd #:kevent
+   #+bsd #:ev-set
 
    ;; Directory walking
-   #:%sys-opendir
-   #-darwin #:%sys-fdopendir
-   #-darwin #:%sys-dirfd
-   #:%sys-closedir
-   #:%sys-readdir
-   #:%sys-rewinddir
-   #:%sys-seekdir
-   #:%sys-telldir
+   #:opendir
+   #-darwin #:fdopendir
+   #-darwin #:dirfd
+   #:closedir
+   #:readdir
+   #:rewinddir
+   #:seekdir
+   #:telldir
 
    ;; Memory mapping
-   #:%sys-mmap
-   #:%sys-munmap
+   #:mmap
+   #:munmap
 
    ;; Process creation and info
-   #:%sys-fork
-   #:%sys-execv
-   #:%sys-execvp
-   #:%sys-waitpid
-   #:%sys-getpid
-   #:%sys-getppid
-   #:%sys-gettid
-   #:%sys-getuid
-   #:%sys-setuid
-   #:%sys-geteuid
-   #:%sys-seteuid
-   #:%sys-getgid
-   #:%sys-setgid
-   #:%sys-getegid
-   #:%sys-setegid
-   #:%sys-setreuid
-   #:%sys-setregid
-   #:%sys-getpgid
-   #:%sys-setpgid
-   #:%sys-getpgrp
-   #:%sys-setpgrp
-   #:%sys-setsid
-   #:%sys-getrlimit
-   #:%sys-setrlimit
-   #:%sys-getrusage
-   #:%sys-getpriority
-   #:%sys-setpriority
-   #:%sys-nice
+   #:fork
+   #:execv
+   #:execvp
+   #:waitpid
+   #:getpid
+   #:getppid
+   #:gettid
+   #:getuid
+   #:setuid
+   #:geteuid
+   #:seteuid
+   #:getgid
+   #:setgid
+   #:getegid
+   #:setegid
+   #:setreuid
+   #:setregid
+   #:getpgid
+   #:setpgid
+   #:getpgrp
+   #:setpgrp
+   #:setsid
+   #:getrlimit
+   #:setrlimit
+   #:getrusage
+   #:getpriority
+   #:setpriority
+   #:nice
 
    ;; Signals
-   #:%sys-kill
-   #:%sys-sigaction
+   #:kill
+   #:sigaction
 
    ;; Time
-   #:%sys-usleep
-   #:%sys-time
-   #:%sys-gettimeofday
-   #:%sys-get-monotonic-time
+   #:usleep
+   #:time
+   #:gettimeofday
+   #:get-monotonic-time
 
    ;; Environment
-   #:%sys-getenv
-   #:%sys-setenv
-   #:%sys-unsetenv
-   #:%sys-clearenv
+   #:getenv
+   #:setenv
+   #:unsetenv
+   #:clearenv
 
    ;; Local info
-   #:%sys-gethostname
-   #:%sys-getdomainname
-   #:%sys-uname
+   #:gethostname
+   #:getdomainname
+   #:uname
 
    ;; User info
-   #:%sys-getpwnam
-   #:%sys-getpwuid
+   #:getpwnam
+   #:getpwuid
 
    ;; Group info
-   #:%sys-getgrnam
-   #:%sys-getgrgid
+   #:getgrnam
+   #:getgrgid
 
    ;; CMSG readers
-   #:%sys-cmsg.space
-   #:%sys-cmsg.len
-   #:%sys-cmsg.firsthdr
-   #:%sys-cmsg.data
+   #:cmsg.space
+   #:cmsg.len
+   #:cmsg.firsthdr
+   #:cmsg.data
 
 
    ;;;--------------------------------------------------------------------------

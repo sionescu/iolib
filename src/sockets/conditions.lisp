@@ -27,7 +27,7 @@
       (format stream "~S ~S ~S, FD: ~S"
               (or code "[Unknown code]")
               (error-identifier socket-error)
-              (if code (isys:%sys-strerror code) "[Can't get error string.]")
+              (if code (isys:strerror code) "[Can't get error string.]")
               (isys:handle-of socket-error)))))
 
 (defparameter *socket-error-map* (make-hash-table :test 'eql))
@@ -41,7 +41,7 @@
          (:default-initargs :code ,(foreign-enum-value 'socket-error-values
                                                        identifier)
            :identifier ,identifier)
-         (:documentation ,(or documentation (isys:%sys-strerror identifier)))))))
+         (:documentation ,(or documentation (isys:strerror identifier)))))))
 
 (defun lookup-socket-error (errno)
   (gethash errno *socket-error-map*))

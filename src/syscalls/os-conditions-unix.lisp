@@ -44,7 +44,7 @@
                     :handle fd :handle2 fd2)))
 
 (declaim (inline signal-syscall-error))
-(defun signal-syscall-error (&optional (errno (%sys-errno)) fd fd2)
+(defun signal-syscall-error (&optional (errno (errno)) fd fd2)
   (cond
     ((= errno eintr)
      (error 'eintr :handle fd :handle2 fd2))

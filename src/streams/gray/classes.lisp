@@ -21,10 +21,10 @@
 (deftype stream-position () '(unsigned-byte 64))
 
 (defun default-read-fn (fd buf nbytes)
-  (isys:%sys-read fd buf nbytes))
+  (isys:read fd buf nbytes))
 
 (defun default-write-fn (fd buf nbytes)
-  (isys:%sys-write fd buf nbytes))
+  (isys:write fd buf nbytes))
 
 (defclass dual-channel-fd-mixin ()
   ((input-fd  :initform nil :initarg :input-fd :accessor input-fd-of

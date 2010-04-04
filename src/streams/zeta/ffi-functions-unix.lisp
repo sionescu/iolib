@@ -11,23 +11,23 @@
 
 (defun compute-poll-flags (type)
   (ecase type
-    (:input  (logior pollin pollrdhup pollpri))
-    (:output (logior pollout))
-    (:io     (logior pollin pollrdhup pollpri pollout))))
+    (:input  (logior isys:pollin isys:pollrdhup isys:pollpri))
+    (:output (logior isys:pollout))
+    (:io     (logior isys:pollin isys:pollrdhup isys:pollpri isys:pollout))))
 
 (defun process-poll-revents (fd event-type revents)
   (flet ((poll-error ()
-           (error 'poll-error :code ebadf :identifier :ebadf
-                  :event-type event-type :os-handle fd
+           (error 'isys:poll-error :code isys:ebadf :identifier :ebadf
+                  :os-handle fd :event-type event-type
                   :message "invalid OS handle")))
     (let ((readp  nil) (rhupp nil)
           (writep nil) (whupp nil))
       (flags-case revents
-        ((pollin pollpri)   (setf readp t))
-        ((pollrdhup)        (setf rhupp t))
-        ((pollout)          (setf writep t))
-        ((pollhup)          (setf whupp t))
-        ((pollerr pollnval) (poll-error)))
+        ((isys:pollin isys:pollpri)   (setf readp t))
+        ((isys:pollrdhup)             (setf rhupp t))
+        ((isys:pollout)               (setf writep t))
+        ((isys:pollhup)               (setf whupp t))
+        ((isys:pollerr isys:pollnval) (poll-error)))
       (values readp rhupp writep whupp))))
 
 (defun timeout->milisec (timeout)
@@ -36,9 +36,9 @@
     (+ (* sec 1000) (truncate usec 1000))))
 
 (defun %poll (fds timeout)
-  (repeat-upon-condition-decreasing-timeout
-      ((eintr) remaining-time timeout)
-    (%sys-poll fds 1 (timeout->milisec remaining-time))))
+  (isys:repeat-upon-condition-decreasing-timeout
+      ((isys:eintr) remaining-time timeout)
+    (isys:poll fds 1 (timeout->milisec remaining-time))))
 
 (defun poll-fd (file-descriptor event-type timeout)
   "Poll file descriptor `FD' for I/O readiness. `EVENT-TYPE' must be either
@@ -53,20 +53,21 @@ Returns two boolean values indicating readability and writeability of `FD'."
                   :os-handle file-descriptor
                   :message (format nil "OS error ~A"
                                    (posix-file-error-identifier posix-err)))))
-    (with-foreign-object (pollfd 'pollfd)
-      (%sys-bzero pollfd size-of-pollfd)
-      (with-foreign-slots ((fd events revents) pollfd pollfd)
-        (setf fd file-descriptor
-              events (compute-poll-flags event-type))
+    (with-foreign-object (pollfd 'isys:pollfd)
+      (isys:bzero pollfd isys:size-of-pollfd)
+      (with-foreign-slots ((isys:fd isys:events isys:revents)
+                           pollfd isys:pollfd)
+        (setf isys:fd file-descriptor
+              isys:events (compute-poll-flags event-type))
         (handler-case
             (cond
               ((plusp (%poll pollfd timeout))
-               (process-poll-revents fd event-type revents))
+               (process-poll-revents isys:fd event-type isys:revents))
               (t
-               (error 'poll-timeout
+               (error 'isys:poll-timeout
                       :os-handle file-descriptor
                       :event-type event-type)))
-          (syscall-error (err) (poll-error err)))))))
+          (isys:syscall-error (err) (poll-error err)))))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -78,8 +79,8 @@ Returns two boolean values indicating readability and writeability of `FD'."
   (handler-case
       (with-foreign-object (arg :int)
         (setf (mem-aref arg :int) 1)
-        (%sys-ioctl fd fionbio arg))
-    (syscall-error (err)
+        (isys:ioctl fd isys:fionbio arg))
+    (isys:syscall-error (err)
       (posix-file-error err *device* "issuing FIONBIO IOCTL on")))
   (values))
 
@@ -92,9 +93,9 @@ Returns two boolean values indicating readability and writeability of `FD'."
   (declare (special *device*))
   (handler-case
       (with-foreign-object (arg :int)
-        (%sys-ioctl fd fionread arg)
+        (isys:ioctl fd isys:fionread arg)
         (mem-aref arg :int))
-    (syscall-error (err)
+    (isys:syscall-error (err)
       (posix-file-error err *device* "issuing FIONREAD IOCTL on"))))
 
 
@@ -107,9 +108,9 @@ Returns two boolean values indicating readability and writeability of `FD'."
            (special *device*))
   (with-pointer-to-vector-data (buf vector)
     (handler-case
-        (%sys-read fd (inc-pointer buf start) (- end start))
-      (ewouldblock () 0)
-      (syscall-error (err)
+        (isys:read fd (inc-pointer buf start) (- end start))
+      (isys:ewouldblock () 0)
+      (isys:syscall-error (err)
         (posix-file-error err *device* "reading data from"))
       (:no-error (nbytes)
         (if (zerop nbytes) :eof nbytes)))))
@@ -118,15 +119,16 @@ Returns two boolean values indicating readability and writeability of `FD'."
   (declare (type ub8-simple-vector vector)
            (special *device*))
   (with-pointer-to-vector-data (buf vector)
-    (repeat-decreasing-timeout (remaining (clamp-timeout timeout) :rloop)
+    (isys:repeat-decreasing-timeout
+        (remaining (clamp-timeout timeout) :rloop)
       (flet ((check-timeout ()
                (if (plusp remaining)
                    (poll-fd fd :input remaining)
                    (return-from :rloop 0))))
         (handler-case
-            (%sys-read fd (inc-pointer buf start) (- end start))
-          (ewouldblock () (check-timeout))
-          (syscall-error (err)
+            (isys:read fd (inc-pointer buf start) (- end start))
+          (isys:ewouldblock () (check-timeout))
+          (isys:syscall-error (err)
             (posix-file-error err *device* "reading data from"))
           (:no-error (nbytes)
             (return-from :rloop
@@ -142,10 +144,10 @@ Returns two boolean values indicating readability and writeability of `FD'."
            (special *device*))
   (with-pointer-to-vector-data (buf vector)
     (handler-case
-        (%sys-write fd (inc-pointer buf start) (- end start))
-      (ewouldblock () 0)
-      (epipe () :hangup)
-      (syscall-error (err)
+        (isys:write fd (inc-pointer buf start) (- end start))
+      (isys:ewouldblock () 0)
+      (isys:epipe () :hangup)
+      (isys:syscall-error (err)
         (posix-file-error err *device* "writing data to"))
       (:no-error (nbytes)
         (if (zerop nbytes) :hangup nbytes)))))
@@ -154,16 +156,17 @@ Returns two boolean values indicating readability and writeability of `FD'."
   (declare (type ub8-simple-vector vector)
            (special *device*))
   (with-pointer-to-vector-data (buf vector)
-    (repeat-decreasing-timeout (remaining (clamp-timeout timeout) :rloop)
+    (isys:repeat-decreasing-timeout
+        (remaining (clamp-timeout timeout) :rloop)
       (flet ((check-timeout ()
                (if (plusp remaining)
                    (poll-fd fd :output remaining)
                    (return-from :rloop 0))))
         (handler-case
-            (%sys-write fd (inc-pointer buf start) (- end start))
-          (ewouldblock () (check-timeout))
-          (epipe () (return-from :rloop :hangup))
-          (syscall-error (err)
+            (isys:write fd (inc-pointer buf start) (- end start))
+          (isys:ewouldblock () (check-timeout))
+          (isys:epipe () (return-from :rloop :hangup))
+          (isys:syscall-error (err)
             (posix-file-error err *device* "writing data to"))
           (:no-error (nbytes)
             (return-from :rloop

@@ -46,7 +46,7 @@ either be a symbol or a string."
   (let ((name (string name)))
     (etypecase env
       (null
-       (isys:%sys-getenv name))
+       (isys:getenv name))
       (environment
        (%obj-getenv env name)))))
 
@@ -58,7 +58,7 @@ symbols or strings. Signals an error on failure."
         (name (string name)))
     (etypecase env
       (null
-       (isys:%sys-setenv name value overwrite))
+       (isys:setenv name value overwrite))
       (environment
        (%obj-setenv env name value overwrite)))
     value))
@@ -71,7 +71,7 @@ failure."
   (let ((name (string name)))
     (etypecase env
       (null
-       (isys:%sys-unsetenv name))
+       (isys:unsetenv name))
       (environment
        (%obj-unsetenv env name)))
     name))
@@ -80,7 +80,7 @@ failure."
   "Removes all variables from an environment."
   (etypecase env
     (null
-     (isys:%sys-clearenv))
+     (isys:clearenv))
     (environment
      (%obj-clearenv env)
      env)))
@@ -107,9 +107,9 @@ Often it is preferable to use SETF ENVIRONMENT-VARIABLE and
 MAKUNBOUND-ENVIRONMENT-VARIABLE to modify the environment instead
 of SETF ENVIRONMENT."
   (check-type newenv environment)
-  (isys:%sys-clearenv)
+  (isys:clearenv)
   (maphash (lambda (name value)
-             (isys:%sys-setenv name value t))
+             (isys:setenv name value t))
            (environment-variables newenv))
   newenv)
 
@@ -120,7 +120,7 @@ of SETF ENVIRONMENT."
   "CURRENT-DIRECTORY returns the operating system's current
 directory, which may or may not correspond to
 *DEFAULT-FILE-PATH-DEFAULTS*."
-  (let ((cwd (isys:%sys-getcwd)))
+  (let ((cwd (isys:getcwd)))
     (if cwd
         (parse-file-path cwd :expand-user nil)
         (isys:syscall-error "Could not get current directory."))))
@@ -130,7 +130,7 @@ directory, which may or may not correspond to
 directory to the PATHSPEC. An error is signalled if PATHSPEC
 is not a directory."
   (let ((path (file-path pathspec)))
-    (isys:%sys-chdir (file-path-namestring path))))
+    (isys:chdir (file-path-namestring path))))
 
 (defmacro with-current-directory (pathspec &body body)
   (with-gensyms (old)
@@ -171,7 +171,7 @@ is not a directory."
 
 (defun resolve-symlinks (path)
   (let* ((namestring (file-path-namestring path))
-         (realpath (isys:%sys-realpath namestring)))
+         (realpath (isys:realpath namestring)))
     (parse-file-path realpath)))
 
 (defun resolve-file-path (pathspec &key
@@ -199,8 +199,8 @@ then just remove «.» and «..», otherwise symlinks are resolved too."
     (handler-case
         (let ((mode (isys:stat-mode
                      (if follow-p
-                         (isys:%sys-stat namestring)
-                         (isys:%sys-lstat namestring)))))
+                         (isys:stat namestring)
+                         (isys:lstat namestring)))))
           (switch ((logand isys:s-ifmt mode) :test #'=)
             (isys:s-ifdir  :directory)
             (isys:s-ifchr  :character-device)
@@ -216,7 +216,7 @@ then just remove «.» and «..», otherwise symlinks are resolved too."
           ;; or it is a broken symlink
           (follow-p
            (handler-case
-               (isys:%sys-lstat namestring)
+               (isys:lstat namestring)
              ((or isys:enoent isys:eloop) ())
              (:no-error (stat)
                (declare (ignore stat))
@@ -289,7 +289,7 @@ Signals an error if PATHSPEC is not a symbolic link."
   ;; Note: the previous version tried much harder to provide a buffer
   ;; big enough to fit the link's name. OTOH, %SYS-READLINK stack
   ;; allocates on most lisps.
-  (file-path (isys:%sys-readlink
+  (file-path (isys:readlink
               (file-path-namestring
                (absolute-file-path pathspec *default-file-path-defaults*)))))
 
@@ -305,7 +305,7 @@ Signals an error if TARGET does not exist, or LINK exists already."
         (target (file-path target)))
     (with-current-directory
         (absolute-file-path *default-file-path-defaults* nil)
-      (isys:%sys-symlink (file-path-namestring target)
+      (isys:symlink (file-path-namestring target)
                          (file-path-namestring link))
       link)))
 
@@ -321,7 +321,7 @@ Signals an error if TARGET does not exist, or LINK exists already."
         (target (file-path target)))
     (with-current-directory
         (absolute-file-path *default-file-path-defaults* nil)
-      (isys:%sys-link (file-path-namestring
+      (isys:link (file-path-namestring
                        (merge-file-paths target link))
                       link)
       link)))
@@ -359,13 +359,13 @@ Permission symbols consist of :USER-READ, :USER-WRITE, :USER-EXEC,
 
 Both signal an error if PATHSPEC doesn't designate an existing file."
   (let ((mode (isys:stat-mode
-               (isys:%sys-stat (file-path-namestring pathspec)))))
+               (isys:stat (file-path-namestring pathspec)))))
     (loop :for (name . value) :in +permissions+
           :when (plusp (logand mode value))
           :collect name)))
 
 (defun (setf file-permissions) (perms pathspec)
-  (isys:%sys-chmod (file-path-namestring pathspec)
+  (isys:chmod (file-path-namestring pathspec)
                    (reduce (lambda (a b)
                              (logior a (cdr (assoc b +permissions+))))
                            perms :initial-value 0)))
@@ -401,9 +401,9 @@ body. Signals an error if PATHSPEC is not a directory."
 
 (defun call-with-directory-iterator (pathspec fn)
   (let* ((dir (resolve-file-path pathspec :canonicalize nil))
-         (dp (isys:%sys-opendir (file-path-namestring dir))))
+         (dp (isys:opendir (file-path-namestring dir))))
     (labels ((one-iter ()
-               (let ((name (isys:%sys-readdir dp)))
+               (let ((name (isys:readdir dp)))
                  (unless (null name)
                    (cond
                      ((member name '("." "..") :test #'string=)
@@ -413,7 +413,7 @@ body. Signals an error if PATHSPEC is not a directory."
       (unwind-protect
            (let ((*default-file-path-defaults* dir))
              (funcall fn #'one-iter))
-        (isys:%sys-closedir dp)))))
+        (isys:closedir dp)))))
 
 (defun mapdir (function pathspec)
   "Applies function to each entry in directory designated by
@@ -498,10 +498,10 @@ the files and directories contained within. Returns T on success."
 
 (defun delete-files (pathspec &key recursive)
   (labels ((%delete-file (file)
-             (isys:%sys-unlink (file-path-namestring
+             (isys:unlink (file-path-namestring
                                 (absolute-file-path file))))
            (%delete-directory (directory)
-             (isys:%sys-rmdir (file-path-namestring
+             (isys:rmdir (file-path-namestring
                                (absolute-file-path directory)))))
     (let* ((pathspec (file-path pathspec))
            (kind (file-kind pathspec :follow-symlinks t)))
@@ -527,8 +527,8 @@ the files and directories contained within. Returns T on success."
 numerical user ID, as an assoc-list."
   (multiple-value-bind (name password uid gid gecos home shell)
       (etypecase id
-        (string  (isys:%sys-getpwnam id))
-        (integer (isys:%sys-getpwuid id)))
+        (string  (isys:getpwnam id))
+        (integer (isys:getpwuid id)))
     (declare (ignore password))
     (unless (null name)
       (list (cons :name name)

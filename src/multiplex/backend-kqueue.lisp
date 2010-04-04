@@ -17,14 +17,14 @@
 (defvar *kqueue-max-events* 200)
 
 (defmethod initialize-instance :after ((mux kqueue-multiplexer) &key)
-  (setf (slot-value mux 'fd) (isys:%sys-kqueue)))
+  (setf (slot-value mux 'fd) (isys:kqueue)))
 
 (defun do-kqueue-event-request (kqueue-fd fd-entry filter request-type)
   (let ((fd (fd-entry-fd fd-entry)))
     (with-foreign-object (kev 'isys:kevent)
-      (isys:%sys-bzero kev isys:size-of-kevent)
-      (isys:%sys-ev-set kev fd filter request-type 0 0 (null-pointer))
-      (isys:%sys-kevent kqueue-fd
+      (isys:bzero kev isys:size-of-kevent)
+      (isys:ev-set kev fd filter request-type 0 0 (null-pointer))
+      (isys:kevent kqueue-fd
                         kev 1
                         (null-pointer) 0
                         (null-pointer)))))
@@ -85,14 +85,14 @@
 (defmethod harvest-events ((mux kqueue-multiplexer) timeout)
   (with-foreign-objects ((events 'isys:kevent *kqueue-max-events*)
                          (ts 'isys:timespec))
-    (isys:%sys-bzero events (* *kqueue-max-events* isys:size-of-kevent))
+    (isys:bzero events (* *kqueue-max-events* isys:size-of-kevent))
     (let (ready-fds)
       (isys:repeat-upon-condition-decreasing-timeout
           ((isys:eintr) tmp-timeout timeout)
         (when tmp-timeout
           (timeout->timespec tmp-timeout ts))
         (setf ready-fds
-              (isys:%sys-kevent (fd-of mux) (null-pointer) 0
+              (isys:kevent (fd-of mux) (null-pointer) 0
                                 events *kqueue-max-events*
                                 (if tmp-timeout ts (null-pointer)))))
       (macrolet ((kevent-slot (slot-name)

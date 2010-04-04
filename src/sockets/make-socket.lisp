@@ -317,15 +317,15 @@ The socket is automatically closed upon exit."
 
 (defun call-with-buffers-for-fd-passing (fn)
   (with-foreign-object (msg 'msghdr)
-    (isys:%sys-bzero msg size-of-msghdr)
-    (with-foreign-pointer (buffer #.(isys:%sys-cmsg.space size-of-int) buffer-size)
-      (isys:%sys-bzero buffer buffer-size)
+    (isys:bzero msg size-of-msghdr)
+    (with-foreign-pointer (buffer #.(isys:cmsg.space size-of-int) buffer-size)
+      (isys:bzero buffer buffer-size)
       (with-foreign-slots ((control controllen) msg msghdr)
         (setf control    buffer
               controllen buffer-size)
-        (let ((cmsg (isys:%sys-cmsg.firsthdr msg)))
+        (let ((cmsg (isys:cmsg.firsthdr msg)))
           (with-foreign-slots ((len level type) cmsg cmsghdr)
-            (setf len (isys:%sys-cmsg.len size-of-int)
+            (setf len (isys:cmsg.len size-of-int)
                   level sol-socket
                   type scm-rights)
             (funcall fn msg cmsg)))))))
@@ -335,13 +335,13 @@ The socket is automatically closed upon exit."
 
 (defmethod send-file-descriptor ((socket local-socket) file-descriptor)
   (with-buffers-for-fd-passing (msg cmsg)
-    (let ((data (isys:%sys-cmsg.data cmsg)))
+    (let ((data (isys:cmsg.data cmsg)))
       (setf (mem-aref data :int) file-descriptor)
       (%sendmsg (fd-of socket) msg 0)
       (values))))
 
 (defmethod receive-file-descriptor ((socket local-socket))
   (with-buffers-for-fd-passing (msg cmsg)
-    (let ((data (isys:%sys-cmsg.data cmsg)))
+    (let ((data (isys:cmsg.data cmsg)))
       (%recvmsg (fd-of socket) msg 0)
       (mem-aref data :int))))

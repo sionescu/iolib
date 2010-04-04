@@ -300,7 +300,7 @@ within the extent of BODY.  Closes VAR."
                         (event-base-empty-p event-base)))))
       (loop :with deletion-list := ()
             :with eventsp := nil
-            :for now := (isys:%sys-get-monotonic-time)
+            :for now := (isys:get-monotonic-time)
             :for poll-timeout := (poll-timeout now)
             :until (must-exit-loop-p) :do
         (setf expired-events nil)

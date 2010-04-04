@@ -31,11 +31,11 @@
                                        (protocol :default))
   (with-accessors ((fd fd-of) (fam socket-address-family) (proto socket-protocol))
       socket
-    (setf fd (or (and file-descriptor (isys:%sys-dup file-descriptor))
+    (setf fd (or (and file-descriptor (isys:dup file-descriptor))
                  (multiple-value-call #'%socket
                    (translate-make-socket-keywords-to-constants
                     address-family type protocol)))
-          (isys:%sys-fd-nonblock fd) t)
+          (isys:fd-nonblock fd) t)
     (setf fam address-family
           proto protocol)))
 
@@ -372,7 +372,7 @@
 
 (defmethod disconnect ((socket datagram-socket))
   (with-foreign-object (sin 'sockaddr-in)
-    (isys:%sys-bzero sin size-of-sockaddr-in)
+    (isys:bzero sin size-of-sockaddr-in)
     (setf (foreign-slot-value sin 'sockaddr-in 'addr) af-unspec)
     (%connect (fd-of socket) sin size-of-sockaddr-in)
     (values socket)))

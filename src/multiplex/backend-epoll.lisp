@@ -19,7 +19,7 @@
 
 (defmethod initialize-instance :after ((mux epoll-multiplexer)
                                        &key (size +epoll-default-size-hint+))
-  (setf (slot-value mux 'fd) (isys:%sys-epoll-create size)))
+  (setf (slot-value mux 'fd) (isys:epoll-create size)))
 
 (defun calc-epoll-flags (fd-entry)
   (logior (if (fd-entry-read-handler fd-entry)
@@ -35,14 +35,14 @@
   (let ((flags (calc-epoll-flags fd-entry))
         (fd (fd-entry-fd fd-entry)))
     (with-foreign-object (ev 'isys:epoll-event)
-      (isys:%sys-bzero ev isys:size-of-epoll-event)
+      (isys:bzero ev isys:size-of-epoll-event)
       (setf (foreign-slot-value ev 'isys:epoll-event 'isys:events) flags)
       (setf (foreign-slot-value
              (foreign-slot-value ev 'isys:epoll-event 'isys:data)
              'isys:epoll-data 'isys:fd)
             fd)
       (handler-case
-          (isys:%sys-epoll-ctl (fd-of mux) isys:epoll-ctl-add fd ev)
+          (isys:epoll-ctl (fd-of mux) isys:epoll-ctl-add fd ev)
         (isys:ebadf ()
           (warn "FD ~A is invalid, cannot monitor it." fd))
         (isys:eexist ()
@@ -54,14 +54,14 @@
   (let ((flags (calc-epoll-flags fd-entry))
         (fd (fd-entry-fd fd-entry)))
     (with-foreign-object (ev 'isys:epoll-event)
-      (isys:%sys-bzero ev isys:size-of-epoll-event)
+      (isys:bzero ev isys:size-of-epoll-event)
       (setf (foreign-slot-value ev 'isys:epoll-event 'isys:events) flags)
       (setf (foreign-slot-value
              (foreign-slot-value ev 'isys:epoll-event 'isys:data)
              'isys:epoll-data 'isys:fd)
             fd)
       (handler-case
-          (isys:%sys-epoll-ctl (fd-of mux) isys:epoll-ctl-mod fd ev)
+          (isys:epoll-ctl (fd-of mux) isys:epoll-ctl-mod fd ev)
         (isys:ebadf ()
           (warn "FD ~A is invalid, cannot update its status." fd))
         (isys:enoent ()
@@ -70,7 +70,7 @@
 
 (defmethod unmonitor-fd ((mux epoll-multiplexer) fd-entry)
   (handler-case
-      (isys:%sys-epoll-ctl (fd-of mux)
+      (isys:epoll-ctl (fd-of mux)
                            isys:epoll-ctl-del
                            (fd-entry-fd fd-entry)
                            (null-pointer))
@@ -82,11 +82,11 @@
 
 (defmethod harvest-events ((mux epoll-multiplexer) timeout)
   (with-foreign-object (events 'isys:epoll-event +epoll-max-events+)
-    (isys:%sys-bzero events (* +epoll-max-events+ isys:size-of-epoll-event))
+    (isys:bzero events (* +epoll-max-events+ isys:size-of-epoll-event))
     (let (ready-fds)
       (isys:repeat-upon-condition-decreasing-timeout
           ((isys:eintr) tmp-timeout timeout)
-        (setf ready-fds (isys:%sys-epoll-wait (fd-of mux) events +epoll-max-events+
+        (setf ready-fds (isys:epoll-wait (fd-of mux) events +epoll-max-events+
                                               (timeout->milisec tmp-timeout))))
       (macrolet ((epoll-slot (slot-name)
                    `(foreign-slot-value (mem-aref events 'isys:epoll-event i)

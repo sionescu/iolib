@@ -6,6 +6,6 @@
 (in-package :common-lisp-user)
 
 (defpackage :iolib.zstreams
-  (:use :iolib.base :iolib.syscalls :iolib.pathnames :cffi)
+  (:use :iolib.base :iolib.pathnames :cffi)
   (:export
    ))

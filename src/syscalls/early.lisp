@@ -100,7 +100,7 @@
                `(let* ,(remove-if 'null
                                   `((,retval (convert-from-foreign ,value ',(base-type-of type)))
                                     ,(case (error-location-of type)
-                                           (:errno `(,errno (%sys-errno)))
+                                           (:errno `(,errno (errno)))
                                            (:return `(,errno ,retval)))))
                   ,(let* ((return-val-exp
                            (if (eql 'identity (return-filter-of type))

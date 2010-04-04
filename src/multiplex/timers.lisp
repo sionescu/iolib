@@ -54,7 +54,7 @@
 
 (defun make-timer (function delay &key name one-shot)
   (flet ((abs-timeout (timeout)
-           (+ (isys:%sys-get-monotonic-time)
+           (+ (isys:get-monotonic-time)
               (normalize-timeout timeout))))
     (let ((name (or name "(unnamed)")))
       (%make-timer name function (abs-timeout delay) delay one-shot))))

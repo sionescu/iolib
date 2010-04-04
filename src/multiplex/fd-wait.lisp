@@ -56,14 +56,14 @@ Returns two boolean values indicating readability and writeability of `FILE-DESC
            (error 'poll-error :fd file-descriptor
                   :identifier (isys:identifier-of unix-err))))
     (with-foreign-object (pollfd 'isys:pollfd)
-      (isys:%sys-bzero pollfd isys:size-of-pollfd)
+      (isys:bzero pollfd isys:size-of-pollfd)
       (with-foreign-slots ((isys:fd isys:events isys:revents) pollfd isys:pollfd)
         (setf isys:fd     file-descriptor
               isys:events (compute-poll-flags event-type))
         (handler-case
             (let ((ret (isys:repeat-upon-condition-decreasing-timeout
                            ((isys:eintr) remaining-time timeout)
-                         (isys:%sys-poll pollfd 1 (timeout->milisec remaining-time)))))
+                         (isys:poll pollfd 1 (timeout->milisec remaining-time)))))
               (when (zerop ret)
                 (if errorp
                     (error 'poll-timeout :fd file-descriptor :event-type event-type)

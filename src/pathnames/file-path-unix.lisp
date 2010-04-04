@@ -135,9 +135,9 @@
 
 (defun %expand-user-directory (pathspec)
   (flet ((user-homedir (user)
-           (nth-value 5 (isys:%sys-getpwnam user)))
+           (nth-value 5 (isys:getpwnam user)))
          (uid-homedir (uid)
-           (nth-value 5 (isys:%sys-getpwuid uid))))
+           (nth-value 5 (isys:getpwuid uid))))
     (unless (char= #\~ (aref pathspec 0))
       (return* pathspec))
     (destructuring-bind (first &rest rest)
@@ -145,13 +145,13 @@
       (let ((homedir
              (cond
                ((string= "~" first)
-                (or (isys:%sys-getenv "HOME")
+                (or (isys:getenv "HOME")
                     (let ((username
-                           (or (isys:%sys-getenv "USER")
-                               (isys:%sys-getenv "LOGIN"))))
+                           (or (isys:getenv "USER")
+                               (isys:getenv "LOGIN"))))
                       (if username
                           (user-homedir username)
-                          (uid-homedir (isys:%sys-getuid))))))
+                          (uid-homedir (isys:getuid))))))
                ((char= #\~ (aref first 0))
                 (user-homedir (subseq first 1)))
                (t
@@ -167,7 +167,7 @@
 
 (defparameter *default-file-path-defaults*
   (or (ignore-some-conditions (isys:syscall-error)
-        (parse-file-path (isys:%sys-getcwd)))
+        (parse-file-path (isys:getcwd)))
       (ignore-some-conditions (isys:syscall-error)
         (parse-file-path "~"))
       (parse-file-path "/")))
@@ -175,5 +175,5 @@
 (defparameter *default-execution-path*
   (mapcar #'parse-file-path
           (split-sequence +execution-path-delimiter+
-                          (isys:%sys-getenv "PATH")
+                          (isys:getenv "PATH")
                           :remove-empty-subseqs t)))

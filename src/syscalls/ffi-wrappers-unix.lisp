@@ -20,13 +20,13 @@
 
 (include "errno.h")
 
-(declaim (inline %sys-errno))
-(defwrapper* ("iolib_get_errno" %sys-errno) :int
+(declaim (inline errno))
+(defwrapper* ("iolib_get_errno" errno) :int
   ()
   "return errno;")
 
-(declaim (inline %%sys-set-errno))
-(defwrapper* ("iolib_set_errno" %%sys-set-errno) :int
+(declaim (inline %set-errno))
+(defwrapper* ("iolib_set_errno" %set-errno) :int
   ((value :int))
   "errno = value;"
   "return errno;")
@@ -39,22 +39,22 @@
 (include "stdlib.h") ; needed on FreeBSD to define NULL
 (include "sys/socket.h")
 
-(declaim (inline %sys-cmsg.space))
-(defwrapper* ("cmsg_space" %sys-cmsg.space) :unsigned-int
+(declaim (inline cmsg.space))
+(defwrapper* ("cmsg_space" cmsg.space) :unsigned-int
   ((data-size :unsigned-int))
   "return CMSG_SPACE(data_size);")
 
-(declaim (inline %sys-cmsg.len))
-(defwrapper* ("cmsg_len" %sys-cmsg.len) :unsigned-int
+(declaim (inline cmsg.len))
+(defwrapper* ("cmsg_len" cmsg.len) :unsigned-int
   ((data-size :unsigned-int))
   "return CMSG_LEN(data_size);")
 
-(declaim (inline %sys-cmsg.firsthdr))
-(defwrapper* ("cmsg_firsthdr" %sys-cmsg.firsthdr) :pointer
+(declaim (inline cmsg.firsthdr))
+(defwrapper* ("cmsg_firsthdr" cmsg.firsthdr) :pointer
   ((msg ("struct msghdr*" :pointer)))
   "return CMSG_FIRSTHDR(msg);")
 
-(declaim (inline %sys-cmsg.data))
-(defwrapper* ("cmsg_data" %sys-cmsg.data) :pointer
+(declaim (inline cmsg.data))
+(defwrapper* ("cmsg_data" cmsg.data) :pointer
   ((cmsg ("struct cmsghdr*" :pointer)))
   "return CMSG_DATA(cmsg);")
