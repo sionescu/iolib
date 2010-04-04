@@ -459,10 +459,10 @@
    #:%sys-getgrgid
 
    ;; CMSG readers
-   #:%sys-cmsg-space
-   #:%sys-cmsg-len
-   #:%sys-cmsg-firsthdr
-   #:%sys-cmsg-data
+   #:%sys-cmsg.space
+   #:%sys-cmsg.len
+   #:%sys-cmsg.firsthdr
+   #:%sys-cmsg.data
 
 
    ;;;--------------------------------------------------------------------------
