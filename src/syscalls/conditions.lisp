@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- Error conditions.
+;;; --- Syscall error conditions.
 ;;;
 
 (in-package :iolib.syscalls)

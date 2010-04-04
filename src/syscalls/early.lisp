@@ -1,11 +1,13 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- Early definitions.
+;;; --- Early FFI definitions.
 ;;;
 
 (in-package :iolib.syscalls)
 
-;;;; Sizes of Standard Types
+;;;-------------------------------------------------------------------------
+;;; Sizes of Standard Types
+;;;-------------------------------------------------------------------------
 
 (defconstant size-of-char (foreign-type-size :char))
 (defconstant size-of-int (foreign-type-size :int))
@@ -14,6 +16,10 @@
 (defconstant size-of-pointer (foreign-type-size :pointer))
 (defconstant size-of-short (foreign-type-size :short))
 
+
+;;;-------------------------------------------------------------------------
+;;; Syscall return wrapper
+;;;-------------------------------------------------------------------------
 
 ;;; Error predicate that always returns NIL.  Not actually used
 ;;; because the RETURN-WRAPPER optimizes this call away.
@@ -59,7 +65,7 @@
         (error "Could not choose an error-predicate function."))))))
 
 (define-parse-method syscall-wrapper
-    (base-type &key handle handle2 (restart nil restart-p)
+    (base-type &key handle handle2 restart
      (error-predicate 'never-fails error-predicate-p)
      (error-location :errno)
      (return-filter 'identity)
@@ -67,7 +73,7 @@
   ;; pick a default error-predicate
   (unless error-predicate-p
     (setf error-predicate (default-error-predicate base-type)))
-  (when (and (not restart-p) (eql 't restart))
+  (when restart
     (setf error-generator 'signal-syscall-error/restart))
   (unless (or (eql 'never-fails error-predicate) error-generator)
     (error "Function can fail but no error-generator suplied."))
@@ -116,11 +122,15 @@
                     ,foreign-call))
               foreign-call)))))
 
-(defmacro signal-syscall-error/restart (errno)
+(defmacro signal-syscall-error/restart (errno &optional fd fd2)
   `(if (= eintr ,errno)
        (go :restart)
-       (signal-syscall-error ,errno)))
+       (signal-syscall-error ,errno ,fd ,fd2)))
 
+
+;;;-------------------------------------------------------------------------
+;;; Utilities
+;;;-------------------------------------------------------------------------
 
 (defun foreign-name (spec &optional varp)
   (declare (ignore varp))
@@ -143,6 +153,10 @@
           (foreign-name spec varp)
           (cffi::foreign-options spec varp)))
 
+
+;;;-------------------------------------------------------------------------
+;;; Syscall definers
+;;;-------------------------------------------------------------------------
 
 (defmacro defentrypoint (name (&rest args) &body body)
   `(progn

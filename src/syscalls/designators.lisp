@@ -1,11 +1,13 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- FFI designators.
+;;; --- CFFI type designators.
 ;;;
 
 (in-package :iolib.syscalls)
 
-;;;; Type Designators
+;;;-------------------------------------------------------------------------
+;;; CFFI Type Designators
+;;;-------------------------------------------------------------------------
 
 (defmacro define-designator (name cffi-type &body type-clauses)
   (let ((type `(quote (or ,@(mapcar #'car type-clauses))))
@@ -32,3 +34,12 @@
 (define-designator bool :int
   (null 0)
   (t    1))
+
+
+;;;-------------------------------------------------------------------------
+;;; Other Types
+;;;-------------------------------------------------------------------------
+
+;;; FIXME: with fd namespaces on Linux, someday this might be no
+;;; longer correct
+(deftype fd   () '(integer 0 65535))

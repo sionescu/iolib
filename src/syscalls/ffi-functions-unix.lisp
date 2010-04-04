@@ -35,16 +35,16 @@
     (with-foreign-pointer-as-string ((buf bufsiz) 1024)
       (%%sys-strerror-r errno buf bufsiz))))
 
-(defmethod print-object ((e syscall-error) stream)
-  (let ((code (code-of e))
-        (identifier (identifier-of e))
-        (message (message-of e)))
+(defmethod print-object ((e syscall-error) s)
+  (with-slots (code identifier message handle handle2) e
     (if message
-        (format stream "~A" message)
-        (print-unreadable-object (e stream :type nil :identity nil)
-          (format stream "System-Error ~A(~S) ~S"
+        (format s "~A" message)
+        (print-unreadable-object (e s :type nil :identity nil)
+          (format s "Syscall error ~A(~S) ~S"
                   identifier (or code "[No code]")
-                  (or (%sys-strerror code) "[Can't get error string.]"))))))
+                  (or (%sys-strerror code) "[Can't get error string.]"))
+          (when handle (format s " FD=~A" handle))
+          (when handle2 (format s " FD2=~A" handle2))))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -263,8 +263,11 @@ to the argument OFFSET according to the directive WHENCE."
   "Change permissions of open file referenced by FD to mode MODE."
   (fd   :int)
   (mode mode-t))
+
 
-;;; STAT()
+;;;-------------------------------------------------------------------------
+;;; Stat()
+;;;-------------------------------------------------------------------------
 
 (define-c-struct-wrapper stat ())
 
@@ -411,6 +414,7 @@ Return two values: the file descriptor and the path of the temporary file."
     ((not argp)     (%%sys-fcntl/noarg   fd cmd))
     ((integerp arg) (%%sys-fcntl/int     fd cmd arg))
     ((pointerp arg) (%%sys-fcntl/pointer fd cmd arg))
+    ;; FIXME: signal a type error
     (t (error "Wrong argument to fcntl: ~S" arg))))
 
 (defentrypoint %sys-fd-nonblock (fd)
@@ -444,6 +448,7 @@ Return two values: the file descriptor and the path of the temporary file."
   (cond
     ((not argp)     (%%sys-ioctl/noarg   fd request))
     ((pointerp arg) (%%sys-ioctl/pointer fd request arg))
+    ;; FIXME: signal a type error
     (t (error "Wrong argument to ioctl: ~S" arg))))
 
 (defentrypoint %sys-fd-open-p (fd)
@@ -960,12 +965,12 @@ The environment variable is overwritten only if overwrite is not NIL."
 (defentrypoint %sys-clearenv ()
   "Remove all name-value pairs from the environment and set the external
 variable *environ* to NULL."
-  (let ((envptr isys:*environ*))
+  (let ((envptr *environ*))
     (unless (null-pointer-p envptr)
       (loop :for i :from 0 :by 1
             :for string := (mem-aref envptr :string i)
             :for name := (subseq string 0 (position #\= string))
-            :while name :do (isys:%sys-unsetenv name))
+            :while name :do (%sys-unsetenv name))
       (setf (mem-ref envptr :pointer) (null-pointer)))
     (values)))
 
