@@ -1338,7 +1338,7 @@ Here is the example using this API.
 +------------------------------------------------------------------------------+
 |                                                                              |
 ;; This will be an instance of the multiplexer.
-(defparameter *ex5a-event-base* nil)
+(defvar *ex5a-event-base*)
 |                                                                              |
 +------------------------------------------------------------------------------+
 
@@ -1603,21 +1603,22 @@ Here is the example using this API.
 |                                                                              |
 ;; This is the entry point for this example.
 (defun run-ex5a-client (&key (host *host*) (port *port*))
-  (unwind-protect
-       (progn
-         ;; When the connection gets closed, either intentionally in the client
-         ;; or because the server went away, we want to leave the multiplexer
-         ;; event loop. So, when making the event-base, we explicitly state
-         ;; that we'd like that behavior.
-         (setf *ex5a-event-base*
-               (make-instance 'iomux:event-base :exit-when-empty t))
-         (handler-case
-             (run-ex5a-client-helper host port)
+  (let ((*ex5a-event-base* nil))
+    (unwind-protect
+         (progn
+           ;; When the connection gets closed, either intentionally in the client
+           ;; or because the server went away, we want to leave the multiplexer
+           ;; event loop. So, when making the event-base, we explicitly state
+           ;; that we'd like that behavior.
+           (setf *ex5a-event-base*
+                 (make-instance 'iomux:event-base :exit-when-empty t))
+           (handler-case
+               (run-ex5a-client-helper host port)
 
-           ;; handle a commonly signaled error...
-           (socket-connection-refused-error ()
-             (format t "Connection refused to ~A:~A. Maybe the server isn't running?~%"
-                     (lookup-hostname host) port)))))
+             ;; handle a commonly signaled error...
+             (socket-connection-refused-error ()
+               (format t "Connection refused to ~A:~A. Maybe the server isn't running?~%"
+                       (lookup-hostname host) port))))
 |                                                                              |
 +------------------------------------------------------------------------------+
 
@@ -1629,12 +1630,13 @@ Here is the example using this API.
 
 +------------------------------------------------------------------------------+
 |                                                                              |
-  ;; Cleanup form for uw-p
-  ;; ensure we clean up the event base regardless of how we left the client
-  ;; algorithm
-  (close *ex5a-event-base*)
-  (format t "Client Exited.~%")
-  (finish-output))
+      ;; Cleanup form for uw-p
+      ;; ensure we clean up the event base regardless of how we left the client
+      ;; algorithm
+      (when *ex5a-event-base*
+        (close *ex5a-event-base*))
+      (format t "Client Exited.~%")
+      (finish-output))))
 |                                                                              |
 +------------------------------------------------------------------------------+
 
@@ -1949,7 +1951,7 @@ multiplexer API farther.
 +------------------------------------------------------------------------------+
 |                                                                              |
 ;; This variable represents the multiplexer state.
-(defparameter *ex6-server-event-base* nil)
+(defvar *ex6-server-event-base*)
 |                                                                              |
 +------------------------------------------------------------------------------+
 
@@ -1966,7 +1968,7 @@ multiplexer API farther.
 ;; is a list containing the host and port of the connection. We use this to
 ;; close all connections to the clients, if any, when the server exits.  This
 ;; allows all clients to notice the server had gone away.
-(defparameter *ex6-server-open-connections* nil)
+(defvar *ex6-server-open-connections*)
 |                                                                              |
 +------------------------------------------------------------------------------+
 
@@ -2166,21 +2168,23 @@ multiplexer API farther.
 |                                                                              |
 ;; This is the entrance function into this example.
 (defun run-ex6-server (&key (port *port*))
-  (unwind-protect
-       (handler-case
-           (progn
-             ;; Clear the open connection table and init the event base
-             (setf *ex6-server-open-connections*
-                   (make-hash-table :test #'equalp)
+  (let ((*ex6-server-open-connections* nil)
+        (*ex6-server-event-base* nil))
+    (unwind-protect
+         (handler-case
+             (progn
+               ;; Clear the open connection table and init the event base
+               (setf *ex6-server-open-connections*
+                     (make-hash-table :test #'equalp)
 
-                   *ex6-server-event-base*
-                   (make-instance 'event-base))
+                     *ex6-server-event-base*
+                     (make-instance 'event-base))
 
-             (run-ex6-server-helper port))
+               (run-ex6-server-helper port))
 
-         ;; handle a common signal
-         (socket-address-in-use-error ()
-           (format t "Bind: Address already in use, forget :reuse-addr t?")))
+           ;; handle a common signal
+           (socket-address-in-use-error ()
+             (format t "Bind: Address already in use, forget :reuse-addr t?")))
 |                                                                              |
 +------------------------------------------------------------------------------+
 
@@ -2192,22 +2196,23 @@ multiplexer API farther.
 
 +------------------------------------------------------------------------------+
 |                                                                              |
-    ;; Cleanup form for uw-p
-    ;; Close all open connections to the clients, if any. We do this
-    ;; because when the server goes away we want the clients to know
-    ;; immediately. Sockets are not memory, and can't just be garbage
-    ;; collected whenever. They have to be eagerly closed.
-    (maphash
-     #'(lambda (k v)
-         (format t "Closing a client connection to ~A~%" k)
-         ;; We don't want to signal any conditions on the close...
-         (close v :abort t))
-     *ex6-server-open-connections*)
+      ;; Cleanup form for uw-p
+      ;; Close all open connections to the clients, if any. We do this
+      ;; because when the server goes away we want the clients to know
+      ;; immediately. Sockets are not memory, and can't just be garbage
+      ;; collected whenever. They have to be eagerly closed.
+      (maphash
+       #'(lambda (k v)
+           (format t "Closing a client connection to ~A~%" k)
+           ;; We don't want to signal any conditions on the close...
+           (close v :abort t))
+       *ex6-server-open-connections*)
 
-    ;; and clean up the multiplexer too!
-    (close *ex6-server-event-base*)
-    (format t "Server Exited~%")
-    (finish-output)))
+      ;; and clean up the multiplexer too!
+      (when *ex6-server-event-base*
+        (close *ex6-server-event-base*))
+      (format t "Server Exited~%")
+      (finish-output))))
 |                                                                              |
 +------------------------------------------------------------------------------+
 

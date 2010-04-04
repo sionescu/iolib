@@ -3,7 +3,7 @@
 ;;;; This file was originally written by Peter Keller (psilord@cs.wisc.edu)
 ;;;; and this code is released under the same license as IOLib.
 
-(defparameter *ex5b-event-base* nil)
+(defvar *ex5b-event-base*)
 
 ;; This program differs from ex5a-client in the fact that when the end-of-file
 ;; is reached for the input, only the write end of the socket is shutdown, this
@@ -136,29 +136,31 @@
       (close socket))))
 
 (defun run-ex5b-client (&key (host *host*) (port *port*))
-  (unwind-protect
-       (progn
-         ;; When the connection gets closed, either intentionally in the client
-         ;; or because the server went away, we want to leave the multiplexer
-         ;; event loop. So, when making the event-base, we explicitly state
-         ;; that we'd like that behavior.
-         (setf *ex5b-event-base*
-               (make-instance 'iomux:event-base :exit-when-empty t))
+  (let ((*ex5b-event-base* nil))
+    (unwind-protect
+         (progn
+           ;; When the connection gets closed, either intentionally in the client
+           ;; or because the server went away, we want to leave the multiplexer
+           ;; event loop. So, when making the event-base, we explicitly state
+           ;; that we'd like that behavior.
+           (setf *ex5b-event-base*
+                 (make-instance 'iomux:event-base :exit-when-empty t))
 
-         (handler-case
+           (handler-case
 
-             (run-ex5b-client-helper host port)
+               (run-ex5b-client-helper host port)
 
-           ;; handle a commonly signaled error...
-           (socket-connection-refused-error ()
-             (format t
-                     "Connection refused to ~A:~A. Maybe the server isn't running?~%"
-                     (lookup-hostname "localhost") port)))))
+             ;; handle a commonly signaled error...
+             (socket-connection-refused-error ()
+               (format t
+                       "Connection refused to ~A:~A. Maybe the server isn't running?~%"
+                       (lookup-hostname "localhost") port))))
 
-  ;; ensure we clean up the event base regardless of how we left the client
-  ;; algorithm
-  (close *ex5b-event-base*)
-  (format t "Client Exited.~%"))
+      ;; ensure we clean up the event base regardless of how we left the client
+      ;; algorithm
+      (when *ex5b-event-base*
+        (close *ex5b-event-base*))
+      (format t "Client Exited.~%"))))
 
 
 

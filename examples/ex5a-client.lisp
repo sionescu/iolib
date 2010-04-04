@@ -14,7 +14,7 @@
 
 ;; ex-0b
 ;; This will be an instance of the multiplexer.
-(defparameter *ex5a-event-base* nil)
+(defvar *ex5a-event-base*)
 ;; ex-0e
 
 ;; in batch mode, this will cut the connection to the server when end of input
@@ -155,30 +155,32 @@
 ;; ex-7b
 ;; This is the entry point for this example.
 (defun run-ex5a-client (&key (host *host*) (port *port*))
-  (unwind-protect
-       (progn
-         ;; When the connection gets closed, either intentionally in the client
-         ;; or because the server went away, we want to leave the multiplexer
-         ;; event loop. So, when making the event-base, we explicitly state
-         ;; that we'd like that behavior.
-         (setf *ex5a-event-base*
-               (make-instance 'iomux:event-base :exit-when-empty t))
-         (handler-case
-             (run-ex5a-client-helper host port)
+  (let ((*ex5a-event-base* nil))
+    (unwind-protect
+         (progn
+           ;; When the connection gets closed, either intentionally in the client
+           ;; or because the server went away, we want to leave the multiplexer
+           ;; event loop. So, when making the event-base, we explicitly state
+           ;; that we'd like that behavior.
+           (setf *ex5a-event-base*
+                 (make-instance 'iomux:event-base :exit-when-empty t))
+           (handler-case
+               (run-ex5a-client-helper host port)
 
-           ;; handle a commonly signaled error...
-           (socket-connection-refused-error ()
-             (format t "Connection refused to ~A:~A. Maybe the server isn't running?~%"
-                     (lookup-hostname host) port)))))
-  ;; ex-7e
+             ;; handle a commonly signaled error...
+             (socket-connection-refused-error ()
+               (format t "Connection refused to ~A:~A. Maybe the server isn't running?~%"
+                       (lookup-hostname host) port))))
+      ;; ex-7e
 
-  ;; ex-8b
-  ;; Cleanup form for uw-p
-  ;; ensure we clean up the event base regardless of how we left the client
-  ;; algorithm
-  (close *ex5a-event-base*)
-  (format t "Client Exited.~%")
-  (finish-output))
+      ;; ex-8b
+      ;; Cleanup form for uw-p
+      ;; ensure we clean up the event base regardless of how we left the client
+      ;; algorithm
+      (when *ex5a-event-base*
+        (close *ex5a-event-base*))
+      (format t "Client Exited.~%")
+      (finish-output))))
 ;; ex-8e
 
 

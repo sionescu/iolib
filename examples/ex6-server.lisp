@@ -13,7 +13,7 @@
 
 ;; ex-0b
 ;; This variable represents the multiplexer state.
-(defparameter *ex6-server-event-base* nil)
+(defvar *ex6-server-event-base*)
 ;; ex-0e
 
 ;; ex-1b
@@ -21,7 +21,7 @@
 ;; is a list containing the host and port of the connection. We use this to
 ;; close all connections to the clients, if any, when the server exits.  This
 ;; allows all clients to notice the server had gone away.
-(defparameter *ex6-server-open-connections* nil)
+(defvar *ex6-server-open-connections*)
 ;; ex-1e
 
 ;; ex-2b
@@ -164,38 +164,41 @@
 ;; ex-8b
 ;; This is the entrance function into this example.
 (defun run-ex6-server (&key (port *port*))
-  (unwind-protect
-       (handler-case
-           (progn
-             ;; Clear the open connection table and init the event base
-             (setf *ex6-server-open-connections*
-                   (make-hash-table :test #'equalp)
+  (let ((*ex6-server-open-connections* nil)
+        (*ex6-server-event-base* nil))
+    (unwind-protect
+         (handler-case
+             (progn
+               ;; Clear the open connection table and init the event base
+               (setf *ex6-server-open-connections*
+                     (make-hash-table :test #'equalp)
 
-                   *ex6-server-event-base*
-                   (make-instance 'event-base))
+                     *ex6-server-event-base*
+                     (make-instance 'event-base))
 
-             (run-ex6-server-helper port))
+               (run-ex6-server-helper port))
 
-         ;; handle a common signal
-         (socket-address-in-use-error ()
-           (format t "Bind: Address already in use, forget :reuse-addr t?")))
-    ;; ex-8e
+           ;; handle a common signal
+           (socket-address-in-use-error ()
+             (format t "Bind: Address already in use, forget :reuse-addr t?")))
+      ;; ex-8e
 
-    ;; ex-9b
-    ;; Cleanup form for uw-p
-    ;; Close all open connections to the clients, if any. We do this
-    ;; because when the server goes away we want the clients to know
-    ;; immediately. Sockets are not memory, and can't just be garbage
-    ;; collected whenever. They have to be eagerly closed.
-    (maphash
-     #'(lambda (k v)
-         (format t "Closing a client connection to ~A~%" k)
-         ;; We don't want to signal any conditions on the close...
-         (close v :abort t))
-     *ex6-server-open-connections*)
+      ;; ex-9b
+      ;; Cleanup form for uw-p
+      ;; Close all open connections to the clients, if any. We do this
+      ;; because when the server goes away we want the clients to know
+      ;; immediately. Sockets are not memory, and can't just be garbage
+      ;; collected whenever. They have to be eagerly closed.
+      (maphash
+       #'(lambda (k v)
+           (format t "Closing a client connection to ~A~%" k)
+           ;; We don't want to signal any conditions on the close...
+           (close v :abort t))
+       *ex6-server-open-connections*)
 
-    ;; and clean up the multiplexer too!
-    (close *ex6-server-event-base*)
-    (format t "Server Exited~%")
-    (finish-output)))
+      ;; and clean up the multiplexer too!
+      (when *ex6-server-event-base*
+        (close *ex6-server-event-base*))
+      (format t "Server Exited~%")
+      (finish-output))))
 ;; ex-9e

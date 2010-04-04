@@ -12,7 +12,7 @@
 ;;;; due to read-line and the blocking i/o requirement.
 
 ;; The event dispatcher
-(defparameter *ex7-event-base* nil)
+(defvar *ex7-event-base*)
 
 ;; ex-0b
 (defun make-ex7-io-buffer (socket who port disconnector &key (max-bytes 4096))

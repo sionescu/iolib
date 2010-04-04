@@ -15,7 +15,7 @@
 ;;;; socket and stores partial reads and writes in an internal buffer.
 
 ;; The event dispatcher
-(defparameter *ex8-event-base* nil)
+(defvar *ex8-event-base*)
 
 ;; ex-0b
 (defun make-ex8-io-buffer (socket who port disconnector &key (max-bytes 16384))

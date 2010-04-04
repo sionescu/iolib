@@ -12,7 +12,7 @@
 ;; connection. We use this to close all connections to the clients, if
 ;; any, when the server exits.  This allows all clients to notice the
 ;; server had gone away.
-(defparameter *ex8-open-connections* nil)
+(defvar *ex8-open-connections*)
 
 ;; This program uses the multiplexer to select on a listening socket
 ;; which when it becomes ready in the read bit, will do a blocking
@@ -125,30 +125,33 @@
 ;; If for whatever reason the server has to stop running, we ensure that all
 ;; open connections are closed.
 (defun run-ex8-server (&key (port *port*))
-  (unwind-protect
-       (handler-case
-           (progn
-             (setf *ex8-open-connections* (make-hash-table :test #'equalp)
-                   *ex8-event-base* (make-instance 'event-base))
+  (let ((*ex8-open-connections* nil)
+        (*ex8-event-base* nil))
+    (unwind-protect
+         (handler-case
+             (progn
+               (setf *ex8-open-connections* (make-hash-table :test #'equalp)
+                     *ex8-event-base* (make-instance 'event-base))
 
-             (run-ex8-server-helper port))
+               (run-ex8-server-helper port))
 
-         ;; handle some common signals
-         (socket-address-in-use-error ()
-           (format t "Bind: Address already in use, forget :reuse-addr t?")))
+           ;; handle some common signals
+           (socket-address-in-use-error ()
+             (format t "Bind: Address already in use, forget :reuse-addr t?")))
 
-    ;; Cleanup form for uw-p
-    ;; Close all open connections to the clients, if any. We do this
-    ;; because when the server goes away we want the clients to know
-    ;; immediately. Sockets are not memory, and can't just be garbage
-    ;; collected whenever. They have to be eagerly closed.
-    (maphash
-     #'(lambda (k v)
-         (format t "Force closing a client connection to ~A~%" k)
-         (close v :abort t))
-     *ex8-open-connections*)
+      ;; Cleanup form for uw-p
+      ;; Close all open connections to the clients, if any. We do this
+      ;; because when the server goes away we want the clients to know
+      ;; immediately. Sockets are not memory, and can't just be garbage
+      ;; collected whenever. They have to be eagerly closed.
+      (maphash
+       #'(lambda (k v)
+           (format t "Force closing a client connection to ~A~%" k)
+           (close v :abort t))
+       *ex8-open-connections*)
 
-    ;; and clean up the event-base too!
-    (close *ex8-event-base*)
-    (format t "Server Exited.~%")
-    (finish-output)))
+      ;; and clean up the event-base too!
+      (when *ex8-event-base*
+        (close *ex8-event-base*))
+      (format t "Server Exited.~%")
+      (finish-output))))
