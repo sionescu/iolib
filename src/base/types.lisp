@@ -31,19 +31,20 @@
 
 (deftype ub8-sarray (&optional (size '*))
   `(simple-array ub8 (,size)))
-(deftype ub8-vector () '(vector ub8))
+(deftype ub8-vector (&optional (size '*))
+  `(vector ub8 ,size))
 
 (deftype ub16-sarray (&optional (size '*))
   `(simple-array ub16 (,size)))
 (deftype ub16-vector (&optional (size '*))
-  `(vector ub16))
+  `(vector ub16 ,size))
 
 (deftype ub32-sarray (&optional (size '*))
   `(simple-array ub32 (,size)))
 (deftype ub32-vector (&optional (size '*))
-  `(vector ub32))
+  `(vector ub32 ,size))
 
 (deftype ub64-sarray (&optional (size '*))
   `(simple-array ub64 (,size)))
 (deftype ub64-vector (&optional (size '*))
-  `(vector ub64))
+  `(vector ub64 ,size))
