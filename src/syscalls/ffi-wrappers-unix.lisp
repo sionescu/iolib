@@ -40,24 +40,20 @@
 (include "sys/socket.h")
 
 (declaim (inline cmsg.space))
-(defwrapper* ("cmsg_space" cmsg.space) :unsigned-int
-  ((data-size :unsigned-int))
-  "return CMSG_SPACE(data_size);")
+(defwrapper ("CMSG_SPACE" cmsg.space) :unsigned-int
+  (data-size :unsigned-int))
 
 (declaim (inline cmsg.len))
-(defwrapper* ("cmsg_len" cmsg.len) :unsigned-int
-  ((data-size :unsigned-int))
-  "return CMSG_LEN(data_size);")
+(defwrapper ("CMSG_LEN" cmsg.len) :unsigned-int
+  (data-size :unsigned-int))
 
 (declaim (inline cmsg.firsthdr))
-(defwrapper* ("cmsg_firsthdr" cmsg.firsthdr) :pointer
-  ((msg ("struct msghdr*" :pointer)))
-  "return CMSG_FIRSTHDR(msg);")
+(defwrapper ("CMSG_FIRSTHDR" cmsg.firsthdr) :pointer
+  (msg ("struct msghdr*" :pointer)))
 
 (declaim (inline cmsg.data))
-(defwrapper* ("cmsg_data" cmsg.data) :pointer
-  ((cmsg ("struct cmsghdr*" :pointer)))
-  "return CMSG_DATA(cmsg);")
+(defwrapper ("CMSG_DATA" cmsg.data) :pointer
+  (cmsg ("struct cmsghdr*" :pointer)))
 
 
 ;;;-------------------------------------------------------------------------
