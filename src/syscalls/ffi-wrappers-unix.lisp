@@ -58,3 +58,14 @@
 (defwrapper* ("cmsg_data" cmsg.data) :pointer
   ((cmsg ("struct cmsghdr*" :pointer)))
   "return CMSG_DATA(cmsg);")
+
+
+;;;-------------------------------------------------------------------------
+;;; Directory listing
+;;;-------------------------------------------------------------------------
+
+(include "sys/types.h" "dirent.h")
+
+(declaim (inline dirfd))
+(defwrapper (dirfd "dirfd") :int
+  (dirp ("DIR*" :pointer)))

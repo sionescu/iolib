@@ -586,11 +586,6 @@ Return two values: the file descriptor and the path of the temporary file."
   "Open directory denoted by descriptor FD for listing of its contents."
   (fd :int))
 
-#-darwin
-(defsyscall (dirfd "dirfd") :int
-  "Returns the file descriptor associated with the directory DIRP."
-  (dirp :pointer))
-
 (defsyscall (closedir "closedir") :int
   "Close directory DIR when done listing its contents."
   (dirp :pointer))

@@ -389,7 +389,7 @@
    ;; Directory walking
    #:opendir
    #-darwin #:fdopendir
-   #-darwin #:dirfd
+   #:dirfd
    #:closedir
    #:readdir
    #:rewinddir
