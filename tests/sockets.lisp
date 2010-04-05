@@ -339,10 +339,10 @@
                         :type :datagram :address-family :ipv4)
      (send-to s #(1 2 3 4 5))
      (let ((nbytes (nth-value 1 (handler-bind ((isys:ewouldblock
-                                                 (lambda (e)
-                                                   (invoke-restart (find-restart 'retry-syscall e)
-                                                                   *echo-timeout*))))
-                                    (receive-from s :size 200)))))
+                                                (lambda (e)
+                                                  (invoke-restart (find-restart 'retry-syscall e)
+                                                                  *echo-timeout*))))
+                                  (receive-from s :size 200)))))
        (plusp nbytes)))))
 
 (test (simple-udp-client.2 :compile-at :definition-time)
@@ -352,10 +352,10 @@
               :remote-host *echo-address*
               :remote-port *echo-port*)
      (let ((nbytes (nth-value 1 (handler-bind ((isys:ewouldblock
-                                                 (lambda (e)
-                                                   (invoke-restart (find-restart 'retry-syscall e)
-                                                                   *echo-timeout*))))
-                                    (receive-from s :size 200)))))
+                                                (lambda (e)
+                                                  (invoke-restart (find-restart 'retry-syscall e)
+                                                                  *echo-timeout*))))
+                                  (receive-from s :size 200)))))
        (plusp nbytes)))))
 
 (test (simple-local-sockets :compile-at :definition-time)
