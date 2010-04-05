@@ -9,7 +9,7 @@
 ;;; Input
 ;;;-------------------------------------------------------------------------
 
-(declaim (notinline %read-once))
+(declaim (inline %read-once))
 (defun %read-once (fd read-fn iobuf)
   (declare (type function read-fn)
            (type iobuf iobuf))
@@ -21,7 +21,7 @@
       (isys:ewouldblock ()
         (iomux:wait-until-fd-ready fd :input nil t)))))
 
-(declaim (notinline %fill-ibuf))
+(declaim (inline %fill-ibuf))
 (defun %fill-ibuf (iobuf fd read-fn)
   (declare (type iobuf iobuf))
   (let ((nbytes (%read-once fd read-fn iobuf)))
@@ -29,7 +29,7 @@
         :eof
         (progn (incf (iobuf-end iobuf) nbytes) nbytes))))
 
-(declaim (notinline %read-once/no-hang))
+(declaim (inline %read-once/no-hang))
 (defun %read-once/no-hang (fd read-fn iobuf)
   (declare (type function read-fn)
            (type iobuf iobuf))
@@ -38,7 +38,7 @@
                (iobuf-end-space-length iobuf))
     (isys:ewouldblock () nil)))
 
-(declaim (notinline %fill-ibuf/no-hang))
+(declaim (inline %fill-ibuf/no-hang))
 (defun %fill-ibuf/no-hang (iobuf fd read-fn)
   (declare (type iobuf iobuf))
   (let ((nbytes (%read-once/no-hang fd read-fn iobuf)))
