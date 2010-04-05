@@ -17,6 +17,7 @@
            :run-ex5-server
            :run-ex6-server
            :run-ex7-server
+           :run-ex8-server
            ))
 
 (in-package :iolib.examples)
