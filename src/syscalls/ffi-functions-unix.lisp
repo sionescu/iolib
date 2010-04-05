@@ -581,7 +581,7 @@ Return two values: the file descriptor and the path of the temporary file."
   "Open directory PATH for listing of its contents."
   (path sstring))
 
-#-darwin
+#-bsd
 (defsyscall (fdopendir "fdopendir") :pointer
   "Open directory denoted by descriptor FD for listing of its contents."
   (fd :int))

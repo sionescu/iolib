@@ -388,7 +388,7 @@
 
    ;; Directory walking
    #:opendir
-   #-darwin #:fdopendir
+   #-bsd #:fdopendir
    #:dirfd
    #:closedir
    #:readdir
