@@ -48,5 +48,5 @@
                                            `(logior ,@flags)
                                            flags))
                                     ,mask)
-                           ,(rest clause)))
+                           ,@(rest clause)))
                       clauses))))
