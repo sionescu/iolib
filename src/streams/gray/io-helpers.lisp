@@ -102,27 +102,23 @@
        (when (eql :hangup ,hangup-p)
          (error 'hangup :stream ,stream)))))
 
-(defun %write-octets-from-foreign-memory (write-fn fd buf nbytes)
+(defun %write-octets-from-foreign-memory (fd write-fn buf start end)
   (declare (type stream-buffer buf))
-  (let ((bytes-written 0))
-    (labels ((write-once ()
-               (handler-case
-                   (funcall write-fn fd (inc-pointer buf bytes-written)
-                            (- nbytes bytes-written))
-                 (isys:epipe ()
-                   (return* (values bytes-written :hangup)))
-                 (isys:ewouldblock ()
-                   (iomux:wait-until-fd-ready fd :output nil t))
-                 (:no-error (nbytes) (incf bytes-written nbytes))))
-             (buffer-emptyp () (= bytes-written nbytes)))
-      (loop :until (buffer-emptyp) :do (write-once)
-         :finally (return* bytes-written)))))
+  (let ((old-start start))
+    (do () ((= start end) (- start old-start))
+      (handler-case
+          (funcall write-fn fd (inc-pointer buf start) (- end start))
+        (isys:epipe ()
+          (return (values (- start old-start) :hangup)))
+        (isys:ewouldblock ()
+          (iomux:wait-until-fd-ready fd :output nil t))
+        (:no-error (nbytes) (incf start nbytes))))))
 
 (defun %write-octets-from-iobuf (write-fn fd iobuf)
   (declare (type iobuf iobuf))
   (multiple-value-bind (bytes-written hangup-p)
       (%write-octets-from-foreign-memory
-       write-fn fd (iobuf-start-pointer iobuf) (iobuf-length iobuf))
+       fd write-fn (iobuf-data iobuf) (iobuf-start iobuf) (iobuf-end iobuf))
     (incf (iobuf-start iobuf) bytes-written)
     (when (iobuf-empty-p iobuf) (iobuf-reset iobuf))
     (values bytes-written hangup-p)))
@@ -147,21 +143,15 @@
                    (write-fn write-fn-of)
                    (iobuf output-buffer-of))
       stream
-    (let ((octets-needed (- end start)))
-      (cond ((<= octets-needed (iobuf-end-space-length iobuf))
-             (iobuf-copy-from-lisp-array array start iobuf
-                                         (iobuf-end iobuf) octets-needed)
-             (incf (iobuf-end iobuf) octets-needed)
+    (cond ((iobuf-can-hold-array-slice-p iobuf start end)
+           (iobuf-append-array-slice iobuf array start end))
+          (t
+           (with-hangup-guard stream
+             (%write-octets-from-iobuf write-fn fd iobuf))
+           (with-pointer-to-vector-data (ptr array)
              (with-hangup-guard stream
-               (%flush-obuf-if-needed stream)))
-            (t
-             (with-pointer-to-vector-data (ptr array)
-               (with-hangup-guard stream
-                 (%write-octets-from-iobuf write-fn fd iobuf))
-               (with-hangup-guard stream
-                 (%write-octets-from-foreign-memory
-                  write-fn fd (inc-pointer ptr start) octets-needed)))))
-      array)))
+               (%write-octets-from-foreign-memory fd write-fn ptr start end)))))
+    array))
 
 (defun %write-vector-ub8 (stream vector start end)
   (declare (type dual-channel-gray-stream stream))

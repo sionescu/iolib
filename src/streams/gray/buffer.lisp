@@ -68,6 +68,15 @@
   (setf (iobuf-end iobuf) (iobuf-length iobuf))
   (setf (iobuf-start iobuf) 0))
 
+(defun iobuf-can-hold-array-slice-p (iobuf start end)
+  (<= (- end start) (iobuf-end-space-length iobuf)))
+
+(defun iobuf-append-array-slice (iobuf array start end)
+  (let ((slice-length (- end start)))
+    (iobuf-copy-from-lisp-array array start iobuf
+                                (iobuf-end iobuf) slice-length)
+    (incf (iobuf-end iobuf) slice-length)))
+
 ;;; BREF, (SETF BREF) and BUFFER-COPY *DO NOT* check boundaries
 ;;; that must be done by their callers
 (defun bref (iobuf index)
