@@ -143,8 +143,8 @@
                    (write-fn write-fn-of)
                    (iobuf output-buffer-of))
       stream
-    (cond ((iobuf-can-hold-array-slice-p iobuf start end)
-           (iobuf-append-array-slice iobuf array start end))
+    (cond ((iobuf-can-fit-slice-p iobuf start end)
+           (iobuf-append-slice iobuf array start end))
           (t
            (with-hangup-guard stream
              (%write-octets-from-iobuf write-fn fd iobuf))
