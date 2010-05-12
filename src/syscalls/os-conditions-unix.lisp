@@ -34,26 +34,26 @@
 
 ;;; Instantiates a subclass of SYSCALL-ERROR matching ERR
 ;;; ERR must be either an integer denoting an ERRNO value.
-(defun make-syscall-error (errno fd fd2)
+(defun make-syscall-error (errno syscall fd fd2)
   (debug-only* (assert (integerp errno)))
   (let ((error-keyword (foreign-enum-keyword 'errno-values errno :errorp nil)))
     (unless error-keyword
       (bug "A non-existent ~A syscall error has been signaled: ~A, ~A"
            'errno-values (or error-keyword :unknown) errno))
     (make-condition (get-syscall-error-condition errno)
-                    :handle fd :handle2 fd2)))
+                    :syscall syscall :handle fd :handle2 fd2)))
 
 (declaim (inline signal-syscall-error))
-(defun signal-syscall-error (&optional (errno (errno)) fd fd2)
+(defun signal-syscall-error (&optional (errno (errno)) syscall fd fd2)
   (cond
     ((= errno eintr)
-     (error 'eintr :handle fd :handle2 fd2))
+     (error 'eintr :syscall syscall :handle fd :handle2 fd2))
     (t
-     (error (make-syscall-error errno fd fd2)))))
+     (error (make-syscall-error errno syscall fd fd2)))))
 
-(defun signal-syscall-error-kw (error-keyword &optional fd fd2)
+(defun signal-syscall-error-kw (error-keyword &optional syscall fd fd2)
   (let ((errno (foreign-enum-value 'errno-values error-keyword :errorp nil)))
     (unless error-keyword
       (bug "A non-existent ~A syscall error has been signaled: ~A, ~A"
            'errno-values error-keyword errno))
-    (signal-syscall-error errno fd fd2)))
+    (signal-syscall-error errno syscall fd fd2)))

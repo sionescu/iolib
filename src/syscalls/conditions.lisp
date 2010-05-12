@@ -16,7 +16,9 @@
   ())
 
 (define-condition syscall-error (iolib-error)
-  ((code :initarg :code :reader code-of
+  ((syscall :initarg :syscall :reader syscall-of
+            :documentation "The name of the C syscall.")
+   (code :initarg :code :reader code-of
          :documentation "Numeric error code, or NIL.")
    (identifier :initarg :identifier :reader identifier-of
                :documentation "Keyword identifier, or NIL.")

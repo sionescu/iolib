@@ -36,12 +36,12 @@
       (%strerror-r errno buf bufsiz))))
 
 (defmethod print-object ((e syscall-error) s)
-  (with-slots (code identifier message handle handle2) e
+  (with-slots (syscall code identifier message handle handle2) e
     (if message
         (format s "~A" message)
         (print-unreadable-object (e s :type nil :identity nil)
-          (format s "Syscall error ~A(~S) ~S"
-                  identifier (or code "[No code]")
+          (format s "Syscall ~S signalled error ~A(~S) ~S"
+                  syscall identifier (or code "[No code]")
                   (or (strerror code) "[Can't get error string.]"))
           (when handle (format s " FD=~A" handle))
           (when handle2 (format s " FD2=~A" handle2))))))
