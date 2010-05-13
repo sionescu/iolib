@@ -107,12 +107,11 @@
   (let ((old-start start))
     (do () ((= start end) (- start old-start))
       (handler-case
-          (funcall write-fn fd (inc-pointer buf start) (- end start))
+          (incf start (funcall write-fn fd (inc-pointer buf start) (- end start)))
         (isys:epipe ()
           (return (values (- start old-start) :hangup)))
         (isys:ewouldblock ()
-          (iomux:wait-until-fd-ready fd :output nil t))
-        (:no-error (nbytes) (incf start nbytes))))))
+          (iomux:wait-until-fd-ready fd :output nil t))))))
 
 (defun %write-octets-from-iobuf (write-fn fd iobuf)
   (declare (type iobuf iobuf))
