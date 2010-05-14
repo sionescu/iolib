@@ -434,13 +434,13 @@ Return two values: the file descriptor and the path of the temporary file."
     (:int :restart t :handle fd)
   "Send request REQUEST to file referenced by FD."
   (fd      :int)
-  (request :int))
+  (request :unsigned-int))
 
 (defsyscall (%ioctl/pointer "ioctl")
     (:int :restart t :handle fd)
   "Send request REQUEST to file referenced by FD using argument ARG."
  (fd      :int)
- (request :int)
+ (request :unsigned-int)
  (arg     :pointer))
 
 (defentrypoint ioctl (fd request &optional (arg nil argp))
