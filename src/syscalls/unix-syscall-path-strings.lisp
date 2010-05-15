@@ -8,13 +8,12 @@
 
 (in-package :iolib.syscalls)
 
-(eval-when (:compile-toplevel :load-toplevel)
-  #+#.(cl:if (cl:<= cl:char-code-limit #x100) '(:and) '(:or))
-  (pushnew :8bit-chars *features*)
-  #+#.(cl:if (cl:<= #x101 cl:char-code-limit #x10000) '(:and) '(:or))
-  (pushnew :16bit-chars *features*)
-  #+#.(cl:if (cl:> cl:char-code-limit #x10000) '(:and) '(:or))
-  (pushnew :21bit-chars *features*))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (pushnew (cond
+             ((<=       char-code-limit   #x100) :8bit-chars)
+             ((<= #x101 char-code-limit #x10000) :16bit-chars)
+             ((>        char-code-limit #x10000) :21bit-chars))
+           *features*))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defconstant +cstring-path-max+ 65535))
@@ -89,6 +88,9 @@
 (defun utf8-extra-bytes (code)
   (declare (type (unsigned-byte 8) code)
            (optimize (speed 3) (safety 0) (debug 0)))
+  (declare (ignorable code))
+  #+8bit-chars 0
+  #-8bit-chars
   (let ((vec (load-time-value
               (coerce
                ;; 16-bit chars
