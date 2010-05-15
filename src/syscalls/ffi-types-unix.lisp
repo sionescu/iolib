@@ -19,7 +19,7 @@
 (include "stdlib.h" "errno.h" "sys/types.h" "sys/stat.h" "sys/mman.h"
          "fcntl.h" "signal.h" "unistd.h" "limits.h" "time.h" "sys/select.h"
          "sys/poll.h" "sys/ioctl.h" "sys/resource.h" "pwd.h" "grp.h"
-         "dirent.h" "sys/utsname.h")
+         "dirent.h" "sys/utsname.h" "sys/wait.h")
 
 #+linux
 (include "sys/epoll.h" "sys/syscall.h")
@@ -59,6 +59,9 @@
 (constant (o-sync "O_SYNC"))
 (constant (o-nofollow "O_NOFOLLOW"))
 (constant (o-async "O_ASYNC"))
+(constant (o-cloexec #+linux "O_CLOEXEC"
+                     #-linux "0"))
+
 
 
 ;;;-------------------------------------------------------------------------
@@ -188,6 +191,7 @@
           :documentation "stop signal generated from keyboard.")
 (constant (sigcont "SIGCONT") :documentation "continue after stop.")
 (constant (sigchld "SIGCHLD") :documentation "child status has changed.")
+(constant (sigcld "SIGCLD") :documentation "child status has changed.") ; same as above
 (constant (sigttin "SIGTTIN")
           :documentation "background read attempted from control terminal.")
 (constant (sigttou "SIGTTOU")
@@ -218,7 +222,19 @@
 (constant (sig-dfl "SIG_DFL"))
 
 (cstruct sigaction "struct sigaction"
-  (handler "sa_handler" :type :long))
+  (handler "sa_handler" :type :pointer)
+  (sigaction "sa_sigaction" :type :pointer)
+  (mask "sa_mask" :type :unsigned-long) ;; actual type can be structure or array...
+  (flags "sa_flags" :type :int))
+
+(constant (sa-nocldstop "SA_NOCLDSTOP"))
+(constant (sa-nocldwait "SA_NOCLDWAIT"))
+(constant (sa-nodefer "SA_NODEFER"))
+(constant (sa-onstack "SA_ONSTACK"))
+(constant (sa-resethand "SA_RESETHAND"))
+(constant (sa-restart "SA_RESTART"))
+(constant (sa-siginfo "SA_SIGINFO"))
+
 
 
 ;;;-------------------------------------------------------------------------
@@ -680,3 +696,11 @@
   ((:enobufs "ENOBUFS"))
   ((:enotsup "ENOTSUP"))
   ((:eopnotsupp "EOPNOTSUPP")))
+
+;;;-------------------------------------------------------------------------
+;;; sys/wait.h
+;;;-------------------------------------------------------------------------
+
+(constant (wnohang "WNOHANG"))
+(constant (wuntraced "WUNTRACED"))
+(constant (wcontinued "WCONTINUED"))

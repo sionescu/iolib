@@ -661,10 +661,15 @@ processes mapping the same region."
   (file :string)
   (argv :pointer))
 
-(defsyscall (waitpid "waitpid") pid-t
+(defsyscall (%waitpid "waitpid") pid-t
   (pid     pid-t)
   (status  :pointer)
   (options :int))
+
+(defentrypoint waitpid (pid options)
+  (with-foreign-pointer (status size-of-int)
+    (let ((ret (%waitpid pid status options)))
+      (values ret (mem-ref status :int)))))
 
 (defsyscall (getpid "getpid") pid-t
   "Returns the process id of the current process")

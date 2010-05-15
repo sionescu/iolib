@@ -33,6 +33,44 @@
 
 
 ;;;-------------------------------------------------------------------------
+;;; waitpid status readers
+;;;-------------------------------------------------------------------------
+(include "sys/types.h" "sys/wait.h")
+
+(declaim (inline wifexited wexitstatus wtermsig wcoredump wifstopped
+                 wstopsig wifcontinued))
+
+(defwrapper ("WIFEXITED" wifexited) :int ;; boolean
+  (status :int))
+
+(defwrapper ("WEXITSTATUS" wexitstatus) :int ;; unsigned-char
+  (status :int))
+
+(defwrapper ("WTERMSIG" wtermsig) :int
+  (status :int))
+
+(defwrapper* ("iolib_wcoredump" wcoredump) :int ;; boolean
+  ((status :int))
+"
+  #ifdef WCOREDUMP
+  return WCOREDUMP(status);
+  #else
+  return 0;
+  #endif
+")
+
+(defwrapper ("WIFSTOPPED" wifstopped) :int ;; boolean
+  (status :int))
+
+(defwrapper ("WSTOPSIG" wstopsig) :int
+  (status :int))
+
+(defwrapper ("WIFCONTINUED" wifcontinued) :int ;; boolean
+  (status :int))
+
+
+
+;;;-------------------------------------------------------------------------
 ;;; Socket message readers
 ;;;-------------------------------------------------------------------------
 
