@@ -2,7 +2,7 @@
 ;;;; and this code is released under the same license as IOLib.
 
 (asdf:defsystem :iolib.examples
-  :depends-on (:iolib :bordeaux-threads :cl-serializer)
+  :depends-on (:iolib :bordeaux-threads)
   :components ( (:file "package")
                 (:file "ex1-client" :depends-on ("package"))
                 (:file "ex2-client" :depends-on ("package"))
