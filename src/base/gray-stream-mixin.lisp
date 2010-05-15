@@ -123,6 +123,8 @@
 
 #+ecl
 (progn
+  (when (fboundp 'gray::redefine-cl-functions)
+    (gray::redefine-cl-functions))
   (defmethod gray:stream-read-sequence
       ((s trivial-gray-stream-mixin) seq &optional start end)
     (stream-read-sequence s seq (or start 0) (or end (length seq))))
