@@ -802,7 +802,7 @@ as indicated by WHICH and WHO to VALUE."
   (let ((retval (foreign-funcall "nice" :int increment :int))
         (errno (errno)))
     (if (and (= retval -1) (/= errno 0))
-        (signal-syscall-error errno)
+        (signal-syscall-error errno "nice")
         retval)))
 
 (defsyscall (exit "_exit") :void
@@ -942,7 +942,7 @@ as indicated by WHICH and WHO to VALUE."
   "Returns the value of environment variable NAME."
   (when (and (pointerp name) (null-pointer-p name))
     (setf (errno) einval)
-    (signal-syscall-error))
+    (signal-syscall-error einval "getenv"))
   (foreign-funcall "getenv" :string name :string))
 
 (defsyscall (setenv "setenv") :int
