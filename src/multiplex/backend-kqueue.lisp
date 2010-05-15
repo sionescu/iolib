@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- kequeue(2) multiplexer implementation.
+;;; --- kqueue(2) multiplexer implementation.
 ;;;
 
 (in-package :iolib.multiplex)
