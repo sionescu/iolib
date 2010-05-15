@@ -20,16 +20,15 @@
 
 (include "errno.h")
 
-(declaim (inline errno))
+(declaim (inline errno %set-errno))
+
 (defwrapper* ("iolib_get_errno" errno) :int
   ()
   "return errno;")
 
-(declaim (inline %set-errno))
 (defwrapper* ("iolib_set_errno" %set-errno) :int
   ((value :int))
-  "errno = value;"
-  "return errno;")
+  "errno = value; return errno;")
 
 
 ;;;-------------------------------------------------------------------------
@@ -77,19 +76,17 @@
 (include "stdlib.h") ; needed on FreeBSD to define NULL
 (include "sys/socket.h")
 
-(declaim (inline cmsg.space))
+(declaim (inline cmsg.space cmsg.len cmsg.firsthdr cmsg.data))
+
 (defwrapper ("CMSG_SPACE" cmsg.space) :unsigned-int
   (data-size :unsigned-int))
 
-(declaim (inline cmsg.len))
 (defwrapper ("CMSG_LEN" cmsg.len) :unsigned-int
   (data-size :unsigned-int))
 
-(declaim (inline cmsg.firsthdr))
 (defwrapper ("CMSG_FIRSTHDR" cmsg.firsthdr) :pointer
   (msg ("struct msghdr*" :pointer)))
 
-(declaim (inline cmsg.data))
 (defwrapper ("CMSG_DATA" cmsg.data) :pointer
   (cmsg ("struct cmsghdr*" :pointer)))
 
@@ -101,5 +98,6 @@
 (include "sys/types.h" "dirent.h")
 
 (declaim (inline dirfd))
+
 (defwrapper (dirfd "dirfd") :int
   (dirp ("DIR*" :pointer)))
