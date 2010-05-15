@@ -70,18 +70,18 @@
 (define-socket-error socket-operation-not-supported-error :eopnotsupp)
 
 (declaim (inline %signal-socket-error))
-(defun %signal-socket-error (errno fd fd2)
+(defun %signal-socket-error (errno syscall fd fd2)
   (when-let (err (lookup-socket-error errno))
-    (error err :handle fd :handle2 fd2)))
+    (error err :syscall syscall :handle fd :handle2 fd2)))
 
 ;;; Used in the ERRNO-WRAPPER foreign type.
 (declaim (inline signal-socket-error))
-(defun signal-socket-error (errno &optional fd fd2)
+(defun signal-socket-error (errno &optional syscall fd fd2)
   (cond
     ((= errno isys:eintr)
-     (error 'isys:eintr :handle fd :handle2 fd2))
+     (error 'isys:eintr :syscall syscall :handle fd :handle2 fd2))
     ((= errno isys:ewouldblock)
-     (error 'isys:ewouldblock :handle fd :handle2 fd2))
+     (error 'isys:ewouldblock :syscall syscall :handle fd :handle2 fd2))
     (t
-     (or (%signal-socket-error errno fd fd2)
-         (error (isys:make-syscall-error errno fd fd2))))))
+     (or (%signal-socket-error errno syscall fd fd2)
+         (error (isys:make-syscall-error errno syscall fd fd2))))))
