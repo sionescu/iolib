@@ -106,7 +106,7 @@
 
   (defmethod gray:stream-position ((stream trivial-gray-stream-mixin) position)
     (if position
-	(setf (stream-file-position stream) position)
+        (setf (stream-file-position stream) position)
         (stream-file-position stream))))
 
 #+sbcl
