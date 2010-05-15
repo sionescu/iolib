@@ -66,7 +66,7 @@ Returns two boolean values indicating readability and writeability of `FILE-DESC
         (handler-case
             (let ((ret (isys:repeat-upon-condition-decreasing-timeout
                            ((isys:eintr) remaining-time timeout)
-                         (isys:poll pollfd 1 (timeout->milisec remaining-time)))))
+                         (isys:poll pollfd 1 (timeout->milliseconds remaining-time)))))
               (when (zerop ret)
                 (if errorp
                     (error 'poll-timeout :fd file-descriptor :event-type event-type)

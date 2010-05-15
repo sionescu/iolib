@@ -100,7 +100,7 @@
     ;; FIXME: when does poll() return EBADF ?
     (nix:repeat-upon-condition-decreasing-timeout
         ((nix:eintr) tmp-timeout timeout)
-      (nix:poll fd-set count (timeout->milisec tmp-timeout)))
+      (nix:poll fd-set count (timeout->milliseconds tmp-timeout)))
     (harvest-pollfd-events fd-set count)))
 
 (defun harvest-pollfd-events (fd-set count)
