@@ -127,9 +127,9 @@
 (defsyscall ("if_nametoindex" %if-nametoindex)
     (:unsigned-int
      :error-predicate zerop
-     :error-generator (lambda (r h h2)
+     :error-generator (lambda (r syscall h h2)
                         (declare (ignore r h h2))
-                        (isys:signal-syscall-error-kw :enxio)))
+                        (isys:signal-syscall-error-kw :enxio syscall)))
   (ifname :string))
 
 (defsyscall ("if_indextoname" %if-indextoname)
