@@ -414,8 +414,8 @@ Return two values: the file descriptor and the path of the temporary file."
     ((not argp)     (%fcntl/noarg   fd cmd))
     ((integerp arg) (%fcntl/int     fd cmd arg))
     ((pointerp arg) (%fcntl/pointer fd cmd arg))
-    ;; FIXME: signal a type error
-    (t (error "Wrong argument to fcntl: ~S" arg))))
+    (t (error 'type-error :datum arg
+              :expected-type '(or integer foreign-pointer)))))
 
 (defentrypoint fd-nonblock (fd)
   (let ((current-flags (fcntl fd f-getfl)))
@@ -448,8 +448,7 @@ Return two values: the file descriptor and the path of the temporary file."
   (cond
     ((not argp)     (%ioctl/noarg   fd request))
     ((pointerp arg) (%ioctl/pointer fd request arg))
-    ;; FIXME: signal a type error
-    (t (error "Wrong argument to ioctl: ~S" arg))))
+    (t (error 'type-error :datum arg :expected-type 'foreign-pointer))))
 
 (defentrypoint fd-open-p (fd)
   (handler-case
