@@ -60,6 +60,7 @@
    #:o-sync
    #:o-nofollow
    #:o-async
+   #:o-cloexec
 
    ;; Lseek()
    #:seek-set
@@ -128,6 +129,7 @@
    #:sigtstp
    #:sigcont
    #:sigchld
+   #:sigcld
    #:sigttin
    #:sigttou
    #:sigio
@@ -142,9 +144,21 @@
    #+linux #:sigrtmin
    #+linux #:sigrtmax
 
+   ;; waitpid()
+   #:wnohang
+   #:wuntraced
+   #:wcontinued
+
    ;; Sigaction()
    #:sig-ign
    #:sig-dfl
+   #:sa-nocldstop
+   #:sa-nocldwait
+   #:sa-nodefer
+   #:sa-onstack
+   #:sa-resethand
+   #:sa-restart
+   #:sa-siginfo
 
    ;; Fcntl()
    #:f-dupfd
@@ -433,6 +447,13 @@
    ;; Signals
    #:kill
    #:sigaction
+   #:wifexited
+   #:wexitstatus
+   #:wtermsig
+   #:wcoredump
+   #:wifstopped
+   #:wstopsig
+   #:wifcontinued
 
    ;; Time
    #:usleep
