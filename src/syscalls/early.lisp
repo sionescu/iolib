@@ -134,26 +134,19 @@
 ;;; Utilities
 ;;;-------------------------------------------------------------------------
 
-(defun foreign-name (spec &optional varp)
-  (declare (ignore varp))
-  (check-type spec list)
-  (destructuring-bind (first second) spec
-    (etypecase first
-      ((or string cons)
-       (foreign-name (list second (ensure-list first))))
-      (symbol
-       (setf second (ensure-list second))
-       (assert (every #'stringp second))
-       (loop :for sym :in second
-             :if (foreign-symbol-pointer sym) :do (return sym)
-             :finally
-             (error "None of these foreign symbols is defined: ~{~S~^, ~}"
-                    second))))))
-
-(defun parse-name-and-options (spec &optional varp)
-  (values (cffi::lisp-name spec varp)
-          (foreign-name spec varp)
-          (cffi::foreign-options spec varp)))
+(defun parse-name-and-options (spec)
+  (assert (or (stringp spec)
+              (and (symbolp (first spec))
+                   (every #'stringp (ensure-list (second spec))))))
+  (cond
+    ((stringp spec)
+     (values (cffi::lisp-name spec) (cffi::foreign-name spec)
+             (cffi::foreign-options spec nil)))
+    (t
+     (values (first spec)
+             (find-if #'foreign-symbol-pointer
+                      (ensure-list (second spec)))
+             (cffi::foreign-options spec nil)))))
 
 
 ;;;-------------------------------------------------------------------------
