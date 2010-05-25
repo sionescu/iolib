@@ -11,7 +11,8 @@
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :iolib.streams
                :babel :cffi :cffi-grovel :bordeaux-threads)
-  :pathname (merge-pathnames #p"sockets/" *load-truename*)
+  :pathname #-asdf2 (merge-pathnames "sockets/" *load-truename*)
+            #+asdf2 "sockets/"
   :default-component-class iolib.base:cl-source-file
   :components
   ((:file "pkgdcl")

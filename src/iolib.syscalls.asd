@@ -9,7 +9,8 @@
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:trivial-features :cffi :cffi-grovel :iolib.base)
-  :pathname (merge-pathnames "syscalls/" *load-truename*)
+  :pathname #-asdf2 (merge-pathnames "syscalls/" *load-truename*)
+            #+asdf2 "syscalls/"
   :serial t
   :default-component-class iolib.base:cl-source-file
   :components

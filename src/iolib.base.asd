@@ -6,7 +6,8 @@
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:alexandria)
-  :pathname (merge-pathnames #p"base/" *load-truename*)
+  :pathname #-asdf2 (merge-pathnames "base/" *load-truename*)
+            #+asdf2 "base/"
   :components
   ((:file "pkgdcl")
    (:file "return-star" :depends-on ("pkgdcl"))

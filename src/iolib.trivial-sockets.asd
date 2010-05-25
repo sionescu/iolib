@@ -9,7 +9,8 @@
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.sockets)
-  :pathname (merge-pathnames #p"sockets/" *load-truename*)
+  :pathname #-asdf2 (merge-pathnames "sockets/" *load-truename*)
+            #+asdf2 "sockets/"
   :default-component-class iolib.base:cl-source-file
   :components
   ((:file "trivial-sockets")))

@@ -8,7 +8,8 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls)
-  :pathname (merge-pathnames #p"pathnames/" *load-truename*)
+  :pathname #-asdf2 (merge-pathnames "pathnames/" *load-truename*)
+            #+asdf2 "pathnames/"
   :serial t
   :default-component-class iolib.base:cl-source-file
   :components

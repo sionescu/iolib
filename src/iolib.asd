@@ -10,7 +10,8 @@
   :version "0.6.0-dev"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.multiplex :iolib.streams :iolib.sockets)
-  :pathname (merge-pathnames #p"iolib/" *load-truename*)
+  :pathname #-asdf2 (merge-pathnames "iolib/" *load-truename*)
+            #+asdf2 "iolib/"
   :default-component-class iolib.base:cl-source-file
   :components ((:file "pkgdcl")))
 
