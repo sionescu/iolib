@@ -5,14 +5,21 @@
 
 (in-package :iolib.base)
 
-(defclass cl-source-file (asdf:cl-source-file) ())
+(defclass muffled-source-file (asdf:cl-source-file) ())
 
-(defmethod asdf:perform :around ((o asdf:compile-op) (c cl-source-file))
-  (let (#+sbcl
-        (sb-impl::*default-external-format* :utf-8))
-    (call-next-method)))
+(macrolet ((with-muffled-output (&body body)
+             `(let ((*load-print* nil)
+                    (*load-verbose* t)
+                    (*compile-print* nil)
+                    (*compile-verbose* t)
+                    #+cmu (ext:*gc-verbose* nil))
+                ,@body)))
+  (defmethod asdf:perform :around ((o asdf:compile-op) (c muffled-source-file))
+    (with-muffled-output
+      (call-next-method)))
 
-(defmethod asdf:perform :around ((o asdf:load-source-op) (c cl-source-file))
-  (let (#+sbcl
-        (sb-impl::*default-external-format* :utf-8))
-    (call-next-method)))
+  (defmethod asdf:perform :around ((o asdf:load-source-op) (c muffled-source-file))
+    (with-muffled-output
+      (call-next-method))))
+
+(defclass cl-source-file (muffled-source-file) ())
