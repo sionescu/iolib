@@ -52,17 +52,24 @@
       (return pkg))))
 
 (cl:defun wrap-body-for-return-star (body &optional block-name)
-  (multiple-value-bind (body declarations docstring)
-      (parse-body body :documentation t)
-    (with-gensyms (value)
-      (remove-if
-       #'null
-       `(,docstring
-         ,@declarations
-         ,(if block-name
-              `(macrolet ((return* (,value) `(return-from ,',block-name ,,value)))
-                 ,@body)
-              (with-gensyms (block-name)
-                `(block ,block-name
-                   (macrolet ((return* (value) `(return-from ,',block-name ,value)))
-                     ,@body)))))))))
+  (flet ((block-name (block)
+           (etypecase block
+             (cons (destructuring-bind (kind block-name) block
+                     (assert (eql 'setf kind))
+                     (check-type block-name symbol)
+                     block-name))
+             (symbol block))))
+    (multiple-value-bind (body declarations docstring)
+        (parse-body body :documentation t)
+      (with-gensyms (value)
+        (remove-if
+         #'null
+         `(,docstring
+           ,@declarations
+           ,(if block-name
+                `(macrolet ((return* (,value) `(return-from ,',(block-name block-name) ,,value)))
+                   ,@body)
+                (with-gensyms (block)
+                  `(block ,block
+                     (macrolet ((return* (value) `(return-from ,',block ,value)))
+                       ,@body))))))))))
