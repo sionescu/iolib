@@ -1,11 +1,15 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (oos 'load-op :iolib.base))
+
 (defsystem :iolib.zstreams
   :description "Zeta streams."
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :iolib.pathnames :cffi :bordeaux-threads)
   :pathname (merge-pathnames #p"streams/zeta/" *load-truename*)
+  :default-component-class iolib.base:cl-source-file
   :components
   ((:file "pkgdcl")
    (:file "types" :depends-on ("pkgdcl"))

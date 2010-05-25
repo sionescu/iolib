@@ -1,5 +1,8 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (oos 'load-op :iolib.base))
+
 (defsystem :iolib.multiplex
   :description "I/O multiplexing library."
   :author "Stelian Ionescu <sionescu@cddr.org>"
@@ -7,6 +10,7 @@
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :cffi)
   :pathname (merge-pathnames #p"multiplex/" *load-truename*)
+  :default-component-class iolib.base:cl-source-file
   :components
   ((:file "pkgdcl")
 

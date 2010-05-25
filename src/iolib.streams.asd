@@ -1,11 +1,15 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (oos 'load-op :iolib.base))
+
 (defsystem :iolib.streams
   :description "Gray streams."
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.multiplex :cffi :trivial-garbage)
   :pathname (merge-pathnames #p"streams/gray/" *load-truename*)
+  :default-component-class iolib.base:cl-source-file
   :components
   ((:file "pkgdcl")
    (:file "classes" :depends-on ("pkgdcl"))

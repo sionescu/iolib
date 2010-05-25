@@ -1,6 +1,7 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  (oos 'load-op :iolib.base)
   (oos 'load-op :cffi-grovel))
 
 (defsystem :iolib.sockets
@@ -11,6 +12,7 @@
   :depends-on (:iolib.base :iolib.syscalls :iolib.streams
                :babel :cffi :cffi-grovel :bordeaux-threads)
   :pathname (merge-pathnames #p"sockets/" *load-truename*)
+  :default-component-class iolib.base:cl-source-file
   :components
   ((:file "pkgdcl")
    (cffi-grovel:grovel-file "grovel" :depends-on ("pkgdcl"))

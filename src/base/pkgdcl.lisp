@@ -9,6 +9,8 @@
   (:use #:common-lisp :alexandria)
   (:shadow #:defun #:defmethod #:defmacro #:define-compiler-macro #:defconstant)
   (:export
+   ;; ASDF components
+   #:cl-source-file
    ;; Conditions
    #:bug #:iolib-bug
    #:subtype-error #:subtype-error-datum #:subtype-error-expected-supertype

@@ -1,6 +1,7 @@
 ;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  (oos 'load-op :iolib.base)
   (oos 'load-op :cffi-grovel))
 
 (defsystem :iolib.syscalls
@@ -10,6 +11,7 @@
   :depends-on (:trivial-features :cffi :cffi-grovel :iolib.base)
   :pathname (merge-pathnames "syscalls/" *load-truename*)
   :serial t
+  :default-component-class iolib.base:cl-source-file
   :components
   ((:file "pkgdcl")
    #+unix

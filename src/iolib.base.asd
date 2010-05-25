@@ -22,4 +22,5 @@
    (:file "split-sequence" :depends-on ("pkgdcl" "return-star" "sequence"))
    #+scl (:file "scl-gray-streams")
    (:file "gray-stream-mixin"
-     :depends-on ("pkgdcl" "return-star" #+scl "scl-gray-streams"))))
+     :depends-on ("pkgdcl" "return-star" #+scl "scl-gray-streams"))
+   (:file "asdf" :depends-on ("pkgdcl"))))
