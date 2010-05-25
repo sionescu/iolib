@@ -180,7 +180,7 @@ is not a directory."
   "Returns an absolute file-path corresponding to PATHSPEC by
 merging it with DEFAULT, and (CURRENT-DIRECTORY) if necessary.
 If CANONICALIZE is non-NIL, the path is canonicalised: if it is :STRIP-DOTS,
-then just remove «.» and «..», otherwise symlinks are resolved too."
+then just remove \".\" and \"..\", otherwise symlinks are resolved too."
   (let ((absolute-file-path (absolute-file-path pathspec defaults)))
     (case canonicalize
       ((nil)       absolute-file-path)

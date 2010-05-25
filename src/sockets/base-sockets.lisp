@@ -120,7 +120,7 @@ Works only on LOCAL sockets."))
 
 (defgeneric socket-option (socket option-name)
   (:documentation "Returns the value(s) of OS option OPTION-NAME on SOCKET.
-For a complete list of supported options see «iolib.sockets/socket-options.lisp»."))
+For a complete list of supported options see src/sockets/socket-options.lisp."))
 
 (defclass stream-socket (socket) ()
   (:default-initargs :type :stream)
