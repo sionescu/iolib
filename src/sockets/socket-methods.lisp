@@ -27,11 +27,13 @@
   (fd-of socket))
 
 (defmethod initialize-instance :after ((socket socket) &key
-                                       file-descriptor address-family type
+                                       file-descriptor (dup t) address-family type
                                        (protocol :default))
   (with-accessors ((fd fd-of) (fam socket-address-family) (proto socket-protocol))
       socket
-    (setf fd (or (and file-descriptor (isys:dup file-descriptor))
+    (setf fd (or (and file-descriptor (if dup
+                                          (isys:dup file-descriptor)
+                                          file-descriptor))
                  (multiple-value-call #'%socket
                    (translate-make-socket-keywords-to-constants
                     address-family type protocol)))
@@ -285,7 +287,7 @@
   (flet ((make-client-socket (fd)
            (make-instance (active-class socket)
                           :address-family (socket-address-family socket)
-                          :file-descriptor fd
+                          :file-descriptor fd :dup nil
                           :external-format (or external-format
                                                (external-format-of socket))
                           :input-buffer-size input-buffer-size
