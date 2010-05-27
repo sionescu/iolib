@@ -1,4 +1,4 @@
-;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; indent-tabs-mode: nil -*-
+;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 ;;;
 ;;; --- Multiplexer example, adapted from Juho Snellman's version for SBCL
 ;;;     which is available at http://jsnell.iki.fi/tmp/echo-server.lisp.
