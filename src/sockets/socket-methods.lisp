@@ -318,10 +318,13 @@
         ((wait-connect ()
            (when (or (null  timeout)
                      (plusp timeout))
-             (iomux:wait-until-fd-ready (fd-of socket) :output timeout t)
-             (let ((errcode (socket-option socket :error)))
-               (unless (zerop errcode)
-                 (signal-socket-error errcode "connect" (fd-of socket)))))))
+             (handler-case
+                 (iomux:wait-until-fd-ready (fd-of socket) :output timeout t)
+               (iomux:poll-error ()
+                 (let ((errcode (socket-option socket :error)))
+                   (if (zerop errcode)
+                       (bug "Polling socket signalled an error but SO_ERROR is 0")
+                       (signal-socket-error errcode "connect" (fd-of socket)))))))))
       (ignore-some-conditions (iomux:poll-timeout)
         (handler-case
             (funcall thunk)
