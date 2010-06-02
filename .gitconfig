@@ -1,0 +1,4 @@
+[diff "lisp"]
+  xfuncname="^(\\(def.*)$"
+[diff "texinfo"]
+  xfuncname="^(@(sub)*section.*)$"
