@@ -493,7 +493,7 @@
 
    #:iolib-condition #:iolib-error
    #:syscall-error #:code-of #:identifier-of #:message-of #:handle-of #:handle2-of
-   #:make-syscall-error #:get-syscall-error-condition
+   #:make-syscall-error #:syscall-error-p #:get-syscall-error-condition
    #:signal-syscall-error #:signal-syscall-error/restart
    #:poll-error #:event-type-of #:poll-timeout
 

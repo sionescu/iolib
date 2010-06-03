@@ -31,6 +31,9 @@
   (:default-initargs :code nil :identifier :unknown :message nil)
   (:documentation "Base class for syscall errors."))
 
+(defun syscall-error-p (thing)
+  (typep thing 'syscall-error))
+
 (defun syscall-error (control-string &rest args)
   (error 'syscall-error :message (format nil "~?" control-string args)))
 

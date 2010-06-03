@@ -439,12 +439,12 @@
                      (if got-peer ss (null-pointer))
                      (if got-peer (sockaddr-size ss) 0)))
          (ignore-syscall-error ()
-           :test (lambda (c) (typep c 'isys:syscall-error))
            :report "Ignore this socket condition"
+           :test isys:syscall-error-p
            (return* 0))
          (retry-syscall (&optional (timeout 15.0d0))
-           :test (lambda (c) (typep c 'isys:syscall-error))
            :report "Try to send data again"
+           :test isys:syscall-error-p
            (when (plusp timeout)
              (iomux:wait-until-fd-ready fd :output timeout nil)))))))
 
@@ -510,12 +510,12 @@
        (restart-case
            (return* (%recvfrom fd buff-sap length flags ss size))
          (ignore-syscall-error ()
-           :test (lambda (c) (typep c 'isys:syscall-error))
            :report "Ignore this socket condition"
+           :test isys:syscall-error-p
            (return* 0))
          (retry-syscall (&optional (timeout 15.0d0))
-           :test (lambda (c) (typep c 'isys:syscall-error))
            :report "Try to receive data again"
+           :test isys:syscall-error-p
            (when (plusp timeout)
              (iomux:wait-until-fd-ready fd :input timeout nil)))))))
 
