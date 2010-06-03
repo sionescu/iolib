@@ -1,8 +1,12 @@
 ;;;; This file was originally written by Peter Keller (psilord@cs.wisc.edu)
 ;;;; and this code is released under the same license as IOLib.
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (asdf:oos 'asdf:load-op :iolib.base))
+
 (asdf:defsystem :iolib.examples
   :depends-on (:iolib :bordeaux-threads)
+  :default-component-class iolib.base:cl-source-file
   :components ( (:file "package")
                 (:file "ex1-client" :depends-on ("package"))
                 (:file "ex2-client" :depends-on ("package"))

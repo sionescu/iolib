@@ -1,10 +1,14 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (asdf:oos 'asdf:load-op :iolib.base))
+
 (asdf:defsystem :iolib-tests
   :description "IOLib test suite."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
   :licence "MIT"
   :depends-on (:fiveam :iolib :iolib.pathnames)
+  :default-component-class iolib.base:cl-source-file
   :components
   ((:file "pkgdcl")
    (:file "defsuites" :depends-on ("pkgdcl"))
