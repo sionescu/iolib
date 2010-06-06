@@ -112,6 +112,38 @@ of SETF ENVIRONMENT."
              (isys:setenv name value t))
            (environment-variables newenv))
   newenv)
+
+(defun allocate-env (argv variables)
+  (let ((argc (hash-table-size variables))
+        (offset -1))
+    ;; copy variables
+    (maphash (lambda (k v)
+               (setf (mem-aref argv :pointer (incf offset))
+                     (foreign-string-alloc (concatenate 'string k "=" v))))
+             variables)
+    ;; final null pointer
+    (setf (mem-aref argv :pointer argc) (null-pointer))))
+
+(defun deallocate-null-ended-list (argv)
+  (loop :for i :from 0
+        :for ptr := (mem-aref argv :pointer i)
+        :if (null-pointer-p ptr) :do (loop-finish)
+        :else :do (foreign-free ptr)))
+
+(defmacro with-c-environment ((environment) &body body)
+  (with-gensyms (body-fn ptr)
+    `(flet ((,body-fn ()
+              ,@body))
+       (if ,environment
+           (with-foreign-object (,ptr :pointer (1+ (hash-table-size
+                                                    (environment-variables ,environment))))
+             (unwind-protect
+                  (progn
+                    (allocate-env ,ptr (environment-variables ,environment))
+                    (let ((isys:*environ* ,ptr))
+                      (,body-fn)))
+               (deallocate-null-ended-list ,ptr)))
+           (,body-fn)))))
 
 
 ;;;; Current directory
