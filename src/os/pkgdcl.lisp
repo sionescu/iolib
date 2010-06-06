@@ -18,6 +18,17 @@
    #:makunbound-environment-variable
    #:clear-environment
 
+   ;; Processes
+   #:process
+   #:process-pid
+   #:process-stdin
+   #:process-stdout
+   #:process-stderr
+   #:create-process
+   #:run-program
+   #:process-wait
+   #:process-kill
+
    ;; Directories
    #:current-directory
    #:with-current-directory
