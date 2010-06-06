@@ -8,9 +8,9 @@
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :iolib.pathnames :cffi :bordeaux-threads)
+  :default-component-class iolib.base:cl-source-file
   :pathname #-asdf2 (merge-pathnames "streams/zeta/" *load-truename*)
             #+asdf2 "streams/zeta/"
-  :default-component-class iolib.base:cl-source-file
   :components
   ((:file "pkgdcl")
    (:file "types" :depends-on ("pkgdcl"))

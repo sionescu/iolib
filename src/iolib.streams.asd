@@ -8,9 +8,9 @@
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.multiplex :cffi :trivial-garbage)
+  :default-component-class iolib.base:cl-source-file
   :pathname #-asdf2 (merge-pathnames "streams/gray/" *load-truename*)
             #+asdf2 "streams/gray/"
-  :default-component-class iolib.base:cl-source-file
   :components
   ((:file "pkgdcl")
    (:file "classes" :depends-on ("pkgdcl"))

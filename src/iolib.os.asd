@@ -8,11 +8,11 @@
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :iolib.pathnames)
+  :default-component-class iolib.base:cl-source-file
   :pathname #-asdf2 (merge-pathnames "os/" *load-truename*)
             #+asdf2 "os/"
-  :serial t
-  :default-component-class iolib.base:cl-source-file
   :components
   ((:file "pkgdcl")
    (:file "os" :pathname #+unix "os-unix"
-     :depends-on ("pkgdcl"))))
+     :depends-on ("pkgdcl")))
+  :serial t)

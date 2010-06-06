@@ -9,10 +9,9 @@
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:trivial-features :cffi :cffi-grovel :iolib.base)
+  :default-component-class iolib.base:cl-source-file
   :pathname #-asdf2 (merge-pathnames "syscalls/" *load-truename*)
             #+asdf2 "syscalls/"
-  :serial t
-  :default-component-class iolib.base:cl-source-file
   :components
   ((:file "pkgdcl")
    #+unix
@@ -25,4 +24,5 @@
    (:file "early")
    (cffi-grovel:wrapper-file "ffi-wrappers" :pathname #+unix "ffi-wrappers-unix"
      :soname "libiolib-syscalls")
-   (:file "ffi-functions" :pathname #+unix "ffi-functions-unix")))
+   (:file "ffi-functions" :pathname #+unix "ffi-functions-unix"))
+  :serial t)

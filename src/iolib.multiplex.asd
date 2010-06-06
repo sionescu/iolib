@@ -9,9 +9,9 @@
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :cffi)
+  :default-component-class iolib.base:cl-source-file
   :pathname #-asdf2 (merge-pathnames "multiplex/" *load-truename*)
             #+asdf2 "multiplex/"
-  :default-component-class iolib.base:cl-source-file
   :components
   ((:file "pkgdcl")
 

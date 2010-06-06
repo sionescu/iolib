@@ -11,9 +11,9 @@
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :iolib.streams
                :babel :cffi :cffi-grovel :bordeaux-threads)
+  :default-component-class iolib.base:cl-source-file
   :pathname #-asdf2 (merge-pathnames "sockets/" *load-truename*)
             #+asdf2 "sockets/"
-  :default-component-class iolib.base:cl-source-file
   :components
   ((:file "pkgdcl")
    (cffi-grovel:grovel-file "grovel" :depends-on ("pkgdcl"))
@@ -33,15 +33,15 @@
      :depends-on ("pkgdcl" "grovel" "conditions" "bsd" "common" "config" "base-sockets"))
 
    ;; Local file configuration (/etc/hosts etc...)
-   (:file "etc-files" :pathname #p"namedb/etc-files"
+   (:file "etc-files" :pathname "namedb/etc-files"
      :depends-on ("pkgdcl"))
-   (:file "file-monitor" :pathname #p"namedb/file-monitor"
+   (:file "file-monitor" :pathname "namedb/file-monitor"
      :depends-on ("pkgdcl"))
-   (:file "protocols" :pathname #p"namedb/protocols"
+   (:file "protocols" :pathname "namedb/protocols"
      :depends-on ("pkgdcl" "common" "etc-files" "file-monitor"))
-   (:file "services" :pathname #p"namedb/services"
+   (:file "services" :pathname "namedb/services"
      :depends-on ("pkgdcl" "common" "etc-files" "file-monitor"))
-   (:file "hosts" :pathname #p"namedb/hosts"
+   (:file "hosts" :pathname "namedb/hosts"
      :depends-on ("pkgdcl" "address" "address-predicates" "etc-files" "file-monitor"))
 
    (:file "socket-methods"
@@ -53,20 +53,20 @@
                   "socket-options" "services" "socket-methods"))
 
    ;; DNS client
-   (:file "dns-common" :pathname #p"dns/common"
+   (:file "dns-common" :pathname "dns/common"
      :depends-on ("pkgdcl" "common"))
-   (:file "nameservers" :pathname #p"dns/nameservers"
+   (:file "nameservers" :pathname "dns/nameservers"
      :depends-on ("pkgdcl" "address" "etc-files" "file-monitor"))
-   (:file "dynamic-buffer" :pathname #p"dns/dynamic-buffer"
+   (:file "dynamic-buffer" :pathname "dns/dynamic-buffer"
      :depends-on ("pkgdcl"))
-   (:file "message":pathname #p"dns/message"
+   (:file "message":pathname "dns/message"
      :depends-on ("pkgdcl" "common" "dns-common" "dynamic-buffer"))
-   (:file "query" :pathname #p"dns/query"
+   (:file "query" :pathname "dns/query"
      :depends-on ("pkgdcl" "conditions" "address" "address-predicates"
                   "socket-options" "socket-methods" "make-socket" "dns-common"
                   "nameservers" "dynamic-buffer" "message"))
-   (:file "dns-conditions" :pathname #p"dns/conditions"
+   (:file "dns-conditions" :pathname "dns/conditions"
      :depends-on ("pkgdcl"))
-   (:file "lookup" :pathname #p"dns/lookup"
+   (:file "lookup" :pathname "dns/lookup"
      :depends-on ("pkgdcl" "address" "address-predicates" "file-monitor" "hosts"
                   "nameservers" "message" "query" "dns-conditions"))))
