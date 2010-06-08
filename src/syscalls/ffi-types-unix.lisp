@@ -59,8 +59,7 @@
 (constant (o-sync "O_SYNC"))
 (constant (o-nofollow "O_NOFOLLOW"))
 (constant (o-async "O_ASYNC"))
-(constant (o-cloexec #+linux "O_CLOEXEC"
-                     #-linux "0"))
+(constant (o-cloexec "O_CLOEXEC"))
 
 
 

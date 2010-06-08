@@ -60,7 +60,7 @@
    #:o-sync
    #:o-nofollow
    #:o-async
-   #:o-cloexec
+   #+linux #:o-cloexec
 
    ;; Lseek()
    #:seek-set
