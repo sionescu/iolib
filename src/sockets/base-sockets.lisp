@@ -7,7 +7,7 @@
 
 ;;;; Sockets
 
-(defclass socket (dual-channel-single-fd-mixin)
+(defclass socket (dual-channel-fd-mixin)
   ((address-family :initarg :address-family :accessor socket-address-family)
    (protocol :initarg :protocol :accessor socket-protocol)
    (bound    :initform nil      :reader   socket-bound-p :type boolean))

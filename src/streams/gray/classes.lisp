@@ -27,40 +27,11 @@
   (isys:write fd buf nbytes))
 
 (defclass dual-channel-fd-mixin ()
-  ((input-fd  :initform nil :initarg :input-fd :accessor input-fd-of
-              :documentation "placeholder")
+  ((fd :initform nil :initarg :fd :accessor fd-of
+       :documentation "placeholder")
    (read-fn :initform #'default-read-fn :initarg :read-fn :accessor read-fn-of)
-   (output-fd :initform nil :initarg :output-fd :accessor output-fd-of
-              :documentation "placeholder")
    (write-fn :initform #'default-write-fn :initarg :write-fn :accessor write-fn-of))
   (:documentation "placeholder"))
-
-(defgeneric input-fd-non-blocking (socket))
-(defgeneric (setf input-fd-non-blocking) (mode fd-mixin))
-
-(defgeneric output-fd-non-blocking (socket))
-(defgeneric (setf output-fd-non-blocking) (mode fd-mixin))
-
-(defclass dual-channel-single-fd-mixin (dual-channel-fd-mixin)
-  ()
-  (:documentation "placeholder"))
-
-(defgeneric fd-of (stream)
-  (:documentation "placeholder")
-  (:method ((stream dual-channel-single-fd-mixin))
-    (with-accessors ((fd-in  input-fd-of)
-                     (fd-out output-fd-of)) stream
-      (assert (eql fd-in fd-out) (fd-in fd-out)
-              "Input and output FDs must be equal: ~A, ~A" fd-in fd-out)
-      (values fd-in))))
-
-(defgeneric (setf fd-of) (fd stream)
-  (:documentation "placeholder")
-  (:method (fd (stream dual-channel-single-fd-mixin))
-    (with-accessors ((fd-in  input-fd-of)
-                     (fd-out output-fd-of)) stream
-      (setf fd-in fd fd-out fd)
-      (values fd-in))))
 
 (defgeneric fd-non-blocking (fd-mixin))
 (defgeneric (setf fd-non-blocking) (mode fd-mixin))
@@ -107,8 +78,3 @@
 
 (defgeneric output-buffer-empty-p (stream)
   (:documentation ""))
-
-(defclass dual-channel-single-fd-gray-stream
-    (dual-channel-gray-stream dual-channel-single-fd-mixin)
-  ()
-  (:documentation "placeholder"))

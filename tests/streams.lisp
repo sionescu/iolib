@@ -33,7 +33,7 @@
 
 (in-suite :iolib.streams)
 
-(defclass my-file-stream (dual-channel-single-fd-gray-stream)
+(defclass my-file-stream (dual-channel-gray-stream)
   ((path :initarg :path :reader file-stream-path)))
 
 ;;; Very ad-hoc: doesn't do :DIRECTION :PROBE, or handle errors,
@@ -64,8 +64,7 @@
     (setf (isys:fd-nonblock fd) t)
     (make-instance 'my-file-stream
                    :path path
-                   :input-fd fd
-                   :output-fd fd
+                   :fd fd
                    :external-format external-format)))
 
 (defmacro with-open-file-stream ((var path &rest options) &body body)

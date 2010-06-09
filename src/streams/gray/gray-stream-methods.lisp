@@ -123,7 +123,7 @@
   (setf (dirtyp stream) nil))
 
 (defmethod stream-finish-output ((stream dual-channel-gray-stream))
-  (with-accessors ((fd output-fd-of)
+  (with-accessors ((fd fd-of)
                    (write-fn write-fn-of)
                    (ob output-buffer-of)
                    (dirtyp dirtyp))
@@ -163,7 +163,7 @@
   (setf (unread-index-of stream) (iobuf-start iobuf)))
 
 (defmethod stream-read-char ((stream dual-channel-gray-stream))
-  (with-accessors ((fd input-fd-of)
+  (with-accessors ((fd fd-of)
                    (ib input-buffer-of)
                    (read-fn read-fn-of)
                    (unread-index unread-index-of)
@@ -184,7 +184,7 @@
                (decode-one-char fd read-fn ib encoding))))))))
 
 (defmethod stream-read-char-no-hang ((stream dual-channel-gray-stream))
-  (with-accessors ((fd input-fd-of)
+  (with-accessors ((fd fd-of)
                    (read-fn read-fn-of)
                    (ib input-buffer-of)
                    (ef external-format-of))
@@ -287,7 +287,7 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod stream-read-byte ((stream dual-channel-gray-stream))
-  (with-accessors ((fd input-fd-of)
+  (with-accessors ((fd fd-of)
                    (read-fn read-fn-of)
                    (ib input-buffer-of))
       stream

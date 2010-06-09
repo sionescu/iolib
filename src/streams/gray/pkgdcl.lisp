@@ -11,8 +11,6 @@
    ;; Classes
    #:dual-channel-fd-mixin
    #:dual-channel-gray-stream
-   #:dual-channel-single-fd-mixin
-   #:dual-channel-single-fd-gray-stream
 
    ;; Conditions
    #:hangup
@@ -22,10 +20,6 @@
    #:external-format-of
    #:fd-non-blocking
    #:fd-of
-   #:input-fd-non-blocking
-   #:input-fd-of
-   #:output-fd-non-blocking
-   #:output-fd-of
    #:read-buffer-size
    #:read-buffer-empty-p
    #:write-buffer-size

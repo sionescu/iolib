@@ -53,7 +53,7 @@
 
 (defun %read-into-simple-array-ub8 (stream array start end)
   (declare (type dual-channel-gray-stream stream))
-  (with-accessors ((fd input-fd-of)
+  (with-accessors ((fd fd-of)
                    (read-fn read-fn-of)
                    (iobuf input-buffer-of))
       stream
@@ -124,7 +124,7 @@
 
 (defun %flush-obuf-if-needed (stream)
   (declare (type dual-channel-gray-stream stream))
-  (with-accessors ((fd output-fd-of)
+  (with-accessors ((fd fd-of)
                    (write-fn write-fn-of)
                    (iobuf output-buffer-of)
                    (dirtyp dirtyp))
@@ -138,7 +138,7 @@
 
 (defun %write-simple-array-ub8 (stream array start end)
   (declare (type dual-channel-gray-stream stream))
-  (with-accessors ((fd output-fd-of)
+  (with-accessors ((fd fd-of)
                    (write-fn write-fn-of)
                    (iobuf output-buffer-of))
       stream
