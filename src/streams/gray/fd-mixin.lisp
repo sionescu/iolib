@@ -5,6 +5,12 @@
 
 (in-package :iolib.streams)
 
+(defmethod shared-initialize :after ((stream dual-channel-fd-mixin) slot-names
+                                     &key fd)
+  (declare (ignore slot-names))
+  (check-type fd unsigned-byte)
+  (setf (isys:fd-nonblock fd) t))
+
 ;;;; CLOSE
 
 (defmethod close :around ((fd-mixin dual-channel-fd-mixin)

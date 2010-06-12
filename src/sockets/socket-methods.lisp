@@ -36,8 +36,7 @@
                                           file-descriptor))
                  (multiple-value-call #'%socket
                    (translate-make-socket-keywords-to-constants
-                    address-family type protocol)))
-          (isys:fd-nonblock fd) t)
+                    address-family type protocol))))
     (setf fam address-family
           proto protocol)))
 
