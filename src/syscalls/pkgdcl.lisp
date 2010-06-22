@@ -449,6 +449,7 @@
    #:sigaction
    #:wifexited
    #:wexitstatus
+   #:wifsignaled
    #:wtermsig
    #:wcoredump
    #:wifstopped

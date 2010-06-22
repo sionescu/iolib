@@ -45,6 +45,9 @@
 (defwrapper ("WEXITSTATUS" wexitstatus) :int ;; unsigned-char
   (status :int))
 
+(defwrapper ("WIFSIGNALED" wifsignaled) :int
+  (status :int))
+
 (defwrapper ("WTERMSIG" wtermsig) :int
   (status :int))
 
