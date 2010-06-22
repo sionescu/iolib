@@ -938,7 +938,7 @@ as indicated by WHICH and WHO to VALUE."
 
 
 ;;;-------------------------------------------------------------------------
-;;; Environement
+;;; Environment
 ;;;-------------------------------------------------------------------------
 
 (defcvar ("environ" :read-only t) (:pointer :string))

@@ -695,6 +695,7 @@
   ((:enobufs "ENOBUFS"))
   ((:enotsup "ENOTSUP"))
   ((:eopnotsupp "EOPNOTSUPP")))
+
 
 ;;;-------------------------------------------------------------------------
 ;;; sys/wait.h
