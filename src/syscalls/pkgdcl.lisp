@@ -598,4 +598,12 @@
    #+bsd #:fflags
    #+bsd #:data
    #+bsd #:udata
+
+   ;; sysconf
+   #:sysconf
+   #:sc-arg-max #:sc-child-max #:sc-host-name-max #:sc-login-name-max #:sc-clk-tck
+   #:sc-open-max #:sc-pagesize #:sc-re-dup-max #:sc-stream-max #:sc-symloop-max
+   #:sc-tty-name-max #:sc-tzname-max #:sc-version
+
+   #:sc-phys-pages #:sc-avphys-pages #:sc-nprocessors-conf #:sc-nprocessors-onln
    ))
