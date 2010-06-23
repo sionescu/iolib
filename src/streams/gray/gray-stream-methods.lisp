@@ -149,7 +149,15 @@
     (setf dirtyp nil)))
 
 (defmethod stream-force-output ((stream dual-channel-gray-stream))
-  (setf (dirtyp stream) t))
+  (with-accessors ((fd fd-of)
+                   (write-fn write-fn-of)
+                   (ob output-buffer-of)
+                   (dirtyp dirtyp))
+      stream
+    (with-hangup-guard stream
+      (%write-octets-from-iobuf write-fn fd ob t))
+    (unless (iobuf-empty-p ob)
+      (setf dirtyp t))))
 
 (declaim (inline %write-sequence))
 (defun %write-sequence (stream seq start end)

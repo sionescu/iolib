@@ -102,7 +102,8 @@
        (when (eql :hangup ,hangup-p)
          (error 'hangup :stream ,stream)))))
 
-(defun %write-octets-from-foreign-memory (fd write-fn buf start end)
+(defun %write-octets-from-foreign-memory (fd write-fn buf start end
+                                          &optional non-blocking)
   (declare (type stream-buffer buf))
   (let ((old-start start))
     (do () ((= start end) (- start old-start))
@@ -111,13 +112,16 @@
         (isys:epipe ()
           (return (values (- start old-start) :hangup)))
         (isys:ewouldblock ()
-          (iomux:wait-until-fd-ready fd :output nil t))))))
+          (if non-blocking
+              (return (- start old-start))
+              (iomux:wait-until-fd-ready fd :output nil t)))))))
 
-(defun %write-octets-from-iobuf (write-fn fd iobuf)
+(defun %write-octets-from-iobuf (write-fn fd iobuf &optional non-blocking)
   (declare (type iobuf iobuf))
   (multiple-value-bind (bytes-written hangup-p)
       (%write-octets-from-foreign-memory
-       fd write-fn (iobuf-data iobuf) (iobuf-start iobuf) (iobuf-end iobuf))
+       fd write-fn (iobuf-data iobuf) (iobuf-start iobuf) (iobuf-end iobuf)
+       non-blocking)
     (incf (iobuf-start iobuf) bytes-written)
     (when (iobuf-empty-p iobuf) (iobuf-reset iobuf))
     (values bytes-written hangup-p)))
