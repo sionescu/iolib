@@ -5,11 +5,10 @@
 
 (in-package :iolib.streams)
 
-(defmethod shared-initialize :after ((stream dual-channel-fd-mixin) slot-names
-                                     &key fd)
+(defmethod shared-initialize :around ((stream dual-channel-fd-mixin) slot-names &key)
   (declare (ignore slot-names))
-  (check-type fd unsigned-byte)
-  (setf (isys:fd-nonblock fd) t))
+  (call-next-method)
+  (setf (isys:fd-nonblock (fd-of stream)) t))
 
 ;;;; CLOSE
 

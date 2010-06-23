@@ -26,9 +26,10 @@
 (defmethod socket-os-fd ((socket socket))
   (fd-of socket))
 
-(defmethod initialize-instance :after ((socket socket) &key
-                                       file-descriptor (dup t) address-family type
-                                       (protocol :default))
+(defmethod shared-initialize :after ((socket socket) slot-names &key
+                                     file-descriptor (dup t) address-family type
+                                     (protocol :default))
+  (declare (ignore slot-names))
   (with-accessors ((fd fd-of) (fam socket-address-family) (proto socket-protocol))
       socket
     (setf fd (or (and file-descriptor (if dup
@@ -44,10 +45,11 @@
   (setf (slot-value socket 'external-format)
         (babel:ensure-external-format external-format)))
 
-(defmethod initialize-instance :after ((socket passive-socket) &key external-format
-                                       input-buffer-size output-buffer-size)
+(defmethod shared-initialize :after ((socket passive-socket) slot-names
+                                     &key external-format
+                                     input-buffer-size output-buffer-size)
   ;; Makes CREATE-SOCKET simpler
-  (declare (ignore input-buffer-size output-buffer-size))
+  (declare (ignore slot-names input-buffer-size output-buffer-size))
   (setf (external-format-of socket) external-format))
 
 
