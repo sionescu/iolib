@@ -13,7 +13,7 @@
            #:open-server #:close-server #:accept-connection
            #:with-server))
 
-(in-package :net.trivial-sockets)
+(in-package :iolib.trivial-sockets)
 
 ;;;;
 ;;;; ERRORS
