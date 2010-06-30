@@ -5,11 +5,13 @@
 ;;;
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (oos 'load-op :iolib.base))
+  (asdf:oos 'asdf:load-op :iolib.base))
+
+(in-package :iolib.asdf)
 
 (defsystem :iolib.examples
   :depends-on (:iolib :bordeaux-threads)
-  :default-component-class iolib.base:cl-source-file
+  :default-component-class iolib-source-file
   :components ((:file "package")
                (:file "ex1-client" :depends-on ("package"))
                (:file "ex2-client" :depends-on ("package"))

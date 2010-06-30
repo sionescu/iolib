@@ -1,8 +1,10 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (oos 'load-op :cffi-grovel)
-  (oos 'load-op :iolib.base))
+  (asdf:oos 'asdf:load-op :cffi-grovel)
+  (asdf:oos 'asdf:load-op :iolib.base))
+
+(in-package :iolib.asdf)
 
 (defsystem :iolib.os
   :description "OS interface."
@@ -10,7 +12,7 @@
   :licence "MIT"
   :depends-on (:cffi-grovel :iolib.base :iolib.syscalls
                :iolib.streams :iolib.pathnames)
-  :default-component-class iolib.base:cl-source-file
+  :default-component-class iolib-source-file
   :pathname #-asdf2 (merge-pathnames "os/" *load-truename*)
             #+asdf2 "os/"
   :components

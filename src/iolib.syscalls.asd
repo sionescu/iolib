@@ -1,15 +1,17 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (oos 'load-op :iolib.base)
-  (oos 'load-op :cffi-grovel))
+  (asdf:oos 'asdf:load-op :iolib.base)
+  (asdf:oos 'asdf:load-op :cffi-grovel))
+
+(in-package :iolib.asdf)
 
 (defsystem :iolib.syscalls
   :description "Syscalls and foreign types."
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:trivial-features :cffi :cffi-grovel :iolib.base)
-  :default-component-class iolib.base:cl-source-file
+  :default-component-class iolib-source-file
   :pathname #-asdf2 (merge-pathnames "syscalls/" *load-truename*)
             #+asdf2 "syscalls/"
   :components

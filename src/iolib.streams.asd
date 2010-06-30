@@ -1,14 +1,16 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (oos 'load-op :iolib.base))
+  (asdf:oos 'asdf:load-op :iolib.base))
+
+(in-package :iolib.asdf)
 
 (defsystem :iolib.streams
   :description "Gray streams."
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.multiplex :cffi :trivial-garbage)
-  :default-component-class iolib.base:cl-source-file
+  :default-component-class iolib-source-file
   :pathname #-asdf2 (merge-pathnames "streams/gray/" *load-truename*)
             #+asdf2 "streams/gray/"
   :components

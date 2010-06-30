@@ -1,7 +1,9 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (oos 'load-op :iolib.base))
+  (asdf:oos 'asdf:load-op :iolib.base))
+
+(in-package :iolib.asdf)
 
 (defsystem :iolib
   :description "I/O library."
@@ -10,7 +12,7 @@
   :version "0.6.0-dev"
   :licence "MIT"
   :depends-on (:iolib.base :iolib.multiplex :iolib.streams :iolib.sockets)
-  :default-component-class iolib.base:cl-source-file
+  :default-component-class iolib-source-file
   :pathname #-asdf2 (merge-pathnames "iolib/" *load-truename*)
             #+asdf2 "iolib/"
   :components ((:file "pkgdcl")))

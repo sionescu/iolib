@@ -9,8 +9,6 @@
   (:use #:common-lisp :alexandria)
   (:shadow #:defun #:defmethod #:defmacro #:define-compiler-macro #:defconstant)
   (:export
-   ;; ASDF components
-   #:muffled-source-file #:cl-source-file
    ;; Conditions
    #:bug #:iolib-bug
    #:subtype-error #:subtype-error-datum #:subtype-error-expected-supertype
@@ -54,6 +52,11 @@
    #:timeout-designator #:positive-timeout-designator
    #:decode-timeout #:normalize-timeout #:clamp-timeout
    ))
+
+(defpackage :iolib.asdf
+  (:use :iolib.base :asdf)
+  ;; ASDF components
+  (:export #:muffled-source-file #:iolib-source-file))
 
 (flet ((gather-external-symbols (&rest packages)
          (let (symbols)

@@ -3,7 +3,7 @@
 ;;; --- ASDF component classes
 ;;;
 
-(in-package :iolib.base)
+(in-package :iolib.asdf)
 
 (defclass muffled-source-file (asdf:cl-source-file) ())
 
@@ -22,4 +22,6 @@
     (with-muffled-output
       (call-next-method))))
 
-(defclass cl-source-file (muffled-source-file) ())
+(defclass iolib-source-file (muffled-source-file) ())
+
+(import 'iolib-source-file (find-package :asdf))
