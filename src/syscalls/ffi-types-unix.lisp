@@ -578,7 +578,6 @@
   ((:enoexec "ENOEXEC"))
   ((:ebadf "EBADF"))
   ((:echild "ECHILD"))
-  ((:eagain "EAGAIN"))
   ((:enomem "ENOMEM"))
   ((:eacces "EACCES"))
   ((:efault "EFAULT"))

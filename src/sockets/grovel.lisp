@@ -66,7 +66,6 @@
   ((:enonet "ENONET") :optional t)
   ((:enobufs "ENOBUFS"))
   ((:eopnotsupp "EOPNOTSUPP"))
-  ((:eagain "EAGAIN"))
   ((:ebadf "EBADF"))
   ((:einval "EINVAL"))
   ((:enomem "ENOMEM"))

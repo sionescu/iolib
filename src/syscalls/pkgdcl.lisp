@@ -289,7 +289,7 @@
    ;; Syscall error codes
    #:errno-values
    #:eperm #:enoent #:esrch #:eintr #:eio #:enxio #:e2big #:enoexec
-   #:ebadf #:echild #:eagain #:enomem #:eacces #:efault #:ebusy #:eexist
+   #:ebadf #:echild #:enomem #:eacces #:efault #:ebusy #:eexist
    #:exdev #:enodev #:enotdir #:eisdir #:einval #:enfile #:emfile
    #:enotty #:efbig #:enospc #:espipe #:erofs #:emlink #:epipe #:edom
    #:erange #:edeadlk #:enametoolong #:enolck #:enosys #:enotempty
