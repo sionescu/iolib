@@ -1,6 +1,7 @@
 -*- mode: outline; fill-column: 78 -*-
 
 * Changes since 0.6.0:
+
 ** API changes
 - IOLIB.SOCKETS:LOOKUP-HOST was renamed to LOOKUP-HOSTNAME
 - IOLIB.SOCKETS:IPV6-SOCKET-P was renamed to SOCKET-IPV6-P
@@ -9,11 +10,11 @@
 - IOLIB.SOCKETS:ACCEPT-CONNECTION : keyword arg TIMEOUT has been coalesced
   into WAIT
 - IOLIB.SOCKETS:CONNECT : keyword arg TIMEOUT has been coalesced into WAIT
+
 ** New features
 - Add support for abstract UNIX addresses (patch by Julian Stecklina)
 - UNIX addresses are now printed as strings. Abstract addresses have a leading #\@
-- Add an rough implementation of Unicode, UCHARS and USTRINGS: names and patch
-  by Tobias Rittweiler
+
 ** Bug fixes:
 - EVENT-DISPATCH now calculates the distance to the next timer correctly
   (reported by Ariel Badichi)
@@ -27,5 +28,6 @@
   properly signal ISYS:EWOULDBLOCK upon timeout
 - fix bug in HEAP-PARENT, used in the multiplexer (reported by Ole Arndt on sbcl-devel)
 - fix define-designator for when *print-case* is :downcase.
+
 ** Misc
 - Sources have been reorganized, ASDF system files are now inside src/
