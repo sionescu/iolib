@@ -92,11 +92,11 @@
 #+clisp
 (progn
   (defmethod gray:stream-read-sequence
-      ((s trivial-gray-stream-mixin) seq &optional start end)
+      ((s trivial-gray-stream-mixin) seq &key start end)
     (stream-read-sequence s seq (or start 0) (or end (length seq))))
 
   (defmethod gray:stream-write-sequence
-      ((s trivial-gray-stream-mixin) seq &optional start end)
+      ((s trivial-gray-stream-mixin) seq &key start end)
     (stream-write-sequence s seq (or start 0) (or end (length seq))))
 
   (defmethod gray:stream-position ((stream trivial-gray-stream-mixin) position)
