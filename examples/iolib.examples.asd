@@ -10,6 +10,10 @@
 (in-package :iolib.asdf)
 
 (defsystem :iolib.examples
+  :version #.(with-open-file (f (merge-pathnames "../version.lisp-expr"
+                                                 (or *compile-file-pathname*
+                                                     *load-truename*)))
+               (read f))
   :depends-on (:iolib :bordeaux-threads)
   :default-component-class iolib-source-file
   :components ((:file "package")

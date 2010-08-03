@@ -10,6 +10,10 @@
   :description "Socket library."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
+  :version #.(with-open-file (f (merge-pathnames "../version.lisp-expr"
+                                                 (or *compile-file-pathname*
+                                                     *load-truename*)))
+               (read f))
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :iolib.streams
                :babel :cffi :cffi-grovel :bordeaux-threads)

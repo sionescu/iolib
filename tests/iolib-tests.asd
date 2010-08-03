@@ -8,6 +8,10 @@
 (defsystem :iolib-tests
   :description "IOLib test suite."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
+  :version #.(with-open-file (f (merge-pathnames "../version.lisp-expr"
+                                                 (or *compile-file-pathname*
+                                                     *load-truename*)))
+               (read f))
   :licence "MIT"
   :depends-on (:fiveam :iolib :iolib.pathnames)
   :default-component-class iolib-source-file

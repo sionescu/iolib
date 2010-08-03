@@ -9,6 +9,10 @@
 (defsystem :iolib.syscalls
   :description "Syscalls and foreign types."
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
+  :version #.(with-open-file (f (merge-pathnames "../version.lisp-expr"
+                                                 (or *compile-file-pathname*
+                                                     *load-truename*)))
+               (read f))
   :licence "MIT"
   :depends-on (:trivial-features :cffi :cffi-grovel :iolib.base)
   :default-component-class iolib-source-file
