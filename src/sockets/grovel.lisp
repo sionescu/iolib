@@ -2,7 +2,7 @@
 ;;;
 ;;; --- Grovelling for socket constants and types.
 ;;;
-;;; Copyright (C) 2005-2006, Matthew Backes  <lucca@accela.net>
+;;; Copyright (C) 2005-2006, Emily Backes  <lucca@accela.net>
 ;;; Copyright (C) 2005-2006, Dan Knapp  <dankna@accela.net>
 ;;; Copyright (C) 2007, Stelian Ionescu  <sionescu@cddr.org>
 ;;; Copyright (C) 2007, Luis Oliveira  <loliveira@common-lisp.net>
