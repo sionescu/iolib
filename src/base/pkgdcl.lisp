@@ -54,7 +54,10 @@
    ))
 
 (defpackage :iolib.asdf
-  (:use :iolib.base :asdf)
+  (:use :iolib.base)
+  (:import-from :asdf #:defsystem #:find-system
+                #:oos #:perform #:test-op #:load-op #:compile-op
+                #:operation-done-p)
   ;; ASDF components
   (:export #:muffled-source-file #:iolib-source-file))
 
