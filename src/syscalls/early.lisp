@@ -144,8 +144,12 @@
              (cffi::foreign-options spec nil)))
     (t
      (values (first spec)
-             (find-if #'foreign-symbol-pointer
-                      (ensure-list (second spec)))
+             (let ((foreign-names (ensure-list (second spec))))
+               ;; If there are multiple foreign names, pick the
+               ;; one that is available -- defaulting to the first
+               ;; one if all else fails.
+               (or (find-if #'foreign-symbol-pointer foreign-names)
+                   (car foreign-names)))
              (cffi::foreign-options spec nil)))))
 
 
