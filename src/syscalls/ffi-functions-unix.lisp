@@ -1088,11 +1088,3 @@ variable *environ* to NULL."
 (defentrypoint getgrnam (name)
   "Gets a group-entry, by group name (reentrant)."
   (funcall-getgr #'%getgrnam-r name))
-
-
-;;;-------------------------------------------------------------------------
-;;; Sysconf
-;;;-------------------------------------------------------------------------
-
-(defcfun (sysconf "sysconf") :long
-  (name :int))

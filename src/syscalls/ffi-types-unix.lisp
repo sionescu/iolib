@@ -559,27 +559,3 @@
   (passwd "gr_passwd" :type sstring)
   (gid    "gr_gid"    :type gid-t)
   (mem    "gr_mem"    :type :pointer))
-
-
-;;;-------------------------------------------------------------------------
-;;; sysconf(3) sys/unistd.h
-;;;-------------------------------------------------------------------------
-
-(constant (sc-arg-max "_SC_ARG_MAX"))
-(constant (sc-child-max "_SC_CHILD_MAX"))
-(constant (sc-host-name-max "_SC_HOST_NAME_MAX"))
-(constant (sc-login-name-max "_SC_LOGIN_NAME_MAX"))
-(constant (sc-clk-tck "_SC_CLK_TCK"))
-(constant (sc-open-max "_SC_OPEN_MAX"))
-(constant (sc-pagesize "_SC_PAGESIZE"))
-(constant (sc-re-dup-max "_SC_RE_DUP_MAX"))
-(constant (sc-stream-max "_SC_STREAM_MAX"))
-(constant (sc-symloop-max "_SC_SYMLOOP_MAX"))
-(constant (sc-tty-name-max "_SC_TTY_NAME_MAX"))
-(constant (sc-tzname-max "_SC_TZNAME_MAX"))
-(constant (sc-version "_SC_VERSION"))
-
-#+linux (constant (sc-phys-pages "_SC_PHYS_PAGES"))
-#+linux (constant (sc-avphys-pages "_SC_AVPHYS_PAGES"))
-#+linux (constant (sc-nprocessors-conf "_SC_NPROCESSORS_CONF"))
-#+linux (constant (sc-nprocessors-onln "_SC_NPROCESSORS_ONLN"))
