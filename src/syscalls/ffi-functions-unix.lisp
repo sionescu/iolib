@@ -44,35 +44,6 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; Memory manipulation
-;;;-------------------------------------------------------------------------
-
-(defcfun* (memset "memset") :pointer
-  "Fill the first COUNT bytes of BUFFER with the constant VALUE."
-  (buffer :pointer)
-  (value  :int)
-  (count  size-t))
-
-(defentrypoint bzero (buffer count)
-  "Fill the first COUNT bytes of BUFFER with zeros."
-  (memset buffer 0 count))
-
-(defcfun* (memcpy "memcpy") :pointer
-  "Copy COUNT octets from SRC to DEST.
-The two memory areas must not overlap."
-  (dest :pointer)
-  (src  :pointer)
-  (count size-t))
-
-(defcfun* (memmove "memmove") :pointer
-  "Copy COUNT octets from SRC to DEST.
-The two memory areas may overlap."
-  (dest :pointer)
-  (src  :pointer)
-  (count size-t))
-
-
-;;;-------------------------------------------------------------------------
 ;;; I/O
 ;;;-------------------------------------------------------------------------
 

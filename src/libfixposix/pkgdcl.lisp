@@ -64,6 +64,12 @@
    ;; Errno-related functions
    #:errno
 
+   ;; Memory manipulation functions
+   #:memset
+   #:bzero
+   #:memcpy
+   #:memmove
+
    ;; Signals
    #:wifexited
    #:wexitstatus
