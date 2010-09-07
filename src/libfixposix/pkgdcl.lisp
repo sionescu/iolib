@@ -25,9 +25,20 @@
    #:size-of-pointer
 
    ;; POSIX Types
+   #:bool #:size-of-bool
    #:size-t #:size-of-size-t
    #:ssize-t #:size-of-ssize-t
    #:off-t #:size-of-off-t
+   #:time-t #:size-of-time-t
+   #:suseconds-t #:size-of-suseconds-t
+
+   ;;;----------------------------------------------------------------------
+   ;;; Struct definitions, slots and accessors
+   ;;;----------------------------------------------------------------------
+
+   ;; timeval
+   #:timeval #:size-of-timeval
+   #:sec #:usec
 
 
    ;;;----------------------------------------------------------------------
@@ -51,6 +62,9 @@
    #:estale #:etime #:etimedout #:etxtbsy #:ewouldblock #:exdev
    #:ebug
 
+   ;; Select()
+   #:fd-setsize
+
    ;; Waitpid()
    #:wnohang
    #:wuntraced
@@ -69,6 +83,14 @@
    #:bzero
    #:memcpy
    #:memmove
+
+   ;; I/O Polling
+   #:select
+   #:copy-fd-set
+   #:fd-clr
+   #:fd-isset
+   #:fd-set
+   #:fd-zero
 
    ;; Signals
    #:wifexited

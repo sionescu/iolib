@@ -19,7 +19,9 @@
   (:default-initargs :fd-limit (1- isys:fd-setsize)))
 
 (defun allocate-fd-set ()
-  (isys:fd-zero (foreign-alloc 'isys:fd-set)))
+  (let ((fd-set (foreign-alloc 'isys:fd-set)))
+    (isys:fd-zero fd-set)
+    fd-set))
 
 (defmethod print-object ((mux select-multiplexer) stream)
   (print-unreadable-object (mux stream :type nil :identity nil)
@@ -100,10 +102,11 @@
               (when tmp-timeout
                 (timeout->timeval tmp-timeout tv))
               (isys:select (1+ max-fd)
-                                read-fds
-                                write-fds
-                                except-fds
-                                (if tmp-timeout tv (null-pointer)))))
+                           read-fds
+                           write-fds
+                           except-fds
+                           (if tmp-timeout tv (null-pointer))
+                           (null-pointer))))
         (isys:ebadf ()
           (return* (harvest-select-fd-errors rs ws max-fd))))
       (harvest-select-events max-fd read-fds write-fds except-fds))))

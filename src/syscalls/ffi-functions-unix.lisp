@@ -447,43 +447,14 @@ Return two values: the file descriptor and the path of the temporary file."
 ;;; File descriptor polling
 ;;;-------------------------------------------------------------------------
 
-(defsyscall (select "select") :int
+(defsyscall (select "lfp_select") :int
   "Scan for I/O activity on multiple file descriptors."
   (nfds      :int)
   (readfds   :pointer)
   (writefds  :pointer)
   (exceptfds :pointer)
-  (timeout   :pointer))
-
-(defentrypoint fd-zero (fd-set)
-  (bzero fd-set size-of-fd-set)
-  (values fd-set))
-
-(defentrypoint copy-fd-set (from to)
-  (memcpy to from size-of-fd-set)
-  (values to))
-
-(deftype select-file-descriptor ()
-  `(mod #.fd-setsize))
-
-(defentrypoint fd-isset (fd fd-set)
-  (multiple-value-bind (byte-off bit-off) (floor fd 8)
-    (let ((oldval (mem-aref fd-set :uint8 byte-off)))
-      (logbitp bit-off oldval))))
-
-(defentrypoint fd-clr (fd fd-set)
-  (multiple-value-bind (byte-off bit-off) (floor fd 8)
-    (let ((oldval (mem-aref fd-set :uint8 byte-off)))
-      (setf (mem-aref fd-set :uint8 byte-off)
-            (logandc2 oldval (ash 1 bit-off)))))
-  (values fd-set))
-
-(defentrypoint fd-set (fd fd-set)
-  (multiple-value-bind (byte-off bit-off) (floor fd 8)
-    (let ((oldval (mem-aref fd-set :uint8 byte-off)))
-      (setf (mem-aref fd-set :uint8 byte-off)
-            (logior oldval (ash 1 bit-off)))))
-  (values fd-set))
+  (timeout   :pointer)
+  (sigmask   :pointer))
 
 ;;; FIXME: Until a way to autodetect platform features is implemented
 (eval-when (:compile-toplevel :load-toplevel :execute)

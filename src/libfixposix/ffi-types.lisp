@@ -13,9 +13,12 @@
 ;;; Simple POSIX types
 ;;;-------------------------------------------------------------------------
 
+(ctype bool "bool")
 (ctype size-t "size_t")
 (ctype ssize-t "ssize_t")
 (ctype off-t "off_t")
+(ctype time-t "time_t")
+(ctype suseconds-t "suseconds_t")
 
 
 ;;;-------------------------------------------------------------------------
@@ -105,6 +108,21 @@
  ((:exdev "EXDEV"))
  ;; ((:ebug "LFP_EBUG"))
  )
+
+
+;;;-------------------------------------------------------------------------
+;;; sys/select.h
+;;;-------------------------------------------------------------------------
+
+(cstruct timeval "struct timeval"
+  "UNIX time specification in seconds and microseconds."
+  (sec  "tv_sec"  :type time-t)
+  (usec "tv_usec" :type suseconds-t))
+
+(constant (fd-setsize "FD_SETSIZE"))
+
+(cstruct fd-set "fd_set"
+  (bits "fds_bits" :type :uint8 :count :auto))
 
 
 ;;;-------------------------------------------------------------------------

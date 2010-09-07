@@ -251,21 +251,6 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; sys/select.h
-;;;-------------------------------------------------------------------------
-
-(cstruct timeval "struct timeval"
-  "UNIX time specification in seconds and microseconds."
-  (sec  "tv_sec"  :type time-t)
-  (usec "tv_usec" :type suseconds-t))
-
-(constant (fd-setsize "FD_SETSIZE"))
-
-(cstruct fd-set "fd_set"
-  (bits "fds_bits" :type :uint8 :count :auto))
-
-
-;;;-------------------------------------------------------------------------
 ;;; Fcntl()
 ;;;-------------------------------------------------------------------------
 

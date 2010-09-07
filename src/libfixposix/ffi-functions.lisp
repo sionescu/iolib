@@ -49,6 +49,41 @@ The two memory areas may overlap."
   (src  :pointer)
   (count size-t))
 
+
+;;;-------------------------------------------------------------------------
+;;; File descriptor polling
+;;;-------------------------------------------------------------------------
+
+(defcfun (select "lfp_select") :int
+  "Scan for I/O activity on multiple file descriptors."
+  (nfds      :int)
+  (readfds   :pointer)
+  (writefds  :pointer)
+  (exceptfds :pointer)
+  (timeout   :pointer)
+  (sigmask   :pointer))
+
+(defun copy-fd-set (from to)
+  (memcpy to from size-of-fd-set)
+  to)
+
+(defcfun (fd-clr "lfp_fd_clr") :void
+  (fd     :int)
+  (fd-set :pointer))
+
+(defcfun (fd-isset "lfp_fd_isset") bool
+  (fd     :int)
+  (fd-set :pointer))
+
+(defcfun (fd-set "lfp_fd_set") :void
+  (fd     :int)
+  (fd-set :pointer))
+
+(defcfun (fd-zero "lfp_fd_zero") :void
+  (fd-set :pointer))
+
+
+;;;-------------------------------------------------------------------------
 ;;; Socket message readers
 ;;;-------------------------------------------------------------------------
 
