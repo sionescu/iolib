@@ -580,11 +580,6 @@ Return two values: the file descriptor and the path of the temporary file."
   "Open directory PATH for listing of its contents."
   (path sstring))
 
-#-bsd
-(defsyscall (fdopendir "fdopendir") :pointer
-  "Open directory denoted by descriptor FD for listing of its contents."
-  (fd :int))
-
 (defsyscall (closedir "closedir") :int
   "Close directory DIR when done listing its contents."
   (dirp :pointer))

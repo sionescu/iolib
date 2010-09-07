@@ -402,8 +402,6 @@
 
    ;; Directory walking
    #:opendir
-   #-bsd #:fdopendir
-   #:dirfd
    #:closedir
    #:readdir
    #:rewinddir
