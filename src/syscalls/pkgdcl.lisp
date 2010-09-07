@@ -696,5 +696,5 @@
    #+bsd #:flags
    #+bsd #:fflags
    #+bsd #:data
-   #+bsd) #:udata
-   )
+   #+bsd #:udata
+   ))
