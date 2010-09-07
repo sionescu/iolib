@@ -16,10 +16,6 @@
 ;;; ERRNO-related functions
 ;;;-------------------------------------------------------------------------
 
-(defentrypoint (setf errno) (value)
-  "Set errno value."
-  (%set-errno value))
-
 (defsyscall (%strerror-r (#+linux "__xpg_strerror_r" "strerror_r"))
     :int
   (errnum :int)

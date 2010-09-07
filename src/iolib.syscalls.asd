@@ -14,7 +14,8 @@
                                                      *load-truename*)))
                (read f))
   :licence "MIT"
-  :depends-on (:trivial-features :cffi :cffi-grovel :iolib.base)
+  :depends-on (:trivial-features :cffi :cffi-grovel :iolib.base
+               :libfixposix)
   :default-component-class iolib-source-file
   :pathname #-asdf2 (merge-pathnames "syscalls/" *load-truename*)
             #+asdf2 "syscalls/"
@@ -28,7 +29,5 @@
    (:file "os-conditions" :pathname #+unix "os-conditions-unix")
    (:file "designators")
    (:file "early")
-   (cffi-grovel:wrapper-file "ffi-wrappers" :pathname #+unix "ffi-wrappers-unix"
-     :soname "libiolib-syscalls")
    (:file "ffi-functions" :pathname #+unix "ffi-functions-unix"))
   :serial t)

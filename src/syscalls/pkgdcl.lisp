@@ -10,6 +10,80 @@
   (:use :iolib.base :cffi)
   (:shadow #:open #:close #:read #:write #:listen
            #:truncate #:ftruncate #:time)
+  (:import-from
+   :libfixposix
+
+   ;;;----------------------------------------------------------------------
+   ;;; C Types
+   ;;;----------------------------------------------------------------------
+
+   ;; Primitive type sizes
+   #:size-of-char
+   #:size-of-short
+   #:size-of-int
+   #:size-of-long
+   #:size-of-long-long
+   #:size-of-pointer
+
+   ;; POSIX Types
+   #:size-t #:size-of-size-t
+   #:ssize-t #:size-of-ssize-t
+   #:off-t #:size-of-off-t
+
+
+   ;;;----------------------------------------------------------------------
+   ;;; C Constants
+   ;;;----------------------------------------------------------------------
+
+   ;; Syscall error codes
+   #:errno-values
+   #:e2big #:eacces #:eaddrinuse #:eaddrnotavail
+   #:eafnosupport #:ealready #:ebadf #:ebadmsg #:ebusy #:ecanceled
+   #:echild #:econnaborted #:econnrefused #:econnreset #:edeadlk
+   #:edestaddrreq #:edom #:edquot #:eexist #:efault #:efbig
+   #:ehostunreach #:eidrm #:eilseq #:einprogress #:eintr #:einval #:eio
+   #:eisconn #:eisdir #:eloop #:emfile #:emlink #:emsgsize #:emultihop
+   #:enametoolong #:enetdown #:enetreset #:enetunreach #:enfile
+   #:enobufs #:enodata #:enodev #:enoent #:enoexec #:enolck #:enolink
+   #:enomem #:enomsg #:enoprotoopt #:enospc #:enosr #:enostr #:enosys
+   #:enotconn #:enotdir #:enotempty #:enotsock #:enotsup #:enotty
+   #:enxio #:eopnotsupp #:eoverflow #:eperm #:epipe #:eproto
+   #:eprotonosupport #:eprototype #:erange #:erofs #:espipe #:esrch
+   #:estale #:etime #:etimedout #:etxtbsy #:ewouldblock #:exdev
+   #:ebug
+
+   ;; Waitpid()
+   #:wnohang
+   #:wuntraced
+   #:wcontinued
+
+
+   ;;;----------------------------------------------------------------------
+   ;;; Syscalls
+   ;;;----------------------------------------------------------------------
+
+   ;; Errno-related functions
+   #:errno
+
+   ;; Signals
+   #:wifexited
+   #:wexitstatus
+   #:wifsignaled
+   #:wtermsig
+   #:wcoredump
+   #:wifstopped
+   #:wstopsig
+   #:wifcontinued
+
+   ;; CMSG readers
+   #:cmsg.firsthdr
+   #:cmsg.nxthdr
+   #:cmsg.align
+   #:cmsg.space
+   #:cmsg.len
+   #:cmsg.data
+   )
+
   (:export
 
    ;;;----------------------------------------------------------------------
@@ -289,26 +363,20 @@
 
    ;; Syscall error codes
    #:errno-values
-   #:eperm #:enoent #:esrch #:eintr #:eio #:enxio #:e2big #:enoexec
-   #:ebadf #:echild #:enomem #:eacces #:efault #:ebusy #:eexist
-   #:exdev #:enodev #:enotdir #:eisdir #:einval #:enfile #:emfile
-   #:enotty #:efbig #:enospc #:espipe #:erofs #:emlink #:epipe #:edom
-   #:erange #:edeadlk #:enametoolong #:enolck #:enosys #:enotempty
-   #:echrng #:el2nsync #:el3hlt #:el3rst #:elnrng #:eunatch #:enocsi
-   #:el2hlt #:ebade #:ebadr #:exfull #:enoano #:ebadrqc #:ebadslt
-   #:edeadlock #:ebfont #:enostr #:enodata #:etime #:enosr #:enopkg
-   #:eadv #:esrmnt #:ecomm #:edotdot #:enotuniq #:ebadfd #:elibscn
-   #:elibmax #:elibexec #:eilseq #:erestart #:estrpipe #:euclean
-   #:enotnam #:enavail #:eremoteio #:enomedium #:emediumtype #:estale
-   #:enotblk #:etxtbsy #:eusers #:eloop #:ewouldblock #:enomsg #:eidrm
-   #:eproto #:emultihop #:ebadmsg #:eoverflow #:edquot #:einprogress
-   #:ealready #:eprotonosupport #:esocktnosupport #:enotsock
-   #:edestaddrreq #:emsgsize #:eprototype #:enoprotoopt #:eremote
-   #:enolink #:epfnosupport #:eafnosupport #:eaddrinuse #:eaddrnotavail
-   #:enetdown #:enetunreach #:enetreset #:econnaborted #:econnreset
-   #:eisconn #:enotconn #:eshutdown #:etoomanyrefs #:etimedout
-   #:econnrefused #:ehostdown #:ehostunreach #:enonet #:enobufs
-   #:eopnotsupp
+   #:e2big #:eacces #:eaddrinuse #:eaddrnotavail
+   #:eafnosupport #:ealready #:ebadf #:ebadmsg #:ebusy #:ecanceled
+   #:echild #:econnaborted #:econnrefused #:econnreset #:edeadlk
+   #:edestaddrreq #:edom #:edquot #:eexist #:efault #:efbig
+   #:ehostunreach #:eidrm #:eilseq #:einprogress #:eintr #:einval #:eio
+   #:eisconn #:eisdir #:eloop #:emfile #:emlink #:emsgsize #:emultihop
+   #:enametoolong #:enetdown #:enetreset #:enetunreach #:enfile
+   #:enobufs #:enodata #:enodev #:enoent #:enoexec #:enolck #:enolink
+   #:enomem #:enomsg #:enoprotoopt #:enospc #:enosr #:enostr #:enosys
+   #:enotconn #:enotdir #:enotempty #:enotsock #:enotsup #:enotty
+   #:enxio #:eopnotsupp #:eoverflow #:eperm #:epipe #:eproto
+   #:eprotonosupport #:eprototype #:erange #:erofs #:espipe #:esrch
+   #:estale #:etime #:etimedout #:etxtbsy #:ewouldblock #:exdev
+   #:ebug
 
 
    ;;;----------------------------------------------------------------------
@@ -481,9 +549,11 @@
    #:getgrgid
 
    ;; CMSG readers
+   #:cmsg.firsthdr
+   #:cmsg.nxthdr
+   #:cmsg.align
    #:cmsg.space
    #:cmsg.len
-   #:cmsg.firsthdr
    #:cmsg.data
 
 
