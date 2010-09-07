@@ -8,12 +8,13 @@
 (defpackage :iolib.syscalls
   (:nicknames #:isys)
   (:use :iolib.base :cffi)
-  (:shadow #:open #:close #:read #:write #:listen #:truncate #:ftruncate #:time)
+  (:shadow #:open #:close #:read #:write #:listen
+           #:truncate #:ftruncate #:time)
   (:export
 
-   ;;;--------------------------------------------------------------------------
+   ;;;----------------------------------------------------------------------
    ;;; C Types
-   ;;;--------------------------------------------------------------------------
+   ;;;----------------------------------------------------------------------
 
    ;; Primitive type sizes
    #:size-of-char
@@ -42,9 +43,9 @@
    #:nfds-t #:size-of-nfds-t
 
 
-   ;;;--------------------------------------------------------------------------
+   ;;;----------------------------------------------------------------------
    ;;; C Constants
-   ;;;--------------------------------------------------------------------------
+   ;;;----------------------------------------------------------------------
 
    ;; Open()
    #:o-rdonly
@@ -144,7 +145,7 @@
    #+linux #:sigrtmin
    #+linux #:sigrtmax
 
-   ;; waitpid()
+   ;; Waitpid()
    #:wnohang
    #:wuntraced
    #:wcontinued
@@ -310,9 +311,9 @@
    #:eopnotsupp
 
 
-   ;;;--------------------------------------------------------------------------
+   ;;;----------------------------------------------------------------------
    ;;; Syscalls
-   ;;;--------------------------------------------------------------------------
+   ;;;----------------------------------------------------------------------
 
    ;; Specials
    #:*default-open-mode*
@@ -486,12 +487,12 @@
    #:cmsg.data
 
 
-   ;;;--------------------------------------------------------------------------
+   ;;;----------------------------------------------------------------------
    ;;; Error conditions, wrappers and definers
-   ;;;--------------------------------------------------------------------------
+   ;;;----------------------------------------------------------------------
 
-   #:iolib-condition #:iolib-error
-   #:syscall-error #:code-of #:identifier-of #:message-of #:handle-of #:handle2-of
+   #:iolib-condition #:iolib-error #:syscall-error
+   #:code-of #:identifier-of #:message-of #:handle-of #:handle2-of
    #:make-syscall-error #:syscall-error-p #:get-syscall-error-condition
    #:signal-syscall-error #:signal-syscall-error/restart
    #:poll-error #:event-type-of #:poll-timeout
@@ -534,9 +535,9 @@
    #:repeat-upon-condition-decreasing-timeout
 
 
-   ;;;--------------------------------------------------------------------------
+   ;;;----------------------------------------------------------------------
    ;;; Struct definitions, slots and accessors
-   ;;;--------------------------------------------------------------------------
+   ;;;----------------------------------------------------------------------
 
    ;; timespec
    #:timespec #:size-of-timespec
@@ -600,9 +601,9 @@
 
    ;; sysconf
    #:sysconf
-   #:sc-arg-max #:sc-child-max #:sc-host-name-max #:sc-login-name-max #:sc-clk-tck
-   #:sc-open-max #:sc-pagesize #:sc-re-dup-max #:sc-stream-max #:sc-symloop-max
-   #:sc-tty-name-max #:sc-tzname-max #:sc-version
-
-   #:sc-phys-pages #:sc-avphys-pages #:sc-nprocessors-conf #:sc-nprocessors-onln
+   #:sc-arg-max #:sc-child-max #:sc-host-name-max #:sc-login-name-max
+   #:sc-clk-tck #:sc-open-max #:sc-pagesize #:sc-re-dup-max
+   #:sc-stream-max #:sc-symloop-max #:sc-tty-name-max #:sc-tzname-max
+   #:sc-version #:sc-phys-pages #:sc-avphys-pages #:sc-nprocessors-conf
+   #:sc-nprocessors-onln
    ))
