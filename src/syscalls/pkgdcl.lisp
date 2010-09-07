@@ -52,16 +52,16 @@
    #:e2big #:eacces #:eaddrinuse #:eaddrnotavail
    #:eafnosupport #:ealready #:ebadf #:ebadmsg #:ebusy #:ecanceled
    #:echild #:econnaborted #:econnrefused #:econnreset #:edeadlk
-   #:edestaddrreq #:edom #:edquot #:eexist #:efault #:efbig
+   #:edestaddrreq #:edom #:edquot #:eexist #:efault #:efbig #:ehostdown
    #:ehostunreach #:eidrm #:eilseq #:einprogress #:eintr #:einval #:eio
    #:eisconn #:eisdir #:eloop #:emfile #:emlink #:emsgsize #:emultihop
    #:enametoolong #:enetdown #:enetreset #:enetunreach #:enfile
    #:enobufs #:enodata #:enodev #:enoent #:enoexec #:enolck #:enolink
-   #:enomem #:enomsg #:enoprotoopt #:enospc #:enosr #:enostr #:enosys
-   #:enotconn #:enotdir #:enotempty #:enotsock #:enotsup #:enotty
+   #:enomem #:enomsg #:enonet #:enoprotoopt #:enospc #:enosr #:enostr
+   #:enosys #:enotconn #:enotdir #:enotempty #:enotsock #:enotsup #:enotty
    #:enxio #:eopnotsupp #:eoverflow #:eperm #:epipe #:eproto
-   #:eprotonosupport #:eprototype #:erange #:erofs #:espipe #:esrch
-   #:estale #:etime #:etimedout #:etxtbsy #:ewouldblock #:exdev
+   #:eprotonosupport #:eprototype #:erange #:erofs #:eshutdown #:espipe
+   #:esrch #:estale #:etime #:etimedout #:etxtbsy #:ewouldblock #:exdev
    #:ebug
 
    ;; Select()
@@ -395,16 +395,16 @@
    #:e2big #:eacces #:eaddrinuse #:eaddrnotavail
    #:eafnosupport #:ealready #:ebadf #:ebadmsg #:ebusy #:ecanceled
    #:echild #:econnaborted #:econnrefused #:econnreset #:edeadlk
-   #:edestaddrreq #:edom #:edquot #:eexist #:efault #:efbig
+   #:edestaddrreq #:edom #:edquot #:eexist #:efault #:efbig #:ehostdown
    #:ehostunreach #:eidrm #:eilseq #:einprogress #:eintr #:einval #:eio
    #:eisconn #:eisdir #:eloop #:emfile #:emlink #:emsgsize #:emultihop
    #:enametoolong #:enetdown #:enetreset #:enetunreach #:enfile
    #:enobufs #:enodata #:enodev #:enoent #:enoexec #:enolck #:enolink
-   #:enomem #:enomsg #:enoprotoopt #:enospc #:enosr #:enostr #:enosys
-   #:enotconn #:enotdir #:enotempty #:enotsock #:enotsup #:enotty
+   #:enomem #:enomsg #:enonet #:enoprotoopt #:enospc #:enosr #:enostr
+   #:enosys #:enotconn #:enotdir #:enotempty #:enotsock #:enotsup #:enotty
    #:enxio #:eopnotsupp #:eoverflow #:eperm #:epipe #:eproto
-   #:eprotonosupport #:eprototype #:erange #:erofs #:espipe #:esrch
-   #:estale #:etime #:etimedout #:etxtbsy #:ewouldblock #:exdev
+   #:eprotonosupport #:eprototype #:erange #:erofs #:eshutdown #:espipe
+   #:esrch #:estale #:etime #:etimedout #:etxtbsy #:ewouldblock #:exdev
    #:ebug
 
 
@@ -696,5 +696,5 @@
    #+bsd #:flags
    #+bsd #:fflags
    #+bsd #:data
-   #+bsd #:udata
-   ))
+   #+bsd) #:udata
+   )
