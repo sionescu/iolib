@@ -1,6 +1,6 @@
 -*- mode: outline; fill-column: 78 -*-
 
-* Changes since 0.7.0:
+* Changes since 0.7.1:
 
 ** API changes
 
@@ -9,6 +9,15 @@
 ** Bug fixes:
 
 ** Misc
+
+
+
+* Changes since 0.7.0:
+
+** Bug fixes:
+- Only import a few symbols from ASDF into IOLIB.ASDF, which sometimes caused
+  problems with ASDF2
+- Fix compilation on OSX
 
 
 
