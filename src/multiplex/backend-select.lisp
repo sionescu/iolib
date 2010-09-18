@@ -96,16 +96,16 @@
       (isys:copy-fd-set ws write-fds)
       (isys:copy-fd-set es except-fds)
       (handler-case
-          (with-foreign-object (tv 'isys:timeval)
+          (with-foreign-object (ts 'isys:timespec)
             (isys:repeat-upon-condition-decreasing-timeout
                 ((isys:eintr) tmp-timeout timeout)
               (when tmp-timeout
-                (timeout->timeval tmp-timeout tv))
+                (timeout->timespec tmp-timeout ts))
               (isys:select (1+ max-fd)
                            read-fds
                            write-fds
                            except-fds
-                           (if tmp-timeout tv (null-pointer))
+                           (if tmp-timeout ts (null-pointer))
                            (null-pointer))))
         (isys:ebadf ()
           (return* (harvest-select-fd-errors rs ws max-fd))))
