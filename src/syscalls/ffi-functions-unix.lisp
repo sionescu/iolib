@@ -447,6 +447,9 @@ Return two values: the file descriptor and the path of the temporary file."
 ;;; File descriptor polling
 ;;;-------------------------------------------------------------------------
 
+(defun fd-isset (fd fd-set)
+  (plusp (foreign-funcall "lfp_fd_isset" :int fd :pointer fd-set bool)))
+
 (defsyscall (select "lfp_select") :int
   "Scan for I/O activity on multiple file descriptors."
   (nfds      :int)

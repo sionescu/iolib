@@ -71,8 +71,9 @@ The two memory areas may overlap."
   (fd     :int)
   (fd-set :pointer))
 
-(defun fd-isset (fd fd-set)
-  (plusp (foreign-funcall "lfp_fd_isset" :int fd :pointer fd-set bool)))
+(defcfun (fd-isset "lfp_fd_isset") bool
+  (fd     :int)
+  (fd-set :pointer))
 
 (defcfun (fd-set "lfp_fd_set") :void
   (fd     :int)

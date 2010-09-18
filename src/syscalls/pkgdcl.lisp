@@ -87,10 +87,9 @@
    #:memmove
 
    ;; I/O Polling
-   ;; select() is wrapped
+   ;; wrapper: select, fd-isset
    #:copy-fd-set
    #:fd-clr
-   #:fd-isset
    #:fd-set
    #:fd-zero
 
