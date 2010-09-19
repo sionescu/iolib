@@ -19,6 +19,11 @@
 
 (defun (setf errno) (value)
   (foreign-funcall "lfp_set_errno" :int value :int))
+
+(defcfun (strerror "lfp_strerror") :int
+  (errnum :int)
+  (buf    :pointer)
+  (buflen size-t))
 
 
 ;;;-------------------------------------------------------------------------

@@ -78,6 +78,7 @@
    ;;;----------------------------------------------------------------------
 
    ;; Errno-related functions
+   ;; Shadowed: strerror
    #:errno
 
    ;; Memory manipulation functions
@@ -416,8 +417,8 @@
    #:*environ*
 
    ;; Errno-related functions
-   #:strerror
    #:errno
+   #:strerror
 
    ;; Memory manipulation functions
    #:memset

@@ -16,7 +16,7 @@
 ;;; ERRNO-related functions
 ;;;-------------------------------------------------------------------------
 
-(defsyscall (%strerror-r (#+linux "__xpg_strerror_r" "strerror_r"))
+(defsyscall (%strerror "lfp_strerror")
     :int
   (errnum :int)
   (buf    :pointer)
@@ -29,7 +29,7 @@
              (foreign-enum-value 'errno-values err)
              err)))
     (with-foreign-pointer-as-string ((buf bufsiz) 1024)
-      (%strerror-r errno buf bufsiz))))
+      (%strerror errno buf bufsiz))))
 
 (defmethod print-object ((e syscall-error) s)
   (with-slots (syscall code identifier message handle handle2) e

@@ -77,6 +77,7 @@
 
    ;; Errno-related functions
    #:errno
+   #:strerror
 
    ;; Memory manipulation functions
    #:memset
