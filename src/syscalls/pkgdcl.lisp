@@ -88,7 +88,7 @@
    #:memmove
 
    ;; I/O Polling
-   ;; wrapper: select, fd-isset
+   ;; Shadowed: select, fd-isset
    #:copy-fd-set
    #:fd-clr
    #:fd-set
