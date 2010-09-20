@@ -127,9 +127,6 @@
   (mtime   "st_mtime"   :type time-t)
   (ctime   "st_ctime"   :type time-t))
 
-#+linux
-(constant (+stat-version+ "_STAT_VER"))
-
 (constant (s-irwxu "S_IRWXU")
           :documentation "read, write, execute/search by owner")
 (constant (s-irusr "S_IRUSR") :documentation "read permission, owner")
