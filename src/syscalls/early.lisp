@@ -119,29 +119,6 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; Utilities
-;;;-------------------------------------------------------------------------
-
-(defun parse-name-and-options (spec)
-  (assert (or (stringp spec)
-              (and (symbolp (first spec))
-                   (every #'stringp (ensure-list (second spec))))))
-  (cond
-    ((stringp spec)
-     (values (cffi::lisp-name spec) (cffi::foreign-name spec)
-             (cffi::foreign-options spec nil)))
-    (t
-     (values (first spec)
-             (let ((foreign-names (ensure-list (second spec))))
-               ;; If there are multiple foreign names, pick the
-               ;; one that is available -- defaulting to the first
-               ;; one if all else fails.
-               (or (find-if #'foreign-symbol-pointer foreign-names)
-                   (car foreign-names)))
-             (cffi::foreign-options spec nil)))))
-
-
-;;;-------------------------------------------------------------------------
 ;;; Syscall definers
 ;;;-------------------------------------------------------------------------
 
@@ -152,7 +129,7 @@
 
 (defmacro defcfun* (name-and-opts return-type &body args)
   (multiple-value-bind (lisp-name c-name options)
-      (parse-name-and-options name-and-opts)
+      (cffi::parse-name-and-options name-and-opts)
     `(progn
        (declaim (inline ,lisp-name))
        (defcfun (,c-name ,lisp-name ,@options) ,return-type
@@ -160,7 +137,7 @@
 
 (defmacro defsyscall (name-and-opts return-type &body args)
   (multiple-value-bind (lisp-name c-name options)
-      (parse-name-and-options name-and-opts)
+      (cffi::parse-name-and-options name-and-opts)
     `(progn
        (declaim (inline ,lisp-name))
        (defcfun (,c-name ,lisp-name ,@options)
