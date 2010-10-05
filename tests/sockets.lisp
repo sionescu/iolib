@@ -173,10 +173,13 @@
 
 ;;;; Host Lookup
 
+(defparameter *google-ns*
+  (list #/ip/8.8.8.8 #/ip/8.8.4.4))
+
 #-no-internet-available
 (test (lookup-hostname.1 :compile-at :definition-time)
   (is (equalp (multiple-value-bind (address addresses truename)
-                  (lookup-hostname "a.root-servers.net" :ipv6 nil)
+                  (lookup-hostname "a.root-servers.net" :ipv6 nil :ns *google-ns*)
                 (declare (ignore addresses))
                 (values (address-equal-p address #(198 41 0 4))
                         truename))
@@ -184,27 +187,24 @@
 
 #-no-internet-available
 (test (lookup-hostname.2 :compile-at :definition-time)
-  (is-true (string= (nth-value 2 (lookup-hostname #(198 41 0 4)))
+  (is-true (string= (nth-value 2 (lookup-hostname #(198 41 0 4) :ns *google-ns*))
                     "a.root-servers.net")))
 
-;;; These days lots of people seem to be using DNS servers that don't
-;;; report resolving failures for non-existing domains.  This test
-;;; will fail there.
 (test (lookup-hostname.3 :compile-at :definition-time)
   (signals resolver-no-name-error
-    (lookup-hostname "foo.tninkpad.telent.net.")))
+    (lookup-hostname "foo.tninkpad.telent.net." :ns *google-ns*)))
 
 (test (lookup-hostname.4 :compile-at :definition-time)
-  (is-true (address-equal-p (lookup-hostname #(127 0 0 1) :ipv6 nil)
+  (is-true (address-equal-p (lookup-hostname #(127 0 0 1) :ipv6 nil :ns *google-ns*)
                             #(127 0 0 1))))
 
 (test (lookup-hostname.5 :compile-at :definition-time)
   (signals parse-error
-    (lookup-hostname #(127 0 0))))
+    (lookup-hostname #(127 0 0) :ns *google-ns*)))
 
 (test (lookup-hostname.6 :compile-at :definition-time)
   (signals resolver-no-name-error
-    (lookup-hostname #(127 0 0 1) :ipv6 :ipv6)))
+    (lookup-hostname #(127 0 0 1) :ipv6 :ipv6 :ns *google-ns*)))
 
 ;;;; Service Lookup
 
