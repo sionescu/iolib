@@ -106,23 +106,27 @@
 ;; TODO: * implement address selection as per RFC 3484
 ;;       * add caching
 ;;       * profile the whole thing
-(defun lookup-hostname (host &key (ipv6 *ipv6*))
+(defun lookup-hostname (host &key (ipv6 *ipv6*) ns)
   "Looks up a host by name or address. IPV6 determines the
 IPv6 behaviour, defaults to *IPV6*.
+Use NS to specify a (list of) nameservers, overriding *DNS-NAMESERVERS*.
 Returns 4 values:
 * an address
 * a list of additional addresses(if existent)
 * the canonical name of the host
-* an alist of all the host's names with their respective addresses"
+* an alist of all the host's names with their respective addresses."
   (check-type ipv6 *ipv6*-type "one of T, NIL or :IPV6")
-  (let ((address (ensure-address host :errorp (not (stringp host)))))
+  (let ((address (ensure-address host :errorp (not (stringp host))))
+        (ns (mapcar #'ensure-address (ensure-list ns))))
     (update-monitor *resolv.conf-monitor*)
     (update-monitor *hosts-monitor*)
-    (cond (address
-           (lookup-host-by-address address ipv6))
-          (t
-           (check-type host string "a string")
-           (lookup-host-by-name host ipv6)))))
+    (let ((*dns-nameservers* (or ns *dns-nameservers*)))
+      (cond
+        (address
+         (lookup-host-by-address address ipv6))
+        (t
+         (check-type host string "a string")
+         (lookup-host-by-name host ipv6))))))
 
 (defun lookup-host (&rest args)
   (apply #'lookup-hostname args))

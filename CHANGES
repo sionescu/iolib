@@ -3,6 +3,7 @@
 * Changes since 0.7.1:
 
 ** API changes
+* Add parameter NS to LOOKUP-HOSTNAME
 
 ** New features
 
