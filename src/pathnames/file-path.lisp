@@ -114,16 +114,13 @@
         ".")))
 
 (defun split-name/type (path)
-  (if (member path '("." "..") :test #'string=)
-      (values path nil)
-      (let ((dotpos (position #\. path :start 1 :from-end t)))
-        (cond
-          ((null dotpos)
-           (values path nil))
-          ((= (1+ dotpos) (length path))
-           (values (subseq path 0 dotpos) nil))
-          (t (values (subseq path 0 dotpos)
-                     (subseq path (1+ dotpos))))))))
+  (let ((dotpos (position #\. path :start 1 :from-end t)))
+    (cond
+      ((or (null dotpos) (member path '("." "..") :test #'string=))
+       (values path nil))
+      (t (values (subseq path 0 dotpos)
+                 (non-empty-string-or-nil
+                  (subseq path (1+ dotpos))))))))
 
 (defun file-path-file-name (pathspec)
   (let ((file (file-path-file pathspec)))
