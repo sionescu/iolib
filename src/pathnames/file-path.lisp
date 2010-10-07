@@ -113,27 +113,25 @@
     (or (lastcar (nth-value 1 (split-root/nodes components)))
         ".")))
 
-(defun split-name/type (file)
-  (let* ((dotpos (position #\. file :start 1 :from-end t)))
-    (cond
-      ((null dotpos)
-       (values file nil))
-      ((= (1+ dotpos) (length file))
-       (values (subseq file 0 dotpos) nil))
-      (t (values (subseq file 0 dotpos)
-                 (subseq file (1+ dotpos)))))))
+(defun split-name/type (path)
+  (if (member path '("." "..") :test #'string=)
+      (values path nil)
+      (let ((dotpos (position #\. path :start 1 :from-end t)))
+        (cond
+          ((null dotpos)
+           (values path nil))
+          ((= (1+ dotpos) (length path))
+           (values (subseq path 0 dotpos) nil))
+          (t (values (subseq path 0 dotpos)
+                     (subseq path (1+ dotpos))))))))
 
 (defun file-path-file-name (pathspec)
-  (let* ((file (file-path-file pathspec)))
-    (switch (file :test #'string=)
-      ("." ".." file)
-      (t (nth-value 0 (split-name/type file))))))
+  (let ((file (file-path-file pathspec)))
+    (nth-value 0 (split-name/type file))))
 
 (defun file-path-file-type (pathspec)
-  (let* ((file (file-path-file pathspec)))
-    (switch (file :test #'string=)
-      ("." ".." nil)
-      (t (nth-value 1 (split-name/type file))))))
+  (let ((file (file-path-file pathspec)))
+    (nth-value 1 (split-name/type file))))
 
 
 ;;;-------------------------------------------------------------------------

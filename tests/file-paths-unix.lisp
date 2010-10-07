@@ -277,10 +277,10 @@
   (is (equal "." (file-path-file-name (file-path "./")))))
 
 (test (file-path.file-name.4 :compile-at :definition-time)
-  (is (equal "." (file-path-file-name (file-path "..")))))
+  (is (equal ".." (file-path-file-name (file-path "..")))))
 
 (test (file-path.file-name.5 :compile-at :definition-time)
-  (is (equal "." (file-path-file-name (file-path "../")))))
+  (is (equal ".." (file-path-file-name (file-path "../")))))
 
 (test (file-path.file-name.6 :compile-at :definition-time)
   (is (equal "a" (file-path-file-name (file-path "a")))))
