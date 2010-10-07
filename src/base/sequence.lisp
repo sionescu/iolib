@@ -30,3 +30,11 @@
   #+sbcl `(sb-kernel:shrink-vector ,str ,size)
   #+scl `(common-lisp::shrink-vector ,str ,size)
   #-(or allegro cmu lispworks sbcl scl) `(subseq ,str 0 ,size))
+
+(declaim (inline non-empty-string-or-nil))
+(defun non-empty-string-or-nil (string)
+  (etypecase string
+    (string
+     (if (zerop (length string))
+         nil
+         string))))

@@ -45,7 +45,7 @@
    #:split-sequence #:split-sequence-if #:split-sequence-if-not
    ;; Misc
    #:function-name #:function-name-p
-   #:check-bounds #:join #:shrink-vector
+   #:check-bounds #:join #:shrink-vector #:non-empty-string-or-nil
    ;; Matching
    #:multiple-value-case #:flags-case
    ;; Time
