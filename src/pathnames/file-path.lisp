@@ -119,8 +119,7 @@
       ((or (null dotpos) (member path '("." "..") :test #'string=))
        (values path nil))
       (t (values (subseq path 0 dotpos)
-                 (non-empty-string-or-nil
-                  (subseq path (1+ dotpos))))))))
+                 (full-string (subseq path (1+ dotpos))))))))
 
 (defun file-path-file-name (pathspec)
   (let ((file (file-path-file pathspec)))
@@ -150,7 +149,11 @@
              :reason "Null filenames are not valid"))
     (when (find-if (lambda (c) (member c +directory-delimiters+)) node)
       (error 'invalid-file-path :path node
-             :reason "Path components cannot contain directory delimiters(#\\ and #\/)"))))
+             :reason (format nil
+                             "Path components cannot contain delimiters(~A)"
+                             (join* " and "
+                                    (mapcar 'prin1-to-string
+                                            +directory-delimiters+)))))))
 
 
 ;;;-------------------------------------------------------------------------
