@@ -136,7 +136,7 @@
 ;;; output file is opened with the :DIRECTION keyword argument
 ;;; DIRECTION-OUT.
 (defun copy-file (path-in external-format-in path-out external-format-out
-                  direction-out direction-in)
+                  direction-in direction-out)
   (with-open-file-stream (in path-in
                              :direction direction-in
                              :if-does-not-exist :error
@@ -176,7 +176,7 @@
           (format *error-output* "~&;; ~A.~%" description)
           (copy-file full-path-in external-format-in
                      full-path-out external-format-out
-                     direction-out direction-in)
+                     direction-in direction-out)
           (unless (file-equal full-path-out full-path-orig)
             (format *error-output* "~&;;   Test failed!!!~%")
             (return* nil)))))))
