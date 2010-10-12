@@ -375,7 +375,7 @@ Return two values: the file descriptor and the path of the temporary file."
     ((integerp arg) (%fcntl/int     fd cmd arg))
     ((pointerp arg) (%fcntl/pointer fd cmd arg))
     (t (error 'type-error :datum arg
-              :expected-type '(or integer foreign-pointer)))))
+              :expected-type '(or null integer foreign-pointer)))))
 
 (defentrypoint fd-nonblock (fd)
   (let ((current-flags (fcntl fd f-getfl)))
@@ -408,7 +408,8 @@ Return two values: the file descriptor and the path of the temporary file."
   (cond
     ((not argp)     (%ioctl/noarg   fd request))
     ((pointerp arg) (%ioctl/pointer fd request arg))
-    (t (error 'type-error :datum arg :expected-type 'foreign-pointer))))
+    (t (error 'type-error :datum arg
+              :expected-type '(or null foreign-pointer)))))
 
 (defentrypoint fd-open-p (fd)
   (handler-case
