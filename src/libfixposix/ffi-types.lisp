@@ -131,8 +131,7 @@
 
 (constant (fd-setsize "FD_SETSIZE"))
 
-(cstruct fd-set "fd_set"
-  (bits "fds_bits" :type :uint8 :count :auto))
+(cstruct fd-set "fd_set")
 
 
 ;;;-------------------------------------------------------------------------
