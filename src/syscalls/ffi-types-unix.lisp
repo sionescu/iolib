@@ -32,12 +32,9 @@
 ;;; POSIX types
 ;;;-------------------------------------------------------------------------
 
-(ctype size-t "size_t")
-(ctype ssize-t "ssize_t")
 (ctype pid-t "pid_t")
 (ctype uid-t "uid_t")
 (ctype gid-t "gid_t")
-(ctype off-t "off_t")
 (ctype mode-t "mode_t")
 
 
@@ -85,9 +82,6 @@
 ;;;-------------------------------------------------------------------------
 ;;; time.h
 ;;;-------------------------------------------------------------------------
-
-(ctype time-t "time_t")
-(ctype suseconds-t "suseconds_t")
 
 #-darwin
 (progn
