@@ -42,8 +42,10 @@
 
    ;; timeval
    #:timeval #:size-of-timeval
-   #:sec
-   #:usec
+   #:sec #:usec
+
+   ;; fd-set
+   #:fd-set #:size-of-fd-set
 
 
    ;;;----------------------------------------------------------------------
