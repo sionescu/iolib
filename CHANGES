@@ -1,6 +1,6 @@
 -*- mode: outline; fill-column: 78 -*-
 
-* Changes since 0.7.1:
+* Changes since 0.7.2:
 
 ** API changes
 * Add parameter NS to LOOKUP-HOSTNAME
@@ -10,6 +10,13 @@
 ** Bug fixes:
 
 ** Misc
+
+
+
+* Changes since 0.7.1:
+
+** Bug fixes:
+- Don't redefine Alexandria functions (patch by Nikodemus Siivola)
 
 
 
