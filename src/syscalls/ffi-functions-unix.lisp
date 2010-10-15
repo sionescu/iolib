@@ -257,6 +257,7 @@ to the argument OFFSET according to the directive WHENCE."
 ;;; argument to this function and use that to reuse a wrapper object.
 (defentrypoint funcall-stat (fn arg)
   (with-foreign-object (buf 'stat)
+    (funcall fn arg buf)
     (make-instance 'stat :pointer buf)))
 
 (defentrypoint stat (path)
