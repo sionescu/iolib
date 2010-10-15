@@ -89,14 +89,15 @@ failure."
   "Return the current global environment."
   (let ((env (make-instance 'environment))
         (envptr isys:*environ*))
-    (unless (null-pointer-p envptr)
-      (loop :for i :from 0 :by 1
-            :for string := (mem-aref envptr :string i)
-            :for split := (position #\= string)
-            :while string :do
-            (let ((name (subseq string 0 split))
-                  (value (subseq string (1+ split))))
-              (%obj-setenv env name value t))))
+    (if (null-pointer-p envptr)
+        ()
+        (loop :for i :from 0 :by 1
+              :for string := (mem-aref envptr :string i)
+              :for split := (position #\= string)
+              :while string :do
+              (let ((name (subseq string 0 split))
+                    (value (subseq string (1+ split))))
+                (%obj-setenv env name value t))))
     env))
 
 (defun (setf environment) (newenv)
@@ -275,7 +276,7 @@ it also checks the file kind. If the tests succeed, return two values:
 truename and file kind of PATHSPEC, NIL otherwise.
 Follows symbolic links."
   (let* ((path (file-path pathspec))
-         (follow (unless (eql :symbolic-link file-kind) t))
+         (follow (if (eql :symbolic-link file-kind) nil t))
          (actual-kind (file-kind path :follow-symlinks follow)))
     (when (and actual-kind
                (if file-kind (eql file-kind actual-kind) t))
@@ -562,10 +563,11 @@ numerical user ID, as an assoc-list."
         (string  (isys:getpwnam id))
         (integer (isys:getpwuid id)))
     (declare (ignore password))
-    (unless (null name)
-      (list (cons :name name)
-            (cons :user-id uid)
-            (cons :group-id gid)
-            (cons :gecos gecos)
-            (cons :home home)
-            (cons :shell shell)))))
+    (if name
+        (list (cons :name name)
+              (cons :user-id uid)
+              (cons :group-id gid)
+              (cons :gecos gecos)
+              (cons :home home)
+              (cons :shell shell))
+        nil)))
