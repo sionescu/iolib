@@ -162,8 +162,6 @@ ADDRESS-NAME reader."))
                (decf end))
              (values start end start-i trailing-colon-p
                      tokens-from-leading-or-trailing-zeros)))
-         (emptyp (string)
-           (= 0 (length string)))
          ;; we need to use this instead of dotted-to-vector because
          ;; abbreviated IPv4 addresses are invalid in this context.
          (ipv4-string-to-ub16-list (string)
