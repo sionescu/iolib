@@ -195,8 +195,8 @@
 
 (defmethod print-object ((path file-path) stream)
   (let ((ns (file-path-namestring path)))
-    (if *print-escape*
-        (format stream "#/p/~S" ns)
+    (if (or *print-readably* *print-escape*)
+        (format stream "#/~S/~S" 'p ns)
         (write-string ns stream))))
 
 (define-literal-reader p (stream)

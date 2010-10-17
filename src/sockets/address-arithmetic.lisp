@@ -83,8 +83,8 @@ host part of ADDRESS.")
          (format nil "~A/~A"
                  (address-to-string (address-of network))
                  (cidr-of network))))
-    (if *print-escape*
-        (format stream "#/net/~A" namestring)
+    (if (or *print-readably* *print-escape*)
+        (format stream "#/~S/~A" 'net namestring)
         (write-string namestring stream))))
 
 (defgeneric ipv4-network= (net1 net2)
