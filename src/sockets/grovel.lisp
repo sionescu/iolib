@@ -350,7 +350,7 @@
 (constant (tcp-quickack "TCP_QUICKACK") :optional t)
 
 #+linux
-(cenum (connstates :define-constants nil)
+(cenum connstates
   (:tcp-established "TCP_ESTABLISHED")
   (:tcp-syn-sent "TCP_SYN_SENT")
   (:tcp-syn-recv "TCP_SYN_RECV")

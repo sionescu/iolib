@@ -32,8 +32,6 @@
 ;;; errno.h
 ;;;-------------------------------------------------------------------------
 
-;; FIXME: :define-constants doesn't work when
-;;        the values arent' defined as macros too
 (cenum (errno-values :define-constants t)
  (:e2big "E2BIG")
  (:eacces "EACCES")
