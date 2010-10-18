@@ -2,7 +2,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (asdf:oos 'asdf:load-op :iolib.base)
-  (asdf:oos 'asdf:load-op :cffi-grovel))
+  (asdf:oos 'asdf:load-op :iolib-grovel))
 
 (in-package :iolib.asdf)
 
@@ -16,13 +16,13 @@
                (read f))
   :licence "MIT"
   :depends-on (:iolib.base :iolib.syscalls :iolib.streams
-               :babel :cffi :cffi-grovel :bordeaux-threads)
+               :babel :cffi :iolib-grovel :bordeaux-threads)
   :default-component-class iolib-source-file
   :pathname #-asdf2 (merge-pathnames "sockets/" *load-truename*)
             #+asdf2 "sockets/"
   :components
   ((:file "pkgdcl")
-   (cffi-grovel:grovel-file "grovel" :depends-on ("pkgdcl"))
+   (iolib-grovel:grovel-file "grovel" :depends-on ("pkgdcl"))
    (:file "conditions" :depends-on ("pkgdcl" "grovel"))
    (:file "bsd" :depends-on ("pkgdcl" "grovel" "conditions"))
    (:file "common" :depends-on ("pkgdcl" "grovel" "bsd"))

@@ -2,7 +2,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (asdf:oos 'asdf:load-op :iolib.base)
-  (asdf:oos 'asdf:load-op :cffi-grovel))
+  (asdf:oos 'asdf:load-op :iolib-grovel))
 
 (in-package :iolib.asdf)
 
@@ -14,7 +14,7 @@
                                                      *load-truename*)))
                (read f))
   :licence "MIT"
-  :depends-on (:trivial-features :cffi :cffi-grovel :iolib.base
+  :depends-on (:trivial-features :cffi :iolib-grovel :iolib.base
                :libfixposix)
   :default-component-class iolib-source-file
   :pathname #-asdf2 (merge-pathnames "syscalls/" *load-truename*)
@@ -24,7 +24,7 @@
    #+unix
    (:file "syscall-path-strings" :pathname "unix-syscall-path-strings")
    ;; Platform-specific files
-   (cffi-grovel:grovel-file "ffi-types" :pathname #+unix "ffi-types-unix")
+   (iolib-grovel:grovel-file "ffi-types" :pathname #+unix "ffi-types-unix")
    (:file "conditions")
    (:file "os-conditions" :pathname #+unix "os-conditions-unix")
    (:file "designators")
