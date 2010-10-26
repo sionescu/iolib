@@ -32,7 +32,7 @@
 ;;; errno.h
 ;;;-------------------------------------------------------------------------
 
-(cenum (errno-values :define-constants t)
+(constantenum (errno-values :define-constants t)
  (:e2big "E2BIG")
  (:eacces "EACCES")
  (:eaddrinuse "EADDRINUSE")
@@ -83,7 +83,7 @@
  (:enolink "ENOLINK")
  (:enomem "ENOMEM")
  (:enomsg "ENOMSG")
- (:enonet "ENONET")
+ (:enonet "ENONET" :optional t)
  (:enoprotoopt "ENOPROTOOPT")
  (:enospc "ENOSPC")
  (:enosr "ENOSR")

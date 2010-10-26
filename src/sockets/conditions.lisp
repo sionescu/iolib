@@ -33,15 +33,17 @@
 (defparameter *socket-error-map* (make-hash-table :test 'eql))
 
 (defmacro define-socket-error (name identifier &optional documentation)
-  (let ((errno (cffi:foreign-enum-value 'isys:errno-values identifier)))
-    `(progn
-       (setf (gethash ,errno *socket-error-map*) ',name)
-       (define-condition ,name (,(isys:get-syscall-error-condition errno)
-                                 socket-error) ()
-         (:default-initargs :code ,(foreign-enum-value 'socket-error-values
-                                                       identifier)
-           :identifier ,identifier)
-         (:documentation ,(or documentation (isys:strerror identifier)))))))
+  ;; FIXME: find a better way to conditionally define syscall errors
+  (when (find identifier (cffi:foreign-enum-keyword-list 'isys:errno-values))
+    (let ((errno (cffi:foreign-enum-value 'isys:errno-values identifier)))
+      `(progn
+         (setf (gethash ,errno *socket-error-map*) ',name)
+         (define-condition ,name (,(isys:get-syscall-error-condition errno)
+                                   socket-error) ()
+           (:default-initargs :code ,(foreign-enum-value 'socket-error-values
+                                                         identifier)
+             :identifier ,identifier)
+           (:documentation ,(or documentation (isys:strerror identifier))))))))
 
 (defun lookup-socket-error (errno)
   (gethash errno *socket-error-map*))

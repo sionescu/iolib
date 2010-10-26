@@ -63,7 +63,7 @@
   (:econnrefused "ECONNREFUSED")
   (:ehostdown "EHOSTDOWN")
   (:ehostunreach "EHOSTUNREACH")
-  (:enonet "ENONET")
+  (:enonet "ENONET" :optional t)
   (:enobufs "ENOBUFS")
   (:eopnotsupp "EOPNOTSUPP")
   (:ebadf "EBADF")
