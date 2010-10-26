@@ -489,12 +489,12 @@ int main(int argc, char**argv) {
             enum
           (check-type lisp-name keyword)
           (when optional
-            (format out "#if defined(~S)\n" c-name))
+            (format out "#if defined(~A)~%" c-name))
           (format out "  CFFI_DEFCENUM_MEMBER(~S, ~A, ~S);~%"
                   (prin1-to-string lisp-name) c-name
                   (or documentation 'null))
           (when optional
-            (format out "#endif\n"))))
+            (format out "#endif~%"))))
       (format out "  CFFI_DEFCENUM_END;~%")
       (when define-constants
         (define-constants-from-enum out enum-list)))))
