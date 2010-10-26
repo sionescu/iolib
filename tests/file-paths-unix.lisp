@@ -97,7 +97,7 @@
 
 (test (file-path.expand-user.2 :compile-at :definition-time)
   (is-file-path (parse-file-path "~root" :expand-user t)
-                (:root "root")))
+                (:root #+osx "var" "root")))
 
 (test (file-path.expand-user.3 :compile-at :definition-time)
   (is-file-path (parse-file-path "/~root")
@@ -113,7 +113,7 @@
 
 (test (file-path.expand-user.6 :compile-at :definition-time)
   (is-file-path (parse-file-path "~root/a" :expand-user t)
-                (:root "root" "a")))
+                (:root #+osx "var" "root" "a")))
 
 
 (test (file-path.namestring.1 :compile-at :definition-time)
