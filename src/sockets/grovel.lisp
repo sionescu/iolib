@@ -298,9 +298,7 @@
 
 (cunion in6-addr "struct in6_addr"
   "An IPv6 address."
-  (addr8  "s6_addr"   :type :uint8  :count :auto)
-  (addr16 "s6_addr16" :type :uint16 :count :auto)
-  (addr32 "s6_addr32" :type :uint32 :count :auto))
+  (addr8  "s6_addr"   :type :uint8  :count :auto))
 
 (cstruct sockaddr-in6 "struct sockaddr_in6"
   "An IPv6 socket address."
