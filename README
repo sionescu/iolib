@@ -1,14 +1,10 @@
 -*- outline -*-
 
 * Tests
- Some of the socket tests require an echo server runing locally.
-You can either compile and run the provided tests/echo-server.c
-or enabled the echo services in (x)inetd.
-Note: on Darwin, this can be achieved by uncommenting the echo
- service in /etc/inetd.conf and running:
-   sudo xinetd -dontfork -inetd_compat)
-Otherwise, set iolib-tests:*echo-address* and iolib-test:*echo-port*
-appropriately if you want to point the echo tests somewhere else.
+ Some of the socket tests require an echo server, the default being
+one on the Internet. If you can't use that, set
+iolib-tests:*echo-address* and iolib-test:*echo-port* appropriately to
+point the echo tests somewhere else.
 
 * Generating documentation
  To generate the documentation, use this patched version of
