@@ -114,8 +114,7 @@
  (:etxtbsy "ETXTBSY")
  (:ewouldblock "EWOULDBLOCK")
  (:exdev "EXDEV")
- ;; (:ebug "LFP_EBUG")
- )
+ (:ebug "EBUG"))
 
 
 ;;;-------------------------------------------------------------------------
