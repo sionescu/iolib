@@ -33,7 +33,6 @@
    #:suseconds-t #:size-of-suseconds-t
 
    ;; LibFixPOSIX types
-   #:lfp-open-flags #:size-of-lfp-open-flags
 
    ;;;----------------------------------------------------------------------
    ;;; Struct definitions, slots and accessors

@@ -101,7 +101,7 @@
 (defsyscall (%open "lfp_open")
     (:int :restart t)
   (path  sstring)
-  (flags lfp-open-flags)
+  (flags :uint64)
   (mode  mode-t))
 
 (defvar *default-open-mode* #o666)
