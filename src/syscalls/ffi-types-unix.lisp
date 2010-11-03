@@ -181,7 +181,6 @@
           :documentation "stop signal generated from keyboard.")
 (constant (sigcont "SIGCONT") :documentation "continue after stop.")
 (constant (sigchld "SIGCHLD") :documentation "child status has changed.")
-(constant (sigcld "SIGCLD") :documentation "child status has changed.") ; same as above
 (constant (sigttin "SIGTTIN")
           :documentation "background read attempted from control terminal.")
 (constant (sigttou "SIGTTOU")
