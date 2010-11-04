@@ -28,7 +28,7 @@
 ;;; DEALINGS IN THE SOFTWARE.
 ;;;
 
-(in-package #:iolib-grovel)
+(in-package :iolib-grovel)
 
 (defun ensure-pathname (thing)
   (if (typep thing 'logical-pathname)
@@ -45,36 +45,36 @@
 
 ;;;# ASDF component: GROVEL-FILE
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defclass grovel-file (asdf:cl-source-file cc-flags-mixin)
-    ()
-    (:documentation
-      "This ASDF component defines COMPILE-OP and LOAD-SOURCE-OP
+(defclass asdf::iolib-grovel-file (asdf:cl-source-file cc-flags-mixin)
+  ()
+  (:documentation
+   "This ASDF component defines COMPILE-OP and LOAD-SOURCE-OP
 operations that take care of calling PROCESS-GROVEL-FILE in order
 to generate a Lisp file that is subsequently compiled and/or
-loaded.")))
+loaded."))
 
-(defmethod asdf:perform ((op asdf:compile-op) (c grovel-file))
+(defmethod asdf:perform ((op asdf:compile-op)
+                         (c asdf::iolib-grovel-file))
   (let ((output-file (ensure-pathname (car (asdf:output-files op c)))))
     (compile-file (process-grovel-file (asdf:component-pathname c) output-file)
                   :output-file output-file
                   #+ecl :system-p #+ecl t)))
 
-(defmethod asdf:perform ((op asdf:load-source-op) (c grovel-file))
+(defmethod asdf:perform ((op asdf:load-source-op)
+                         (c asdf::iolib-grovel-file))
   (load (process-grovel-file
          (asdf:component-pathname c)
          (ensure-pathname (car (asdf:output-files op c))))))
 
 ;;;# ASDF component: WRAPPER-FILE
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defclass wrapper-file (asdf:cl-source-file cc-flags-mixin)
-    ((soname :initform nil :initarg :soname :accessor soname-of))
-    (:documentation
-      "This ASDF component defines COMPILE-OP and LOAD-SOURCE-OP
+(defclass asdf::iolib-wrapper-file (asdf:cl-source-file cc-flags-mixin)
+  ((soname :initform nil :initarg :soname :accessor soname-of))
+  (:documentation
+   "This ASDF component defines COMPILE-OP and LOAD-SOURCE-OP
 operations that take care of calling PROCESS-WRAPPER-FILE in
 order to generate a foreign library and matching CFFI bindings
-that are subsequently compiled and/or loaded.")))
+that are subsequently compiled and/or loaded."))
 
 (defun %perform-process-wrapper-file (op c)
   (let ((fasl-file (ensure-pathname (car (asdf:output-files op c)))))
@@ -84,17 +84,14 @@ that are subsequently compiled and/or loaded.")))
                                       (asdf:component-name c)))
             fasl-file)))
 
-(defmethod asdf:perform ((op asdf:compile-op) (c wrapper-file))
+(defmethod asdf:perform ((op asdf:compile-op)
+                         (c asdf::iolib-wrapper-file))
   (multiple-value-bind (generated-source-file fasl-file)
       (%perform-process-wrapper-file op c)
     (compile-file generated-source-file
                   :output-file fasl-file
                   #+ecl :system-p #+ecl t)))
 
-(defmethod asdf:perform ((op asdf:load-source-op) (c wrapper-file))
+(defmethod asdf:perform ((op asdf:load-source-op)
+                         (c asdf::iolib-wrapper-file))
   (load (%perform-process-wrapper-file op c)))
-
-;; Allow for naked :grovel-file and :wrapper-file in asdf definitions.
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (setf (find-class 'asdf::iolib-grovel-file) (find-class 'grovel-file))
-  (setf (find-class 'asdf::iolib-wrapper-file) (find-class 'wrapper-file)))

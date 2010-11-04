@@ -1,12 +1,6 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:oos 'asdf:load-op :iolib.base)
-  (asdf:oos 'asdf:load-op :iolib-grovel))
-
-(in-package :iolib.asdf)
-
-(defsystem :iolib.syscalls
+(asdf:defsystem :iolib.syscalls
   :description "Syscalls and foreign types."
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :version #.(with-open-file (f (merge-pathnames "../version.lisp-expr"
@@ -14,17 +8,17 @@
                                                      *load-truename*)))
                (read f))
   :licence "MIT"
+  :defsystem-depends-on (:iolib.base :iolib-grovel)
   :depends-on (:trivial-features :cffi :iolib-grovel :iolib.base
                :libfixposix)
-  :default-component-class iolib-source-file
-  :pathname #-asdf2 (merge-pathnames "syscalls/" *load-truename*)
-            #+asdf2 "syscalls/"
+  :default-component-class :iolib-source-file
+  :pathname "syscalls/"
   :components
   ((:file "pkgdcl")
    #+unix
    (:file "syscall-path-strings" :pathname "unix-syscall-path-strings")
    ;; Platform-specific files
-   (iolib-grovel:grovel-file "ffi-types" :pathname #+unix "ffi-types-unix")
+   (:iolib-grovel-file "ffi-types" :pathname #+unix "ffi-types-unix")
    (:file "conditions")
    (:file "os-conditions" :pathname #+unix "os-conditions-unix")
    (:file "designators")

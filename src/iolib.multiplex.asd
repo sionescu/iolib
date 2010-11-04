@@ -1,11 +1,6 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:oos 'asdf:load-op :iolib.base))
-
-(in-package :iolib.asdf)
-
-(defsystem :iolib.multiplex
+(asdf:defsystem :iolib.multiplex
   :description "I/O multiplexing library."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
@@ -14,10 +9,10 @@
                                                      *load-truename*)))
                (read f))
   :licence "MIT"
+  :defsystem-depends-on (:iolib.base)
   :depends-on (:iolib.base :iolib.syscalls :cffi)
-  :default-component-class iolib-source-file
-  :pathname #-asdf2 (merge-pathnames "multiplex/" *load-truename*)
-            #+asdf2 "multiplex/"
+  :default-component-class :iolib-source-file
+  :pathname "multiplex/"
   :components
   ((:file "pkgdcl")
 

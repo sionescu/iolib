@@ -1,11 +1,6 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:oos 'asdf:load-op :iolib.base))
-
-(in-package :iolib.asdf)
-
-(defsystem :iolib.trivial-sockets
+(asdf:defsystem :iolib.trivial-sockets
   :description "Trivial-Sockets compatibility layer."
   :author "Dan Barlow <dan@telent.net>"
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
@@ -14,9 +9,9 @@
                                                      *load-truename*)))
                (read f))
   :licence "MIT"
+  :defsystem-depends-on (:iolib.base)
   :depends-on (:iolib.base :iolib.sockets)
-  :default-component-class iolib-source-file
-  :pathname #-asdf2 (merge-pathnames "sockets/" *load-truename*)
-            #+asdf2 "sockets/"
+  :default-component-class :iolib-source-file
+  :pathname "sockets/"
   :components
   ((:file "trivial-sockets")))

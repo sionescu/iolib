@@ -10,8 +10,7 @@
                (read f))
   :licence "MIT"
   :depends-on (:alexandria)
-  :pathname #-asdf2 (merge-pathnames "base/" *load-truename*)
-            #+asdf2 "base/"
+  :pathname "base/"
   :components
   ((:file "pkgdcl")
    (:file "return-star" :depends-on ("pkgdcl"))

@@ -3,9 +3,9 @@
 ;;; --- ASDF component classes
 ;;;
 
-(in-package :iolib.asdf)
+(in-package :iolib.base)
 
-(defclass muffled-source-file (asdf:cl-source-file) ())
+(defclass :iolib-muffled-source-file (asdf:cl-source-file) ())
 
 (macrolet ((with-muffled-output (&body body)
              `(let ((*load-print* nil)
@@ -14,14 +14,14 @@
                     (*compile-verbose* t)
                     #+cmu (ext:*gc-verbose* nil))
                 ,@body)))
-  (defmethod asdf:perform :around ((o asdf:compile-op) (c muffled-source-file))
+  (defmethod asdf:perform :around ((o asdf:compile-op)
+                                   (c :iolib-muffled-source-file))
     (with-muffled-output
       (call-next-method)))
 
-  (defmethod asdf:perform :around ((o asdf:load-source-op) (c muffled-source-file))
+  (defmethod asdf:perform :around ((o asdf:load-source-op)
+                                   (c :iolib-muffled-source-file))
     (with-muffled-output
       (call-next-method))))
 
-(defclass iolib-source-file (muffled-source-file) ())
-
-(import 'iolib-source-file (find-package :asdf))
+(defclass :iolib-source-file (:iolib-muffled-source-file) ())

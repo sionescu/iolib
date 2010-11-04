@@ -1,12 +1,6 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:oos 'asdf:load-op :iolib.base)
-  (asdf:oos 'asdf:load-op :iolib-grovel))
-
-(in-package :iolib.asdf)
-
-(defsystem :iolib.sockets
+(asdf:defsystem :iolib.sockets
   :description "Socket library."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
@@ -15,14 +9,14 @@
                                                      *load-truename*)))
                (read f))
   :licence "MIT"
+  :defsystem-depends-on (:iolib.base :iolib-grovel)
   :depends-on (:iolib.base :iolib.syscalls :iolib.streams
                :babel :cffi :iolib-grovel :bordeaux-threads)
-  :default-component-class iolib-source-file
-  :pathname #-asdf2 (merge-pathnames "sockets/" *load-truename*)
-            #+asdf2 "sockets/"
+  :default-component-class :iolib-source-file
+  :pathname "sockets/"
   :components
   ((:file "pkgdcl")
-   (iolib-grovel:grovel-file "grovel" :depends-on ("pkgdcl"))
+   (:iolib-grovel-file "grovel" :depends-on ("pkgdcl"))
    (:file "conditions" :depends-on ("pkgdcl" "grovel"))
    (:file "bsd" :depends-on ("pkgdcl" "grovel" "conditions"))
    (:file "common" :depends-on ("pkgdcl" "grovel" "bsd"))

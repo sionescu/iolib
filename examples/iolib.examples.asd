@@ -4,18 +4,14 @@
 ;;; and this code is released under the same license as IOLib.
 ;;;
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (asdf:oos 'asdf:load-op :iolib.base))
-
-(in-package :iolib.asdf)
-
-(defsystem :iolib.examples
+(asdf:defsystem :iolib.examples
   :version #.(with-open-file (f (merge-pathnames "../version.lisp-expr"
                                                  (or *compile-file-pathname*
                                                      *load-truename*)))
                (read f))
+  :defsystem-depends-on (:iolib.base)
   :depends-on (:iolib :bordeaux-threads)
-  :default-component-class iolib-source-file
+  :default-component-class :iolib-source-file
   :components ((:file "package")
                (:file "ex1-client" :depends-on ("package"))
                (:file "ex2-client" :depends-on ("package"))

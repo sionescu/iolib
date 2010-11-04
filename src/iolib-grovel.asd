@@ -25,10 +25,10 @@
 ;;; DEALINGS IN THE SOFTWARE.
 ;;;
 
-(asdf:defsystem iolib-grovel
+(asdf:defsystem :iolib-grovel
   :description "The CFFI Groveller"
   :author "Dan Knapp <dankna@accela.net>"
-  :depends-on (cffi alexandria)
+  :depends-on (:alexandria :cffi)
   :licence "MIT"
   :components
   ((:module grovel

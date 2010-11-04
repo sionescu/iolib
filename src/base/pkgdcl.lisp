@@ -53,15 +53,6 @@
    #:decode-timeout #:normalize-timeout #:clamp-timeout
    ))
 
-(defpackage :iolib.asdf
-  (:use :iolib.base)
-  (:import-from :asdf #:defsystem #:find-system
-                #:oos #:operate #:perform
-                #:test-op #:load-op #:compile-op
-                #:operation-done-p)
-  ;; ASDF components
-  (:export #:muffled-source-file #:iolib-source-file))
-
 (flet ((gather-external-symbols (&rest packages)
          (let (symbols)
            (with-package-iterator (iterator packages :external)
