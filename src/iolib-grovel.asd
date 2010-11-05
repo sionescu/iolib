@@ -28,16 +28,17 @@
 (asdf:defsystem :iolib-grovel
   :description "The CFFI Groveller"
   :author "Dan Knapp <dankna@accela.net>"
+  :defsystem-depends-on (:iolib.asdf)
   :depends-on (:alexandria :cffi)
+  :default-component-class :iolib-source-file
   :licence "MIT"
+  :pathname "grovel/"
   :components
-  ((:module grovel
-    :serial t
-    :components
-    ((:file "package")
-     (:file "invoke")
-     (:static-file "common.h")
-     (:file "grovel")
-     (:file "asdf")))))
+  ((:file "package")
+   (:file "invoke")
+   (:static-file "common.h")
+   (:file "grovel")
+   (:file "asdf"))
+  :serial t)
 
 ;; vim: ft=lisp et

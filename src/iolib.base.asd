@@ -9,7 +9,9 @@
                                                      *load-truename*)))
                (read f))
   :licence "MIT"
+  :defsystem-depends-on (:iolib.asdf)
   :depends-on (:alexandria)
+  :default-component-class :iolib-source-file
   :pathname "base/"
   :components
   ((:file "pkgdcl")

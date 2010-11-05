@@ -9,7 +9,7 @@
                                                      *load-truename*)))
                (read f))
   :licence "MIT"
-  :defsystem-depends-on (:iolib.base :iolib-grovel)
+  :defsystem-depends-on (:iolib.asdf :iolib-grovel)
   :depends-on (:iolib.base :iolib.syscalls :iolib.streams
                :babel :cffi :iolib-grovel :bordeaux-threads)
   :default-component-class :iolib-source-file

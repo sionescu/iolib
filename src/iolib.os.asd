@@ -8,8 +8,8 @@
                                                      *load-truename*)))
                (read f))
   :licence "MIT"
-  :defsystem-depends-on (:iolib.base :iolib-grovel)
-  :depends-on (:iolib-grovel :iolib.base :iolib.syscalls
+  :defsystem-depends-on (:iolib.asdf :iolib-grovel)
+  :depends-on (:iolib.base :iolib-grovel :iolib.syscalls
                :iolib.streams :iolib.pathnames)
   :default-component-class :iolib-source-file
   :pathname "os/"

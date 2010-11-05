@@ -9,7 +9,7 @@
                                                      *load-truename*)))
                (read f))
   :licence "MIT"
-  :defsystem-depends-on (:iolib.base)
+  :defsystem-depends-on (:iolib.asdf)
   :depends-on (:iolib.base :iolib.syscalls :cffi)
   :default-component-class :iolib-source-file
   :pathname "multiplex/"

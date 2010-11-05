@@ -8,7 +8,7 @@
                                                      *load-truename*)))
                (read f))
   :licence "Boost-1.0"
-  :defsystem-depends-on (:iolib.base :iolib-grovel)
+  :defsystem-depends-on (:iolib.asdf :iolib-grovel)
   :depends-on (:iolib.base :cffi :iolib-grovel)
   :default-component-class :iolib-source-file
   :pathname "libfixposix/"

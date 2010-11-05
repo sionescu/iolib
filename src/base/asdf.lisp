@@ -3,7 +3,9 @@
 ;;; --- ASDF component classes
 ;;;
 
-(in-package :iolib.base)
+(defpackage :iolib.asdf
+  (:use :common-lisp))
+(in-package :iolib.asdf)
 
 (defclass :iolib-muffled-source-file (asdf:cl-source-file) ())
 
