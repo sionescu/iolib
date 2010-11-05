@@ -9,9 +9,9 @@
 
 (macrolet ((with-muffled-output (&body body)
              `(let ((*load-print* nil)
-                    (*load-verbose* t)
+                    (*load-verbose* nil)
                     (*compile-print* nil)
-                    (*compile-verbose* t)
+                    (*compile-verbose* nil)
                     #+cmu (ext:*gc-verbose* nil))
                 ,@body)))
   (defmethod asdf:perform :around ((o asdf:compile-op)
