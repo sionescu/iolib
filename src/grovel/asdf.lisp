@@ -45,7 +45,7 @@
 
 ;;;# ASDF component: GROVEL-FILE
 
-(defclass asdf::iolib-grovel-file (asdf:cl-source-file cc-flags-mixin)
+(defclass asdf::iolib-grovel-file (:iolib-muffled-source-file cc-flags-mixin)
   ()
   (:documentation
    "This ASDF component defines COMPILE-OP and LOAD-SOURCE-OP
@@ -68,7 +68,7 @@ loaded."))
 
 ;;;# ASDF component: WRAPPER-FILE
 
-(defclass asdf::iolib-wrapper-file (asdf:cl-source-file cc-flags-mixin)
+(defclass asdf::iolib-wrapper-file (:iolib-muffled-source-file cc-flags-mixin)
   ((soname :initform nil :initarg :soname :accessor soname-of))
   (:documentation
    "This ASDF component defines COMPILE-OP and LOAD-SOURCE-OP

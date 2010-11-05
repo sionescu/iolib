@@ -29,7 +29,7 @@
   :description "The CFFI Groveller"
   :author "Dan Knapp <dankna@accela.net>"
   :defsystem-depends-on (:iolib.asdf)
-  :depends-on (:alexandria :cffi)
+  :depends-on (:alexandria :cffi :iolib.asdf)
   :default-component-class :iolib-source-file
   :licence "MIT"
   :pathname "grovel/"
