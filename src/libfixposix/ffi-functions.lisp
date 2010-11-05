@@ -99,9 +99,6 @@ The two memory areas may overlap."
   (msgh :pointer)
   (cmsg :pointer))
 
-(defcfun (cmsg.align "lfp_cmsg_align") size-t
-  (length size-t))
-
 (defcfun (cmsg.space "lfp_cmsg_space") size-t
   (length size-t))
 
