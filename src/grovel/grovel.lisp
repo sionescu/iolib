@@ -330,14 +330,17 @@ int main(int argc, char**argv) {
   (format out "  CFFI_DEFCTYPE(~S, ~A);~%"
           (string lisp-name) c-name))
 
+(defun docstring-to-c (docstring)
+  (if docstring (format nil "~S" docstring) "NULL"))
+
 (define-grovel-syntax constant ((lisp-name &rest c-names) &key documentation optional)
   (c-section-header out "constant" lisp-name)
   (loop :for i :from 0
         :for c-name :in c-names :do
         (format out "~A defined(~A)~%" (if (zerop i) "#if" "#elif") c-name)
-        (format out "  CFFI_DEFCONSTANT(~S, ~A, ~S);~%"
+        (format out "  CFFI_DEFCONSTANT(~S, ~A, ~A);~%"
                 (string lisp-name) c-name
-                (or documentation 'null)))
+                (docstring-to-c documentation)))
   (unless optional
     (format out "#else~%  cffi_signal_missing_definition(output, ~S);~%"
             (string lisp-name)))
@@ -346,9 +349,9 @@ int main(int argc, char**argv) {
 (define-grovel-syntax cunion (union-lisp-name union-c-name &rest slots)
   (let ((documentation (when (stringp (car slots)) (pop slots))))
     (c-section-header out "cunion" union-lisp-name)
-    (format out "  CFFI_DEFCUNION_START(~S, ~A, ~S);~%"
+    (format out "  CFFI_DEFCUNION_START(~S, ~A, ~A);~%"
             (string union-lisp-name) union-c-name
-            (or documentation 'null))
+            (docstring-to-c documentation))
     (dolist (slot slots)
       (destructuring-bind (slot-lisp-name slot-c-name &key type (count 1))
           slot
@@ -427,9 +430,9 @@ int main(int argc, char**argv) {
 (define-grovel-syntax cstruct (struct-lisp-name struct-c-name &rest slots)
   (let ((documentation (when (stringp (car slots)) (pop slots))))
     (c-section-header out "cstruct" struct-lisp-name)
-    (format out "  CFFI_DEFCSTRUCT_START(~S, ~A, ~S);~%"
+    (format out "  CFFI_DEFCSTRUCT_START(~S, ~A, ~A);~%"
             (string struct-lisp-name) struct-c-name
-            (or documentation 'null))
+            (docstring-to-c documentation))
     (dolist (slot slots)
       (destructuring-bind (slot-lisp-name slot-c-name &key type (count 1))
           slot
@@ -462,16 +465,16 @@ int main(int argc, char**argv) {
     (destructuring-bind (name &key (base-type :int) define-constants)
         (ensure-list name)
       (c-section-header out "cenum" name)
-      (format out "  CFFI_DEFCENUM_START(~S, ~S, ~S);~%"
+      (format out "  CFFI_DEFCENUM_START(~S, ~S, ~A);~%"
               (string name) (prin1-to-string base-type)
-              (or documentation 'null))
+              (docstring-to-c documentation))
       (dolist (enum enum-list)
         (destructuring-bind (lisp-name c-name &key documentation)
             enum
           (check-type lisp-name keyword)
-          (format out "  CFFI_DEFCENUM_MEMBER(~S, ~A, ~S);~%"
+          (format out "  CFFI_DEFCENUM_MEMBER(~S, ~A, ~A);~%"
                   (prin1-to-string lisp-name) c-name
-                  (or documentation 'null))))
+                  (docstring-to-c documentation))))
       (format out "  CFFI_DEFCENUM_END;~%")
       (when define-constants
         (define-constants-from-enum out enum-list)))))
@@ -481,18 +484,18 @@ int main(int argc, char**argv) {
     (destructuring-bind (name &key (base-type :int) define-constants)
         (ensure-list name)
       (c-section-header out "constantenum" name)
-      (format out "  CFFI_DEFCENUM_START(~S, ~S, ~S);~%"
+      (format out "  CFFI_DEFCENUM_START(~S, ~S, ~A);~%"
               (string name) (prin1-to-string base-type)
-              (or documentation 'null))
+              (docstring-to-c documentation))
       (dolist (enum enum-list)
         (destructuring-bind (lisp-name c-name &key documentation optional)
             enum
           (check-type lisp-name keyword)
           (when optional
             (format out "#if defined(~A)~%" c-name))
-          (format out "  CFFI_DEFCENUM_MEMBER(~S, ~A, ~S);~%"
+          (format out "  CFFI_DEFCENUM_MEMBER(~S, ~A, ~A);~%"
                   (prin1-to-string lisp-name) c-name
-                  (or documentation 'null))
+                  (docstring-to-c documentation))
           (when optional
             (format out "#endif~%"))))
       (format out "  CFFI_DEFCENUM_END;~%")
