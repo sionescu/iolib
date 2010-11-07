@@ -26,4 +26,9 @@
     (with-muffled-output
       (call-next-method))))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  ;; SCL 1.3.9.1 doesn't allow superclasses to be keywords
+  ;; Fix suggested by DTC
+  (defun clos::legal-class-name-p (x) (and x (symbolp x))))
+
 (defclass :iolib-source-file (:iolib-muffled-source-file) ())
