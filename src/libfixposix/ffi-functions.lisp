@@ -7,7 +7,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (define-foreign-library libfixposix
-    (:unix "libfixposix.so"))
+    (t (:default "libfixposix")))
   (use-foreign-library libfixposix))
 
 
