@@ -10,14 +10,9 @@
 (defclass :iolib-muffled-source-file (asdf:cl-source-file) ())
 
 (macrolet ((with-muffled-output (&body body)
-             `(let ((*load-print* nil)
-                    (*load-verbose* nil)
-                    (*compile-print* nil)
-                    (*compile-verbose* nil)
-                    #+cmu (ext:*gc-verbose* nil))
-                (handler-bind (#+sbcl
-                               (sb-int:package-at-variance #'muffle-warning))
-                  ,@body))))
+             `(handler-bind
+                  (#+sbcl (sb-int:package-at-variance #'muffle-warning))
+                ,@body)))
   (defmethod asdf:perform :around ((o asdf:compile-op)
                                    (c :iolib-muffled-source-file))
     (with-muffled-output
