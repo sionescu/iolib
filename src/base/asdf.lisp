@@ -15,8 +15,15 @@
                     (*compile-print* nil)
                     (*compile-verbose* nil)
                     #+cmu (ext:*gc-verbose* nil))
-                ,@body)))
+                (handler-bind (#+sbcl
+                               (sb-int:package-at-variance #'muffle-warning))
+                  ,@body))))
   (defmethod asdf:perform :around ((o asdf:compile-op)
+                                   (c :iolib-muffled-source-file))
+    (with-muffled-output
+      (call-next-method)))
+
+  (defmethod asdf:perform :around ((o asdf:load-op)
                                    (c :iolib-muffled-source-file))
     (with-muffled-output
       (call-next-method)))
