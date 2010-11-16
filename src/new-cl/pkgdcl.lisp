@@ -3,8 +3,8 @@
 (in-package :iolib.internal.conduits)
 
 (macrolet
-    ((#1=#:define-gray-streams-package ()
-       (let ((#2=#:gray-streams-package
+    ((define-gray-streams-package ()
+       (let ((#1=gray-streams-package
               #+allegro :excl
               #+(or cmu scl) :ext
               #+(or clisp ecl) :gray
@@ -13,7 +13,7 @@
               #+sbcl :sb-gray
               #-(or allegro cmu scl clisp ecl ccl openmcl lispworks sbcl)
               (cl:error "Your CL implementation isn't supported."))
-             (#3=#:gray-streams-symbols
+             (#2=gray-streams-symbols
               '(#:fundamental-stream #:fundamental-input-stream
                 #:fundamental-output-stream #:fundamental-character-stream
                 #:fundamental-binary-stream #:fundamental-character-input-stream
@@ -36,13 +36,13 @@
             (:export #:defconstant)
             (:extend/excluding :iolib.internal.conduits
                                #:recompute-conduits)
-            (:import-from ,#2# ,@#3#)
+            (:import-from ,#1# ,@#2#)
             (:export #:trivial-gray-stream-mixin
                      #:stream-read-sequence
                      #:stream-write-sequence
                      #:stream-file-position
-                     ,@#3#)))))
-  (#1#))
+                     ,@#2#)))))
+  (define-gray-streams-package))
 
 (defpackage :iolib.common-lisp-user
   (:nicknames :iolib.cl-user)
