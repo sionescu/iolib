@@ -28,8 +28,8 @@
 (asdf:defsystem :iolib-grovel
   :description "The CFFI Groveller"
   :author "Dan Knapp <dankna@accela.net>"
-  :defsystem-depends-on (:iolib.asdf)
-  :depends-on (:alexandria :cffi :iolib.asdf)
+  :defsystem-depends-on (:iolib.asdf :iolib.conf)
+  :depends-on (:alexandria :cffi :iolib.asdf :iolib.conf)
   :default-component-class :iolib-source-file
   :licence "MIT"
   :pathname "grovel/"
@@ -39,6 +39,10 @@
    (:static-file "common.h")
    (:file "grovel")
    (:file "asdf"))
-  :serial t)
+  :serial t
+  :perform (compile-op :before (o c)
+             #+allegro (require "osi"))
+  :perform (load-op :before (o c)
+             #+allegro (require "osi")))
 
 ;; vim: ft=lisp et
