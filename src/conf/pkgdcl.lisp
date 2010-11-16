@@ -5,5 +5,4 @@
 
 (cl:defpackage :iolib.conf
   (:use :common-lisp)
-  (:export #:load-gray-streams
-           #:load-os-package))
+  (:export #:load-gray-streams))

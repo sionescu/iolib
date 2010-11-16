@@ -14,7 +14,3 @@
   #+ecl
   (when (fboundp 'gray::redefine-cl-functions)
     (gray::redefine-cl-functions)))
-
-(defun load-os-package ()
-  #+allegro
-  (require "osi"))
