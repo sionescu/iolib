@@ -5,16 +5,21 @@
 
 (in-package :iolib.syscalls)
 
-;;; Needed for clock_gettime() and friends.
+;; FIXME: move this into an ASDF operation
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (define-foreign-library librt
-    (:linux "librt.so"))
-  (use-foreign-library librt))
+  (define-foreign-library libfixposix
+    (t (:default "libfixposix")))
+  (use-foreign-library libfixposix))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; ERRNO-related functions
 ;;;-------------------------------------------------------------------------
+
+(defcfun (errno "lfp_errno") :int)
+
+(defun (setf errno) (value)
+  (foreign-funcall "lfp_set_errno" :int value :int))
 
 (defsyscall (%strerror "lfp_strerror")
     :int
@@ -46,52 +51,32 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; I/O
+;;; Memory manipulation
 ;;;-------------------------------------------------------------------------
 
-(defsyscall (read "read")
-    (ssize-t :restart t :handle fd)
-  "Read at most COUNT bytes from FD into the foreign area BUF."
-  (fd    :int)
-  (buf   :pointer)
+(defcfun (memset "memset") :pointer
+  "Fill the first COUNT bytes of BUFFER with the constant VALUE."
+  (buffer :pointer)
+  (value  :int)
+  (count  size-t))
+
+(defun bzero (buffer count)
+  "Fill the first COUNT bytes of BUFFER with zeros."
+  (memset buffer 0 count))
+
+(defcfun (memcpy "memcpy") :pointer
+  "Copy COUNT octets from SRC to DEST.
+The two memory areas must not overlap."
+  (dest :pointer)
+  (src  :pointer)
   (count size-t))
 
-(defsyscall (write "write")
-    (ssize-t :restart t :handle fd)
-  "Write at most COUNT bytes to FD from the foreign area BUF."
-  (fd    :int)
-  (buf   :pointer)
+(defcfun (memmove "memmove") :pointer
+  "Copy COUNT octets from SRC to DEST.
+The two memory areas may overlap."
+  (dest :pointer)
+  (src  :pointer)
   (count size-t))
-
-(defsyscall (readv "readv")
-    (ssize-t :restart t :handle fd)
-  "Read from FD into the first IOVCNT buffers of the IOV array."
-  (fd     :int)
-  (iov    :pointer)
-  (iovcnt :int))
-
-(defsyscall (writev "writev")
-    (ssize-t :restart t :handle fd)
-  "Writes to FD the first IOVCNT buffers of the IOV array."
-  (fd     :int)
-  (iov    :pointer)
-  (iovcnt :int))
-
-(defsyscall (pread "lfp_pread")
-    (ssize-t :restart t :handle fd)
-  "Read at most COUNT bytes from FD at offset OFFSET into the foreign area BUF."
-  (fd     :int)
-  (buf    :pointer)
-  (count  size-t)
-  (offset off-t))
-
-(defsyscall (pwrite "lfp_pwrite")
-    (ssize-t :restart t :handle fd)
-  "Write at most COUNT bytes to FD at offset OFFSET from the foreign area BUF."
-  (fd     :int)
-  (buf    :pointer)
-  (count  size-t)
-  (offset off-t))
 
 
 ;;;-------------------------------------------------------------------------
@@ -104,11 +89,8 @@
   (flags :uint64)
   (mode  mode-t))
 
-(defvar *default-open-mode* #o666)
-
-(defentrypoint open (path flags &optional (mode *default-open-mode*))
-  "Open a file descriptor for PATH using FLAGS and permissions MODE
-\(default value is *DEFAULT-OPEN-MODE* - #o666)."
+(defentrypoint open (path flags &optional (mode #o666))
+  "Open a file descriptor for PATH using FLAGS and permissions MODE(#o666 by default)."
   (%open path flags mode))
 
 (defsyscall (creat "lfp_creat")
@@ -232,6 +214,55 @@ to the argument OFFSET according to the directive WHENCE."
   "Change permissions of open file referenced by FD to mode MODE."
   (fd   :int)
   (mode mode-t))
+
+
+;;;-------------------------------------------------------------------------
+;;; I/O
+;;;-------------------------------------------------------------------------
+
+(defsyscall (read "read")
+    (ssize-t :restart t :handle fd)
+  "Read at most COUNT bytes from FD into the foreign area BUF."
+  (fd    :int)
+  (buf   :pointer)
+  (count size-t))
+
+(defsyscall (write "write")
+    (ssize-t :restart t :handle fd)
+  "Write at most COUNT bytes to FD from the foreign area BUF."
+  (fd    :int)
+  (buf   :pointer)
+  (count size-t))
+
+(defsyscall (readv "readv")
+    (ssize-t :restart t :handle fd)
+  "Read from FD into the first IOVCNT buffers of the IOV array."
+  (fd     :int)
+  (iov    :pointer)
+  (iovcnt :int))
+
+(defsyscall (writev "writev")
+    (ssize-t :restart t :handle fd)
+  "Writes to FD the first IOVCNT buffers of the IOV array."
+  (fd     :int)
+  (iov    :pointer)
+  (iovcnt :int))
+
+(defsyscall (pread "lfp_pread")
+    (ssize-t :restart t :handle fd)
+  "Read at most COUNT bytes from FD at offset OFFSET into the foreign area BUF."
+  (fd     :int)
+  (buf    :pointer)
+  (count  size-t)
+  (offset off-t))
+
+(defsyscall (pwrite "lfp_pwrite")
+    (ssize-t :restart t :handle fd)
+  "Write at most COUNT bytes to FD at offset OFFSET from the foreign area BUF."
+  (fd     :int)
+  (buf    :pointer)
+  (count  size-t)
+  (offset off-t))
 
 
 ;;;-------------------------------------------------------------------------
@@ -380,19 +411,6 @@ Return two values: the file descriptor and the path of the temporary file."
     (t (error 'type-error :datum arg
               :expected-type '(or null integer foreign-pointer)))))
 
-(defentrypoint fd-nonblock (fd)
-  (let ((current-flags (fcntl fd f-getfl)))
-    (logtest o-nonblock current-flags)))
-
-(defentrypoint (setf fd-nonblock) (newmode fd)
-  (let* ((current-flags (fcntl fd f-getfl))
-         (new-flags (if newmode
-                        (logior current-flags o-nonblock)
-                        (logandc2 current-flags o-nonblock))))
-    (when (/= new-flags current-flags)
-      (fcntl fd f-setfl new-flags))
-    newmode))
-
 (defsyscall (%ioctl/noarg "ioctl")
     (:int :handle fd)
   "Send request REQUEST to file referenced by FD."
@@ -414,10 +432,28 @@ Return two values: the file descriptor and the path of the temporary file."
     (t (error 'type-error :datum arg
               :expected-type '(or null foreign-pointer)))))
 
-(defentrypoint fd-open-p (fd)
-  (handler-case
-      (progn (fstat fd) t)
-    (ebadf () nil)))
+(defsyscall (fd-cloexec-p "lfp_is_fd_cloexec") bool-designator
+  (fd :int))
+
+(defsyscall (%set-fd-cloexec "lfp_set_fd_cloexec") :int
+  (fd      :int)
+  (enabled bool-designator))
+
+(defentrypoint (setf fd-cloexec-p) (enabled fd)
+  (%set-fd-cloexec fd enabled))
+
+(defsyscall (fd-nonblock-p "lfp_is_fd_nonblock") bool-designator
+  (fd :int))
+
+(defsyscall (%set-fd-nonblock "lfp_set_fd_nonblock") :int
+  (fd      :int)
+  (enabled bool-designator))
+
+(defentrypoint (setf fd-nonblock-p) (enabled fd)
+  (%set-fd-nonblock fd enabled))
+
+(defsyscall (fd-open-p "lfp_is_fd_open") bool-designator
+  (fd :int))
 
 
 ;;;-------------------------------------------------------------------------
@@ -441,11 +477,8 @@ Return two values: the file descriptor and the path of the temporary file."
 
 
 ;;;-------------------------------------------------------------------------
-;;; File descriptor polling
+;;; I/O polling
 ;;;-------------------------------------------------------------------------
-
-(defun fd-isset (fd fd-set)
-  (plusp (foreign-funcall "lfp_fd_isset" :int fd :pointer fd-set bool)))
 
 (defsyscall (select "lfp_select") :int
   "Scan for I/O activity on multiple file descriptors."
@@ -455,6 +488,25 @@ Return two values: the file descriptor and the path of the temporary file."
   (exceptfds :pointer)
   (timeout   :pointer)
   (sigmask   :pointer))
+
+(defentrypoint copy-fd-set (from to)
+  (memcpy to from size-of-fd-set)
+  to)
+
+(defcfun (fd-clr "lfp_fd_clr") :void
+  (fd     :int)
+  (fd-set :pointer))
+
+(defcfun (fd-isset "lfp_fd_isset") bool
+  (fd     :int)
+  (fd-set :pointer))
+
+(defcfun (fd-set "lfp_fd_set") :void
+  (fd     :int)
+  (fd-set :pointer))
+
+(defcfun (fd-zero "lfp_fd_zero") :void
+  (fd-set :pointer))
 
 ;;; FIXME: Until a way to autodetect platform features is implemented
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -511,6 +563,27 @@ Return two values: the file descriptor and the path of the temporary file."
 
 
 ;;;-------------------------------------------------------------------------
+;;; Socket message readers
+;;;-------------------------------------------------------------------------
+
+(defcfun (cmsg.firsthdr "lfp_cmsg_firsthdr") :pointer
+  (msgh :pointer))
+
+(defcfun (cmsg.nxthdr "lfp_cmsg_nxthdr") :pointer
+  (msgh :pointer)
+  (cmsg :pointer))
+
+(defcfun (cmsg.space "lfp_cmsg_space") size-t
+  (length size-t))
+
+(defcfun (cmsg.len "lfp_cmsg_len") size-t
+  (length size-t))
+
+(defcfun (cmsg.data "lfp_cmsg_data") :pointer
+  (cmsg :pointer))
+
+
+;;;-------------------------------------------------------------------------
 ;;; Directory walking
 ;;;-------------------------------------------------------------------------
 
@@ -522,10 +595,7 @@ Return two values: the file descriptor and the path of the temporary file."
   "Close directory DIR when done listing its contents."
   (dirp :pointer))
 
-(defsyscall (%readdir "lfp_readdir")
-    (:int
-     :error-predicate plusp
-     :error-location :return)
+(defsyscall (%readdir "lfp_readdir") :int
   (dirp   :pointer)
   (entry  :pointer)
   (result :pointer))
@@ -582,17 +652,6 @@ processes mapping the same region."
 ;;;-------------------------------------------------------------------------
 ;;; Process creation and info
 ;;;-------------------------------------------------------------------------
-
-(defsyscall (fork "fork") pid-t
-  "Create a child process.")
-
-(defsyscall (execv "execv") :int
-  (path :string)
-  (argv :pointer))
-
-(defsyscall (execvp "execvp") :int
-  (file :string)
-  (argv :pointer))
 
 (defsyscall (%waitpid "waitpid") pid-t
   (pid     pid-t)
@@ -772,101 +831,44 @@ as indicated by WHICH and WHO to VALUE."
   "Suspend execution for USECONDS microseconds."
   (useconds useconds-t))
 
-(defsyscall (%time "time") time-t
-  (tloc :pointer))
+(defsyscall (%clock-getres "lfp_clock_getres") :int
+  "Returns the resolution of the clock CLOCKID."
+  (clockid clockid-t)
+  (res     :pointer))
 
-(defentrypoint time ()
-  "Get time in seconds."
-  (%time (null-pointer)))
+(defentrypoint clock-getres (clock-id)
+  (with-foreign-object (ts 'timespec)
+    (with-foreign-slots ((sec nsec) ts timespec)
+      (%clock-getres clock-id ts)
+      (values sec nsec))))
 
-(defsyscall (%gettimeofday "gettimeofday") :int
-  (tp  :pointer)
-  (tzp :pointer))
+(defsyscall (%clock-gettime "lfp_clock_gettime") :int
+  (clockid clockid-t)
+  (tp      :pointer))
 
-(defentrypoint gettimeofday ()
-  "Return the time in seconds and microseconds."
-  (with-foreign-object (tv 'timeval)
-    (with-foreign-slots ((sec usec) tv timeval)
-      (%gettimeofday tv (null-pointer))
-      (values sec usec))))
+(defentrypoint clock-gettime (clock-id)
+  "Returns the time of the clock CLOCKID."
+  (with-foreign-object (ts 'timespec)
+    (with-foreign-slots ((sec nsec) ts timespec)
+      (%clock-gettime clock-id ts)
+      (values sec nsec))))
 
-#-darwin
-(progn
-  (defsyscall (%clock-getres "clock_getres") :int
-    "Returns the resolution of the clock CLOCKID."
-    (clockid clockid-t)
-    (res     :pointer))
+(defsyscall (%clock-settime "lfp_clock_settime") :int
+  (clockid clockid-t)
+  (tp      :pointer))
 
-  (defentrypoint clock-getres (clock-id)
-    (with-foreign-object (ts 'timespec)
-      (with-foreign-slots ((sec nsec) ts timespec)
-        (%clock-getres clock-id ts)
-        (values sec nsec))))
+(defentrypoint clock-settime (clock-id)
+  "Sets the time of the clock CLOCKID."
+  (with-foreign-object (ts 'timespec)
+    (with-foreign-slots ((sec nsec) ts timespec)
+      (%clock-settime clock-id ts)
+      (values sec nsec))))
 
-  (defsyscall (%clock-gettime "clock_gettime") :int
-    (clockid clockid-t)
-    (tp      :pointer))
-
-  (defentrypoint clock-gettime (clock-id)
-    "Returns the time of the clock CLOCKID."
-    (with-foreign-object (ts 'timespec)
-      (with-foreign-slots ((sec nsec) ts timespec)
-        (%clock-gettime clock-id ts)
-        (values sec nsec))))
-
-  (defsyscall (%clock-settime "clock_settime") :int
-    (clockid clockid-t)
-    (tp      :pointer))
-
-  (defentrypoint clock-settime (clock-id)
-    "Sets the time of the clock CLOCKID."
-    (with-foreign-object (ts 'timespec)
-      (with-foreign-slots ((sec nsec) ts timespec)
-        (%clock-settime clock-id ts)
-        (values sec nsec)))))
-
-;;; FIXME: or we can implement this through the MACH functions.
-#+darwin
-(progn
-  (defctype kern-return-t :int)
-  (defctype clock-res-t :int)
-  (defctype clock-id-t :int)
-  (defctype port-t :unsigned-int)         ; not sure
-  (defctype clock-serv-t port-t)
-
-  (defconstant kern-success 0)
-
-  (defconstant system-clock 0)
-  (defconstant calendar-clock 1)
-  (defconstant realtime-clock 0)
-
-  (defsyscall (mach-host-self "mach_host_self") port-t)
-
-  (defsyscall (%host-get-clock-service "host_get_clock_service") kern-return-t
-    (host       port-t)
-    (id         clock-id-t)
-    (clock-name :pointer))
-
-  (defentrypoint host-get-clock-service (id &optional (host (mach-host-self)))
-    (with-foreign-object (clock 'clock-serv-t)
-      (%host-get-clock-service host id clock)
-      (mem-ref clock :int)))
-
-  (defsyscall (%clock-get-time "clock_get_time") kern-return-t
-    (clock-serv clock-serv-t)
-    (cur-time   timespec))
-
-  (defentrypoint clock-get-time (clock-service)
-    (with-foreign-object (time 'timespec)
-      (%clock-get-time clock-service time)
-      (with-foreign-slots ((sec nsec) time timespec)
-        (values sec nsec)))))
-
+;; FIXME: replace it with clock_gettime(CLOCK_MONOTONIC, ...)
 (defentrypoint get-monotonic-time ()
   "Gets current time in seconds from a system's monotonic clock."
   (multiple-value-bind (seconds nanoseconds)
-      #-darwin (clock-gettime clock-monotonic)
-      #+darwin (clock-get-time (host-get-clock-service system-clock))
+      (clock-gettime clock-monotonic)
     (+ seconds (/ nanoseconds 1d9))))
 
 
@@ -894,6 +896,7 @@ The environment variable is overwritten only if overwrite is not NIL."
   "Removes the binding of environment variable NAME."
   (name :string))
 
+;; FIXME: move into libfixposix
 (defentrypoint clearenv ()
   "Remove all name-value pairs from the environment and set the external
 variable *environ* to NULL."
@@ -972,20 +975,20 @@ variable *environ* to NULL."
   (result  :pointer))
 
 (defun funcall-getpw (fn arg)
-  (with-foreign-objects ((pw 'passwd-entry) (pwp :pointer))
+  (with-foreign-objects ((pw 'passwd) (pwp :pointer))
     (with-foreign-pointer (buf +cstring-path-max+ bufsize)
-      (with-foreign-slots ((name passwd uid gid gecos dir shell) pw passwd-entry)
+      (with-foreign-slots ((name passwd uid gid gecos dir shell) pw passwd)
         (funcall fn arg pw buf bufsize pwp)
         (if (null-pointer-p (mem-ref pwp :pointer))
             nil
             (values name passwd uid gid gecos dir shell))))))
 
 (defentrypoint getpwuid (uid)
-  "Gets the password-entry of a user, by user id (reentrant)."
+  "Gets the passwd info of a user, by user id (reentrant)."
   (funcall-getpw #'%getpwuid-r uid))
 
 (defentrypoint getpwnam (name)
-  "Gets the password-entry of a user, by username (reentrant)."
+  "Gets the passwd info of a user, by username (reentrant)."
   (funcall-getpw #'%getpwnam-r name))
 
 
@@ -1015,18 +1018,18 @@ variable *environ* to NULL."
 
 ;; FIXME: return group members too
 (defun funcall-getgr (fn arg)
-  (with-foreign-objects ((gr 'group-entry) (grp :pointer))
+  (with-foreign-objects ((gr 'group) (grp :pointer))
     (with-foreign-pointer (buf +cstring-path-max+ bufsize)
-      (with-foreign-slots ((name passwd gid) gr group-entry)
+      (with-foreign-slots ((name passwd gid) gr group)
         (funcall fn arg gr buf bufsize grp)
         (if (null-pointer-p (mem-ref grp :pointer))
             nil
             (values name passwd gid))))))
 
 (defentrypoint getgrgid (gid)
-  "Gets a group-entry, by group id (reentrant)."
+  "Gets a group info, by group id (reentrant)."
   (funcall-getgr #'%getgrgid-r gid))
 
 (defentrypoint getgrnam (name)
-  "Gets a group-entry, by group name (reentrant)."
+  "Gets a group info, by group name (reentrant)."
   (funcall-getgr #'%getgrnam-r name))

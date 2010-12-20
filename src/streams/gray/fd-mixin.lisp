@@ -8,7 +8,7 @@
 (defmethod shared-initialize :around ((stream dual-channel-fd-mixin) slot-names &key)
   (declare (ignore slot-names))
   (call-next-method)
-  (setf (isys:fd-nonblock (fd-of stream)) t))
+  (setf (isys:fd-nonblock-p (fd-of stream)) t))
 
 ;;;; CLOSE
 

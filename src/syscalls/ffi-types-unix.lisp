@@ -1,46 +1,155 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- Grovel definitions for *NIX systems.
+;;; --- Foreign type definitions for *NIX systems.
 ;;;
 
 (in-package :iolib.syscalls)
 
-#+linux
-(define "_GNU_SOURCE")
-
-;;; Largefile support on linux
-;;; TODO: check if these flags are required on solaris too
+;;; FIXME: Find a way to use pkg-config to get these flags
+;;;        instead of hard-coding them
 #+linux
 (progn
+  (define "_GNU_SOURCE")
   (define "_LARGEFILE_SOURCE")
   (define "_LARGEFILE64_SOURCE")
   (define "_FILE_OFFSET_BITS" 64))
 
-(include "stdlib.h" "errno.h" "sys/types.h" "sys/stat.h" "sys/mman.h"
-         "fcntl.h" "signal.h" "unistd.h" "limits.h" "time.h" "sys/select.h"
-         "sys/poll.h" "sys/ioctl.h" "sys/resource.h" "pwd.h" "grp.h"
-         "dirent.h" "sys/utsname.h" "sys/wait.h")
+(include "libfixposix.h"
+         "sys/poll.h" ;; FIXME: add poll() to LFP
+         "sys/ioctl.h" "sys/resource.h" "sys/utsname.h"
+         "pwd.h" "grp.h" "dirent.h"
+         #+linux "sys/syscall.h")
 
 #+linux
-(include "sys/epoll.h" "sys/syscall.h")
+(include "sys/epoll.h")
 
 #+bsd
 (include "sys/event.h" "sys/time.h")    ; for kqueue
+
 
 
 ;;;-------------------------------------------------------------------------
-;;; POSIX types
+;;; Simple POSIX types
 ;;;-------------------------------------------------------------------------
 
+(ctype bool "bool")
+(ctype size-t "size_t")
+(ctype ssize-t "ssize_t")
+(ctype intptr-t "intptr_t")
+(ctype uintptr-t "uintptr_t")
 (ctype pid-t "pid_t")
 (ctype uid-t "uid_t")
 (ctype gid-t "gid_t")
+(ctype off-t "off_t")
 (ctype mode-t "mode_t")
+(ctype time-t "time_t")
+(ctype useconds-t "useconds_t")
+(ctype suseconds-t "suseconds_t")
+(ctype dev-t "dev_t")
+(ctype ino-t "ino_t")
+(ctype nlink-t "nlink_t")
+(ctype blksize-t "blksize_t")
+(ctype blkcnt-t "blkcnt_t")
+(ctype nfds-t "nfds_t")
+(ctype rlim-t "rlim_t")
+(ctype id-t "id_t")
+(ctype clockid-t "lfp_clockid_t")
 
 
 ;;;-------------------------------------------------------------------------
-;;; Open()
+;;; Structs, slots and C constants
 ;;;-------------------------------------------------------------------------
+
+;;; errno.h
+
+(constantenum (errno-values :define-constants t)
+ (:e2big "E2BIG")
+ (:eacces "EACCES")
+ (:eaddrinuse "EADDRINUSE")
+ (:eaddrnotavail "EADDRNOTAVAIL")
+ (:eafnosupport "EAFNOSUPPORT")
+ (:ealready "EALREADY")
+ (:ebadf "EBADF")
+ (:ebadmsg "EBADMSG")
+ (:ebusy "EBUSY")
+ (:ecanceled "ECANCELED")
+ (:echild "ECHILD")
+ (:econnaborted "ECONNABORTED")
+ (:econnrefused "ECONNREFUSED")
+ (:econnreset "ECONNRESET")
+ (:edeadlk "EDEADLK")
+ (:edestaddrreq "EDESTADDRREQ")
+ (:edom "EDOM")
+ (:edquot "EDQUOT")
+ (:eexist "EEXIST")
+ (:efault "EFAULT")
+ (:efbig "EFBIG")
+ (:ehostdown "EHOSTDOWN")
+ (:ehostunreach "EHOSTUNREACH")
+ (:eidrm "EIDRM")
+ (:eilseq "EILSEQ")
+ (:einprogress "EINPROGRESS")
+ (:eintr "EINTR")
+ (:einval "EINVAL")
+ (:eio "EIO")
+ (:eisconn "EISCONN")
+ (:eisdir "EISDIR")
+ (:eloop "ELOOP")
+ (:emfile "EMFILE")
+ (:emlink "EMLINK")
+ (:emsgsize "EMSGSIZE")
+ (:emultihop "EMULTIHOP")
+ (:enametoolong "ENAMETOOLONG")
+ (:enetdown "ENETDOWN")
+ (:enetreset "ENETRESET")
+ (:enetunreach "ENETUNREACH")
+ (:enfile "ENFILE")
+ (:enobufs "ENOBUFS")
+ (:enodata "ENODATA")
+ (:enodev "ENODEV")
+ (:enoent "ENOENT")
+ (:enoexec "ENOEXEC")
+ (:enolck "ENOLCK")
+ (:enolink "ENOLINK")
+ (:enomem "ENOMEM")
+ (:enomsg "ENOMSG")
+ (:enonet "ENONET" :optional t)
+ (:enoprotoopt "ENOPROTOOPT")
+ (:enospc "ENOSPC")
+ (:enosr "ENOSR")
+ (:enostr "ENOSTR")
+ (:enosys "ENOSYS")
+ (:enotconn "ENOTCONN")
+ (:enotdir "ENOTDIR")
+ (:enotempty "ENOTEMPTY")
+ (:enotsock "ENOTSOCK")
+ (:enotsup "ENOTSUP")
+ (:enotty "ENOTTY")
+ (:enxio "ENXIO")
+ (:eopnotsupp "EOPNOTSUPP")
+ (:eoverflow "EOVERFLOW")
+ (:eperm "EPERM")
+ (:epipe "EPIPE")
+ (:eproto "EPROTO")
+ (:eprotonosupport "EPROTONOSUPPORT")
+ (:eprototype "EPROTOTYPE")
+ (:erange "ERANGE")
+ (:erofs "EROFS")
+ (:eshutdown "ESHUTDOWN")
+ (:espipe "ESPIPE")
+ (:esrch "ESRCH")
+ (:estale "ESTALE")
+ (:etime "ETIME")
+ (:etimedout "ETIMEDOUT")
+ (:etxtbsy "ETXTBSY")
+ (:ewouldblock "EWOULDBLOCK")
+ (:exdev "EXDEV")
+ (:ebug "EBUG"))
+
+
+;;; fcntl.h
+
+;; Open()
 
 (constant (o-rdonly "O_RDONLY"))
 (constant (o-wronly "O_WRONLY"))
@@ -58,20 +167,38 @@
 (constant (o-async "O_ASYNC"))
 (constant (o-cloexec "O_CLOEXEC"))
 
+;;; Fcntl()
+
+(constant (f-dupfd "F_DUPFD"))
+(constant (f-getfd "F_GETFD"))
+(constant (f-setfd "F_SETFD"))
+(constant (f-getfl "F_GETFL"))
+(constant (f-setfl "F_SETFL"))
+(constant (f-getlk "F_GETLK"))
+(constant (f-setlk "F_SETLK"))
+(constant (f-setlkw "F_SETLKW"))
+(constant (f-getown "F_GETOWN"))
+(constant (f-setown "F_SETOWN"))
+(constant (f-rdlck "F_RDLCK"))
+(constant (f-wrlck "F_WRLCK"))
+(constant (f-unlck "F_UNLCK"))
+#+linux
+(progn
+  (constant (f-getsig "F_GETSIG"))
+  (constant (f-setsig "F_SETSIG"))
+  (constant (f-setlease "F_SETLEASE"))
+  (constant (f-getlease "F_GETLEASE")))
 
 
-;;;-------------------------------------------------------------------------
-;;; Lseek()
-;;;-------------------------------------------------------------------------
+;;; unistd.h
+
+;; Lseek()
 
 (constant (seek-set "SEEK_SET"))
 (constant (seek-cur "SEEK_CUR"))
 (constant (seek-end "SEEK_END"))
-
 
-;;;-------------------------------------------------------------------------
-;;; Access()
-;;;-------------------------------------------------------------------------
+;; Access()
 
 (constant (r-ok "R_OK"))
 (constant (w-ok "W_OK"))
@@ -79,15 +206,10 @@
 (constant (f-ok "F_OK"))
 
 
-;;;-------------------------------------------------------------------------
 ;;; time.h
-;;;-------------------------------------------------------------------------
 
-#-darwin
-(progn
-  (ctype clockid-t "clockid_t")
-  (constant (clock-monotonic "CLOCK_MONOTONIC"))
-  (constant (clock-realtime "CLOCK_REALTIME")))
+(constant (clock-realtime "CLOCK_REALTIME"))
+(constant (clock-monotonic "CLOCK_MONOTONIC"))
 
 (cstruct timespec "struct timespec"
   "UNIX time specification in seconds and nanoseconds."
@@ -95,16 +217,9 @@
   (nsec "tv_nsec" :type :long))
 
 
-;;;-------------------------------------------------------------------------
 ;;; sys/stat.h
-;;;-------------------------------------------------------------------------
 
-(ctype dev-t "dev_t")
-(ctype ino-t "ino_t")
-
-(ctype nlink-t "nlink_t")
-(ctype blksize-t "blksize_t")
-(ctype blkcnt-t "blkcnt_t")
+(constant (path-max "PATH_MAX" "MAXPATHLEN"))
 
 (cstruct stat "struct stat"
   (dev     "st_dev"     :type dev-t)
@@ -121,91 +236,82 @@
   (mtime   "st_mtime"   :type time-t)
   (ctime   "st_ctime"   :type time-t))
 
-(constant (s-irwxu "S_IRWXU")
-          :documentation "read, write, execute/search by owner")
-(constant (s-irusr "S_IRUSR") :documentation "read permission, owner")
-(constant (s-iwusr "S_IWUSR") :documentation "write permission, owner")
-(constant (s-ixusr "S_IXUSR") :documentation "execute/search permission, owner")
-(constant (s-ifmt "S_IFMT")   :documentation "bitmask for type of entry")
-(constant (s-ififo "S_IFIFO") :documentation "named pipe, aka fifo")
-(constant (s-ifchr "S_IFCHR") :documentation "special character-device")
-(constant (s-ifdir "S_IFDIR") :documentation "directory")
-(constant (s-ifblk "S_IFBLK") :documentation "special block-device")
-(constant (s-ifreg "S_IFREG") :documentation "regular file")
-(constant (s-ifwht "S_IFWHT") :documentation "whiteout" :optional t)
+(constant (s-irwxu "S_IRWXU"))
+(constant (s-irusr "S_IRUSR"))
+(constant (s-iwusr "S_IWUSR"))
+(constant (s-ixusr "S_IXUSR"))
+(constant (s-ifmt "S_IFMT"))
+(constant (s-ififo "S_IFIFO"))
+(constant (s-ifchr "S_IFCHR"))
+(constant (s-ifdir "S_IFDIR"))
+(constant (s-ifblk "S_IFBLK"))
+(constant (s-ifreg "S_IFREG"))
+(constant (s-ifwht "S_IFWHT") :optional t)
 (constant (s-iread "S_IREAD"))
 (constant (s-iwrite "S_IWRITE"))
 (constant (s-iexec "S_IEXEC"))
 
-(constant (s-irwxg "S_IRWXG")
-          :documentation "read, write, execute/search by group")
-(constant (s-irgrp "S_IRGRP") :documentation "read permission, group")
-(constant (s-iwgrp "S_IWGRP") :documentation "write permission, group")
-(constant (s-ixgrp "S_IXGRP")
-          :documentation "execute/search permission, group")
-(constant (s-irwxo "S_IRWXO")
-          :documentation "read, write, execute/search by others")
-(constant (s-iroth "S_IROTH") :documentation "read permission, others")
-(constant (s-iwoth "S_IWOTH") :documentation "write permission, others")
-(constant (s-ixoth "S_IXOTH")
-          :documentation "execute/search permission, others")
-(constant (s-isuid "S_ISUID") :documentation "set-user-ID on execution")
-(constant (s-isgid "S_ISGID") :documentation "set-group-ID on execution")
-(constant (s-isvtx "S_ISVTX")
-          :documentation "'sticky' bit, many meanings, nonportable")
-(constant (s-iflnk "S_IFLNK") :documentation "symbolic link")
-(constant (s-ifsock "S_IFSOCK") :documentation "socket")
+(constant (s-irwxg "S_IRWXG"))
+(constant (s-irgrp "S_IRGRP"))
+(constant (s-iwgrp "S_IWGRP"))
+(constant (s-ixgrp "S_IXGRP"))
+(constant (s-irwxo "S_IRWXO"))
+(constant (s-iroth "S_IROTH"))
+(constant (s-iwoth "S_IWOTH"))
+(constant (s-ixoth "S_IXOTH"))
+(constant (s-isuid "S_ISUID"))
+(constant (s-isgid "S_ISGID"))
+(constant (s-isvtx "S_ISVTX"))
+(constant (s-iflnk "S_IFLNK"))
+(constant (s-ifsock "S_IFSOCK"))
+
 
-(constant (path-max "PATH_MAX" "MAXPATHLEN"))
+;;; sys/ioctl.h
+
+;; Ioctl()
+
+(constant (fionbio "FIONBIO"))
+(constant (fionread "FIONREAD"))
+
+
+;;; sys/wait.h
+
+(constant (wnohang "WNOHANG"))
+(constant (wuntraced "WUNTRACED"))
+(constant (wcontinued "WCONTINUED"))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; signal.h
 ;;;-------------------------------------------------------------------------
 
-(constant (sighup "SIGHUP") :documentation "terminal line hangup.")
-(constant (sigquit "SIGQUIT") :documentation "quit program.")
-(constant (sigtrap "SIGTRAP") :documentation "trace trap.")
+(constant (sighup "SIGHUP"))
+(constant (sigquit "SIGQUIT"))
+(constant (sigtrap "SIGTRAP"))
 #-linux
-(constant (sigemt "SIGEMT") :documentation "emulate instruction executed.")
-(constant (sigkill "SIGKILL") :documentation "kill program.")
-(constant (sigbus "SIGBUS") :documentation "bus error.")
-(constant (sigsys "SIGSYS") :documentation "non-existent system call invoked.")
-(constant (sigpipe "SIGPIPE") :documentation "write on a pipe with no reader.")
-(constant (sigalrm "SIGALRM") :documentation "real-timeimer expired.")
-(constant (sigurg "SIGURG")
-          :documentation "urgent condition present on socket.")
-(constant (sigstop "SIGSTOP")
-          :documentation "stop (cannot be caught or ignored).")
-(constant (sigtstp "SIGTSTP")
-          :documentation "stop signal generated from keyboard.")
-(constant (sigcont "SIGCONT") :documentation "continue after stop.")
-(constant (sigchld "SIGCHLD") :documentation "child status has changed.")
-(constant (sigttin "SIGTTIN")
-          :documentation "background read attempted from control terminal.")
-(constant (sigttou "SIGTTOU")
-          :documentation "background write attempted from control terminal.")
-(constant (sigio "SIGIO")
-          :documentation "I/O is possible on a descriptor (see fcntl(2)).")
-(constant (sigxcpu "SIGXCPU")
-          :documentation "cpuime limit exceeded (see setrlimit(2)).")
-(constant (sigxfsz "SIGXFSZ")
-          :documentation "file size limit exceeded (see setrlimit(2)).")
-(constant (sigvtalrm "SIGVTALRM")
-          :documentation "virtualime alarm (see setitimer(2)).")
-(constant (sigprof "SIGPROF")
-          :documentation "profilingimer alarm (see setitimer(2)).")
-(constant (sigwinch "SIGWINCH") :documentation "Window size change.")
+(constant (sigemt "SIGEMT"))
+(constant (sigkill "SIGKILL"))
+(constant (sigbus "SIGBUS"))
+(constant (sigsys "SIGSYS"))
+(constant (sigpipe "SIGPIPE"))
+(constant (sigalrm "SIGALRM"))
+(constant (sigurg "SIGURG"))
+(constant (sigstop "SIGSTOP"))
+(constant (sigtstp "SIGTSTP"))
+(constant (sigcont "SIGCONT"))
+(constant (sigchld "SIGCHLD"))
+(constant (sigttin "SIGTTIN"))
+(constant (sigttou "SIGTTOU"))
+(constant (sigio "SIGIO"))
+(constant (sigxcpu "SIGXCPU"))
+(constant (sigxfsz "SIGXFSZ"))
+(constant (sigvtalrm "SIGVTALRM"))
+(constant (sigprof "SIGPROF"))
+(constant (sigwinch "SIGWINCH"))
 #-linux
-(constant (siginfo "SIGINFO") :documentation "status request from keyboard.")
-(constant (sigusr1 "SIGUSR1") :documentation "User defined signal 1.")
-(constant (sigusr2 "SIGUSR2") :documentation "User defined signal 2.")
-#+linux
-(progn
-  (constant (sigrtmin "SIGRTMIN")
-            :documentation "Smallest real-time signal number.")
-  (constant (sigrtmax "SIGRTMAX")
-            :documentation "Largest real-time signal number."))
+(constant (siginfo "SIGINFO"))
+(constant (sigusr1 "SIGUSR1"))
+(constant (sigusr2 "SIGUSR2"))
 
 (constant (sig-ign "SIG_IGN"))
 (constant (sig-dfl "SIG_DFL"))
@@ -213,7 +319,8 @@
 (cstruct sigaction "struct sigaction"
   (handler "sa_handler" :type :pointer)
   (sigaction "sa_sigaction" :type :pointer)
-  (mask "sa_mask" :type :unsigned-long) ;; actual type can be structure or array...
+  ;; actual type can be structure or array...
+  (mask "sa_mask" :type :unsigned-long)
   (flags "sa_flags" :type :int))
 
 (constant (sa-nocldstop "SA_NOCLDSTOP"))
@@ -223,68 +330,36 @@
 (constant (sa-resethand "SA_RESETHAND"))
 (constant (sa-restart "SA_RESTART"))
 (constant (sa-siginfo "SA_SIGINFO"))
-
 
 
-;;;-------------------------------------------------------------------------
-;;; sys/syscalls.h
-;;;-------------------------------------------------------------------------
+;;; sys/mman.h
 
-#+linux (constant (sys-gettid "SYS_gettid"))
+;; Mmap()
+
+(constant (prot-none   "PROT_NONE"))
+(constant (prot-read   "PROT_READ"))
+(constant (prot-write  "PROT_WRITE"))
+(constant (prot-exec   "PROT_EXEC"))
+(constant (map-shared  "MAP_SHARED"))
+(constant (map-private "MAP_PRIVATE"))
+(constant (map-fixed   "MAP_FIXED"))
+(constant (map-failed  "MAP_FAILED"))
 
 
-;;;-------------------------------------------------------------------------
-;;; unistd.h
-;;;-------------------------------------------------------------------------
+;;; sys/select.h
 
-(ctype useconds-t "useconds_t")
+(cstruct fd-set "fd_set")
+(constant (fd-setsize "FD_SETSIZE"))
+
+(cstruct timeval "struct timeval"
+  "UNIX time specification in seconds and microseconds."
+  (sec  "tv_sec"  :type time-t)
+  (usec "tv_usec" :type suseconds-t))
 
 
-;;;-------------------------------------------------------------------------
-;;; Fcntl()
-;;;-------------------------------------------------------------------------
+;;; sys/poll.h
 
-(constant (f-dupfd "F_DUPFD"))
-(constant (f-getfd "F_GETFD"))
-(constant (f-setfd "F_SETFD"))
-(constant (f-getfl "F_GETFL"))
-(constant (f-setfl "F_SETFL"))
-(constant (f-getlk "F_GETLK"))
-(constant (f-setlk "F_SETLK"))
-(constant (f-setlkw "F_SETLKW"))
-(constant (f-getown "F_GETOWN"))
-(constant (f-setown "F_SETOWN"))
-(constant (f-rdlck "F_RDLCK"))
-(constant (f-wrlck "F_WRLCK"))
-(constant (f-unlck "F_UNLCK"))
-
-#+linux
-(progn
-  (constant (f-getsig "F_GETSIG"))
-  (constant (f-setsig "F_SETSIG"))
-  (constant (f-setlease "F_SETLEASE"))
-  (constant (f-getlease "F_GETLEASE")))
-
-
-;;;-------------------------------------------------------------------------
-;;; Mmap()
-;;;-------------------------------------------------------------------------
-
-(constant (prot-none   "PROT_NONE")   :documentation "mmap: no protection")
-(constant (prot-read   "PROT_READ")   :documentation "mmap: read protection")
-(constant (prot-write  "PROT_WRITE")  :documentation "mmap: write protection")
-(constant (prot-exec   "PROT_EXEC")   :documentation "mmap: execute protection")
-(constant (map-shared  "MAP_SHARED")  :documentation "mmap: shared memory")
-(constant (map-private "MAP_PRIVATE") :documentation "mmap: private mapping")
-(constant (map-fixed   "MAP_FIXED")   :documentation "mmap: map at location")
-(constant (map-failed  "MAP_FAILED")  :documentation "mmap: failure")
-
-
-;;;-------------------------------------------------------------------------
-;;; Poll()
-;;;-------------------------------------------------------------------------
-
-(ctype nfds-t "nfds_t")
+;; Poll()
 
 (cstruct pollfd "struct pollfd"
   "Poll file descriptor activity specification structure."
@@ -305,108 +380,7 @@
 (constant (pollnval "POLLNVAL"))
 
 
-;;;-------------------------------------------------------------------------
-;;; from sys/epoll.h
-;;;-------------------------------------------------------------------------
-
-#+linux
-(progn
-  (cunion epoll-data "epoll_data_t"
-    (ptr "ptr" :type :pointer)
-    (fd  "fd"  :type :int)
-    (u32 "u32" :type :uint32)
-    (u64 "u64" :type :uint64))
-
-  (cstruct epoll-event "struct epoll_event"
-    (events "events" :type :uint32)
-    (data   "data"   :type epoll-data))
-
-  (constant (epoll-ctl-add "EPOLL_CTL_ADD"))
-  (constant (epoll-ctl-del "EPOLL_CTL_DEL"))
-  (constant (epoll-ctl-mod "EPOLL_CTL_MOD"))
-
-  (constant (epollin "EPOLLIN"))
-  (constant (epollrdnorm "EPOLLRDNORM"))
-  (constant (epollrdband "EPOLLRDBAND"))
-  (constant (epollpri "EPOLLPRI"))
-  (constant (epollout "EPOLLOUT"))
-  (constant (epollwrnorm "EPOLLWRNORM"))
-  (constant (epollwrband "EPOLLWRBAND"))
-  (constant (epollerr "EPOLLERR"))
-  (constant (epollhup "EPOLLHUP"))
-  (constant (epollmsg "EPOLLMSG"))
-  (constant (epolloneshot "EPOLLONESHOT"))
-  (constant (epollet "EPOLLET")))
-
-
-;;;-------------------------------------------------------------------------
-;;; from sys/event.h
-;;;-------------------------------------------------------------------------
-
-#+bsd
-(progn
-  (ctype intptr-t "intptr_t")
-  (ctype uintptr-t "uintptr_t")
-
-  (cstruct kevent "struct kevent"
-    (ident  "ident"  :type uintptr-t)
-    (filter "filter" :type #-netbsd :short
-                           #+netbsd :uint32)
-    (flags  "flags"  :type #-netbsd :unsigned-short
-                           #+netbsd :uint32)
-    (fflags "fflags" :type #-netbsd :unsigned-int
-                           #+netbsd :uint32)
-    (data   "data"   :type #-netbsd intptr-t
-                           #+netbsd :int64)
-    (udata  "udata"  :type :pointer))
-
-  ;; kevent() flags
-  (constant (ev-add "EV_ADD"))
-  (constant (ev-enable "EV_ENABLE"))
-  (constant (ev-disable "EV_DISABLE"))
-  (constant (ev-delete "EV_DELETE"))
-  (constant (ev-oneshot "EV_ONESHOT"))
-  (constant (ev-clear "EV_CLEAR"))
-  (constant (ev-eof "EV_EOF"))
-  (constant (ev-error "EV_ERROR"))
-
-  ;; kevent() filter flags
-  (constant (evfilt-read "EVFILT_READ"))
-  (constant (evfilt-write "EVFILT_WRITE"))
-  (constant (evfilt-aio "EVFILT_AIO"))
-  (constant (evfilt-vnode "EVFILT_VNODE"))
-  (constant (evfilt-proc "EVFILT_PROC"))
-  (constant (evfilt-signal "EVFILT_SIGNAL"))
-  (constant (evfilt-timer "EVFILT_TIMER"))
-  #-darwin (constant (evfilt-netdev "EVFILT_NETDEV"))
-
-  ;; EVFILT_VNODE options
-  (constant (note-delete "NOTE_DELETE"))
-  (constant (note-write "NOTE_WRITE"))
-  (constant (note-extend "NOTE_EXTEND"))
-  (constant (note-attrib "NOTE_ATTRIB"))
-  (constant (note-link "NOTE_LINK"))
-  (constant (note-rename "NOTE_RENAME"))
-  (constant (note-revoke "NOTE_REVOKE"))
-
-  ;; EVFILT_PROC options
-  (constant (note-exit "NOTE_EXIT"))
-  (constant (note-fork "NOTE_FORK"))
-  (constant (note-exec "NOTE_EXEC"))
-  (constant (note-track "NOTE_TRACK"))
-  (constant (note-trackerr "NOTE_TRACKERR"))
-
-  ;; EVFILT_NETDEV options
-  #-darwin
-  (progn
-    (constant (note-linkup "NOTE_LINKUP"))
-    (constant (note-linkdown "NOTE_LINKDOWN"))
-    (constant (note-linkinv "NOTE_LINKINV"))))
-
-
-;;;-------------------------------------------------------------------------
 ;;; dirent.h
-;;;-------------------------------------------------------------------------
 
 ;; Apparently POSIX 1003.1-2001 (according to linux manpages) only
 ;; requires d_name.  Sigh.  I guess we should assemble some decent
@@ -431,19 +405,8 @@
 
 
 ;;;-------------------------------------------------------------------------
-;;; Ioctl()
-;;;-------------------------------------------------------------------------
-
-(constant (fionbio "FIONBIO"))
-(constant (fionread "FIONREAD"))
-
-
-;;;-------------------------------------------------------------------------
 ;;; sys/resource.h
 ;;;-------------------------------------------------------------------------
-
-(ctype rlim-t "rlim_t")
-(ctype id-t "id_t")
 
 (cstruct rlimit "struct rlimit"
   (cur "rlim_cur" :type rlim-t)
@@ -515,22 +478,125 @@
 ;;; pwd.h
 ;;;-------------------------------------------------------------------------
 
-(cstruct passwd-entry "struct passwd"
-  (name   "pw_name"   :type sstring)
-  (passwd "pw_passwd" :type sstring)
+(cstruct passwd "struct passwd"
+  (name   "pw_name"   :type :string)
+  (passwd "pw_passwd" :type :string)
   (uid    "pw_uid"    :type uid-t)
   (gid    "pw_gid"    :type gid-t)
-  (gecos  "pw_gecos"  :type sstring)
-  (dir    "pw_dir"    :type sstring)
-  (shell  "pw_shell"  :type sstring))
+  (gecos  "pw_gecos"  :type :string)
+  (dir    "pw_dir"    :type :string)
+  (shell  "pw_shell"  :type :string))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; grp.h
 ;;;-------------------------------------------------------------------------
 
-(cstruct group-entry "struct group"
-  (name   "gr_name"   :type sstring)
-  (passwd "gr_passwd" :type sstring)
+(cstruct group "struct group"
+  (name   "gr_name"   :type :string)
+  (passwd "gr_passwd" :type :string)
   (gid    "gr_gid"    :type gid-t)
   (mem    "gr_mem"    :type :pointer))
+
+
+;;;-------------------------------------------------------------------------
+;;; sys/syscall.h
+;;;-------------------------------------------------------------------------
+
+#+linux (constant (sys-gettid "SYS_gettid"))
+
+
+;;;-------------------------------------------------------------------------
+;;; from sys/epoll.h
+;;;-------------------------------------------------------------------------
+
+#+linux
+(progn
+  (cunion epoll-data "epoll_data_t"
+    (ptr "ptr" :type :pointer)
+    (fd  "fd"  :type :int)
+    (u32 "u32" :type :uint32)
+    (u64 "u64" :type :uint64))
+
+  (cstruct epoll-event "struct epoll_event"
+    (events "events" :type :uint32)
+    (data   "data"   :type epoll-data))
+
+  (constant (epoll-ctl-add "EPOLL_CTL_ADD"))
+  (constant (epoll-ctl-del "EPOLL_CTL_DEL"))
+  (constant (epoll-ctl-mod "EPOLL_CTL_MOD"))
+
+  (constant (epollin "EPOLLIN"))
+  (constant (epollrdnorm "EPOLLRDNORM"))
+  (constant (epollrdband "EPOLLRDBAND"))
+  (constant (epollpri "EPOLLPRI"))
+  (constant (epollout "EPOLLOUT"))
+  (constant (epollwrnorm "EPOLLWRNORM"))
+  (constant (epollwrband "EPOLLWRBAND"))
+  (constant (epollerr "EPOLLERR"))
+  (constant (epollhup "EPOLLHUP"))
+  (constant (epollmsg "EPOLLMSG"))
+  (constant (epolloneshot "EPOLLONESHOT"))
+  (constant (epollet "EPOLLET")))
+
+
+;;;-------------------------------------------------------------------------
+;;; from sys/event.h
+;;;-------------------------------------------------------------------------
+
+#+bsd
+(progn
+  (cstruct kevent "struct kevent"
+    (ident  "ident"  :type uintptr-t)
+    (filter "filter" :type #-netbsd :short
+                           #+netbsd :uint32)
+    (flags  "flags"  :type #-netbsd :unsigned-short
+                           #+netbsd :uint32)
+    (fflags "fflags" :type #-netbsd :unsigned-int
+                           #+netbsd :uint32)
+    (data   "data"   :type #-netbsd intptr-t
+                           #+netbsd :int64)
+    (udata  "udata"  :type :pointer))
+
+  ;; kevent() flags
+  (constant (ev-add "EV_ADD"))
+  (constant (ev-enable "EV_ENABLE"))
+  (constant (ev-disable "EV_DISABLE"))
+  (constant (ev-delete "EV_DELETE"))
+  (constant (ev-oneshot "EV_ONESHOT"))
+  (constant (ev-clear "EV_CLEAR"))
+  (constant (ev-eof "EV_EOF"))
+  (constant (ev-error "EV_ERROR"))
+
+  ;; kevent() filter flags
+  (constant (evfilt-read "EVFILT_READ"))
+  (constant (evfilt-write "EVFILT_WRITE"))
+  (constant (evfilt-aio "EVFILT_AIO"))
+  (constant (evfilt-vnode "EVFILT_VNODE"))
+  (constant (evfilt-proc "EVFILT_PROC"))
+  (constant (evfilt-signal "EVFILT_SIGNAL"))
+  (constant (evfilt-timer "EVFILT_TIMER"))
+  #-darwin (constant (evfilt-netdev "EVFILT_NETDEV"))
+
+  ;; EVFILT_VNODE options
+  (constant (note-delete "NOTE_DELETE"))
+  (constant (note-write "NOTE_WRITE"))
+  (constant (note-extend "NOTE_EXTEND"))
+  (constant (note-attrib "NOTE_ATTRIB"))
+  (constant (note-link "NOTE_LINK"))
+  (constant (note-rename "NOTE_RENAME"))
+  (constant (note-revoke "NOTE_REVOKE"))
+
+  ;; EVFILT_PROC options
+  (constant (note-exit "NOTE_EXIT"))
+  (constant (note-fork "NOTE_FORK"))
+  (constant (note-exec "NOTE_EXEC"))
+  (constant (note-track "NOTE_TRACK"))
+  (constant (note-trackerr "NOTE_TRACKERR"))
+
+  ;; EVFILT_NETDEV options
+  #-darwin
+  (progn
+    (constant (note-linkup "NOTE_LINKUP"))
+    (constant (note-linkdown "NOTE_LINKDOWN"))
+    (constant (note-linkinv "NOTE_LINKINV"))))

@@ -9,12 +9,12 @@
                (read f))
   :licence "MIT"
   :defsystem-depends-on (:iolib.asdf :iolib-grovel)
-  :depends-on (:trivial-features :cffi :iolib.base :iolib-grovel
-               :libfixposix)
+  :depends-on (:trivial-features :cffi :iolib.base :iolib-grovel)
   :default-component-class :iolib-source-file
   :pathname "syscalls/"
   :components
   ((:file "pkgdcl")
+   (:file "constants")
    #+unix
    (:file "syscall-path-strings" :pathname "unix-syscall-path-strings")
    ;; Platform-specific files

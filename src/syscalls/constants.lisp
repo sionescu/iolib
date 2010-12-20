@@ -3,7 +3,7 @@
 ;;; --- Misc. constants
 ;;;
 
-(in-package :libfixposix)
+(in-package :iolib.syscalls)
 
 ;;;-------------------------------------------------------------------------
 ;;; Sizes of Standard Types

@@ -11,8 +11,6 @@
 (constant (+stdout+ "STDOUT_FILENO"))
 (constant (+stderr+ "STDERR_FILENO"))
 
-(constant (fd-cloexec "FD_CLOEXEC"))
-
 (cstruct posix-spawnattr-t "posix_spawnattr_t")
 
 (cstruct posix-spawn-file-actions-t "posix_spawn_file_actions_t")
