@@ -48,6 +48,8 @@
    (:file "types" :depends-on ("pkgdcl" "return-star"))
    (:file "debug" :depends-on ("pkgdcl" "return-star"))
    (:file "conditions" :depends-on ("pkgdcl" "return-star"))
+   (:file "defalias" :depends-on ("pkgdcl" "return-star"))
+   (:file "deffoldable" :depends-on ("pkgdcl" "return-star"))
    (:file "defobsolete" :depends-on ("pkgdcl" "return-star"))
    (:file "reader" :depends-on ("pkgdcl" "return-star" "conditions"))
    (:file "sequence" :depends-on ("pkgdcl" "return-star"))

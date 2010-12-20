@@ -27,6 +27,12 @@
    ;; RETURN*
    #:return* #:lambda* #:defun #:defmethod
    #:defmacro #:define-compiler-macro
+   ;; DEFALIAS
+   #:defnamespace
+   #:make-alias
+   #:defalias
+   ;; DEFFOLDABLE
+   #:deffoldable
    ;; DEFOBSOLETE
    #:defobsolete
    #:signal-obsolete
