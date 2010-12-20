@@ -414,6 +414,9 @@
    #-darwin #:note-linkdown
    #-darwin #:note-linkinv)
 
+  (:export ;; CFFI additions
+   #:sizeof)
+
 ;;;----------
 ;;; Syscalls
 ;;;----------

@@ -11,6 +11,15 @@
     (t (:default "libfixposix")))
   (use-foreign-library libfixposix))
 
+;;;-------------------------------------------------------------------------
+;;; CFFI additions
+;;;-------------------------------------------------------------------------
+
+(defalias #'sizeof cffi:foreign-type-size)
+
+(deffoldable sizeof (t) t)
+
+
 
 ;;;-------------------------------------------------------------------------
 ;;; ERRNO-related functions
