@@ -41,3 +41,15 @@
     `(setf (macro-function ',alias)
            (lambda (&rest ,args)
              (apply (macro-function ',original) ,args)))))
+
+(defnamespace special
+  "The namespace of special variables.")
+
+(defmethod make-alias ((namespace (eql 'special)) alias original)
+  `(define-symbol-macro ,alias ,original))
+
+(defnamespace constant
+  "The namespace of special variables.")
+
+(defmethod make-alias ((namespace (eql 'constant)) alias original)
+  `(define-symbol-macro ,alias ,original))
