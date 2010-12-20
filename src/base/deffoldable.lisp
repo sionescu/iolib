@@ -25,3 +25,9 @@
 #-(or sbcl)
 (defmacro deffoldable (&rest args)
   (declare (ignore args)))
+
+(defun constantp (form &optional environment)
+  (cl:constantp (cond ((symbolp form)
+                       (macroexpand form environment))
+                      (t form))
+                environment))

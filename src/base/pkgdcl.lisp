@@ -7,7 +7,8 @@
 
 (defpackage :iolib.base
   (:extend/excluding :iolib.common-lisp
-                     #:defun #:defmethod #:defmacro #:define-compiler-macro)
+                     #:defun #:defmethod #:defmacro #:define-compiler-macro
+                     #:constantp)
   (:extend :alexandria)
   (:export
    ;; Conditions
