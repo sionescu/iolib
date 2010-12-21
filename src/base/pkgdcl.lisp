@@ -29,9 +29,14 @@
    #:return* #:lambda* #:defun #:defmethod
    #:defmacro #:define-compiler-macro
    ;; DEFALIAS
+   #:constantp
    #:defnamespace
    #:make-alias
    #:defalias
+   ;; #:function is already in CL
+   #:macro
+   #:constant
+   ;; #:special is already in CL
    ;; DEFFOLDABLE
    #:deffoldable
    ;; DEFOBSOLETE

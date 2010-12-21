@@ -15,7 +15,7 @@
 ;;; CFFI additions
 ;;;-------------------------------------------------------------------------
 
-(defalias #'sizeof cffi:foreign-type-size)
+(defalias (function sizeof (type)) cffi:foreign-type-size)
 
 (deffoldable sizeof (t) t)
 

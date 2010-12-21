@@ -8,10 +8,11 @@
 (defvar *namespaces* nil)
 
 (defmacro defalias (alias original)
-  (destructuring-bind (namespace new-name) alias
+  (destructuring-bind (namespace new-name &optional args)
+      alias
     (assert (member namespace *namespaces*) (namespace)
             "Namespace ~A does not exist" namespace)
-    (make-alias namespace new-name original)))
+    (make-alias namespace original new-name args)))
 
 (defmacro defnamespace (namespace &optional docstring)
   (check-type namespace symbol)
@@ -21,22 +22,21 @@
      (handler-bind ((warning #'muffle-warning))
        (setf (documentation ',namespace 'namespace) ,docstring))))
 
-(defgeneric make-alias (namespace alias original))
+(defgeneric make-alias (namespace original alias args))
 
 (defnamespace function
   "The namespace of ordinary and generic functions.")
 
-(defmethod make-alias ((namespace (eql 'function)) alias original)
-  (alexandria:with-gensyms (args)
-    `(progn
-       (declaim (inline ,alias))
-       (defun ,alias (&rest ,args)
-         (apply ',original ,args)))))
+(defmethod make-alias ((namespace (eql 'function))
+                       original alias args)
+  `(defun ,alias ,args
+     (,original ,@args)))
 
 (defnamespace macro
   "The namespace of macros.")
 
-(defmethod make-alias ((namespace (eql 'macro)) alias original)
+(defmethod make-alias ((namespace (eql 'macro))
+                       original alias args)
   (alexandria:with-gensyms (args)
     `(setf (macro-function ',alias)
            (lambda (&rest ,args)
@@ -45,11 +45,13 @@
 (defnamespace special
   "The namespace of special variables.")
 
-(defmethod make-alias ((namespace (eql 'special)) alias original)
+(defmethod make-alias ((namespace (eql 'special))
+                       original alias args)
   `(define-symbol-macro ,alias ,original))
 
 (defnamespace constant
   "The namespace of special variables.")
 
-(defmethod make-alias ((namespace (eql 'constant)) alias original)
+(defmethod make-alias ((namespace (eql 'constant))
+                       original alias args)
   `(define-symbol-macro ,alias ,original))
