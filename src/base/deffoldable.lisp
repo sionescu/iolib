@@ -34,7 +34,7 @@
                        (argument-types (list t))
                        (return-type t))
   (alexandria:with-gensyms (form env args)
-    `(progn
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
        (%deffoldable ,func ,argument-types ,return-type)
        (define-compiler-macro ,func (&whole ,form &rest ,args
                                             &environment ,env)
