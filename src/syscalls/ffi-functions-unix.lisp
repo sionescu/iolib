@@ -5,6 +5,9 @@
 
 (in-package :iolib.syscalls)
 
+(eval-when (:compile-toplevel)
+  (declaim (optimize (speed 3) (safety 1) (debug 1))))
+
 ;; FIXME: move this into an ASDF operation
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (define-foreign-library libfixposix
