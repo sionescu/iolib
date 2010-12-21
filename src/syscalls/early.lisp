@@ -144,3 +144,11 @@
            (syscall-wrapper ,@(append (ensure-list return-type)
                                       (list :syscall c-name)))
          ,@args))))
+
+;;;-------------------------------------------------------------------------
+;;; CFFI additions
+;;;-------------------------------------------------------------------------
+
+(defalias (function sizeof (type)) cffi:foreign-type-size)
+
+(deffoldable sizeof)

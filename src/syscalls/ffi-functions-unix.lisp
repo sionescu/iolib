@@ -13,14 +13,6 @@
   (define-foreign-library libfixposix
     (t (:default "libfixposix")))
   (use-foreign-library libfixposix))
-
-;;;-------------------------------------------------------------------------
-;;; CFFI additions
-;;;-------------------------------------------------------------------------
-
-(defalias (function sizeof (type)) cffi:foreign-type-size)
-
-(deffoldable sizeof)
 
 
 
