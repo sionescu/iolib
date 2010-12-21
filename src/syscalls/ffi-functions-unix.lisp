@@ -69,7 +69,7 @@
   (value  :int)
   (count  size-t))
 
-(defun bzero (buffer count)
+(defentrypoint bzero (buffer count)
   "Fill the first COUNT bytes of BUFFER with zeros."
   (memset buffer 0 count))
 
