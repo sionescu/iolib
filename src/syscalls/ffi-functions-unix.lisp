@@ -17,7 +17,7 @@
 
 (defalias (function sizeof (type)) cffi:foreign-type-size)
 
-(deffoldable sizeof (t) t)
+(deffoldable sizeof)
 
 
 

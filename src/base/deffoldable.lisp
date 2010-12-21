@@ -16,14 +16,12 @@
   (deftype defknown-redefinition-error ()
     '(satisfies defknown-redefinition-error-p))
 
-  (defmacro deffoldable (func &optional
-                         (argument-types (list t))
-                         (return-type t))
+  (defmacro %deffoldable (func argument-types return-type)
     `(handler-bind ((defknown-redefinition-error #'continue))
        (sb-c:defknown ,func ,argument-types ,return-type (sb-c:foldable)))))
 
 #-(or sbcl)
-(defmacro deffoldable (&rest args)
+(defmacro %deffoldable (&rest args)
   (declare (ignore args)))
 
 (defun constantp (form &optional environment)
@@ -31,3 +29,16 @@
                        (macroexpand form environment))
                       (t form))
                 environment))
+
+(defmacro deffoldable (func &optional
+                       (argument-types (list t))
+                       (return-type t))
+  (alexandria:with-gensyms (form env args)
+    `(progn
+       (%deffoldable ,func ,argument-types ,return-type)
+       (define-compiler-macro ,func (&whole ,form &rest ,args
+                                            &environment ,env)
+         (declare (ignore ,args))
+         (if (constantp ,form ,env)
+             (eval ,form)
+             ,form)))))
