@@ -14,7 +14,7 @@
 
 (defun allocate-pollfd-set (&optional (count 5))
   (let ((fds (foreign-alloc 'nix::pollfd :count count)))
-    (nix:bzero fds (* nix::size-of-pollfd count))
+    (nix:bzero fds (* (isys:sizeof 'isys:pollfd) count))
     (values fds)))
 
 (defmethod print-object ((mux poll-multiplexer) stream)
@@ -44,7 +44,7 @@
 (defun extend-pollfd-set (fd-set size)
   (let* ((new-size (+ size 5))
          (new-fd-set (foreign-alloc 'nix::pollfd :count new-size)))
-    (nix:memcpy new-fd-set fd-set (* size nix::size-of-pollfd))
+    (nix:memcpy new-fd-set fd-set (* size (isys:sizeof 'isys:pollfd)))
     (foreign-free fd-set)
     (values new-fd-set new-size)))
 
@@ -73,9 +73,9 @@
   (let* ((new-size (if (> 5 (- size count)) (- size 5) size))
          (new-fd-set (foreign-alloc 'nix::pollfd :count new-size)))
     (when (plusp pos)
-      (nix:memcpy new-fd-set fd-set (* pos nix::size-of-pollfd)))
+      (nix:memcpy new-fd-set fd-set (* pos (isys:sizeof 'isys:pollfd))))
     (when (< pos count)
-      (nix:memcpy new-fd-set fd-set (* (- count pos) nix::size-of-pollfd)))
+      (nix:memcpy new-fd-set fd-set (* (- count pos) (isys:sizeof 'isys:pollfd))))
     (foreign-free fd-set)
     (values new-fd-set new-size)))
 

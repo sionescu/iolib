@@ -227,11 +227,11 @@
 
 (defun bind-ipv4-address (fd address port)
   (with-sockaddr-in (sin address port)
-    (%bind fd sin size-of-sockaddr-in)))
+    (%bind fd sin (isys:sizeof 'sockaddr-in))))
 
 (defun bind-ipv6-address (fd address port)
   (with-sockaddr-in6 (sin6 address port)
-    (%bind fd sin6 size-of-sockaddr-in6)))
+    (%bind fd sin6 (isys:sizeof 'sockaddr-in6))))
 
 (defmethod bind-address ((socket internet-socket) (address ipv4-address)
                          &key (port 0))
@@ -306,11 +306,11 @@
 
 (defun ipv4-connect (fd address port)
   (with-sockaddr-in (sin address port)
-    (%connect fd sin size-of-sockaddr-in)))
+    (%connect fd sin (isys:sizeof 'sockaddr-in))))
 
 (defun ipv6-connect (fd address port)
   (with-sockaddr-in6 (sin6 address port)
-    (%connect fd sin6 size-of-sockaddr-in6)))
+    (%connect fd sin6 (isys:sizeof 'sockaddr-in6))))
 
 (defun call-with-socket-to-wait-connect (socket thunk wait)
   (check-type wait timeout-designator)
@@ -378,9 +378,9 @@
 
 (defmethod disconnect ((socket datagram-socket))
   (with-foreign-object (sin 'sockaddr-in)
-    (isys:bzero sin size-of-sockaddr-in)
+    (isys:bzero sin (isys:sizeof 'sockaddr-in))
     (setf (foreign-slot-value sin 'sockaddr-in 'addr) af-unspec)
-    (%connect (fd-of socket) sin size-of-sockaddr-in)
+    (%connect (fd-of socket) sin (isys:sizeof 'sockaddr-in))
     (values socket)))
 
 

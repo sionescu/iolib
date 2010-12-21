@@ -90,9 +90,9 @@ ADDRESS-NAME reader."))
 (defun sockaddr-size (ss)
   (with-foreign-slots ((family) ss sockaddr-storage)
     (switch (family :test #'=)
-      (af-inet  size-of-sockaddr-in)
-      (af-inet6 size-of-sockaddr-in6)
-      (af-local size-of-sockaddr-un))))
+      (af-inet  (isys:sizeof 'sockaddr-in))
+      (af-inet6 (isys:sizeof 'sockaddr-in6))
+      (af-local (isys:sizeof 'sockaddr-un)))))
 
 ;;;; Conversion functions
 

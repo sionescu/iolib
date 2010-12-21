@@ -14,7 +14,6 @@
   :pathname "syscalls/"
   :components
   ((:file "pkgdcl")
-   (:file "constants")
    #+unix
    (:file "syscall-path-strings" :pathname "unix-syscall-path-strings")
    ;; Platform-specific files

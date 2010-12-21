@@ -94,7 +94,7 @@
 
 (defun make-sockaddr-in (sin ub8-vector &optional (portno 0))
   (declare (type ipv4-array ub8-vector) (type ub16 portno))
-  (isys:bzero sin size-of-sockaddr-in)
+  (isys:bzero sin (isys:sizeof 'sockaddr-in))
   (with-foreign-slots ((family addr port) sin sockaddr-in)
     (setf family af-inet)
     (setf addr (htonl (vector-to-integer ub8-vector)))
@@ -108,7 +108,7 @@
 
 (defun make-sockaddr-in6 (sin6 ub16-vector &optional (portno 0))
   (declare (type ipv6-array ub16-vector) (type ub16 portno))
-  (isys:bzero sin6 size-of-sockaddr-in6)
+  (isys:bzero sin6 (isys:sizeof 'sockaddr-in6))
   (with-foreign-slots ((family addr port) sin6 sockaddr-in6)
     (setf family af-inet6)
     (copy-simple-array-ub16-to-alien-vector ub16-vector addr)
@@ -122,7 +122,7 @@
 
 (defun make-sockaddr-un (sun string abstract)
   (declare (type string string))
-  (isys:bzero sun size-of-sockaddr-un)
+  (isys:bzero sun (isys:sizeof 'sockaddr-un))
   (with-foreign-slots ((family path) sun sockaddr-un)
     (setf family af-local)
     (let* ((address-string
@@ -130,7 +130,7 @@
            (path-length (length address-string))
            (sun-path-len
             (load-time-value
-             (- size-of-sockaddr-un
+             (- (isys:sizeof 'sockaddr-un)
                 (foreign-slot-offset 'sockaddr-un 'path)))))
       (assert (< path-length sun-path-len))
       (with-foreign-string (c-string address-string :null-terminated-p nil)
@@ -142,7 +142,7 @@
   (let ((path-ptr (foreign-slot-pointer sun 'sockaddr-un 'path))
         (sun-path-len
          (load-time-value
-          (- size-of-sockaddr-un
+          (- (isys:sizeof 'sockaddr-un)
              (foreign-slot-offset 'sockaddr-un 'path)))))
     (loop :for i :from 1 :below sun-path-len
           :if (zerop (mem-aref path-ptr :char i))
@@ -156,7 +156,7 @@
 
 (defmacro with-sockaddr-storage ((var) &body body)
   `(with-foreign-object (,var 'sockaddr-storage)
-     (isys:bzero ,var size-of-sockaddr-storage)
+     (isys:bzero ,var (isys:sizeof 'sockaddr-storage))
      ,@body))
 
 (defmacro with-socklen ((var value) &body body)
@@ -166,7 +166,7 @@
 
 (defmacro with-sockaddr-storage-and-socklen ((ss-var size-var) &body body)
   `(with-sockaddr-storage (,ss-var)
-     (with-socklen (,size-var size-of-sockaddr-storage)
+     (with-socklen (,size-var (isys:sizeof 'sockaddr-storage))
        ,@body)))
 
 ;;;; Misc

@@ -58,7 +58,7 @@ Returns two boolean values indicating readability and writeability of `FILE-DESC
            (error 'poll-error :fd file-descriptor
                   :identifier (isys:identifier-of unix-err))))
     (with-foreign-object (pollfd 'isys:pollfd)
-      (isys:bzero pollfd isys:size-of-pollfd)
+      (isys:bzero pollfd (isys:sizeof 'isys:pollfd))
       (with-foreign-slots ((isys:fd isys:events isys:revents)
                            pollfd isys:pollfd)
         (setf isys:fd     file-descriptor

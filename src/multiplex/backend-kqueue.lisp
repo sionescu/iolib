@@ -22,7 +22,7 @@
 (defun do-kqueue-event-request (kqueue-fd fd-entry filter request-type)
   (let ((fd (fd-entry-fd fd-entry)))
     (with-foreign-object (kev 'isys:kevent)
-      (isys:bzero kev isys:size-of-kevent)
+      (isys:bzero kev (isys:sizeof 'isys:kevent))
       (isys:ev-set kev fd filter request-type 0 0 (null-pointer))
       (isys:kevent kqueue-fd
                         kev 1
@@ -85,7 +85,7 @@
 (defmethod harvest-events ((mux kqueue-multiplexer) timeout)
   (with-foreign-objects ((events 'isys:kevent *kqueue-max-events*)
                          (ts 'isys:timespec))
-    (isys:bzero events (* *kqueue-max-events* isys:size-of-kevent))
+    (isys:bzero events (* *kqueue-max-events* (isys:sizeof 'isys:kevent)))
     (let (ready-fds)
       (isys:repeat-upon-condition-decreasing-timeout
           ((isys:eintr) tmp-timeout timeout)

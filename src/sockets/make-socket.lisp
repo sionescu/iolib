@@ -317,15 +317,16 @@ The socket is automatically closed upon exit."
 
 (defun call-with-buffers-for-fd-passing (fn)
   (with-foreign-object (msg 'msghdr)
-    (isys:bzero msg size-of-msghdr)
-    (with-foreign-pointer (buffer #.(isys:cmsg.space size-of-int) buffer-size)
+    (isys:bzero msg (isys:sizeof 'msghdr))
+    (with-foreign-pointer (buffer #.(isys:cmsg.space (isys:sizeof :int))
+                           buffer-size)
       (isys:bzero buffer buffer-size)
       (with-foreign-slots ((control controllen) msg msghdr)
         (setf control    buffer
               controllen buffer-size)
         (let ((cmsg (isys:cmsg.firsthdr msg)))
           (with-foreign-slots ((len level type) cmsg cmsghdr)
-            (setf len (isys:cmsg.len size-of-int)
+            (setf len (isys:cmsg.len (isys:sizeof :int))
                   level sol-socket
                   type scm-rights)
             (funcall fn msg cmsg)))))))

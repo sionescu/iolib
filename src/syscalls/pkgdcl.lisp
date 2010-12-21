@@ -13,38 +13,30 @@
   ;; Specials
   (:export
    #:*environ*)
-  ;; Primitive type sizes
-  (:export
-   #:size-of-char
-   #:size-of-short
-   #:size-of-int
-   #:size-of-long
-   #:size-of-long-long
-   #:size-of-pointer)
   ;; Simple POSIX Types
   (:export
-   #:bool #:size-of-bool
-   #:size-t #:size-of-size-t
-   #:ssize-t #:size-of-ssize-t
-   #:intptr-t #:size-of-intptr-t
-   #:uintptr-t #:size-of-uintptr-t
-   #:pid-t #:size-of-pid-t
-   #:gid-t #:size-of-gid-t
-   #:uid-t #:size-of-uid-t
-   #:off-t #:size-of-off-t
-   #:mode-t #:size-of-mode-t
-   #:time-t #:size-of-time-t
-   #:useconds-t #:size-of-useconds-t
-   #:suseconds-t #:size-of-suseconds-t
-   #:dev-t #:size-of-dev-t
-   #:ino-t #:size-of-ino-t
-   #:nlink-t #:size-of-nlink-t
-   #:blksize-t #:size-of-blksize-t
-   #:blkcnt-t #:size-of-blkcnt-t
-   #:nfds-t #:size-of-nfds-t
-   #:rlim-t #:size-of-rlim-t
-   #:id-t #:size-of-rlim-t
-   #:clockid-t #:size-of-clockid-t)
+   #:bool
+   #:size-t
+   #:ssize-t
+   #:intptr-t
+   #:uintptr-t
+   #:pid-t
+   #:gid-t
+   #:uid-t
+   #:off-t
+   #:mode-t
+   #:time-t
+   #:useconds-t
+   #:suseconds-t
+   #:dev-t
+   #:ino-t
+   #:nlink-t
+   #:blksize-t
+   #:blkcnt-t
+   #:nfds-t
+   #:rlim-t
+   #:id-t
+   #:clockid-t)
 
   ;;-----------------------------------------
   ;; Error conditions, wrappers and definers
@@ -159,7 +151,7 @@
    #:f-ok)
   (:export ;; time.h
    ;; struct timespec
-   #:timespec #:size-of-timespec
+   #:timespec
    #:sec #:nsec
    ;; Clock_gettime() et al.
    #:clock-realtime
@@ -167,7 +159,7 @@
   (:export ;; sys/stat.h
    #:path-max
    ;; struct stat
-   #:stat #:size-of-stat
+   #:stat
    #:dev #:stat-dev
    #:ino #:stat-ino
    #:mode #:stat-mode
@@ -246,7 +238,7 @@
    #:sigusr1
    #:sigusr2
    ;; struct sigaction
-   #:sigaction #:size-of-sigaction
+   #:sigaction
    #:handler
    ;; Sigaction()
    #:sig-ign
@@ -270,14 +262,14 @@
    #:map-failed)
   (:export ;; sys/select.h
    ;; fd_set
-   #:fd-set #:size-of-fd-set
+   #:fd-set
    #:fd-setsize
    ;; struct timeval
-   #:timeval #:size-of-timeval
+   #:timeval
    #:sec #:usec)
   (:export ;; sys/poll.h
    ;; struct pollfd
-   #:pollfd #:size-of-pollfd
+   #:pollfd
    #:fd #:events #:revents
    ;; Poll()
    #:pollin
@@ -293,7 +285,7 @@
    #:pollnval)
   (:export ;; dirent.h
    ;; struct dirent
-   #:dirent #:size-of-dirent
+   #:dirent
    #:fileno #:type #:name
    ;; Readdir()
    #:dt-unknown
@@ -307,10 +299,10 @@
    #:dt-wht)
   (:export ;; sys/resource.h
    ;; struct rlimit
-   #:rlimit #:size-of-rlimit
+   #:rlimit
    #:cur #:max
    ;; struct rusage
-   #:rusage #:size-of-rusage
+   #:rusage
    #:utime #:stime #:maxrss #:ixrss #:idrss #:isrss
    #:minflt #:majflt #:nswap #:inblock #:outblock
    #:msgsnd #:msgrcv #:nsignals #:nvcsw #:nivcsw
@@ -342,23 +334,23 @@
    #+bsd #:rlimit-sbsize)
   (:export ;; sys/utsname.h
    ;; struct utsname
-   #:utsname #:size-of-utsname
+   #:utsname
    #:sysname #:nodename #:release #:version #:machine)
   (:export ;; pwd.h
    ;; struct passwd
-   #:passwd #:size-of-passwd
+   #:passwd
    #:name #:passwd #:uid #:gid #:gecos #:dir #:shell)
   (:export ;; grp.h
    ;; struct group
-   #:group #:size-of-group
+   #:group
    #:name #:passwd #:gid #:mem)
   #+linux
   (:export ;; sys/epoll.h
    ;; union epoll_data_t
-   #:epoll-data #:size-of-epoll-data
+   #:epoll-data
    #:ptr #:fd #:u32 #:u64
    ;; struct epoll_event
-   #:epoll-event #:size-of-epoll-event
+   #:epoll-event
    #:events #:data
    ;; Epoll_ctl()
    #:epoll-ctl-add
@@ -379,7 +371,7 @@
   #+bsd
   (:export ;; sys/event.h
    ;; struct kevent
-   #:kevent #:size-of-kevent
+   #:kevent
    #:ident #:filter #:flags #:fflags #:data #:udata
    ;; Kevent()
    #+bsd #:ev-add

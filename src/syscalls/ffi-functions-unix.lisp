@@ -494,7 +494,7 @@ Return two values: the file descriptor and the path of the temporary file."
   (sigmask   :pointer))
 
 (defentrypoint copy-fd-set (from to)
-  (memcpy to from size-of-fd-set)
+  (memcpy to from (sizeof 'fd-set))
   to)
 
 (defcfun (fd-clr "lfp_fd_clr") :void
@@ -663,7 +663,7 @@ processes mapping the same region."
   (options :int))
 
 (defentrypoint waitpid (pid options)
-  (with-foreign-pointer (status size-of-int)
+  (with-foreign-pointer (status (sizeof :int))
     (let ((ret (%waitpid pid status options)))
       (values ret (mem-ref status :int)))))
 
@@ -942,7 +942,7 @@ variable *environ* to NULL."
 (defentrypoint uname ()
   "Get name and information about current kernel."
   (with-foreign-object (buf 'utsname)
-    (bzero buf size-of-utsname)
+    (bzero buf (sizeof 'utsname))
     (%uname buf)
     (macrolet ((utsname-slot (name)
                  `(foreign-string-to-lisp

@@ -35,7 +35,7 @@
   (let ((flags (calc-epoll-flags fd-entry))
         (fd (fd-entry-fd fd-entry)))
     (with-foreign-object (ev 'isys:epoll-event)
-      (isys:bzero ev isys:size-of-epoll-event)
+      (isys:bzero ev (isys:sizeof 'isys:epoll-event))
       (setf (foreign-slot-value ev 'isys:epoll-event 'isys:events) flags)
       (setf (foreign-slot-value
              (foreign-slot-value ev 'isys:epoll-event 'isys:data)
@@ -54,7 +54,7 @@
   (let ((flags (calc-epoll-flags fd-entry))
         (fd (fd-entry-fd fd-entry)))
     (with-foreign-object (ev 'isys:epoll-event)
-      (isys:bzero ev isys:size-of-epoll-event)
+      (isys:bzero ev (isys:sizeof 'isys:epoll-event))
       (setf (foreign-slot-value ev 'isys:epoll-event 'isys:events) flags)
       (setf (foreign-slot-value
              (foreign-slot-value ev 'isys:epoll-event 'isys:data)
@@ -82,7 +82,7 @@
 
 (defmethod harvest-events ((mux epoll-multiplexer) timeout)
   (with-foreign-object (events 'isys:epoll-event +epoll-max-events+)
-    (isys:bzero events (* +epoll-max-events+ isys:size-of-epoll-event))
+    (isys:bzero events (* +epoll-max-events+ (isys:sizeof 'isys:epoll-event)))
     (let (ready-fds)
       (isys:repeat-upon-condition-decreasing-timeout
           ((isys:eintr) tmp-timeout timeout)

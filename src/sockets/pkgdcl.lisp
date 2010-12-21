@@ -8,9 +8,9 @@
 (defpackage :iolib.sockets
   (:nicknames #:sockets)
   (:use :iolib.base :iolib.streams :cffi)
-  (:import-from #:iolib.syscalls #:defsyscall #:size-of-int
+  (:import-from #:iolib.syscalls #:defsyscall
                 #:size-t #:ssize-t #:pid-t #:uid-t #:gid-t
-                #:timeval #:size-of-timeval #:sec #:usec)
+                #:timeval #:sec #:usec)
   (:import-from #:iolib.multiplex #:decode-timeout)
   (:export
    ;; Conditions
