@@ -1,105 +1,146 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- posix_spawn(3) and its minions
+;;; --- lfp_spawn(3) and its minions
 ;;;
 
 (in-package :iolib.os)
 
-(defsyscall (posix-spawn "posix_spawn")
+(defsyscall (lfp-spawn "lfp_spawn")
     (:int :restart t)
   (pid          :pointer)
   (path         :string)
-  (file-actions :pointer)
-  (attributes   :pointer)
   (arguments    :pointer)
-  (environment  :pointer))
+  (environment  :pointer)
+  (file-actions :pointer)
+  (attributes   :pointer))
 
-(defsyscall (posix-spawnp "posix_spawnp")
+(defsyscall (lfp-spawnp "lfp_spawnp")
     (:int :restart t)
   (pid          :pointer)
   (file         :string)
-  (file-actions :pointer)
-  (attributes   :pointer)
   (arguments    :pointer)
-  (environment  :pointer))
+  (environment  :pointer)
+  (file-actions :pointer)
+  (attributes   :pointer))
 
-(defsyscall (posix-spawnattr-init "posix_spawnattr_init")
+(defsyscall (lfp-spawnattr-init
+             "lfp_spawnattr_init")
     :int
   (attributes :pointer))
 
-(defsyscall (posix-spawnattr-destroy "posix_spawnattr_destroy")
+(defsyscall (lfp-spawnattr-destroy
+             "lfp_spawnattr_destroy")
     :int
   (attributes :pointer))
 
-(defsyscall (posix-spawnattr-getsigdefault "posix_spawnattr_getsigdefault")
-    :int
-  (attributes :pointer)
-  (sigdefault :pointer))
-
-(defsyscall (posix-spawnattr-setsigdefault "posix_spawnattr_setsigdefault")
-    :int
-  (attributes :pointer)
-  (sigdefault :pointer))
-
-(defsyscall (posix-spawnattr-getsigmask "posix_spawnattr_getsigmask")
-    :int
-  (attributes :pointer)
-  (sigmask    :pointer))
-
-(defsyscall (posix-spawnattr-setsigmask "posix_spawnattr_setsigmask")
-    :int
-  (attributes :pointer)
-  (sigmask    :pointer))
-
-(defsyscall (posix-spawnattr-getflags "posix_spawnattr_getflags")
+(defsyscall (lfp-spawnattr-getflags
+             "lfp_spawnattr_getflags")
     :int
   (attributes :pointer)
   (flags      :pointer))
 
-(defsyscall (posix-spawnattr-setflags "posix_spawnattr_setflags")
+(defsyscall (lfp-spawnattr-setflags
+             "lfp_spawnattr_setflags")
     :int
   (attributes :pointer)
-  (flags      :pointer))
+  (flags      :uint32))
 
-(defsyscall (posix-spawnattr-getpgroup "posix_spawnattr_getpgroup")
+(defsyscall (lfp-spawnattr-getsigmask
+             "lfp_spawnattr_getsigmask")
+    :int
+  (attributes :pointer)
+  (sigmask    :pointer))
+
+(defsyscall (lfp-spawnattr-setsigmask
+             "lfp_spawnattr_setsigmask")
+    :int
+  (attributes :pointer)
+  (sigmask    :pointer))
+
+(defsyscall (lfp-spawnattr-getsigdefault
+             "lfp_spawnattr_getsigdefault")
+    :int
+  (attributes :pointer)
+  (sigdefault :pointer))
+
+(defsyscall (lfp-spawnattr-setsigdefault
+             "lfp_spawnattr_setsigdefault")
+    :int
+  (attributes :pointer)
+  (sigdefault :pointer))
+
+(defsyscall (lfp-spawnattr-getpgroup
+             "lfp_spawnattr_getpgroup")
     :int
   (attributes :pointer)
   (pgroup     :pointer))
 
-(defsyscall (posix-spawnattr-setpgroup "posix_spawnattr_setpgroup")
+(defsyscall (lfp-spawnattr-setpgroup
+             "lfp_spawnattr_setpgroup")
     :int
   (attributes :pointer)
-  (pgroup     :pointer))
+  (pgroup     pid-t))
 
-(defsyscall (posix-spawnattr-getschedpolicy "posix_spawnattr_getschedpolicy")
-    :int
-  (attributes  :pointer)
-  (schedpolicy :pointer))
-
-(defsyscall (posix-spawnattr-setschedpolicy "posix_spawnattr_setschedpolicy")
-    :int
-  (attributes  :pointer)
-  (schedpolicy :pointer))
-
-(defsyscall (posix-spawnattr-getschedparam "posix_spawnattr_getschedparam")
+(defsyscall (lfp-spawnattr-getuid
+             "lfp_spawnattr_getuid")
     :int
   (attributes :pointer)
-  (schedparam :pointer))
+  (uid        :pointer))
 
-(defsyscall (posix-spawnattr-setschedparam "posix_spawnattr_setschedparam")
+(defsyscall (lfp-spawnattr-setuid
+             "lfp_spawnattr_setuid")
     :int
   (attributes :pointer)
-  (schedparam :pointer))
+  (uid        uid-t))
 
-(defsyscall (posix-spawn-file-actions-init "posix_spawn_file_actions_init")
+(defsyscall (lfp-spawnattr-getgid
+             "lfp_spawnattr_getgid")
+    :int
+  (attributes :pointer)
+  (gid        :pointer))
+
+(defsyscall (lfp-spawnattr-setgid
+             "lfp_spawnattr_setgid")
+    :int
+  (attributes :pointer)
+  (gid        gid-t))
+
+;; (defsyscall (lfp-spawnattr-getschedpolicy
+;;              "lfp_spawnattr_getschedpolicy")
+;;     :int
+;;   (attributes  :pointer)
+;;   (schedpolicy :pointer))
+
+;; (defsyscall (lfp-spawnattr-setschedpolicy
+;;              "lfp_spawnattr_setschedpolicy")
+;;     :int
+;;   (attributes  :pointer)
+;;   (schedpolicy :pointer))
+
+;; (defsyscall (lfp-spawnattr-getschedparam
+;;              "lfp_spawnattr_getschedparam")
+;;     :int
+;;   (attributes :pointer)
+;;   (schedparam :pointer))
+
+;; (defsyscall (lfp-spawnattr-setschedparam
+;;              "lfp_spawnattr_setschedparam")
+;;     :int
+;;   (attributes :pointer)
+;;   (schedparam :pointer))
+
+(defsyscall (lfp-spawn-file-actions-init
+             "lfp_spawn_file_actions_init")
     :int
   (file-actions :pointer))
 
-(defsyscall (posix-spawn-file-actions-destroy "posix_spawn_file_actions_destroy")
+(defsyscall (lfp-spawn-file-actions-destroy
+             "lfp_spawn_file_actions_destroy")
     :int
   (file-actions :pointer))
 
-(defsyscall (posix-spawn-file-actions-addopen "posix_spawn_file_actions_addopen")
+(defsyscall (lfp-spawn-file-actions-addopen
+             "lfp_spawn_file_actions_addopen")
     :int
   (file-actions :pointer)
   (fd           :int)
@@ -107,12 +148,14 @@
   (flags        :int)
   (mode         mode-t))
 
-(defsyscall (posix-spawn-file-actions-addclose "posix_spawn_file_actions_addclose")
+(defsyscall (lfp-spawn-file-actions-addclose
+             "lfp_spawn_file_actions_addclose")
     :int
   (file-actions :pointer)
   (fd           :int))
 
-(defsyscall (posix-spawn-file-actions-adddup2 "posix_spawn_file_actions_adddup2")
+(defsyscall (lfp-spawn-file-actions-adddup2
+             "lfp_spawn_file_actions_adddup2")
     :int
   (file-actions :pointer)
   (fd           :int)

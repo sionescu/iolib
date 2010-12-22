@@ -131,20 +131,24 @@ of SETF ENVIRONMENT."
         :if (null-pointer-p ptr) :do (loop-finish)
         :else :do (foreign-free ptr)))
 
-(defmacro with-c-environment ((environment) &body body)
+(defmacro with-c-environment ((var environment) &body body)
   (with-gensyms (body-fn ptr)
-    `(flet ((,body-fn ()
-              ,@body))
-       (if ,environment
-           (with-foreign-object (,ptr :pointer (1+ (hash-table-size
-                                                    (environment-variables ,environment))))
-             (unwind-protect
-                  (progn
-                    (allocate-env ,ptr (environment-variables ,environment))
-                    (let ((isys:*environ* ,ptr))
-                      (,body-fn)))
-               (deallocate-null-ended-list ,ptr)))
-           (,body-fn)))))
+    `(flet ((,body-fn (,ptr)
+              (let ((,var ,ptr))
+                ,@body)))
+       (etypecase ,environment
+         (null
+          (,body-fn (null-pointer)))
+         ((eql t)
+          (,body-fn isys:*environ*))
+         (environment
+          (with-foreign-object (,ptr :pointer (1+ (hash-table-size
+                                                   (environment-variables ,environment))))
+            (unwind-protect
+                 (progn
+                   (allocate-env ,ptr (environment-variables ,environment))
+                   (,body-fn ,ptr))
+              (deallocate-null-ended-list ,ptr))))))))
 
 
 ;;;; Current directory

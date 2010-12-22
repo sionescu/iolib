@@ -8,7 +8,7 @@
 (defpackage :iolib.os
   (:use :iolib.base :iolib.pathnames :cffi)
   (:import-from :iolib.syscalls #:defsyscall
-                #:mode-t #:pid-t)
+                #:mode-t #:pid-t #:uid-t #:gid-t)
   (:import-from :iolib.pathnames #:split-root/nodes)
   (:export
 
