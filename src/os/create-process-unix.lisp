@@ -203,5 +203,5 @@
 (defun process-wait (process)
   (nth-value 1 (isys:waitpid (process-pid process) 0)))
 
-(defun process-kill (process signum)
+(defun process-kill (process &optional (signum :sigterm))
   (isys:kill (process-pid process) signum))
