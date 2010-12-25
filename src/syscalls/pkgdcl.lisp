@@ -519,6 +519,8 @@
    #:mmap
    #:munmap)
   (:export ;; Process creation and info
+   #:fork
+   #:execv
    #:waitpid
    #:getpid
    #:getppid

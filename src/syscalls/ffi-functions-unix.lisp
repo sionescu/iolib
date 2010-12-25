@@ -657,6 +657,12 @@ processes mapping the same region."
 ;;; Process creation and info
 ;;;-------------------------------------------------------------------------
 
+(defsyscall (fork "fork") pid-t)
+
+(defsyscall (execv "execv") :int
+  (path sstring)
+  (argv :pointer))
+
 (defsyscall (%waitpid "waitpid") pid-t
   (pid     pid-t)
   (status  :pointer)
