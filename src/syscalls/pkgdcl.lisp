@@ -211,6 +211,7 @@
    #:wcontinued)
   (:export ;; signal.h
    ;; Kill()
+   #:signal
    #:sighup
    #:sigint
    #:sigquit

@@ -819,7 +819,7 @@ as indicated by WHICH and WHO to VALUE."
 (defsyscall (kill "kill") :int
   "Send signal SIG to process PID."
   (pid    pid-t)
-  (signum :int))
+  (signum signal))
 
 (defsyscall (sigaction "sigaction") :int
   (signum :int)
