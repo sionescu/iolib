@@ -825,6 +825,30 @@ as indicated by WHICH and WHO to VALUE."
   (signum :int)
   (act    :pointer)
   (oldact :pointer))
+
+(defentrypoint wifexited (status)
+  (plusp (foreign-funcall "lfp_wifexited" :int status :int)))
+
+(defentrypoint wexitstatus (status)
+  (foreign-funcall "lfp_wexitstatus" :int status :int))
+
+(defentrypoint wifsignaled (status)
+  (plusp (foreign-funcall "lfp_wifsignaled" :int status :int)))
+
+(defentrypoint wtermsig (status)
+  (foreign-funcall "lfp_wtermsig" :int status :int))
+
+(defentrypoint wcoredump (status)
+  (plusp (foreign-funcall "lfp_wcoredump" :int status :int)))
+
+(defentrypoint wifstopped (status)
+  (plusp (foreign-funcall "lfp_wifstopped" :int status :int)))
+
+(defentrypoint wstopsig (status)
+  (foreign-funcall "lfp_stopsig" :int status :int))
+
+(defentrypoint wifcontinued (status)
+  (plusp (foreign-funcall "lfp_wifcontinued" :int status :int)))
 
 
 ;;;-------------------------------------------------------------------------
