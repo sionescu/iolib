@@ -82,9 +82,6 @@
            (deallocate-null-ended-list ,argv))))))
 
 (defun redirect-one-stream (file-actions fd stream &optional flags (mode #o644) close-old-fd)
-  (declare (notinline lfp-spawn-file-actions-addopen
-                      lfp-spawn-file-actions-adddup2
-                      lfp-spawn-file-actions-addclose))
   (flet ((dup-from-path (path)
            (lfp-spawn-file-actions-addopen file-actions fd path flags mode))
          (dup-from-fd (oldfd)
@@ -105,7 +102,6 @@
        (lfp-spawn-file-actions-addclose file-actions fd)))))
 
 (defun redirect-to-pipes (file-actions fd keep-write-fd)
-  (declare (notinline isys:pipe))
   (multiple-value-bind (pipe-parent pipe-child)
       (isys:pipe)
     (when keep-write-fd (rotatef pipe-parent pipe-child))
@@ -177,7 +173,6 @@
                        (stdin t) (stdout t) (stderr t)
                        ;; path uid gid effective
                        )
-  (declare (notinline lfp-spawn lfp-spawnp))
   (with-lfp-spawn-arguments (attributes file-actions pid)
     (with-argv ((arg0 argv) program arguments)
       (with-c-environment (envp environment)
