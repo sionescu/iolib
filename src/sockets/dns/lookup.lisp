@@ -126,7 +126,7 @@ Returns 4 values:
          (lookup-host-by-address address ipv6))
         (t
          (check-type host string "a string")
-         (lookup-host-by-name host ipv6))))))
+         (lookup-host-by-name (idna:to-ascii host) ipv6))))))
 
 (defun lookup-host (&rest args)
   (apply #'lookup-hostname args))

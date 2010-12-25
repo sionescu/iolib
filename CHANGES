@@ -6,6 +6,7 @@
 * Add parameter NS to LOOKUP-HOSTNAME
 
 ** New features
+* Add support for IDN to LOOKUP-HOSTNAME
 
 ** Bug fixes:
 
