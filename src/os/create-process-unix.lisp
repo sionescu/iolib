@@ -7,6 +7,7 @@
 
 (defclass process ()
   ((pid    :initarg :pid :reader process-pid)
+   (reaped :initform nil)
    (stdin  :initform nil :reader process-stdin)
    (stdout :initform nil :reader process-stdout)
    (stderr :initform nil :reader process-stderr)))
@@ -19,12 +20,13 @@
           err (and stderr (make-instance 'iolib.streams:dual-channel-gray-stream :fd stderr)))))
 
 (defmethod close ((process process) &key abort)
-  (with-slots (pid stdin stdout stderr)
+  (with-slots (pid reaped stdin stdout stderr)
       process
     (when stdin  (close stdin :abort abort))
     (when stdout (close stdout :abort abort))
     (when stderr (close stderr :abort abort))
-    (isys:waitpid pid (if abort isys:wnohang 0))
+    (unless reaped
+      (isys:waitpid pid (if abort isys:wnohang 0)))
     (setf pid nil stdin nil stdout nil stderr nil)))
 
 (defmethod print-object ((o process) s)
@@ -193,12 +195,16 @@
                                    :environment environment
                                    :stdout :pipe
                                    :stderr :pipe)))
-      (values (process-wait process)
-              (slurp-stream-into-string (process-stdout process))
-              (slurp-stream-into-string (process-stderr process))))))
+      (unwind-protect
+           (values (process-wait process)
+                   (slurp-stream-into-string (process-stdout process))
+                   (slurp-stream-into-string (process-stderr process)))
+        (close process)))))
 
 (defun process-wait (process)
-  (nth-value 1 (isys:waitpid (process-pid process) 0)))
+  (prog1
+      (nth-value 1 (isys:waitpid (process-pid process) 0))
+    (setf (slot-value process 'reaped) t)))
 
 (defun process-kill (process &optional (signum :sigterm))
   (isys:kill (process-pid process) signum))
