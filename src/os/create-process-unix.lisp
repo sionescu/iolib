@@ -105,7 +105,7 @@
   (multiple-value-bind (pipe-parent pipe-child)
       (isys:pipe)
     (when keep-write-fd (rotatef pipe-parent pipe-child))
-    (lfp-spawn-file-actions-adddup2 file-actions pipe-parent fd)
+    (lfp-spawn-file-actions-adddup2 file-actions pipe-child fd)
     (lfp-spawn-file-actions-addclose file-actions pipe-parent)
     (lfp-spawn-file-actions-addclose file-actions pipe-child)
     (values pipe-parent pipe-child)))
