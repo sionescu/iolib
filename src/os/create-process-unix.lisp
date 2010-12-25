@@ -201,7 +201,7 @@
               (slurp-stream-into-string (process-stderr process))))))
 
 (defun process-wait (process)
-  (isys:waitpid (process-pid process) 0))
+  (nth-value 1 (isys:waitpid (process-pid process) 0)))
 
 (defun process-kill (process signum)
   (isys:kill (process-pid process) signum))
