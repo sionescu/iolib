@@ -212,31 +212,42 @@
   (:export ;; signal.h
    ;; Kill()
    #:sighup
+   #:sigint
    #:sigquit
-   #:sigtrap
-   #-linux #:sigemt
+   #:sigill
+   #:sigabrt
+   #:sigfpe
    #:sigkill
-   #:sigbus
-   #:sigsys
+   #:sigsegv
    #:sigpipe
    #:sigalrm
-   #:sigurg
-   #:sigstop
-   #:sigtstp
-   #:sigcont
-   #:sigchld
-   #:sigcld
-   #:sigttin
-   #:sigttou
-   #:sigio
-   #:sigxcpu
-   #:sigxfsz
-   #:sigvtalrm
-   #:sigprof
-   #:sigwinch
-   #-linux #:siginfo
+   #:sigterm
    #:sigusr1
    #:sigusr2
+   #:sigchld
+   #:sigcont
+   #:sigstop
+   #:sigtstp
+   #:sigttin
+   #:sigttou
+   #:sigbus
+   #:sigpoll
+   #:sigprof
+   #:sigsys
+   #:sigtrap
+   #:sigurg
+   #:sigvtalrm
+   #:sigxcpu
+   #:sigxfsz
+   #:sigemt
+   #:sigio
+   #:sigcld
+   #:sigpwr
+   #:siginfo
+   #:siglost
+   #:sigwinch
+   #:sig-ign
+   #:sig-dfl
    ;; struct sigaction
    #:sigaction
    #:handler
