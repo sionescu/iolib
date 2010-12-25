@@ -190,7 +190,9 @@
                    :while c :do (write-char c s)))))
     (let ((process (create-process program arguments
                                    :search search
-                                   :environment environment)))
+                                   :environment environment
+                                   :stdout :pipe
+                                   :stderr :pipe)))
       (values (process-wait process)
               (slurp-stream-into-string (process-stdout process))
               (slurp-stream-into-string (process-stderr process))))))
