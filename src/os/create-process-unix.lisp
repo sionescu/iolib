@@ -62,13 +62,10 @@
   ;; final null pointer
   (setf (mem-aref argv :pointer (1- argc)) (null-pointer)))
 
-(defvar *default-shell* "/bin/sh")
-
 (defun find-program (program)
   (cond
     ((eql :shell program)
-     (or (nth-value 6 (isys:getpwuid (isys:getuid)))
-         *default-shell*))
+     "/bin/sh")
     (t
      (file-path-namestring program))))
 
@@ -158,7 +155,7 @@
          (:abort
           (close-fds ,infd ,outfd ,errfd))))))
 
-;; program: :shell - the current user's shell
+;; program: :shell - the system shell
 ;;          file-path designator - a path
 ;; arguments: list
 ;; search: boolean. whether or not to search PROGRAM in $PATH when PROGRAM only names a file,
