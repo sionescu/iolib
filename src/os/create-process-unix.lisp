@@ -15,14 +15,14 @@
 (defmethod initialize-instance :after ((process process) &key stdin stdout stderr)
   (with-slots ((in stdin) (out stdout) (err stderr))
       process
-    (setf in  (and stdin (make-instance 'iolib.streams:dual-channel-gray-stream :fd stdin))
+    (setf in  (and stdin  (make-instance 'iolib.streams:dual-channel-gray-stream :fd stdin))
           out (and stdout (make-instance 'iolib.streams:dual-channel-gray-stream :fd stdout))
           err (and stderr (make-instance 'iolib.streams:dual-channel-gray-stream :fd stderr)))))
 
 (defmethod close ((process process) &key abort)
   (with-slots (pid reaped stdin stdout stderr)
       process
-    (when stdin  (close stdin :abort abort))
+    (when stdin  (close stdin  :abort abort))
     (when stdout (close stdout :abort abort))
     (when stderr (close stderr :abort abort))
     (unless reaped
