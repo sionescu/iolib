@@ -201,10 +201,10 @@
                    (slurp-stream-into-string (process-stderr process)))
         (close process)))))
 
-(defun process-wait (process)
+(defmethod process-wait ((process process))
   (prog1
       (nth-value 1 (isys:waitpid (process-pid process) 0))
     (setf (slot-value process 'reaped) t)))
 
-(defun process-kill (process &optional (signum :sigterm))
+(defmethod process-kill ((process process) &optional (signum :sigterm))
   (isys:kill (process-pid process) signum))
