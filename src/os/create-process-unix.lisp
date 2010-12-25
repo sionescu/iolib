@@ -171,7 +171,7 @@
 ;;                 into a stream which goes into PROCESS slot
 ;;         t - inherit
 ;;         nil - close
-;; stderr: :stdout - close if stdout is NIL, otherwise use the same fd
+;; stderr: :stdout - the same as stdout
 
 (defun create-process (program arguments &key (search t) (environment t)
                        (stdin t) (stdout t) (stderr t)
