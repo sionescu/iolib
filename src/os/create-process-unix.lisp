@@ -84,12 +84,12 @@
                   ,@body))
            (deallocate-null-ended-list ,argv))))))
 
-(defun redirect-one-stream (stream fd file-actions &optional mode close-old-fd)
+(defun redirect-one-stream (file-actions fd stream &optional flags (mode #o644) close-old-fd)
   (declare (notinline lfp-spawn-file-actions-addopen
                       lfp-spawn-file-actions-adddup2
                       lfp-spawn-file-actions-addclose))
   (flet ((dup-from-path (path)
-           (lfp-spawn-file-actions-addopen file-actions fd path 0 mode))
+           (lfp-spawn-file-actions-addopen file-actions fd path flags mode))
          (dup-from-fd (oldfd)
            (lfp-spawn-file-actions-adddup2 file-actions oldfd fd)
            (when close-old-fd
@@ -107,7 +107,7 @@
       (null
        (lfp-spawn-file-actions-addclose file-actions fd)))))
 
-(defun redirect-to-pipes (fd file-actions keep-write-fd)
+(defun redirect-to-pipes (file-actions fd keep-write-fd)
   (declare (notinline isys:pipe))
   (multiple-value-bind (pipe-parent pipe-child)
       (isys:pipe)
@@ -119,22 +119,27 @@
 
 (defun setup-redirections (file-actions stdin stdout stderr)
   (let (infd infd-child outfd outfd-child errfd errfd-child)
+    ;; Standard input
     (if (eql :pipe stdin)
         (setf (values infd infd-child)
-              (redirect-to-pipes +stdin+ file-actions t))
-        (redirect-one-stream stdin +stdin+ file-actions isys:o-rdonly))
+              (redirect-to-pipes file-actions +stdin+ t))
+        (redirect-one-stream file-actions +stdin+ stdin isys:o-rdonly))
+    ;; Standard output
     (if (eql :pipe stdout)
         (setf (values outfd outfd-child)
-              (redirect-to-pipes +stdout+ file-actions nil))
-        (redirect-one-stream stdout +stdout+ file-actions isys:o-wronly))
+              (redirect-to-pipes file-actions +stdout+ nil))
+        (redirect-one-stream file-actions +stdout+ stdout (logior isys:o-wronly
+                                                                  isys:o-creat)))
+    ;; Standard error
     (cond
       ((and stdout (eql :stdout stderr))
-       (redirect-one-stream +stdout+ +stderr+ file-actions 0 nil))
+       (redirect-one-stream file-actions +stderr+ +stdout+))
       ((eql :pipe stderr)
        (setf (values errfd errfd-child)
-             (redirect-to-pipes +stderr+ file-actions nil)))
+             (redirect-to-pipes file-actions +stderr+ nil)))
       (t
-       (redirect-one-stream stderr +stderr+ file-actions isys:o-wronly)))
+       (redirect-one-stream file-actions +stderr+ stderr (logior isys:o-wronly
+                                                                 isys:o-creat))))
     (values infd infd-child outfd outfd-child errfd errfd-child)))
 
 (defun close-fds (&rest fds)
