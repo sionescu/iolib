@@ -36,6 +36,10 @@
   (loop for s in strings
         collect (string-trim '(#\Space #\Tab) s)))
 
+(defun string* (s)
+  "Coerce S to a string, making sure that it returns an extended string"
+  (map 'string #'identity (string s)))
+
 ;;;# Error Conditions
 
 ;;; This warning is signalled when iolib-grovel can't find some macro.
@@ -323,12 +327,12 @@ int main(int argc, char**argv) {
 
 ;;; This form also has some "read time" effects. See GENERATE-C-FILE.
 (define-grovel-syntax in-package (name)
-  (c-format out "(cl:in-package ~S)~%~%" (string name)))
+  (c-format out "(cl:in-package ~S)~%~%" (string* name)))
 
 (define-grovel-syntax ctype (lisp-name c-name)
   (c-section-header out "ctype" lisp-name)
   (format out "  CFFI_DEFCTYPE(~S, ~A);~%"
-          (string lisp-name) c-name))
+          (string* lisp-name) c-name))
 
 (defun docstring-to-c (docstring)
   (if docstring (format nil "~S" docstring) "NULL"))
@@ -339,18 +343,18 @@ int main(int argc, char**argv) {
         :for c-name :in c-names :do
         (format out "~A defined(~A)~%" (if (zerop i) "#if" "#elif") c-name)
         (format out "  CFFI_DEFCONSTANT(~S, ~A, ~A);~%"
-                (string lisp-name) c-name
+                (string* lisp-name) c-name
                 (docstring-to-c documentation)))
   (unless optional
     (format out "#else~%  cffi_signal_missing_definition(output, ~S);~%"
-            (string lisp-name)))
+            (string* lisp-name)))
   (format out "#endif~%"))
 
 (define-grovel-syntax cunion (union-lisp-name union-c-name &rest slots)
   (let ((documentation (when (stringp (car slots)) (pop slots))))
     (c-section-header out "cunion" union-lisp-name)
     (format out "  CFFI_DEFCUNION_START(~S, ~A, ~A);~%"
-            (string union-lisp-name) union-c-name
+            (string* union-lisp-name) union-c-name
             (docstring-to-c documentation))
     (dolist (slot slots)
       (destructuring-bind (slot-lisp-name slot-c-name &key type (count 1))
@@ -366,7 +370,7 @@ int main(int argc, char**argv) {
                    (prin1-to-string slot-lisp-name) (prin1-to-string type) count)))))
     (format out "  CFFI_DEFCUNION_END;~%")
     (format out "  CFFI_DEFTYPESIZE(~S, ~A);~%"
-            (string union-lisp-name) union-c-name)))
+            (string* union-lisp-name) union-c-name)))
 
 (defun make-from-pointer-function-name (type-name)
   (symbolicate '#:make- type-name '#:-from-pointer))
@@ -431,7 +435,7 @@ int main(int argc, char**argv) {
   (let ((documentation (when (stringp (car slots)) (pop slots))))
     (c-section-header out "cstruct" struct-lisp-name)
     (format out "  CFFI_DEFCSTRUCT_START(~S, ~A, ~A);~%"
-            (string struct-lisp-name) struct-c-name
+            (string* struct-lisp-name) struct-c-name
             (docstring-to-c documentation))
     (dolist (slot slots)
       (destructuring-bind (slot-lisp-name slot-c-name &key type (count 1))
@@ -447,7 +451,7 @@ int main(int argc, char**argv) {
                    (prin1-to-string slot-lisp-name) (prin1-to-string type) count)))))    
     (format out "  CFFI_DEFCSTRUCT_END;~%")
     (format out "  CFFI_DEFTYPESIZE(~S, ~A);~%"
-            (string struct-lisp-name) struct-c-name)))
+            (string* struct-lisp-name) struct-c-name)))
 
 (defun foreign-name-to-symbol (s)
   (intern (substitute #\- #\_ (string-upcase s))))
@@ -466,7 +470,7 @@ int main(int argc, char**argv) {
         (ensure-list name)
       (c-section-header out "cenum" name)
       (format out "  CFFI_DEFCENUM_START(~S, ~S, ~A);~%"
-              (string name) (prin1-to-string base-type)
+              (string* name) (prin1-to-string base-type)
               (docstring-to-c documentation))
       (dolist (enum enum-list)
         (destructuring-bind (lisp-name c-name &key documentation)
@@ -485,7 +489,7 @@ int main(int argc, char**argv) {
         (ensure-list name)
       (c-section-header out "constantenum" name)
       (format out "  CFFI_DEFCENUM_START(~S, ~S, ~A);~%"
-              (string name) (prin1-to-string base-type)
+              (string* name) (prin1-to-string base-type)
               (docstring-to-c documentation))
       (dolist (enum enum-list)
         (destructuring-bind (lisp-name c-name &key documentation optional)
