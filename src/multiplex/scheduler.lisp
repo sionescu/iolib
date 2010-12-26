@@ -50,7 +50,7 @@
 ;;;
 
 (defun peek-schedule (schedule)
-  (priority-queue-minimum schedule))
+  (priority-queue-maximum schedule))
 
 (defun time-to-next-timer (schedule)
   (when-let ((timer (peek-schedule schedule)))
@@ -84,6 +84,6 @@
            (unless next-timer (%return))
            (cond ((timer-expired-p next-timer now)
                   (setf expired-p t)
-                  (handle-expired-timer (priority-queue-extract-minimum schedule)))
+                  (handle-expired-timer (priority-queue-extract-maximum schedule)))
                  (t
                   (%return))))))))
