@@ -267,6 +267,13 @@ to the argument OFFSET according to the directive WHENCE."
   (buf    :pointer)
   (count  size-t)
   (offset off-t))
+
+(defsyscall (sendfile "lfp_sendfile")
+    (ssize-t :restart t :handle infd :handle2 outfd)
+  (infd   :int)
+  (outfd  :int)
+  (offset off-t)
+  (nbytes size-t))
 
 
 ;;;-------------------------------------------------------------------------
