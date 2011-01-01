@@ -5,7 +5,7 @@
 
 (in-package :iolib.os)
 
-(include "libfixposix.h")
+(include "lfp.h")
 
 (constant (+stdin+  "STDIN_FILENO"))
 (constant (+stdout+ "STDOUT_FILENO"))
