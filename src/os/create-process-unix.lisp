@@ -153,6 +153,14 @@
          (:abort
           (close-fds ,infd ,outfd ,errfd))))))
 
+(defun process-other-spawn-args (attributes uid gid resetids)
+  (when uid
+    (lfp-spawnattr-setuid attributes uid))
+  (when gid
+    (lfp-spawnattr-setgid attributes gid))
+  (when resetids
+    (lfp-spawnattr-setflags attributes lfp-spawn-resetids)))
+
 ;; program: :shell - the system shell
 ;;          file-path designator - a path
 ;; arguments: list
@@ -170,15 +178,18 @@
 ;;         t - inherit
 ;;         nil - close
 ;; stderr: :stdout - the same as stdout
+;; uid: user id - unsigned-byte or string
+;; gid: group id - unsigned-byte or string
+;; resetids: boolean - reset effective UID and GID to saved IDs
 
 (defun create-process (program arguments &key (search t) (environment t)
                        (stdin t) (stdout t) (stderr t)
-                       ;; path uid gid effective
-                       )
+                       uid gid resetids)
   (with-lfp-spawn-arguments (attributes file-actions pid)
     (with-argv ((arg0 argv) program arguments)
       (with-c-environment (envp environment)
         (with-redirections ((infd outfd errfd) (file-actions stdin stdout stderr))
+          (process-other-spawn-args attributes uid gid resetids)
           (if search
               (lfp-spawnp pid arg0 argv envp file-actions attributes)
               (lfp-spawn  pid arg0 argv envp file-actions attributes))
