@@ -14,14 +14,14 @@
   (define "_LARGEFILE64_SOURCE")
   (define "_FILE_OFFSET_BITS" 64))
 
-(include "libfixposix.h"
-         "sys/poll.h" ;; FIXME: add poll() to LFP
-         "sys/ioctl.h" "sys/resource.h" "sys/utsname.h"
-         "pwd.h" "grp.h" "dirent.h"
-         #+linux "sys/syscall.h")
+(include "lfp.h")
+
+(include "sys/poll.h" ;; FIXME: add poll() to LFP
+         "sys/ioctl.h" "sys/utsname.h"
+         "pwd.h" "grp.h")
 
 #+linux
-(include "sys/epoll.h")
+(include "sys/epoll.h" "sys/syscall.h")
 
 #+bsd
 (include "sys/event.h" "sys/time.h")    ; for kqueue
