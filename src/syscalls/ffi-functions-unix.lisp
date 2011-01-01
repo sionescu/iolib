@@ -1074,3 +1074,49 @@ variable *environ* to NULL."
 (defentrypoint getgrnam (name)
   "Gets a group info, by group name (reentrant)."
   (funcall-getgr #'%getgrnam-r name))
+
+
+;;;-------------------------------------------------------------------------
+;;; Syslog
+;;;-------------------------------------------------------------------------
+
+(defsyscall (openlog "lfp_openlog") :void
+  "Opens a connection to the system logger for a program."
+  (ident    :string)
+  (option   :int)
+  (facility :int))
+
+(defsyscall (%syslog "lfp_syslog") :void
+  "Generates a log message, which will be distributed by syslogd."
+  (priority :int)
+  (format   :string)
+  (message  :string))
+
+(defentrypoint syslog (priority format &rest args)
+  "Generates a log message, which will be distributed by syslogd.
+Using a FORMAT string and ARGS for lisp-side message formating."
+  (with-foreign-string (c-string (format nil format args))
+    (%syslog priority "%s" c-string)))
+
+(defsyscall (closelog "lfp_closelog") :void
+  "Closes the descriptor being used to write to the system logger (optional).")
+
+(defsyscall (setlogmask "lfp_setlogmask") :int
+  "Set the log mask level."
+  (mask :int))
+
+(defsyscall (log-mask "lfp_log_mask") :int
+  "Log mask corresponding to PRIORITY."
+  (priority :int))
+
+(defsyscall (log-upto "lfp_log_upto") :int
+  "Log mask upto and including PRIORITY."
+  (priority :int))
+
+(defmacro with-syslog ((identity &key (options log-ndelay) (facility log-daemon))
+                       &body body)
+  `(unwind-protect
+        (progn
+          (openlog ,identity ,options ,facility)
+          ,@body)
+     (closelog)))

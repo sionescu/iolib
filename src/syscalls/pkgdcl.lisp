@@ -417,6 +417,45 @@
    #-darwin #:note-linkup
    #-darwin #:note-linkdown
    #-darwin #:note-linkinv)
+  (:export ;; syslog.h
+   ;; Openlog() options
+   #:log-pid
+   #:log-cons
+   #:log-odelay
+   #:log-ndelay
+   #:log-nowait
+   #:log-perror
+   ;; Syslog() facilities
+   #:log-kern
+   #:log-user
+   #:log-mail
+   #:log-daemon
+   #:log-auth
+   #:log-authpriv
+   #:log-syslog
+   #:log-lpr
+   #:log-news
+   #:log-uucp
+   #:log-cron
+   #:log-ftp
+   #+bsd #:log-security
+   #:log-local0
+   #:log-local1
+   #:log-local2
+   #:log-local3
+   #:log-local4
+   #:log-local5
+   #:log-local6
+   #:log-local7
+   ;; Syslog() levels
+   #:log-emerg
+   #:log-alert
+   #:log-crit
+   #:log-err
+   #:log-warning
+   #:log-notice
+   #:log-info
+   #:log-debug)
 
   (:export ;; CFFI additions
    #:sizeof)
@@ -578,4 +617,12 @@
    #:getpwnam)
   (:export ;; Group info
    #:getgrgid
-   #:getgrnam))
+   #:getgrnam)
+  (:export ;; Syslog
+   #:openlog
+   #:syslog
+   #:closelog
+   #:setlogmask
+   #:log-mask
+   #:log-upto
+   #:with-syslog))
