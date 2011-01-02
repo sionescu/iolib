@@ -153,13 +153,15 @@
          (:abort
           (close-fds ,infd ,outfd ,errfd))))))
 
-(defun process-other-spawn-args (attributes uid gid resetids)
+(defun process-other-spawn-args (attributes uid gid resetids current-directory)
   (when uid
     (lfp-spawnattr-setuid attributes uid))
   (when gid
     (lfp-spawnattr-setgid attributes gid))
   (when resetids
-    (lfp-spawnattr-setflags attributes lfp-spawn-resetids)))
+    (lfp-spawnattr-setflags attributes lfp-spawn-resetids))
+  (when current-directory
+    (lfp-spawnattr-setcwd attributes current-directory)))
 
 ;; program: :shell - the system shell
 ;;          file-path designator - a path
@@ -184,12 +186,12 @@
 
 (defun create-process (program arguments &key (search t) (environment t)
                        (stdin t) (stdout t) (stderr t)
-                       uid gid resetids)
+                       uid gid resetids current-directory)
   (with-lfp-spawn-arguments (attributes file-actions pid)
     (with-argv ((arg0 argv) program arguments)
       (with-c-environment (envp environment)
         (with-redirections ((infd outfd errfd) (file-actions stdin stdout stderr))
-          (process-other-spawn-args attributes uid gid resetids)
+          (process-other-spawn-args attributes uid gid resetids current-directory)
           (if search
               (lfp-spawnp pid arg0 argv envp file-actions attributes)
               (lfp-spawn  pid arg0 argv envp file-actions attributes))

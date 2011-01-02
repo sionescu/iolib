@@ -69,6 +69,12 @@
   (attributes :pointer)
   (gid        gid-t))
 
+(defsyscall (lfp-spawnattr-setcwd
+             "lfp_spawnattr_setcwd")
+    :int
+  (attributes :pointer)
+  (path       sstring))
+
 ;; (defsyscall (lfp-spawnattr-getschedpolicy
 ;;              "lfp_spawnattr_getschedpolicy")
 ;;     :int
