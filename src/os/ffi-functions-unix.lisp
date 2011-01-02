@@ -33,23 +33,11 @@
     :int
   (attributes :pointer))
 
-(defsyscall (lfp-spawnattr-getflags
-             "lfp_spawnattr_getflags")
-    :int
-  (attributes :pointer)
-  (flags      :pointer))
-
 (defsyscall (lfp-spawnattr-setflags
              "lfp_spawnattr_setflags")
     :int
   (attributes :pointer)
   (flags      :uint32))
-
-(defsyscall (lfp-spawnattr-getsigmask
-             "lfp_spawnattr_getsigmask")
-    :int
-  (attributes :pointer)
-  (sigmask    :pointer))
 
 (defsyscall (lfp-spawnattr-setsigmask
              "lfp_spawnattr_setsigmask")
@@ -57,23 +45,11 @@
   (attributes :pointer)
   (sigmask    :pointer))
 
-(defsyscall (lfp-spawnattr-getsigdefault
-             "lfp_spawnattr_getsigdefault")
-    :int
-  (attributes :pointer)
-  (sigdefault :pointer))
-
 (defsyscall (lfp-spawnattr-setsigdefault
              "lfp_spawnattr_setsigdefault")
     :int
   (attributes :pointer)
   (sigdefault :pointer))
-
-(defsyscall (lfp-spawnattr-getpgroup
-             "lfp_spawnattr_getpgroup")
-    :int
-  (attributes :pointer)
-  (pgroup     :pointer))
 
 (defsyscall (lfp-spawnattr-setpgroup
              "lfp_spawnattr_setpgroup")
@@ -81,23 +57,11 @@
   (attributes :pointer)
   (pgroup     pid-t))
 
-(defsyscall (lfp-spawnattr-getuid
-             "lfp_spawnattr_getuid")
-    :int
-  (attributes :pointer)
-  (uid        :pointer))
-
 (defsyscall (lfp-spawnattr-setuid
              "lfp_spawnattr_setuid")
     :int
   (attributes :pointer)
   (uid        uid-t))
-
-(defsyscall (lfp-spawnattr-getgid
-             "lfp_spawnattr_getgid")
-    :int
-  (attributes :pointer)
-  (gid        :pointer))
 
 (defsyscall (lfp-spawnattr-setgid
              "lfp_spawnattr_setgid")
