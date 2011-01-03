@@ -183,6 +183,7 @@
 ;; uid: user id - unsigned-byte or string
 ;; gid: group id - unsigned-byte or string
 ;; resetids: boolean - reset effective UID and GID to saved IDs
+;; current-directory: path - a directory to switch to before executing
 
 (defun create-process (program arguments &key (search t) (environment t)
                        (stdin t) (stdout t) (stderr t)
