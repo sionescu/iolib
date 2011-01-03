@@ -105,8 +105,7 @@
                            read-fds
                            write-fds
                            except-fds
-                           (if tmp-timeout ts (null-pointer))
-                           (null-pointer))))
+                           (if tmp-timeout ts (null-pointer)))))
         (isys:ebadf ()
           (return* (harvest-select-fd-errors rs ws max-fd))))
       (harvest-select-events max-fd read-fds write-fds except-fds))))

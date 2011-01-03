@@ -497,8 +497,7 @@ Return two values: the file descriptor and the path of the temporary file."
   (readfds   :pointer)
   (writefds  :pointer)
   (exceptfds :pointer)
-  (timeout   :pointer)
-  (sigmask   :pointer))
+  (timeout   :pointer))
 
 (defentrypoint copy-fd-set (from to)
   (memcpy to from (sizeof 'fd-set))
