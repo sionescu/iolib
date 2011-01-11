@@ -33,6 +33,15 @@
   (print-unreadable-object (o s :type t :identity t)
     (format s "~S ~S" :pid (process-pid o))))
 
+(defmethod process-wait ((process process))
+  (prog1
+      (nth-value 1 (isys:waitpid (process-pid process) 0))
+    (setf (slot-value process 'reaped) t)))
+
+(defmethod process-kill ((process process) &optional (signum :sigterm))
+  (isys:kill (process-pid process) signum))
+
+
 (defmacro with-lfp-spawn-arguments ((attributes file-actions pid) &body body)
   (with-gensyms (spawnattr-initialized-p file-actions-initialized-p)
     `(with-foreign-objects ((,attributes 'lfp-spawnattr-t)
@@ -219,11 +228,3 @@
                        nil
                        (slurp-stream-into-string (process-stderr process))))
         (close process)))))
-
-(defmethod process-wait ((process process))
-  (prog1
-      (nth-value 1 (isys:waitpid (process-pid process) 0))
-    (setf (slot-value process 'reaped) t)))
-
-(defmethod process-kill ((process process) &optional (signum :sigterm))
-  (isys:kill (process-pid process) signum))
