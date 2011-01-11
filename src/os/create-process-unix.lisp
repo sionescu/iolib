@@ -194,37 +194,36 @@
 ;; resetids: boolean - reset effective UID and GID to saved IDs
 ;; current-directory: path - a directory to switch to before executing
 
-(defun create-process (program arguments &key (search t) (environment t)
+(defun create-process (program-and-args &key (search t) (environment t)
                        (stdin t) (stdout t) (stderr t)
                        uid gid resetids current-directory)
-  (with-lfp-spawn-arguments (attributes file-actions pid)
-    (with-argv ((arg0 argv) program arguments)
-      (with-c-environment (envp environment)
-        (with-redirections ((infd outfd errfd) (file-actions stdin stdout stderr))
-          (process-other-spawn-args attributes uid gid resetids current-directory)
-          (if search
-              (lfp-spawnp pid arg0 argv envp file-actions attributes)
-              (lfp-spawn  pid arg0 argv envp file-actions attributes))
-          (make-instance 'process :pid (mem-ref pid 'pid-t)
-                         :stdin infd :stdout outfd :stderr errfd))))))
+  (destructuring-bind (program &rest arguments)
+      (ensure-list program-and-args)
+    (with-lfp-spawn-arguments (attributes file-actions pid)
+      (with-argv ((arg0 argv) program arguments)
+        (with-c-environment (envp environment)
+          (with-redirections ((infd outfd errfd) (file-actions stdin stdout stderr))
+            (process-other-spawn-args attributes uid gid resetids current-directory)
+            (if search
+                (lfp-spawnp pid arg0 argv envp file-actions attributes)
+                (lfp-spawn  pid arg0 argv envp file-actions attributes))
+            (make-instance 'process :pid (mem-ref pid 'pid-t)
+                           :stdin infd :stdout outfd :stderr errfd)))))))
 
-(defun run-program (program &optional arguments &key (search t) environment stderr)
-  (check-type stderr (member nil :stdout))
-  (flet ((slurp-stream-into-string (stream)
+(defun run-program (program-and-args &key (search t) environment (stderr t))
+  (flet ((slurp (stream)
            (with-output-to-string (s)
              (loop :for c := (read-char stream nil nil)
                    :while c :do (write-char c s)))))
-    (let ((process (create-process program arguments
+    (let ((process (create-process program-and-args
                                    :search search
                                    :environment environment
                                    :stdout :pipe
-                                   :stderr (if (eql :stdout stderr)
-                                               :stdout
-                                               :pipe))))
+                                   :stderr (if stderr :pipe :stdout))))
       (unwind-protect
            (values (process-wait process)
-                   (slurp-stream-into-string (process-stdout process))
-                   (if (eql :stdout stderr)
-                       nil
-                       (slurp-stream-into-string (process-stderr process))))
+                   (slurp (process-stdout process))
+                   (if stderr
+                       (slurp (process-stderr process))
+                       (make-string 0)))
         (close process)))))
