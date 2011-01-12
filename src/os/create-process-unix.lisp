@@ -39,7 +39,8 @@
     (setf (slot-value process 'reaped) t)))
 
 (defmethod process-kill ((process process) &optional (signum :sigterm))
-  (isys:kill (process-pid process) signum))
+  (isys:kill (process-pid process) signum)
+  process)
 
 
 (defmacro with-lfp-spawn-arguments ((attributes file-actions pid) &body body)
