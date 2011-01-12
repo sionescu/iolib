@@ -210,7 +210,7 @@
             (make-instance 'process :pid (mem-ref pid 'pid-t)
                            :stdin infd :stdout outfd :stderr errfd)))))))
 
-(defun run-program (program-and-args &key (search t) environment (stderr t))
+(defun run-program (program-and-args &key (search t) (environment t) (stderr t))
   (flet ((slurp (stream)
            (with-output-to-string (s)
              (loop :for c := (read-char stream nil nil)
