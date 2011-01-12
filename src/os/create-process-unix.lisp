@@ -175,8 +175,6 @@
 ;; program: :shell - the system shell
 ;;          file-path designator - a path
 ;; arguments: list
-;; search: boolean. whether or not to search PROGRAM in $PATH when PROGRAM only names a file,
-;;                  i.e., it's a relative path whose directory is NIL
 ;; environment: t - inherit environment
 ;;              nil - NULL environment
 ;;              alist - the environment to use
@@ -194,7 +192,7 @@
 ;; resetids: boolean - reset effective UID and GID to saved IDs
 ;; current-directory: path - a directory to switch to before executing
 
-(defun create-process (program-and-args &key (search t) (environment t)
+(defun create-process (program-and-args &key (environment t)
                        (stdin t) (stdout t) (stderr t)
                        uid gid resetids current-directory)
   (destructuring-bind (program &rest arguments)
@@ -204,19 +202,16 @@
         (with-c-environment (envp environment)
           (with-redirections ((infd outfd errfd) (file-actions stdin stdout stderr))
             (process-other-spawn-args attributes uid gid resetids current-directory)
-            (if search
-                (lfp-spawnp pid arg0 argv envp file-actions attributes)
-                (lfp-spawn  pid arg0 argv envp file-actions attributes))
+            (lfp-spawnp pid arg0 argv envp file-actions attributes)
             (make-instance 'process :pid (mem-ref pid 'pid-t)
                            :stdin infd :stdout outfd :stderr errfd)))))))
 
-(defun run-program (program-and-args &key (search t) (environment t) (stderr t))
+(defun run-program (program-and-args &key (environment t) (stderr t))
   (flet ((slurp (stream)
            (with-output-to-string (s)
              (loop :for c := (read-char stream nil nil)
                    :while c :do (write-char c s)))))
     (let ((process (create-process program-and-args
-                                   :search search
                                    :environment environment
                                    :stdout :pipe
                                    :stderr (if stderr :pipe :stdout))))
