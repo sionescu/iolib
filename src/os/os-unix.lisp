@@ -142,7 +142,7 @@ of SETF ENVIRONMENT."
          ((eql t)
           (,body-fn isys:*environ*))
          (environment
-          (with-foreign-object (,ptr :pointer (1+ (hash-table-size
+          (with-foreign-object (,ptr :pointer (1+ (hash-table-count
                                                    (environment-variables ,environment))))
             (unwind-protect
                  (progn
