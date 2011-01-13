@@ -592,7 +592,7 @@
    #:wifexited
    #:wexitstatus
    #:wifsignaled
-   #:wtermsig
+   #:wtermsig #:wtermsig*
    #:wcoredump
    #:wifstopped
    #:wstopsig

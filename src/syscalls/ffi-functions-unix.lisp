@@ -850,6 +850,9 @@ as indicated by WHICH and WHO to VALUE."
 (defentrypoint wtermsig (status)
   (foreign-funcall "lfp_wtermsig" :int status :int))
 
+(defentrypoint wtermsig* (status)
+  (foreign-enum-keyword 'signal (wtermsig status)))
+
 (defentrypoint wcoredump (status)
   (plusp (foreign-funcall "lfp_wcoredump" :int status :int)))
 
