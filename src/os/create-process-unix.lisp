@@ -7,6 +7,7 @@
 
 (defclass process ()
   ((pid    :initarg :pid :reader process-pid)
+   (status :initform nil :reader process-exit-status)
    (reaped :initform nil)
    (stdin  :initform nil :reader process-stdin)
    (stdout :initform nil :reader process-stdout)
@@ -33,10 +34,20 @@
   (print-unreadable-object (o s :type t :identity t)
     (format s "~S ~S" :pid (process-pid o))))
 
+(defun exit-status (status)
+  (cond
+    ((isys:wifexited status)
+     (isys:wexitstatus status))
+    ((isys:wifsignaled status)
+     (values (isys:wtermsig* status)
+             (isys:wcoredump status)))))
+
 (defmethod process-wait ((process process))
-  (prog1
-      (nth-value 1 (isys:waitpid (process-pid process) 0))
-    (setf (slot-value process 'reaped) t)))
+  (let ((status (nth-value 1 (isys:waitpid (process-pid process) 0))))
+    (multiple-value-prog1
+        (exit-status status)
+      (setf (slot-value process 'reaped) t
+            (slot-value process 'status) status))))
 
 (defmethod process-kill ((process process) &optional (signum :sigterm))
   (isys:kill (process-pid process) signum)

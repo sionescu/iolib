@@ -25,6 +25,7 @@
    #:process-stdin
    #:process-stdout
    #:process-stderr
+   #:process-exit-status
    #:create-process
    #:run-program
    #:process-wait
