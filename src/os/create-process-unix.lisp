@@ -220,6 +220,7 @@
                    :while c :do (write-char c s)))))
     (let ((process (create-process program-and-args
                                    :environment environment
+                                   :stdin nil
                                    :stdout :pipe
                                    :stderr (if stderr :pipe +stdout+))))
       (unwind-protect
