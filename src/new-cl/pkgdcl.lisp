@@ -5,12 +5,12 @@
 (macrolet
     ((define-gray-streams-package ()
        (let ((#1=gray-streams-package
-              #+allegro :excl
-              #+(or cmu scl) :ext
-              #+(or clisp ecl) :gray
+              #+allegro          :excl
+              #+(or cmu scl)     :ext
+              #+(or clisp ecl)   :gray
               #+(or ccl openmcl) :ccl
-              #+lispworks :stream
-              #+sbcl :sb-gray
+              #+lispworks        :stream
+              #+sbcl             :sb-gray
               #-(or allegro cmu scl clisp ecl ccl openmcl lispworks sbcl)
               (cl:error "Your CL implementation isn't supported."))
              (#2=gray-streams-symbols
