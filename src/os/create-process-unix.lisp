@@ -213,7 +213,7 @@
             (make-instance 'process :pid (mem-ref pid 'pid-t)
                            :stdin infd :stdout outfd :stderr errfd)))))))
 
-(defun run-program (program-and-args &key (environment t) (stderr t))
+(defun run-program (program-and-args &key (environment t) (stderr :pipe))
   (flet ((slurp (stream)
            (with-output-to-string (s)
              (loop :for c := (read-char stream nil nil)
@@ -222,11 +222,11 @@
                                    :environment environment
                                    :stdin nil
                                    :stdout :pipe
-                                   :stderr (if stderr :pipe +stdout+))))
+                                   :stderr stderr)))
       (unwind-protect
            (values (process-wait process)
                    (slurp (process-stdout process))
-                   (if stderr
+                   (if (eql :pipe stderr)
                        (slurp (process-stderr process))
                        (make-string 0)))
         (close process)))))
