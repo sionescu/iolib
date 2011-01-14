@@ -30,6 +30,9 @@
    #:run-program
    #:process-wait
    #:process-kill
+   #:+stdin+
+   #:+stdout+
+   #:+stderr+
 
    ;; Directories
    #:current-directory

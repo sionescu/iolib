@@ -147,15 +147,11 @@
         (redirect-one-stream file-actions +stdout+ stdout (logior isys:o-wronly
                                                                   isys:o-creat)))
     ;; Standard error
-    (cond
-      ((and stdout (eql :stdout stderr))
-       (redirect-one-stream file-actions +stderr+ +stdout+))
-      ((eql :pipe stderr)
-       (setf (values errfd errfd-child)
-             (redirect-to-pipes file-actions +stderr+ nil)))
-      (t
-       (redirect-one-stream file-actions +stderr+ stderr (logior isys:o-wronly
-                                                                 isys:o-creat))))
+    (if (eql :pipe stderr)
+        (setf (values errfd errfd-child)
+              (redirect-to-pipes file-actions +stderr+ nil))
+        (redirect-one-stream file-actions +stderr+ stderr (logior isys:o-wronly
+                                                                  isys:o-creat)))
     (values infd infd-child outfd outfd-child errfd errfd-child)))
 
 (defun close-fds (&rest fds)
@@ -198,7 +194,6 @@
 ;;                 into a stream which goes into PROCESS slot
 ;;         t - inherit
 ;;         nil - close
-;; stderr: :stdout - the same as stdout
 ;; uid: user id - unsigned-byte or string
 ;; gid: group id - unsigned-byte or string
 ;; resetids: boolean - reset effective UID and GID to saved IDs
@@ -226,7 +221,7 @@
     (let ((process (create-process program-and-args
                                    :environment environment
                                    :stdout :pipe
-                                   :stderr (if stderr :pipe :stdout))))
+                                   :stderr (if stderr :pipe +stdout+))))
       (unwind-protect
            (values (process-wait process)
                    (slurp (process-stdout process))
