@@ -200,7 +200,7 @@
 ;; current-directory: path - a directory to switch to before executing
 
 (defun create-process (program-and-args &key (environment t)
-                       (stdin t) (stdout t) (stderr t)
+                       (stdin :pipe) (stdout :pipe) (stderr :pipe)
                        uid gid resetids current-directory)
   (destructuring-bind (program &rest arguments)
       (ensure-list program-and-args)
