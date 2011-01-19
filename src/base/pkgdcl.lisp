@@ -9,7 +9,7 @@
   (:extend/excluding :iolib.common-lisp
                      #:defun #:defmethod #:defmacro #:define-compiler-macro
                      #:constantp)
-  (:extend :alexandria)
+  (:extend :alexandria :split-sequence)
   (:export
    ;; Conditions
    #:bug #:iolib-bug
@@ -52,8 +52,6 @@
    #:disable-reader-macro #:disable-reader-macro*
    #:define-literal-reader
    #:unknown-literal-syntax #:unknown-literal-syntax-name
-   ;; SPLIT-SEQUENCE
-   #:split-sequence #:split-sequence-if #:split-sequence-if-not
    ;; Misc
    #:function-name #:function-name-p
    #:check-bounds #:join #:join* #:shrink-vector #:full-string

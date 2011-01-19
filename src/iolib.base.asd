@@ -39,7 +39,7 @@
                (read f))
   :licence "MIT"
   :defsystem-depends-on (:iolib.asdf :iolib.conf)
-  :depends-on (:alexandria :iolib.common-lisp)
+  :depends-on (:iolib.common-lisp :alexandria :split-sequence)
   :default-component-class :iolib-source-file
   :pathname "base/"
   :components
@@ -54,5 +54,4 @@
    (:file "reader" :depends-on ("pkgdcl" "return-star" "conditions"))
    (:file "sequence" :depends-on ("pkgdcl" "return-star"))
    (:file "matching" :depends-on ("pkgdcl" "return-star"))
-   (:file "time" :depends-on ("pkgdcl" "return-star"))
-   (:file "split-sequence" :depends-on ("pkgdcl" "return-star" "sequence"))))
+   (:file "time" :depends-on ("pkgdcl" "return-star"))))
