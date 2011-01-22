@@ -59,14 +59,14 @@
     `(with-foreign-objects ((,attributes 'lfp-spawnattr-t)
                             (,file-actions 'lfp-spawn-file-actions-t)
                             (,pid 'pid-t))
-       (let (,spawnattr-initialized-p
-             ,file-actions-initialized-p)
+       (let ((,spawnattr-initialized-p nil)
+             (,file-actions-initialized-p nil))
          (unwind-protect
               (progn
-                (lfp-spawnattr-init ,attributes)
-                (setf ,spawnattr-initialized-p t)
-                (lfp-spawn-file-actions-init ,file-actions)
-                (setf ,file-actions-initialized-p t)
+                (setf ,spawnattr-initialized-p
+                      (lfp-spawnattr-init ,attributes))
+                (setf ,file-actions-initialized-p
+                      (lfp-spawn-file-actions-init ,file-actions))
                 ,@body)
            (when ,spawnattr-initialized-p
              (lfp-spawnattr-destroy ,attributes))
