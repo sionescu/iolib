@@ -57,6 +57,23 @@
   (attributes :pointer)
   (pgroup     pid-t))
 
+(defsyscall (lfp-spawnattr-setsid
+             "lfp_spawnattr_setsid")
+    :int
+  (attributes :pointer))
+
+(defsyscall (lfp-spawnattr-setctty
+             "lfp_spawnattr_setctty")
+    :int
+  (attributes :pointer)
+  (ptmfd      pid-t))
+
+(defsyscall (lfp-spawnattr-setcwd
+             "lfp_spawnattr_setcwd")
+    :int
+  (attributes :pointer)
+  (path       sstring))
+
 (defsyscall (lfp-spawnattr-setuid
              "lfp_spawnattr_setuid")
     :int
@@ -68,12 +85,6 @@
     :int
   (attributes :pointer)
   (gid        gid-t))
-
-(defsyscall (lfp-spawnattr-setcwd
-             "lfp_spawnattr_setcwd")
-    :int
-  (attributes :pointer)
-  (path       sstring))
 
 ;; (defsyscall (lfp-spawnattr-getschedpolicy
 ;;              "lfp_spawnattr_getschedpolicy")

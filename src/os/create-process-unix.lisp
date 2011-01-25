@@ -133,36 +133,64 @@
     (lfp-spawn-file-actions-addclose file-actions pipe-child)
     (values pipe-parent pipe-child)))
 
-(defun setup-redirections (file-actions stdin stdout stderr)
+(defun setup-redirections (file-actions stdin stdout stderr ptmfd pts)
   (let (infd infd-child outfd outfd-child errfd errfd-child)
     ;; Standard input
-    (if (eql :pipe stdin)
-        (setf (values infd infd-child)
-              (redirect-to-pipes file-actions +stdin+ t))
-        (redirect-one-stream file-actions +stdin+ stdin isys:o-rdonly))
+    (case stdin
+      (:pipe
+       (setf (values infd infd-child)
+             (redirect-to-pipes file-actions +stdin+ t)))
+      (:pty
+       (setf infd (isys:dup ptmfd))
+       (redirect-one-stream file-actions +stdin+ pts isys:o-rdonly))
+      (t (redirect-one-stream file-actions +stdin+ stdin isys:o-rdonly)))
     ;; Standard output
-    (if (eql :pipe stdout)
-        (setf (values outfd outfd-child)
-              (redirect-to-pipes file-actions +stdout+ nil))
-        (redirect-one-stream file-actions +stdout+ stdout (logior isys:o-wronly
-                                                                  isys:o-creat)))
+    (case stdout
+      (:pipe
+       (setf (values outfd outfd-child)
+             (redirect-to-pipes file-actions +stdout+ nil)))
+      (:pty
+       (setf outfd (isys:dup ptmfd))
+       (redirect-one-stream file-actions +stdout+ pts (logior isys:o-wronly
+                                                              isys:o-creat)))
+      (t (redirect-one-stream file-actions +stdout+ stdout (logior isys:o-wronly
+                                                                   isys:o-creat))))
     ;; Standard error
-    (if (eql :pipe stderr)
-        (setf (values errfd errfd-child)
-              (redirect-to-pipes file-actions +stderr+ nil))
-        (redirect-one-stream file-actions +stderr+ stderr (logior isys:o-wronly
-                                                                  isys:o-creat)))
+    (case stderr
+      (:pipe
+       (setf (values errfd errfd-child)
+             (redirect-to-pipes file-actions +stderr+ nil)))
+      (:pty
+       (setf errfd (isys:dup ptmfd))
+       (redirect-one-stream file-actions +stderr+ pts (logior isys:o-wronly
+                                                              isys:o-creat)))
+      (t (redirect-one-stream file-actions +stderr+ stderr (logior isys:o-wronly
+                                                                   isys:o-creat))))
     (values infd infd-child outfd outfd-child errfd errfd-child)))
 
 (defun close-fds (&rest fds)
   (dolist (fd fds)
     (when fd (isys:close fd))))
 
-(defmacro with-redirections (((infd outfd errfd) (file-actions stdin stdout stderr))
+(defun setup-slave-pty ()
+  (let ((ptmfd (isys:openpt (logior isys:o-rdwr isys:o-noctty isys:o-cloexec))))
+    (isys:grantpt ptmfd)
+    (isys:unlockpt ptmfd)
+    (values ptmfd (isys:ptsname ptmfd))))
+
+(defmacro with-pty ((ptmfd pts) &body body)
+  `(multiple-value-bind (,ptmfd ,pts)
+       (setup-slave-pty)
+     (unwind-protect
+          (locally ,@body)
+       (close-fds ,ptmfd))))
+
+(defmacro with-redirections (((infd outfd errfd)
+                              (file-actions stdin stdout stderr ptmfd pts))
                              &body body)
   (with-gensyms (infd-child outfd-child errfd-child)
     `(multiple-value-bind (,infd ,infd-child ,outfd ,outfd-child ,errfd ,errfd-child)
-         (setup-redirections ,file-actions ,stdin ,stdout ,stderr)
+         (setup-redirections ,file-actions ,stdin ,stdout ,stderr ,ptmfd ,pts)
        (unwind-protect-case ()
            (locally ,@body)
          (:always
@@ -170,15 +198,18 @@
          (:abort
           (close-fds ,infd ,outfd ,errfd))))))
 
-(defun process-other-spawn-args (attributes uid gid resetids current-directory)
+(defun process-other-spawn-args (attributes new-session current-directory
+                                 uid gid resetids)
+  (when new-session
+    (lfp-spawnattr-setsid attributes))
+  (when current-directory
+    (lfp-spawnattr-setcwd attributes current-directory))
   (when uid
     (lfp-spawnattr-setuid attributes uid))
   (when gid
     (lfp-spawnattr-setgid attributes gid))
   (when resetids
-    (lfp-spawnattr-setflags attributes lfp-spawn-resetids))
-  (when current-directory
-    (lfp-spawnattr-setcwd attributes current-directory)))
+    (lfp-spawnattr-setflags attributes lfp-spawn-resetids)))
 
 ;; program: :shell - the system shell
 ;;          file-path designator - a path
@@ -201,17 +232,26 @@
 
 (defun create-process (program-and-args &key (environment t)
                        (stdin :pipe) (stdout :pipe) (stderr :pipe)
-                       uid gid resetids current-directory)
-  (destructuring-bind (program &rest arguments)
-      (ensure-list program-and-args)
-    (with-argv ((arg0 argv) program arguments)
-      (with-c-environment (envp environment)
-        (with-lfp-spawn-arguments (attributes file-actions pid)
-          (with-redirections ((infd outfd errfd) (file-actions stdin stdout stderr))
-            (process-other-spawn-args attributes uid gid resetids current-directory)
-            (lfp-spawnp pid arg0 argv envp file-actions attributes)
-            (make-instance 'process :pid (mem-ref pid 'pid-t)
-                           :stdin infd :stdout outfd :stderr errfd)))))))
+                       new-session current-directory uid gid resetids)
+  (flet ((new-ctty-p (stdin stdout stderr)
+           (or (eql :pty stdin)
+               (eql :pty stdout)
+               (eql :pty stderr))))
+    (destructuring-bind (program &rest arguments)
+        (ensure-list program-and-args)
+      (when (new-ctty-p stdin stdout stderr)
+        (setf new-session t))
+      (with-argv ((arg0 argv) program arguments)
+        (with-c-environment (envp environment)
+          (with-lfp-spawn-arguments (attributes file-actions pid)
+            (with-pty (ptmfd pts)
+              (with-redirections ((infd outfd errfd)
+                                  (file-actions stdin stdout stderr ptmfd pts))
+                (process-other-spawn-args attributes new-session current-directory
+                                          uid gid resetids)
+                (lfp-spawnp pid arg0 argv envp file-actions attributes)
+                (make-instance 'process :pid (mem-ref pid 'pid-t)
+                               :stdin infd :stdout outfd :stderr errfd)))))))))
 
 (defun run-program (program-and-args &key (environment t) (stderr :pipe))
   (flet ((slurp (stream)
