@@ -226,10 +226,11 @@
 ;;                 into a stream which goes into PROCESS slot
 ;;         t - inherit
 ;;         nil - close
+;; new-session: boolean - create a new session using setsid()
+;; current-directory: path - a directory to switch to before executing
 ;; uid: user id - unsigned-byte or string
 ;; gid: group id - unsigned-byte or string
 ;; resetids: boolean - reset effective UID and GID to saved IDs
-;; current-directory: path - a directory to switch to before executing
 
 (defun create-process (program-and-args &key (environment t)
                        (stdin :pipe) (stdout :pipe) (stderr :pipe)
