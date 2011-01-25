@@ -523,7 +523,7 @@
    #:fd-nonblock-p
    #:fd-open-p)
   (:export ;; TTYs
-   #:posix-openpt
+   #:openpt
    #:grantpt
    #:unlockpt
    #:ptsname)

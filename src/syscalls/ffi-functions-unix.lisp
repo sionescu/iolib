@@ -471,8 +471,8 @@ Return two values: the file descriptor and the path of the temporary file."
 ;;; TTYs
 ;;;-------------------------------------------------------------------------
 
-(defsyscall (posix-openpt "posix_openpt") :int
-  (flags :int))
+(defsyscall (openpt "lfp_openpt") :int
+  (flags :uint64))
 
 (defsyscall (grantpt "grantpt")
     (:int :handle fd)
@@ -482,9 +482,15 @@ Return two values: the file descriptor and the path of the temporary file."
     (:int :handle fd)
   (fd :int))
 
-(defsyscall (ptsname "ptsname")
-    (:string :handle fd)
+(defsyscall (%ptsname "lfp_ptsname")
+    (:pointer :handle fd)
   (fd :int))
+
+(defentrypoint ptsname (fd)
+  (let ((str (%ptsname fd)))
+    (unwind-protect
+         (nth-value 0 (foreign-string-to-lisp str))
+      (foreign-free str))))
 
 
 ;;;-------------------------------------------------------------------------
