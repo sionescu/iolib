@@ -32,8 +32,9 @@
             (:extend/excluding :common-lisp
                                #:export #:unexport #:defpackage 
                                #:delete-package #:rename-package
-                               #:defconstant)
-            (:export #:defconstant)
+                               #:defconstant
+                               #:boolean)
+            (:export #:defconstant #:boolean)
             (:extend/excluding :iolib.internal.conduits
                                #:recompute-conduits)
             (:import-from ,#1# ,@#2#)
