@@ -186,17 +186,18 @@
        (close-fds ,ptmfd))))
 
 (defmacro with-redirections (((infd outfd errfd)
-                              (file-actions stdin stdout stderr ptmfd pts))
+                              (file-actions stdin stdout stderr))
                              &body body)
-  (with-gensyms (infd-child outfd-child errfd-child)
-    `(multiple-value-bind (,infd ,infd-child ,outfd ,outfd-child ,errfd ,errfd-child)
-         (setup-redirections ,file-actions ,stdin ,stdout ,stderr ,ptmfd ,pts)
-       (unwind-protect-case ()
-           (locally ,@body)
-         (:always
-          (close-fds ,infd-child ,outfd-child ,errfd-child))
-         (:abort
-          (close-fds ,infd ,outfd ,errfd))))))
+  (with-gensyms (infd-child outfd-child errfd-child ptmfd pts)
+    `(with-pty (,ptmfd ,pts)
+       (multiple-value-bind (,infd ,infd-child ,outfd ,outfd-child ,errfd ,errfd-child)
+           (setup-redirections ,file-actions ,stdin ,stdout ,stderr ,ptmfd ,pts)
+         (unwind-protect-case ()
+             (locally ,@body)
+           (:always
+            (close-fds ,infd-child ,outfd-child ,errfd-child))
+           (:abort
+            (close-fds ,infd ,outfd ,errfd)))))))
 
 (defun process-other-spawn-args (attributes new-session current-directory
                                  uid gid resetids)
@@ -244,14 +245,13 @@
       (with-argv ((arg0 argv) program arguments)
         (with-c-environment (envp environment)
           (with-lfp-spawn-arguments (attributes file-actions pid)
-            (with-pty (ptmfd pts)
-              (with-redirections ((infd outfd errfd)
-                                  (file-actions stdin stdout stderr ptmfd pts))
-                (process-other-spawn-args attributes new-session current-directory
-                                          uid gid resetids)
-                (lfp-spawnp pid arg0 argv envp file-actions attributes)
-                (make-instance 'process :pid (mem-ref pid 'pid-t)
-                               :stdin infd :stdout outfd :stderr errfd)))))))))
+            (with-redirections ((infd outfd errfd)
+                                (file-actions stdin stdout stderr))
+              (process-other-spawn-args attributes new-session current-directory
+                                        uid gid resetids)
+              (lfp-spawnp pid arg0 argv envp file-actions attributes)
+              (make-instance 'process :pid (mem-ref pid 'pid-t)
+                             :stdin infd :stdout outfd :stderr errfd))))))))
 
 (defun run-program (program-and-args &key (environment t) (stderr :pipe))
   (flet ((slurp (stream)
