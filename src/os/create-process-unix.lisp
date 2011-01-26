@@ -13,12 +13,16 @@
    (stdout :initform nil :reader process-stdout)
    (stderr :initform nil :reader process-stderr)))
 
-(defmethod initialize-instance :after ((process process) &key stdin stdout stderr)
+(defmethod initialize-instance :after ((process process) &key
+                                       stdin stdout stderr external-format)
   (with-slots ((in stdin) (out stdout) (err stderr))
       process
-    (setf in  (and stdin  (make-instance 'iolib.streams:dual-channel-gray-stream :fd stdin))
-          out (and stdout (make-instance 'iolib.streams:dual-channel-gray-stream :fd stdout))
-          err (and stderr (make-instance 'iolib.streams:dual-channel-gray-stream :fd stderr)))))
+    (setf in  (and stdin  (make-instance 'iolib.streams:dual-channel-gray-stream
+                                         :fd stdin :external-format external-format))
+          out (and stdout (make-instance 'iolib.streams:dual-channel-gray-stream
+                                         :fd stdout :external-format external-format))
+          err (and stderr (make-instance 'iolib.streams:dual-channel-gray-stream
+                                         :fd stderr :external-format external-format)))))
 
 (defmethod close ((process process) &key abort)
   (with-slots (pid reaped stdin stdout stderr)
@@ -234,7 +238,8 @@
 
 (defun create-process (program-and-args &key (environment t)
                        (stdin :pipe) (stdout :pipe) (stderr :pipe)
-                       new-session current-directory uid gid resetids)
+                       new-session current-directory uid gid resetids
+                       (external-format :utf-8))
   (flet ((new-ctty-p (stdin stdout stderr)
            (or (eql :pty stdin)
                (eql :pty stdout)
@@ -252,9 +257,11 @@
                                         uid gid resetids)
               (lfp-spawnp pid arg0 argv envp file-actions attributes)
               (make-instance 'process :pid (mem-ref pid 'pid-t)
-                             :stdin infd :stdout outfd :stderr errfd))))))))
+                             :stdin infd :stdout outfd :stderr errfd
+                             :external-format external-format))))))))
 
-(defun run-program (program-and-args &key (environment t) (stderr :pipe))
+(defun run-program (program-and-args &key (environment t) (stderr :pipe)
+                    (external-format :utf-8))
   (flet ((slurp (stream)
            (with-output-to-string (s)
              (loop :for c := (read-char stream nil nil)
@@ -263,7 +270,8 @@
                                    :environment environment
                                    :stdin nil
                                    :stdout :pipe
-                                   :stderr stderr)))
+                                   :stderr stderr
+                                   :external-format external-format)))
       (unwind-protect
            (values (process-wait process)
                    (slurp (process-stdout process))
