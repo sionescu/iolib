@@ -9,30 +9,38 @@
   ((pid    :initarg :pid :reader process-pid)
    (status :initform nil :reader process-exit-status)
    (reaped :initform nil)
-   (stdin  :initform nil :reader process-stdin)
-   (stdout :initform nil :reader process-stdout)
-   (stderr :initform nil :reader process-stderr)))
+   (stdin  :reader process-stdin)
+   (stdout :reader process-stdout)
+   (stderr :reader process-stderr)))
 
 (defmethod initialize-instance :after ((process process) &key
                                        stdin stdout stderr external-format)
   (with-slots ((in stdin) (out stdout) (err stderr))
       process
-    (setf in  (and stdin  (make-instance 'iolib.streams:dual-channel-gray-stream
-                                         :fd stdin :external-format external-format))
-          out (and stdout (make-instance 'iolib.streams:dual-channel-gray-stream
-                                         :fd stdout :external-format external-format))
-          err (and stderr (make-instance 'iolib.streams:dual-channel-gray-stream
-                                         :fd stderr :external-format external-format)))))
+    (when stdin
+      (setf in  (make-instance 'iolib.streams:dual-channel-gray-stream
+                               :fd stdin :external-format external-format)))
+    (when stdout
+      (setf out (make-instance 'iolib.streams:dual-channel-gray-stream
+                               :fd stdout :external-format external-format)))
+    (when stderr
+      (setf err (make-instance 'iolib.streams:dual-channel-gray-stream
+                               :fd stderr :external-format external-format)))))
 
 (defmethod close ((process process) &key abort)
   (with-slots (pid reaped stdin stdout stderr)
       process
-    (when stdin  (close stdin  :abort abort))
-    (when stdout (close stdout :abort abort))
-    (when stderr (close stderr :abort abort))
+    (when (slot-boundp process 'stdin)
+      (close stdin  :abort abort)
+      (slot-makunbound process 'stdin))
+    (when (slot-boundp process 'stdout)
+      (close stdout :abort abort)
+      (slot-makunbound process 'stdout))
+    (when (slot-boundp process 'stderr)
+      (close stderr :abort abort)
+      (slot-makunbound process 'stderr))
     (unless reaped
-      (isys:waitpid pid (if abort isys:wnohang 0)))
-    (setf pid nil stdin nil stdout nil stderr nil)))
+      (isys:waitpid pid (if abort isys:wnohang 0)))))
 
 (defmethod print-object ((o process) s)
   (print-unreadable-object (o s :type t :identity t)
