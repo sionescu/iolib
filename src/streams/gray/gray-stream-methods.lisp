@@ -43,7 +43,7 @@
       o
     (print-unreadable-object (o s :type nil :identity t)
       (format s "~A ~S ~S ~S ~S/~S ~S ~S/~S ~S (~S ~S ~S)"
-              'dual-channel-gray-stream :fd fd
+              (type-of o) :fd fd
               :ibuf (iobuf-length ib) (iobuf-size ib)
               :obuf (iobuf-length ob) (iobuf-size ob)
               :ef (babel-encodings:enc-name (babel:external-format-encoding ef))
