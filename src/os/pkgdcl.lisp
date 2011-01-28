@@ -25,10 +25,10 @@
    #:process-stdin
    #:process-stdout
    #:process-stderr
-   #:process-exit-status
+   #:process-status
    #:create-process
    #:run-program
-   #:process-wait
+   #:process-activep
    #:process-kill
    #:+stdin+
    #:+stdout+

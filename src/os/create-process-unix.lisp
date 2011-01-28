@@ -5,10 +5,28 @@
 
 (in-package :iolib.os)
 
+(defun tty-read-fn (fd buf nbytes)
+  (handler-case
+      (isys:read fd buf nbytes)
+    (isys:eio () 0)))
+
+(defun tty-write-fn (fd buf nbytes)
+  (handler-case
+      (isys:write fd buf nbytes)
+    (isys:eio ()
+      (error 'isys:epipe
+             :handle fd
+             :syscall "write"))))
+
+(defclass tty-stream (iolib.streams:dual-channel-gray-stream)
+  ()
+  (:default-initargs :read-fn  #'tty-read-fn
+                     :write-fn #'tty-write-fn))
+
 (defclass process ()
   ((pid    :initarg :pid :reader process-pid)
-   (status :initform nil :reader process-exit-status)
-   (reaped :initform nil)
+   (status :initform :running)
+   (closed :initform nil)
    (stdin  :reader process-stdin)
    (stdout :reader process-stdout)
    (stderr :reader process-stderr)))
@@ -18,33 +36,34 @@
   (with-slots ((in stdin) (out stdout) (err stderr))
       process
     (when stdin
-      (setf in  (make-instance 'iolib.streams:dual-channel-gray-stream
-                               :fd stdin :external-format external-format)))
+      (setf in  (make-instance 'tty-stream :fd stdin
+                               :external-format external-format)))
     (when stdout
-      (setf out (make-instance 'iolib.streams:dual-channel-gray-stream
-                               :fd stdout :external-format external-format)))
+      (setf out (make-instance 'tty-stream :fd stdout
+                               :external-format external-format)))
     (when stderr
-      (setf err (make-instance 'iolib.streams:dual-channel-gray-stream
-                               :fd stderr :external-format external-format)))))
+      (setf err (make-instance 'tty-stream :fd stderr
+                               :external-format external-format)))))
 
 (defmethod close ((process process) &key abort)
-  (with-slots (pid reaped stdin stdout stderr)
-      process
-    (when (slot-boundp process 'stdin)
-      (close stdin  :abort abort)
-      (slot-makunbound process 'stdin))
-    (when (slot-boundp process 'stdout)
-      (close stdout :abort abort)
-      (slot-makunbound process 'stdout))
-    (when (slot-boundp process 'stderr)
-      (close stderr :abort abort)
-      (slot-makunbound process 'stderr))
-    (unless reaped
-      (isys:waitpid pid (if abort isys:wnohang 0)))))
+  (if (slot-value process 'closed)
+      nil
+      (macrolet ((close-process-stream (slot)
+                   `(when (slot-boundp process ',slot)
+                      (close (slot-value process ',slot) :abort abort)
+                      (slot-makunbound process ',slot))))
+        (close-process-stream stdin)
+        (close-process-stream stdout)
+        (close-process-stream stderr)
+        (process-status process :wait (not abort))
+        (setf (slot-value process 'closed) t)
+        t)))
 
 (defmethod print-object ((o process) s)
   (print-unreadable-object (o s :type t :identity t)
-    (format s "~S ~S" :pid (process-pid o))))
+    (format s "~S ~S ~S ~S"
+            :pid (process-pid o)
+            :status (process-status o))))
 
 (defun exit-status (status)
   (cond
@@ -54,12 +73,21 @@
      (values (isys:wtermsig* status)
              (isys:wcoredump status)))))
 
-(defmethod process-wait ((process process))
-  (let ((status (nth-value 1 (isys:waitpid (process-pid process) 0))))
-    (multiple-value-prog1
-        (exit-status status)
-      (setf (slot-value process 'reaped) t
-            (slot-value process 'status) status))))
+(defmethod process-status ((process process) &key wait)
+  (if (integerp (slot-value process 'status))
+      (slot-value process 'status)
+      (multiple-value-bind (pid status)
+          (isys:waitpid (process-pid process)
+                        (if wait 0 isys:wnohang))
+        (cond
+          ((zerop pid)
+           :running)
+          (t
+           (setf (slot-value process 'status) status)
+           (exit-status status))))))
+
+(defmethod process-activep ((process process))
+  (eql :running (process-status process)))
 
 (defmethod process-kill ((process process) &optional (signum :sigterm))
   (isys:kill (process-pid process) signum)
@@ -281,7 +309,7 @@
                                    :stderr stderr
                                    :external-format external-format)))
       (unwind-protect
-           (values (process-wait process)
+           (values (process-status process :wait t)
                    (slurp (process-stdout process))
                    (if (eql :pipe stderr)
                        (slurp (process-stderr process))
