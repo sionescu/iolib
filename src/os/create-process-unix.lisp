@@ -75,7 +75,7 @@
 
 (defmethod process-status ((process process) &key wait)
   (if (integerp (slot-value process 'status))
-      (slot-value process 'status)
+      (exit-status (slot-value process 'status))
       (multiple-value-bind (pid status)
           (isys:waitpid (process-pid process)
                         (if wait 0 isys:wnohang))
