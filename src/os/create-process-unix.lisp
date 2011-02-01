@@ -121,9 +121,7 @@
   (loop :for i :from 1
         :for arg :in arglist :do
         (setf (mem-aref argv :pointer i)
-              (foreign-string-alloc arg)))
-  ;; final null pointer
-  (setf (mem-aref argv :pointer (1- argc)) (null-pointer)))
+              (foreign-string-alloc arg))))
 
 (defun find-program (program)
   (cond
@@ -137,6 +135,7 @@
     `(let ((,program (find-program ,program))
            (,argc (+ 2 (length ,arguments))))
        (with-foreign-object (,argv :pointer ,argc)
+         (isys:bzero ,argv (* ,argc (isys:sizeof :pointer)))
          (unwind-protect
               (progn
                 (allocate-argv ,argv ,argc ,program ,arguments)
