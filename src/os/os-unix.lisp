@@ -121,9 +121,7 @@ of SETF ENVIRONMENT."
     (maphash (lambda (k v)
                (setf (mem-aref argv :pointer (incf offset))
                      (foreign-string-alloc (concatenate 'string k "=" v))))
-             variables)
-    ;; final null pointer
-    (setf (mem-aref argv :pointer argc) (null-pointer))))
+             variables)))
 
 (defun deallocate-null-ended-list (argv)
   (loop :for i :from 0
@@ -132,7 +130,7 @@ of SETF ENVIRONMENT."
         :else :do (foreign-free ptr)))
 
 (defmacro with-c-environment ((var environment) &body body)
-  (with-gensyms (body-fn ptr)
+  (with-gensyms (body-fn ptr count)
     `(flet ((,body-fn (,ptr)
               (let ((,var ,ptr))
                 ,@body)))
@@ -142,13 +140,15 @@ of SETF ENVIRONMENT."
          ((eql t)
           (,body-fn isys:*environ*))
          (environment
-          (with-foreign-object (,ptr :pointer (1+ (hash-table-count
-                                                   (environment-variables ,environment))))
-            (unwind-protect
-                 (progn
-                   (allocate-env ,ptr (environment-variables ,environment))
-                   (,body-fn ,ptr))
-              (deallocate-null-ended-list ,ptr))))))))
+          (let ((,count (1+ (hash-table-count
+                             (environment-variables ,environment)))))
+            (with-foreign-object (,ptr :pointer ,count)
+              (isys:bzero ,ptr (* ,count (isys:sizeof :pointer)))
+              (unwind-protect
+                   (progn
+                     (allocate-env ,ptr (environment-variables ,environment))
+                     (,body-fn ,ptr))
+                (deallocate-null-ended-list ,ptr)))))))))
 
 
 ;;;; Current directory
