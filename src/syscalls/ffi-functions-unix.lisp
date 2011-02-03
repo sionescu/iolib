@@ -866,7 +866,7 @@ as indicated by WHICH and WHO to VALUE."
   (plusp (foreign-funcall "lfp_wifstopped" :int status :int)))
 
 (defentrypoint wstopsig (status)
-  (foreign-funcall "lfp_stopsig" :int status :int))
+  (foreign-funcall "lfp_wstopsig" :int status :int))
 
 (defentrypoint wifcontinued (status)
   (plusp (foreign-funcall "lfp_wifcontinued" :int status :int)))
