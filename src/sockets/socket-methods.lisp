@@ -360,12 +360,13 @@
   (error "You cannot connect passive sockets."))
 
 (defmethod socket-connected-p ((socket socket))
-  (when (fd-of socket)
-    (with-sockaddr-storage-and-socklen (ss size)
-      (handler-case
-          (%getpeername (fd-of socket) ss size)
-        (socket-not-connected-error () nil)
-        (:no-error (_) (declare (ignore _)) t)))))
+  (if (fd-of socket)
+      (with-sockaddr-storage-and-socklen (ss size)
+        (handler-case
+            (%getpeername (fd-of socket) ss size)
+          ((or isys:enotconn isys:einval) ()  nil)
+          (:no-error (_) (declare (ignore _)) t)))
+      nil))
 
 
 ;;;-------------------------------------------------------------------------
