@@ -42,12 +42,17 @@
   (with-slots (fd (ef external-format) (ib input-buffer) (ob output-buffer))
       o
     (print-unreadable-object (o s :type nil :identity t)
-      (format s "~A ~S ~S ~S ~S/~S ~S ~S/~S ~S (~S ~S ~S)"
-              (type-of o) :fd fd
-              :ibuf (iobuf-length ib) (iobuf-size ib)
-              :obuf (iobuf-length ob) (iobuf-size ob)
-              :ef (babel-encodings:enc-name (babel:external-format-encoding ef))
-              :eol-style (babel:external-format-eol-style ef)))))
+      (if fd
+          (format s "~A ~S ~S ~S ~S/~S ~S ~S/~S ~S (~S ~S ~S)"
+                  (type-of o) :fd fd
+                  :ibuf (iobuf-length ib) (iobuf-size ib)
+                  :obuf (iobuf-length ob) (iobuf-size ob)
+                  :ef (babel-encodings:enc-name (babel:external-format-encoding ef))
+                  :eol-style (babel:external-format-eol-style ef))
+          (format s "~A ~A ~S (~S ~S ~S)"
+                  (type-of o) :closed
+                  :ef (babel-encodings:enc-name (babel:external-format-encoding ef))
+                  :eol-style (babel:external-format-eol-style ef))))))
 
 
 ;;;-------------------------------------------------------------------------
