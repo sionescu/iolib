@@ -37,6 +37,7 @@
 
 (defmethod make-alias ((namespace (eql 'macro))
                        original alias args)
+  (declare (ignore args))
   (alexandria:with-gensyms (args)
     `(setf (macro-function ',alias)
            (lambda (&rest ,args)
@@ -47,6 +48,7 @@
 
 (defmethod make-alias ((namespace (eql 'special))
                        original alias args)
+  (declare (ignore args))
   `(define-symbol-macro ,alias ,original))
 
 (defnamespace constant
@@ -54,4 +56,5 @@
 
 (defmethod make-alias ((namespace (eql 'constant))
                        original alias args)
+  (declare (ignore args))
   `(define-symbol-macro ,alias ,original))
