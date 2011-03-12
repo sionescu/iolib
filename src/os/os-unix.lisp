@@ -115,8 +115,7 @@ of SETF ENVIRONMENT."
   newenv)
 
 (defun allocate-env (argv variables)
-  (let ((argc (hash-table-count variables))
-        (offset -1))
+  (let ((offset -1))
     ;; copy variables
     (maphash (lambda (k v)
                (setf (mem-aref argv :pointer (incf offset))

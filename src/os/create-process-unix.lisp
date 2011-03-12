@@ -113,7 +113,7 @@
            (when ,file-actions-initialized-p
              (lfp-spawn-file-actions-destroy ,file-actions)))))))
 
-(defun allocate-argv (argv argc program arglist)
+(defun allocate-argv (argv program arglist)
   ;; copy program name
   (setf (mem-aref argv :pointer 0)
         (foreign-string-alloc program))
@@ -138,7 +138,7 @@
          (isys:bzero ,argv (* ,argc (isys:sizeof :pointer)))
          (unwind-protect
               (progn
-                (allocate-argv ,argv ,argc ,program ,arguments)
+                (allocate-argv ,argv ,program ,arguments)
                 (let ((,arg0 (mem-ref ,argv :pointer)))
                   ,@body))
            (deallocate-null-ended-list ,argv))))))
