@@ -122,7 +122,7 @@ of SETF ENVIRONMENT."
                      (foreign-string-alloc (concatenate 'string k "=" v))))
              variables)))
 
-(defun deallocate-null-ended-list (argv)
+(defun delocate-null-ended-list (argv)
   (loop :for i :from 0
         :for ptr := (mem-aref argv :pointer i)
         :if (null-pointer-p ptr) :do (loop-finish)
@@ -147,7 +147,7 @@ of SETF ENVIRONMENT."
                    (progn
                      (allocate-env ,ptr (environment-variables ,environment))
                      (,body-fn ,ptr))
-                (deallocate-null-ended-list ,ptr)))))))))
+                (delocate-null-ended-list ,ptr)))))))))
 
 
 ;;;; Current directory

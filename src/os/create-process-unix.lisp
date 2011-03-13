@@ -141,7 +141,7 @@
                 (allocate-argv ,argv ,program ,arguments)
                 (let ((,arg0 (mem-ref ,argv :pointer)))
                   ,@body))
-           (deallocate-null-ended-list ,argv))))))
+           (delocate-null-ended-list ,argv))))))
 
 (defun redirect-one-stream (file-actions fd stream &optional flags (mode #o644) close-old-fd)
   (flet ((dup-from-path (path)
