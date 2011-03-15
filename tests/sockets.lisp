@@ -213,8 +213,8 @@
               (values 22 "ssh" :tcp))))
 
 (test (lookup-service.2 :compile-at :definition-time)
-  (is (equalp (lookup-service 22 :udp)
-              (values 22 "ssh" :udp))))
+  (is (equalp (lookup-service 53 :udp)
+              (values 53 "domain" :udp))))
 
 ;;; looks up a reserved service port
 (test (lookup-service.3 :compile-at :definition-time)
