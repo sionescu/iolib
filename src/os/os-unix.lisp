@@ -50,7 +50,8 @@ either be a symbol or a string."
       (environment
        (%obj-getenv env name)))))
 
-(defun (setf environment-variable) (value name &optional env &key (overwrite t))
+(defun (setf environment-variable) (value name &optional env
+                                    &key (overwrite t))
   "SETF ENVIRONMENT-VARIABLE sets the environment variable
 identified by NAME to VALUE. Both NAME and VALUE can be either a
 symbols or strings. Signals an error on failure."

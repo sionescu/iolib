@@ -143,7 +143,8 @@
                   ,@body))
            (delocate-null-ended-list ,argv))))))
 
-(defun redirect-one-stream (file-actions fd stream &optional flags (mode #o644) close-old-fd)
+(defun redirect-one-stream (file-actions fd stream
+                            &optional flags (mode #o644) close-old-fd)
   (flet ((dup-from-path (path)
            (lfp-spawn-file-actions-addopen file-actions fd path flags mode))
          (dup-from-fd (oldfd)
