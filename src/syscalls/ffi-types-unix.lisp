@@ -659,7 +659,7 @@
   :documentation "ftp daemon")
 #+bsd
 (constant (log-security "LOG_SECURITY")
-  :docuementation "security subsystems")
+  :documentation "security subsystems")
 
 ;; other codes through 15 reserved for system use
 (constant (log-local0 "LOG_LOCAL0"))
