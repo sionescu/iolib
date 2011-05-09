@@ -308,7 +308,7 @@
  (:sigttou   "SIGTTOU")
  ;; POSIX.1-2001
  (:sigbus    "SIGBUS")
- (:sigpoll   "SIGPOLL")
+ (:sigpoll   "SIGPOLL" :optional t)
  (:sigprof   "SIGPROF")
  (:sigsys    "SIGSYS")
  (:sigtrap   "SIGTRAP")
