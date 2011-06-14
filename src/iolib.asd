@@ -9,7 +9,7 @@
                                                      *load-truename*)))
                (read f))
   :licence "MIT"
-  :defsystem-depends-on (:iolib.asdf)
+  :defsystem-depends-on (:iolib.asdf :iolib.conf)
   :depends-on (:iolib.base :iolib.multiplex :iolib.streams :iolib.sockets)
   :default-component-class :iolib-source-file
   :pathname "iolib/"
