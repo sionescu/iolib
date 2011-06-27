@@ -50,7 +50,7 @@ of a file descriptor."))
 (defun wait-until-fd-ready (file-descriptor event-type &optional timeout errorp)
   "Poll file descriptor `FILE-DESCRIPTOR' for I/O readiness.
 `EVENT-TYPE' must be either :INPUT, :OUTPUT or :IO.
-`TIMEOUT' must be either a non-negative integer measured in seconds,
+`TIMEOUT' must be either a non-negative real measured in seconds,
 or `NIL' meaning no timeout at all. If `ERRORP' is not NIL and a timeout
 occurs, then a condition of type `POLL-TIMEOUT' is signaled.
 Returns two boolean values indicating readability and writeability of `FILE-DESCRIPTOR'."
