@@ -71,11 +71,7 @@
     (unless (or abort (null ibuf)) (finish-output stream))
     (free-stream-buffers ibuf obuf)
     (setf ibuf nil obuf nil))
-  (call-next-method)
-  stream)
-
-(defmethod close ((stream dual-channel-gray-stream) &key abort)
-  (declare (ignore stream abort)))
+  (call-next-method))
 
 (defmethod (setf external-format-of)
     (external-format (stream dual-channel-gray-stream))

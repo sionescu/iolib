@@ -417,6 +417,32 @@
               (close s)
               (socket-open-p s))))
 
+(test (socket-open-p.4 :compile-at :definition-time)
+  (is-false (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
+                                 :address-family :ipv4)
+              (close s)
+              (socket-open-p s))))
+
+(test (open-stream-p.1 :compile-at :definition-time)
+  (is-true (with-open-socket (s)
+             (open-stream-p s))))
+
+(test (open-stream-p.2 :compile-at :definition-time)
+  (is-true (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
+                                :address-family :ipv4)
+             (open-stream-p s))))
+
+(test (open-stream-p.3 :compile-at :definition-time)
+  (is-false (with-open-socket (s)
+              (close s)
+              (open-stream-p s))))
+
+(test (open-stream-p.4 :compile-at :definition-time)
+  (is-false (with-open-socket (s :remote-host *echo-address* :remote-port *echo-port*
+                                 :address-family :ipv4)
+              (close s)
+              (open-stream-p s))))
+
 ;;; we don't have an automatic test for some of this yet.  There's no
 ;;; simple way to run servers and have something automatically connect
 ;;; to them as client, unless we spawn external programs.  Then we
