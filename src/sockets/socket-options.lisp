@@ -266,3 +266,9 @@
 (define-socket-options :get-and-set ipproto-tcp :freebsd
   (tcp-noopt  tcp-noopt  :bool)
   (tcp-nopush tcp-nopush :bool))
+
+
+;;; IP Options
+
+(define-socket-option ip-header-include :get-and-set
+  ip-hdrincl ipproto-ip :bool :any)

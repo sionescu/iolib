@@ -200,6 +200,9 @@
 (constant (tcp-syncnt "TCP_SYNCNT") :optional t)              ; linux
 (constant (tcp-window "TCP_WINDOW_CLAMP") :optional t)        ; linux
 
+;; IP options
+(constant (ip-hdrincl "IP_HDRINCL") :optional t)
+
 ;;; shutdown()
 (constant (shut-rd "SHUT_RD" "SD_RECEIVE"))
 (constant (shut-wr "SHUT_WR" "SD_SEND"))
