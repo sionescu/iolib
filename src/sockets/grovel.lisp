@@ -127,7 +127,7 @@
 (constant (ipproto-raw "IPPROTO_RAW"))
 (constant (ipproto-tcp "IPPROTO_TCP"))
 (constant (ipproto-udp "IPPROTO_UDP"))
-#-darwin (constant (ipproto-sctp "IPPROTO_SCTP"))
+(constant (ipproto-sctp "IPPROTO_SCTP") :optional t)
 
 (cstruct sockaddr "struct sockaddr"
   (family "sa_family" :type sa-family-t))
@@ -141,14 +141,15 @@
 (constant (sol-socket "SOL_SOCKET")
   :documentation "get/setsockopt socket level constant.")
 
-#+linux
-(progn
-  (constant (sol-tcp "SOL_TCP")
-            :documentation "get/setsockopt TCP level constant.")
-  (constant (sol-ip "SOL_IP")
-            :documentation "get/setsockopt IP level constant.")
-  (constant (sol-raw "SOL_RAW")
-            :documentation "get/setsockopt raw level constant."))
+(constant (sol-tcp "SOL_TCP")
+  :documentation "get/setsockopt TCP level constant."
+  :optional t)
+(constant (sol-ip "SOL_IP")
+  :documentation "get/setsockopt IP level constant."
+  :optional t)
+(constant (sol-raw "SOL_RAW")
+  :documentation "get/setsockopt raw level constant."
+  :optional t)
 
 ;;; getsockopt/setsockopt()
 (constant (so-acceptconn "SO_ACCEPTCONN"))
