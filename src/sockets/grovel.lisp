@@ -198,7 +198,7 @@
 (constant (tcp-nopush "TCP_NOPUSH") :optional t)              ; freebsd
 (constant (tcp-quickack "TCP_QUICKACK") :optional t)          ; linux
 (constant (tcp-syncnt "TCP_SYNCNT") :optional t)              ; linux
-(constant (tcp-window "TCP_WINDOW_CLAMP") :optional t)        ; linux
+(constant (tcp-window-clamp "TCP_WINDOW_CLAMP") :optional t)  ; linux
 
 ;; IP options
 (constant (ip-hdrincl "IP_HDRINCL") :optional t)
@@ -346,20 +346,6 @@
 (constant (ipv6-v6only "IPV6_V6ONLY"))
 
 ;;;; from netinet/tcp.h
-
-(constant (tcp-nodelay "TCP_NODELAY"))
-(constant (tcp-maxseg "TCP_MAXSEG"))
-#+linux
-(constant (tcp-cork "TCP_CORK"))
-(constant (tcp-keepidle "TCP_KEEPIDLE") :optional t)
-(constant (tcp-keepintvl "TCP_KEEPINTVL") :optional t)
-(constant (tcp-keepcnt "TCP_KEEPCNT") :optional t)
-(constant (tcp-syncnt "TCP_SYNCNT") :optional t)
-(constant (tcp-linger2 "TCP_LINGER2") :optional t)
-(constant (tcp-defer-accept "TCP_DEFER_ACCEPT") :optional t)
-(constant (tcp-window-clamp "TCP_WINDOW_CLAMP") :optional t)
-#-darwin (constant (tcp-info "TCP_INFO"))
-(constant (tcp-quickack "TCP_QUICKACK") :optional t)
 
 #+linux
 (cenum connstates
