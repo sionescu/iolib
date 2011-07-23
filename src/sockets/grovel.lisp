@@ -88,28 +88,36 @@
 
 ;;; socket() - socket address family
 (constant (af-unspec "AF_UNSPEC" "PF_UNSPEC"))
-(constant (af-inet "AF_INET" "PF_INET") :documentation "IPv4 Protocol family")
+(constant (af-inet "AF_INET" "PF_INET")
+  :documentation "IPv4 Protocol family")
 (constant (af-inet6 "AF_INET6" "PF_INET6")
-          :documentation "IPv6 Protocol family")
+  :documentation "IPv6 Protocol family")
 (constant (af-local "AF_UNIX" "AF_LOCAL" "PF_UNIX" "PF_LOCAL")
-          :documentation "File domain sockets")
-(constant (af-packet "AF_PACKET" "PF_PACKET") :documentation "Raw packet access"
-          :optional t)
+  :documentation "File domain sockets")
+(constant (af-packet "AF_PACKET" "PF_PACKET")
+  :documentation "Raw packet access"
+  :optional t)
 (constant (af-route "AF_ROUTE" "PF_ROUTE")
-          :documentation "Routing sockets" :optional t)
+  :documentation "Routing sockets"
+  :optional t)
 (constant (af-key "AF_KEY" "PF_KEY"))
 (constant (af-netlink "AF_NETLINK" "PF_NETLINK")
-          :documentation "Linux Netlink sockets" :optional t)
+  :documentation "Linux Netlink sockets" :optional t)
 
 ;;; socket() - socket type
-(constant (sock-stream "SOCK_STREAM") :documentation "TCP")
-(constant (sock-dgram "SOCK_DGRAM") :documentation "UDP")
+(constant (sock-stream "SOCK_STREAM")
+  :documentation "TCP")
+(constant (sock-dgram "SOCK_DGRAM")
+  :documentation "UDP")
 (constant (sock-seqpacket "SOCK_SEQPACKET")
-  :documentation "Reliable Sequenced Datagram Protocol" :optional t)
-(constant (sock-raw "SOCK_RAW") :documentation "Raw protocol access"
-          :optional t)
+  :documentation "Reliable Sequenced Datagram Protocol"
+  :optional t)
+(constant (sock-raw "SOCK_RAW")
+  :documentation "Raw protocol access"
+  :optional t)
 (constant (sock-rdm "SOCK_RDM")
-          :documentation "Reliable Unordered Datagram Protocol" :optional t)
+  :documentation "Reliable Unordered Datagram Protocol"
+  :optional t)
 
 ;;; socket() - socket protocol
 (constant (ipproto-ip "IPPROTO_IP"))
@@ -174,6 +182,8 @@
 (constant (so-timestamp "SO_TIMESTAMP"))
 (constant (so-type "SO_TYPE"))
 (constant (so-useloopback "SO_USELOOPBACK") :optional t)      ; freebsd
+
+;; TCP options
 (constant (tcp-cork "TCP_CORK") :optional t)                  ; linux
 (constant (tcp-defer-accept "TCP_DEFER_ACCEPT") :optional t)  ; linux
 (constant (tcp-info "TCP_INFO") :optional t)                  ; linux
