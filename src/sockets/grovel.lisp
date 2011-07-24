@@ -30,8 +30,8 @@
 ;;; This file contains a lot of unused types and constants that should
 ;;; be cleaned up or at least commented out.
 
-(include "sys/socket.h" "sys/un.h" "netinet/in.h"
-         "net/if.h" "netinet/tcp.h" "netdb.h" "errno.h"
+(include "sys/socket.h" "sys/un.h" "netdb.h" "errno.h"
+         "net/if.h" "netinet/in.h" "netinet/tcp.h" "netinet/ip.h" #+linux "linux/errqueue.h"
          "arpa/inet.h")
 
 (in-package :iolib.sockets)
@@ -202,6 +202,24 @@
 
 ;; IP options
 (constant (ip-hdrincl "IP_HDRINCL"))
+(constant (ip-recverr "IP_RECVERR") :optional t)
+
+#+linux
+(progn
+  (cenum extended-error-origin
+    (:none         "SO_EE_ORIGIN_NONE")
+    (:local        "SO_EE_ORIGIN_LOCAL")
+    (:icmp         "SO_EE_ORIGIN_ICMP")
+    (:icmp6        "SO_EE_ORIGIN_ICMP6")
+    (:timestamping "SO_EE_ORIGIN_TIMESTAMPING"))
+
+  (cstruct sock-extended-err "struct sock_extended_err"
+    (errno  "ee_errno"  :type :uint32)
+    (origin "ee_origin" :type extended-error-origin)
+    (type   "ee_type"   :type :uint8)
+    (code   "ee_code"   :type :uint8)
+    (info   "ee_info"   :type :uint8)
+    (data   "ee_data"   :type :uint8)))
 
 ;;; shutdown()
 (constant (shut-rd "SHUT_RD" "SD_RECEIVE"))

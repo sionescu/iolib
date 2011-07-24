@@ -272,3 +272,6 @@
 
 (define-socket-option ip-header-include :get-and-set
   ip-hdrincl ipproto-ip :bool :any)
+
+(define-socket-option ip-receive-error :get-and-set
+  ip-recverr ipproto-ip :bool :linux)
