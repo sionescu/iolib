@@ -130,6 +130,10 @@ For a complete list of supported options see src/sockets/socket-options.lisp."))
   (:default-initargs :type :datagram)
   (:documentation "Mixin for sockets of type SOCK_DGRAM."))
 
+(defclass raw-socket (socket) ()
+  (:default-initargs :type :raw)
+  (:documentation "Mixin for sockets of type SOCK_RAW."))
+
 (defgeneric disconnect (socket)
   (:documentation "Disassociates SOCKET from any remote address.
 Works only on DATAGRAM sockets."))
@@ -270,3 +274,8 @@ If a connection is received, returns two values: the newly created socket and th
 (defclass socket-datagram-local
     (datagram-socket local-socket) ()
   (:documentation "Class representing active sockets of type SOCK_DGRAM and domain AF_LOCAL."))
+
+(defclass socket-raw-internet
+    (internet-socket raw-socket) ()
+  (:default-initargs :type :raw)
+  (:documentation "Class representing active sockets of type SOCK_RAW and domain AF_LOCAL."))

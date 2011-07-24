@@ -16,7 +16,8 @@
               (:local af-local)))
         (st (ecase type
               (:stream   sock-stream)
-              (:datagram sock-dgram)))
+              (:datagram sock-dgram)
+              (:raw      sock-raw)))
         (sp (etypecase protocol
               ((eql :default) 0)
               (integer        protocol))))
