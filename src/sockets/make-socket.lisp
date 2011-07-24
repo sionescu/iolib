@@ -6,41 +6,44 @@
 (in-package :iolib.sockets)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *socket-type-map*
-    '(((:ipv4  :stream   :active  :default) . socket-stream-internet-active)
-      ((:ipv6  :stream   :active  :default) . socket-stream-internet-active)
-      ((:ipv4  :stream   :passive :default) . socket-stream-internet-passive)
-      ((:ipv6  :stream   :passive :default) . socket-stream-internet-passive)
-      ((:local :stream   :active  :default) . socket-stream-local-active)
-      ((:local :stream   :passive :default) . socket-stream-local-passive)
-      ((:local :datagram :active  :default) . socket-datagram-local-active)
-      ((:ipv4  :datagram :active  :default) . socket-datagram-internet-active)
-      ((:ipv6  :datagram :active  :default) . socket-datagram-internet-active)))
+  (defparameter *socket-type-map*
+    '(((:ipv4  :stream   :active)  . socket-stream-internet-active)
+      ((:ipv6  :stream   :active)  . socket-stream-internet-active)
+      ((:ipv4  :stream   :passive) . socket-stream-internet-passive)
+      ((:ipv6  :stream   :passive) . socket-stream-internet-passive)
+      ((:local :stream   :active)  . socket-stream-local-active)
+      ((:local :stream   :passive) . socket-stream-local-passive)
+      ((:local :datagram nil)      . socket-datagram-local)
+      ((:ipv4  :datagram nil)      . socket-datagram-internet)
+      ((:ipv6  :datagram nil)      . socket-datagram-internet)))
 
-  ;; FIXME: should match :default to whatever protocol is the default.
-  (defun select-socket-class (address-family type connect protocol)
-    (or (cdr (assoc (list address-family type connect protocol) *socket-type-map*
-                    :test #'equal))
+  (defun select-socket-class (address-family type connect)
+    (or (loop :for ((sock-family sock-type sock-connect) . class)
+                :in *socket-type-map*
+              :when (and (eql sock-family address-family)
+                         (eql sock-type type)
+                         (if sock-connect (eql sock-connect connect) t))
+              :return class)
         (error "No socket class found !!"))))
 
-(defun create-socket (family type connect external-format &key
-                      fd input-buffer-size output-buffer-size)
-  (make-instance (select-socket-class family type connect :default)
-                 :address-family family :file-descriptor fd
-                 :external-format external-format
-                 :input-buffer-size input-buffer-size
-                 :output-buffer-size output-buffer-size))
+(defun create-socket (family type protocol
+                      &rest args &key connect fd &allow-other-keys)
+  (apply #'make-instance (select-socket-class family type connect)
+         :address-family family
+         :protocol protocol
+         :file-descriptor fd
+         (remove-from-plist args :connect)))
 
 (define-compiler-macro create-socket (&whole form &environment env
-                                      family type connect external-format
-                                      &key fd input-buffer-size output-buffer-size)
+                                      family type protocol
+                                      &rest args &key connect fd &allow-other-keys)
   (cond
     ((and (constantp family env) (constantp type env) (constantp connect env))
-     `(make-instance ',(select-socket-class family type connect :default)
-                     :address-family ,family :file-descriptor ,fd
-                     :external-format ,external-format
-                     :input-buffer-size ,input-buffer-size
-                     :output-buffer-size ,output-buffer-size))
+     `(make-instance ',(select-socket-class family type connect)
+                     :file-descriptor ,fd
+                     :address-family ,family
+                     :protocol ,protocol
+                     ,@(remove-from-plist args :connect)))
     (t form)))
 
 (defmacro with-close-on-error ((var value) &body body)
@@ -65,10 +68,12 @@ call CLOSE with :ABORT T on `VAR'."
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun make-first-level-name (family type connect)
-    (format-symbol :iolib.sockets "%~A-~A-~A-~A-~A" :make family type connect :socket)))
+    (if (eql :stream type)
+        (format-symbol :iolib.sockets "%~A/~A-~A-~A" :make-socket family type connect)
+        (format-symbol :iolib.sockets "%~A/~A-~A" :make-socket family type))))
 
-(defmacro define-socket-creator ((socket-family socket-type socket-connect)
-                                 (family ef key &rest args) &body body)
+(defmacro define-socket-creator ((socket-family socket-type &optional socket-connect)
+                                 (family protocol key &rest args) &body body)
   (assert (eql '&key key))
   (flet ((maybe-quote-default-value (arg)
            (cond ((symbolp arg) arg)
@@ -81,13 +86,13 @@ call CLOSE with :ABORT T on `VAR'."
     (let* ((arg-names (mapcar #'arg-name args))
            (first-level-function (make-first-level-name socket-family socket-type socket-connect))
            (second-level-function (format-symbol t "%~A" first-level-function))
-           (first-level-body `(,second-level-function family ef ,@arg-names)))
+           (first-level-body `(,second-level-function family protocol ,@arg-names)))
       `(progn
          (declaim (inline ,second-level-function))
-         (defun ,second-level-function (,family ,ef ,@arg-names) ,@body)
-         (defun ,first-level-function (arguments family ef)
+         (defun ,second-level-function (,family ,protocol ,@arg-names) ,@body)
+         (defun ,first-level-function (arguments family protocol)
            (destructuring-bind (&key ,@args) arguments ,first-level-body))
-         (define-compiler-macro ,first-level-function (&whole form arguments family ef)
+         (define-compiler-macro ,first-level-function (&whole form arguments family protocol)
            (with-guard-against-non-list-args-and-destructuring-bind-errors
                form arguments
              ;; Must quote default values in order for them not to be evaluated
@@ -96,9 +101,10 @@ call CLOSE with :ABORT T on `VAR'."
                  (cdr arguments)
                ,(quotify first-level-body))))))))
 
+
 ;;; Internet Stream Active Socket creation
 
-(defun %%init-internet-stream-active-socket (socket keepalive nodelay reuse-address
+(defun %%init-socket/internet-stream-active (socket keepalive nodelay reuse-address
                                              local-host local-port remote-host remote-port)
   (setf (socket-option socket :no-sigpipe :if-does-not-exist nil) t)
   (when keepalive (setf (socket-option socket :keep-alive) t))
@@ -113,18 +119,22 @@ call CLOSE with :ABORT T on `VAR'."
   (values socket))
 
 (define-socket-creator (:internet :stream :active)
-    (family ef &key keepalive nodelay (reuse-address t)
-            local-host local-port remote-host remote-port
-            input-buffer-size output-buffer-size)
-  (with-close-on-error (socket (%create-internet-socket family :stream :active ef
+    (family protocol &key external-format
+                          keepalive nodelay (reuse-address t)
+                          local-host local-port remote-host remote-port
+                          input-buffer-size output-buffer-size)
+  (with-close-on-error (socket (%create-internet-socket family :stream protocol
+                                                        :connect :active 
+                                                        :external-format external-format
                                                         :input-buffer-size input-buffer-size
                                                         :output-buffer-size output-buffer-size))
-    (%%init-internet-stream-active-socket socket keepalive nodelay reuse-address
+    (%%init-socket/internet-stream-active socket keepalive nodelay reuse-address
                                           local-host (or local-port 0) remote-host remote-port)))
 
+
 ;;; Internet Stream Passive Socket creation
 
-(defun %%init-internet-stream-passive-socket (socket interface reuse-address
+(defun %%init-socket/internet-stream-passive (socket interface reuse-address
                                               local-host local-port backlog)
   (when local-host
     (when interface
@@ -136,16 +146,20 @@ call CLOSE with :ABORT T on `VAR'."
   (values socket))
 
 (define-socket-creator (:internet :stream :passive)
-    (family ef &key interface (reuse-address t)
-            local-host local-port backlog)
-  (with-close-on-error (socket (%create-internet-socket family :stream :passive ef))
-    (%%init-internet-stream-passive-socket socket interface reuse-address
+    (family protocol &key external-format
+                          interface (reuse-address t)
+                          local-host local-port backlog)
+  (with-close-on-error (socket (%create-internet-socket family :stream protocol
+                                                        :connect :passive
+                                                        :external-format external-format))
+    (%%init-socket/internet-stream-passive socket interface reuse-address
                                            local-host (or local-port 0)
                                            (or backlog *default-backlog-size*))))
 
+
 ;;; Local Stream Active Socket creation
 
-(defun %%init-local-stream-active-socket (socket local-filename remote-filename)
+(defun %%init-socket/local-stream-active (socket local-filename remote-filename)
   (setf (socket-option socket :no-sigpipe :if-does-not-exist nil) t)
   (when local-filename
     (bind-address socket (ensure-address local-filename :family :local)))
@@ -154,17 +168,19 @@ call CLOSE with :ABORT T on `VAR'."
   (values socket))
 
 (define-socket-creator (:local :stream :active)
-    (family ef &key local-filename remote-filename
-            input-buffer-size output-buffer-size)
-  (declare (ignore family))
-  (with-close-on-error (socket (create-socket :local :stream :active ef
+    (family protocol &key external-format local-filename remote-filename
+                          input-buffer-size output-buffer-size)
+  (with-close-on-error (socket (create-socket family :stream protocol
+                                              :connect :active
+                                              :external-format external-format
                                               :input-buffer-size input-buffer-size
                                               :output-buffer-size output-buffer-size))
-    (%%init-local-stream-active-socket socket local-filename remote-filename)))
+    (%%init-socket/local-stream-active socket local-filename remote-filename)))
 
+
 ;;; Local Stream Passive Socket creation
 
-(defun %%init-local-stream-passive-socket (socket local-filename reuse-address backlog)
+(defun %%init-socket/local-stream-passive (socket local-filename reuse-address backlog)
   (when local-filename
     (bind-address socket (ensure-address local-filename :family :local)
                   :reuse-address reuse-address)
@@ -172,16 +188,18 @@ call CLOSE with :ABORT T on `VAR'."
   (values socket))
 
 (define-socket-creator (:local :stream :passive)
-    (family ef &key local-filename (reuse-address t) backlog)
-  (declare (ignore family))
-  (with-close-on-error (socket (create-socket :local :stream :passive ef))
-    (%%init-local-stream-passive-socket socket local-filename reuse-address
+    (family protocol &key external-format local-filename (reuse-address t) backlog)
+  (with-close-on-error (socket (create-socket family :stream protocol
+                                              :connect :passive
+                                              :external-format external-format))
+    (%%init-socket/local-stream-passive socket local-filename reuse-address
                                         (or backlog *default-backlog-size*))))
 
+
 ;;; Internet Datagram Socket creation
 
-(defun %%init-internet-datagram-active-socket (socket broadcast interface reuse-address
-                                               local-host local-port remote-host remote-port)
+(defun %%init-socket/internet-datagram (socket broadcast interface reuse-address
+                                        local-host local-port remote-host remote-port)
   (setf (socket-option socket :no-sigpipe :if-does-not-exist nil) t)
   (when broadcast (setf (socket-option socket :broadcast) t))
   (when local-host
@@ -195,17 +213,18 @@ call CLOSE with :ABORT T on `VAR'."
              :port remote-port))
   (values socket))
 
-(define-socket-creator (:internet :datagram :active)
-    (family ef &key broadcast interface (reuse-address t)
-            local-host local-port remote-host remote-port)
-  (with-close-on-error (socket (%create-internet-socket family :datagram :active ef))
-    (%%init-internet-datagram-active-socket socket broadcast interface reuse-address
-                                            local-host (or local-port 0)
-                                            remote-host (or remote-port 0))))
+(define-socket-creator (:internet :datagram)
+    (family protocol &key broadcast interface (reuse-address t)
+                          local-host local-port remote-host remote-port)
+  (with-close-on-error (socket (%create-internet-socket family :datagram protocol))
+    (%%init-socket/internet-datagram socket broadcast interface reuse-address
+                                     local-host (or local-port 0)
+                                     remote-host (or remote-port 0))))
 
+
 ;;; Local Datagram Socket creation
 
-(defun %%init-local-datagram-active-socket (socket local-filename remote-filename)
+(defun %%init-socket/local-datagram (socket local-filename remote-filename)
   (setf (socket-option socket :no-sigpipe :if-does-not-exist nil) t)
   (when local-filename
     (bind-address socket (ensure-address local-filename :family :local)))
@@ -213,43 +232,48 @@ call CLOSE with :ABORT T on `VAR'."
     (connect socket (ensure-address remote-filename :family :local)))
   (values socket))
 
-(define-socket-creator (:local :datagram :active)
-    (family ef &key local-filename remote-filename)
-  (declare (ignore family))
-  (with-close-on-error (socket (create-socket :local :datagram :active ef))
-    (%%init-local-datagram-active-socket socket local-filename remote-filename)))
+(define-socket-creator (:local :datagram)
+    (family protocol &key local-filename remote-filename)
+  (with-close-on-error (socket (create-socket family :datagram protocol))
+    (%%init-socket/local-datagram socket local-filename remote-filename)))
 
+
+
 ;;; MAKE-SOCKET
 
-(defmethod make-socket (&rest args &key (address-family :internet) (type :stream)
-                        (connect :active) (ipv6 *ipv6*)
-                        (external-format :default) &allow-other-keys)
+(defmethod make-socket (&rest args &key (address-family :internet) (type :stream) (protocol :default)
+                        (connect :active) (ipv6 *ipv6*) &allow-other-keys)
   (when (eql :file address-family) (setf address-family :local))
   (check-type address-family (member :internet :local :ipv4 :ipv6) "one of :INTERNET, :LOCAL(or :FILE), :IPV4 or :IPV6")
   (check-type type (member :stream :datagram) "either :STREAM or :DATAGRAM")
   (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
-  (let ((args (remove-from-plist args :address-family :type :connect :external-format :ipv6)))
+  (let ((args (remove-from-plist args :address-family :type :protocol :connect :ipv6)))
     (when (eql :ipv4 address-family) (setf ipv6 nil))
     (let ((*ipv6* ipv6))
       (when (eql :internet address-family) (setf address-family +default-inet-address-family+))
       (multiple-value-case ((address-family type connect))
-        (((:ipv4 :ipv6) :stream :active)
-         (%make-internet-stream-active-socket args address-family external-format))
-        (((:ipv4 :ipv6) :stream :passive)
-         (%make-internet-stream-passive-socket args address-family external-format))
+        ((:ipv4 :stream :active)
+         (%make-socket/internet-stream-active   args :ipv4  :default))
+        ((:ipv6 :stream :active)
+         (%make-socket/internet-stream-active   args :ipv6  :default))
+        ((:ipv4 :stream :passive)
+         (%make-socket/internet-stream-passive  args :ipv4  :default))
+        ((:ipv6 :stream :passive)
+         (%make-socket/internet-stream-passive  args :ipv6  :default))
         ((:local :stream :active)
-         (%make-local-stream-active-socket args :local external-format))
+         (%make-socket/local-stream-active      args :local :default))
         ((:local :stream :passive)
-         (%make-local-stream-passive-socket args :local external-format))
-        (((:ipv4 :ipv6) :datagram)
-         (%make-internet-datagram-active-socket args address-family external-format))
+         (%make-socket/local-stream-passive     args :local :default))
+        ((:ipv4 :datagram)
+         (%make-socket/internet-datagram        args :ipv4  :default))
+        ((:ipv6 :datagram)
+         (%make-socket/internet-datagram        args :ipv6  :default))
         ((:local :datagram)
-         (%make-local-datagram-active-socket args :local external-format))))))
+         (%make-socket/local-datagram           args :local :default))))))
 
 (define-compiler-macro make-socket (&whole form &environment env &rest args
-                                    &key (address-family :internet) (type :stream)
-                                    (connect :active) (ipv6 '*ipv6* ipv6p)
-                                    (external-format :default) &allow-other-keys)
+                                    &key (address-family :internet) (type :stream) (protocol :default)
+                                    (connect :active) (ipv6 '*ipv6* ipv6p) &allow-other-keys)
   (when (eql :file address-family) (setf address-family :local))
   (cond
     ((and (constantp address-family env) (constantp type env) (constantp connect env))
@@ -258,11 +282,11 @@ call CLOSE with :ABORT T on `VAR'."
      (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
      (let* ((family (if (member address-family '(:ipv4 :ipv6)) :internet address-family))
             (lower-function (make-first-level-name family type connect))
-            (newargs (remove-from-plist args :address-family :type :connect :external-format :ipv6)))
+            (args (remove-from-plist args :address-family :type :protocol :connect :ipv6)))
        (case address-family
          (:internet (setf address-family '+default-inet-address-family+))
          (:ipv4     (setf ipv6 nil ipv6p t)))
-       (let ((expansion `(,lower-function (list ,@newargs) ,address-family ,external-format)))
+       (let ((expansion `(,lower-function (list ,@args) ,address-family ,protocol)))
          (if ipv6p `(let ((*ipv6* ,ipv6)) ,expansion) expansion))))
     (t form)))
 
@@ -276,6 +300,7 @@ The socket is automatically closed upon exit."
 The socket is automatically closed upon exit."
   `(with-open-stream (,var (accept-connection ,passive-socket ,@args)) ,@body))
 
+
 ;;; MAKE-SOCKET-FROM-FD
 
 ;;; FIXME: must come up with a way to find out
@@ -295,10 +320,14 @@ The socket is automatically closed upon exit."
              (sock-dgram  :datagram))))
     (create-socket (%get-address-family fd)
                    (%get-type fd)
-                   connect external-format :fd fd
+                   :default
+                   :connect connect
+                   :fd fd
+                   :external-format external-format
                    :input-buffer-size input-buffer-size
                    :output-buffer-size output-buffer-size)))
 
+
 ;;; MAKE-SOCKET-PAIR
 
 (defmethod make-socket-pair (&key (type :stream) (protocol :default) (external-format :default)
@@ -313,6 +342,7 @@ The socket is automatically closed upon exit."
       (values (%make-socket-pair fd1)
               (%make-socket-pair fd2)))))
 
+
 ;;; SEND/RECEIVE-FILE-DESCRIPTOR
 
 (defun call-with-buffers-for-fd-passing (fn)

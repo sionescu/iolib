@@ -17,18 +17,17 @@
         (st (ecase type
               (:stream   sock-stream)
               (:datagram sock-dgram)))
-        (sp (cond
-              ((integerp protocol) protocol)
-              ((eql :default protocol) 0)
-              (t (lookup-protocol protocol)))))
+        (sp (etypecase protocol
+              ((eql :default) 0)
+              (integer        protocol))))
     (values sf st sp)))
 
 (defmethod socket-os-fd ((socket socket))
   (fd-of socket))
 
-(defmethod shared-initialize :after ((socket socket) slot-names &key
-                                     file-descriptor (dup t) address-family type
-                                     (protocol :default))
+(defmethod shared-initialize :after
+    ((socket socket) slot-names
+     &key file-descriptor (dup t) address-family type protocol)
   (declare (ignore slot-names))
   (with-accessors ((fd fd-of) (fam socket-address-family) (proto socket-protocol))
       socket
@@ -43,14 +42,14 @@
 
 (defmethod (setf external-format-of) (external-format (socket passive-socket))
   (setf (slot-value socket 'external-format)
-        (babel:ensure-external-format external-format)))
+        (babel:ensure-external-format (or external-format :default))))
 
 (defmethod shared-initialize :after ((socket passive-socket) slot-names
                                      &key external-format
                                      input-buffer-size output-buffer-size)
   ;; Makes CREATE-SOCKET simpler
   (declare (ignore slot-names input-buffer-size output-buffer-size))
-  (setf (external-format-of socket) external-format))
+  (setf (external-format-of socket) (or external-format :default)))
 
 
 ;;;-------------------------------------------------------------------------
@@ -118,7 +117,7 @@
                   (address-to-string (local-filename socket)))
         (format stream ", ~:[closed~;unbound~]" (fd-of socket)))))
 
-(defmethod print-object ((socket socket-datagram-local-active) stream)
+(defmethod print-object ((socket socket-datagram-local) stream)
   (print-unreadable-object (socket stream :identity t)
     (format stream "local datagram socket")
     (if (socket-connected-p socket)
@@ -128,7 +127,7 @@
             (format stream " waiting @ ~S" (address-to-string (local-filename socket)))
             (format stream ", closed" )))))
 
-(defmethod print-object ((socket socket-datagram-internet-active) stream)
+(defmethod print-object ((socket socket-datagram-internet) stream)
   (print-unreadable-object (socket stream :identity t)
     (format stream "~A datagram socket" (sock-fam socket))
     (if (socket-connected-p socket)

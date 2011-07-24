@@ -16,22 +16,21 @@
 ;;; TODO: use the buffer pool
 ;;; TODO: handle instance reinitialization
 (defmethod shared-initialize :after ((stream dual-channel-gray-stream) slot-names
-                                     &key (input-buffer-size +bytes-per-iobuf+)
-                                     (output-buffer-size +bytes-per-iobuf+)
-                                     (external-format :default))
+                                     &key external-format input-buffer-size output-buffer-size)
   (declare (ignore slot-names))
-  (unless input-buffer-size (setf input-buffer-size +bytes-per-iobuf+))
-  (unless output-buffer-size (setf output-buffer-size +bytes-per-iobuf+))
-  (check-type input-buffer-size buffer-index)
-  (check-type output-buffer-size buffer-index)
-  (with-accessors ((ibuf input-buffer-of)
-                   (obuf output-buffer-of)
-                   (ef external-format-of))
-      stream
-    (setf ibuf (allocate-iobuf input-buffer-size)
-          obuf (allocate-iobuf output-buffer-size)
-          ef external-format)
-    (trivial-garbage:finalize stream (lambda () (free-stream-buffers ibuf obuf)))))
+  (let ((external-format (or external-format :default))
+        (input-buffer-size (or input-buffer-size +bytes-per-iobuf+))
+        (output-buffer-size (or output-buffer-size +bytes-per-iobuf+)))
+   (check-type input-buffer-size buffer-index)
+   (check-type output-buffer-size buffer-index)
+   (with-accessors ((ibuf input-buffer-of)
+                    (obuf output-buffer-of)
+                    (ef external-format-of))
+       stream
+     (setf ibuf (allocate-iobuf input-buffer-size)
+           obuf (allocate-iobuf output-buffer-size)
+           ef external-format)
+     (trivial-garbage:finalize stream (lambda () (free-stream-buffers ibuf obuf))))))
 
 
 ;;;-------------------------------------------------------------------------

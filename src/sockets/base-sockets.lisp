@@ -263,10 +263,10 @@ If a connection is received, returns two values: the newly created socket and th
   (:default-initargs :active-class 'socket-stream-local-active)
   (:documentation "Class representing passive sockets of type SOCK_STREAM and domain AF_LOCAL."))
 
-(defclass socket-datagram-internet-active
-    (active-socket datagram-socket internet-socket) ()
+(defclass socket-datagram-internet
+    (datagram-socket internet-socket) ()
   (:documentation "Class representing active sockets of type SOCK_DGRAM and domain AF_INET or AF_INET6."))
 
-(defclass socket-datagram-local-active
-    (active-socket datagram-socket local-socket) ()
+(defclass socket-datagram-local
+    (datagram-socket local-socket) ()
   (:documentation "Class representing active sockets of type SOCK_DGRAM and domain AF_LOCAL."))
