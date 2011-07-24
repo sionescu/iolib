@@ -148,19 +148,18 @@
 
 (defmethod close :around ((socket socket) &key abort)
   (declare (ignore abort))
-  (call-next-method)
-  (setf (slot-value socket 'bound) nil))
+  (prog1 (socket-open-p socket)
+    (call-next-method)
+    (setf (slot-value socket 'bound) nil)))
 
 (defmethod close ((socket passive-socket) &key abort)
   (declare (ignore abort))
-  (prog1 (socket-open-p socket)
-    (when (next-method-p) (call-next-method))
-    (setf (slot-value socket 'listening) nil)))
+  (when (next-method-p) (call-next-method))
+  (setf (slot-value socket 'listening) nil))
 
 (defmethod close ((socket datagram-socket) &key abort)
   (declare (ignore abort))
-  (prog1 (socket-open-p socket)
-    (when (next-method-p) (call-next-method))))
+  (when (next-method-p) (call-next-method)))
 
 (defmethod socket-open-p ((socket socket))
   (when (fd-of socket)
