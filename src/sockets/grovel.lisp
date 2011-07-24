@@ -224,7 +224,7 @@
 (constant (msg-trunc "MSG_TRUNC"))                    ; recvmsg
 (constant (msg-waitall "MSG_WAITALL"))                ; recvmsg
 (constant (msg-dontwait "MSG_DONTWAIT"))              ; recvmsg sendmsg
-#-darwin (constant (msg-nosignal "MSG_NOSIGNAL"))     ;         sendmsg
+(constant (msg-nosignal "MSG_NOSIGNAL") :optional t)  ;         sendmsg
 (constant (msg-eor "MSG_EOR"))                        ; recvmsg sendmsg
 (constant (msg-ctrunc "MSG_CTRUNC"))                  ; recvmsg
 
