@@ -276,7 +276,7 @@
 ;;; ACCEPT
 ;;;-------------------------------------------------------------------------
 
-(defmethod accept-connection ((socket socket) &key external-format
+(defmethod accept-connection ((socket passive-socket) &key external-format
                               input-buffer-size output-buffer-size (wait t))
   (check-type wait timeout-designator)
   (flet ((make-client-socket (fd)
