@@ -201,7 +201,7 @@
 (constant (tcp-window-clamp "TCP_WINDOW_CLAMP") :optional t)  ; linux
 
 ;; IP options
-(constant (ip-hdrincl "IP_HDRINCL") :optional t)
+(constant (ip-hdrincl "IP_HDRINCL"))
 
 ;;; shutdown()
 (constant (shut-rd "SHUT_RD" "SD_RECEIVE"))
