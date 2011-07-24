@@ -264,26 +264,20 @@
 ;;; LISTEN
 ;;;-------------------------------------------------------------------------
 
-(defmethod listen-on ((socket passive-socket) &key backlog)
+(defmethod listen-on ((socket socket) &key backlog)
   (unless backlog (setf backlog (min *default-backlog-size*
                                      +max-backlog-size+)))
   (check-type backlog unsigned-byte "a non-negative integer")
   (%listen (fd-of socket) backlog)
   (setf (slot-value socket 'listening) t)
   (values socket))
-
-(defmethod listen-on ((socket active-socket) &key)
-  (error "You can't listen on active sockets."))
 
 
 ;;;-------------------------------------------------------------------------
 ;;; ACCEPT
 ;;;-------------------------------------------------------------------------
 
-(defmethod accept-connection ((socket active-socket) &key)
-  (error "You can't accept connections on active sockets."))
-
-(defmethod accept-connection ((socket passive-socket) &key external-format
+(defmethod accept-connection ((socket socket) &key external-format
                               input-buffer-size output-buffer-size (wait t))
   (check-type wait timeout-designator)
   (flet ((make-client-socket (fd)
@@ -356,10 +350,6 @@
         (%connect (fd-of socket) sun (actual-size-of-sockaddr-un sun))))
   (values socket))
 
-(defmethod connect ((socket passive-socket) address &key)
-  (declare (ignore address))
-  (error "You cannot connect passive sockets."))
-
 (defmethod socket-connected-p ((socket socket))
   (if (fd-of socket)
       (with-sockaddr-storage-and-socklen (ss size)
@@ -373,10 +363,6 @@
 ;;;-------------------------------------------------------------------------
 ;;; DISCONNECT
 ;;;-------------------------------------------------------------------------
-
-(defmethod disconnect :before ((socket socket))
-  (unless (typep socket 'datagram-socket)
-    (error "You can only disconnect active datagram sockets.")))
 
 (defmethod disconnect ((socket datagram-socket))
   (with-foreign-object (sin 'sockaddr-in)
@@ -536,7 +522,7 @@
            (replace buffer tmpbuff :start1 start :end1 end :start2 0 :end2 nbytes))))
       (values nbytes))))
 
-(defmethod receive-from :around ((socket active-socket) &rest args
+(defmethod receive-from :around ((socket socket) &rest args
                                  &key buffer size (start 0) end flags &allow-other-keys)
   (let ((flags-val (or flags (compute-flags *recvfrom-flags* args))))
     (cond
