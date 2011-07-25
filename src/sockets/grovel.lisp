@@ -228,11 +228,11 @@
   (constant (icmp-filter "ICMP_FILTER"))
 
   (constantenum (icmp-types :define-constants t)
+    (:icmp-echo-request "ICMP_ECHO")
     (:icmp-echo-reply "ICMP_ECHOREPLY")
     (:icmp-dest-unreach "ICMP_DEST_UNREACH")
     (:icmp-source-quench "ICMP_SOURCE_QUENCH")
     (:icmp-redirect "ICMP_REDIRECT")
-    (:icmp-echo-request "ICMP_ECHO")
     (:icmp-time-exceeded "ICMP_TIME_EXCEEDED")
     (:icmp-parameter-prob "ICMP_PARAMETERPROB")
     (:icmp-timestamp-request "ICMP_TIMESTAMP")
