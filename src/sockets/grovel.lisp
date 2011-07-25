@@ -227,7 +227,7 @@
 (progn
   (constant (icmp-filter "ICMP_FILTER"))
 
-  (constantenum icmp-types
+  (constantenum (icmp-types :define-constants t)
     (:icmp-echo-reply "ICMP_ECHOREPLY")
     (:icmp-dest-unreach "ICMP_DEST_UNREACH")
     (:icmp-source-quench "ICMP_SOURCE_QUENCH")
@@ -242,7 +242,7 @@
     (:icmp-address-request "ICMP_ADDRESS")
     (:icmp-address-reply "ICMP_ADDRESSREPLY"))
 
-  (constantenum icmp-unreach
+  (constantenum (icmp-unreach :define-constants t)
     (:icmp-net-unreach "ICMP_NET_UNREACH")
     (:icmp-host-unreach "ICMP_HOST_UNREACH")
     (:icmp-prot-unreach "ICMP_PROT_UNREACH")
@@ -260,11 +260,15 @@
     (:icmp-prec-violation "ICMP_PREC_VIOLATION")
     (:icmp-prec-cutoff "ICMP_PREC_CUTOFF"))
 
-  (constantenum icmp-redirect
+  (constantenum (icmp-redirect :define-constants t)
     (:icmp-redir-net "ICMP_REDIR_NET")
     (:icmp-redir-host "ICMP_REDIR_HOST")
     (:icmp-redir-nettos "ICMP_REDIR_NETTOS")
-    (:icmp-redir-hosttos "ICMP_REDIR_HOSTTOS")))
+    (:icmp-redir-hosttos "ICMP_REDIR_HOSTTOS"))
+
+  (constantenum (icmp-time-exceeded :define-constants t)
+    (:icmp-exc-ttl "ICMP_EXC_TTL")
+    (:icmp-exc-fragtime "ICMP_EXC_FRAGTIME")))
 
 ;;; shutdown()
 (constant (shut-rd "SHUT_RD" "SD_RECEIVE"))

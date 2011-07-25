@@ -212,11 +212,56 @@
    #:*dns-domain*
    #:*dns-search-domain*
 
-   ;; Protocol enums
-   #+linux #:icmp-types
-   #+linux #:icmp-unreach
-   #+linux #:icmp-redirect
-
    ;; Miscellaneous
-   #:ip #:net
-   ))
+   #:ip #:net)
+  #+linux
+  (:export   
+   ;; CFFI enum ICMP Types
+   #:icmp-types
+   #:icmp-net-unreach
+   #:icmp-host-unreach
+   #:icmp-prot-unreach
+   #:icmp-port-unreach
+   #:icmp-frag-needed
+   #:icmp-sr-failed
+   #:icmp-net-unknown
+   #:icmp-host-unknown
+   #:icmp-host-isolated
+   #:icmp-net-ano
+   #:icmp-host-ano
+   #:icmp-net-unr-tos
+   #:icmp-host-unr-tos
+   #:icmp-pkt-filtered
+   #:icmp-prec-violation
+   #:icmp-prec-cutoff
+
+   ;; CFFI enum ICMP-Unreach Types
+   #:icmp-unreach
+   #:icmp-net-unreach
+   #:icmp-host-unreach
+   #:icmp-prot-unreach
+   #:icmp-port-unreach
+   #:icmp-frag-needed
+   #:icmp-sr-failed
+   #:icmp-net-unknown
+   #:icmp-host-unknown
+   #:icmp-host-isolated
+   #:icmp-net-ano
+   #:icmp-host-ano
+   #:icmp-net-unr-tos
+   #:icmp-host-unr-tos
+   #:icmp-pkt-filtered
+   #:icmp-prec-violation
+   #:icmp-prec-cutoff
+
+   ;; CFFI enum ICMP-Redirect Types
+   #:icmp-redirect
+   #:icmp-redir-net
+   #:icmp-redir-host
+   #:icmp-redir-nettos
+   #:icmp-redir-hosttos   
+
+   ;; CFFI enum ICMP-Time-Exceeded Types
+   #:icmp-redirect
+   #:icmp-exc-ttl
+   #:icmp-exc-fragtime))
