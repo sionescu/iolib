@@ -212,6 +212,11 @@
    #:*dns-domain*
    #:*dns-search-domain*
 
+   ;; Protocol enums
+   #+linux #:icmp-types
+   #+linux #:icmp-unreach
+   #+linux #:icmp-redirect
+
    ;; Miscellaneous
    #:ip #:net
    ))

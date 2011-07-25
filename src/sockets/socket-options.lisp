@@ -275,3 +275,9 @@
 
 (define-socket-option ip-receive-error :get-and-set
   ip-recverr ipproto-ip :bool :linux)
+
+
+;;; RAW  Options
+
+(define-socket-option icmp-filter :get-and-set
+  icmp-filter ipproto-raw :int :linux)

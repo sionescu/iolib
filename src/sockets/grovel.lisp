@@ -31,7 +31,8 @@
 ;;; be cleaned up or at least commented out.
 
 (include "sys/socket.h" "sys/un.h" "netdb.h" "errno.h"
-         "net/if.h" "netinet/in.h" "netinet/tcp.h" "netinet/ip.h" #+linux "linux/errqueue.h"
+         "net/if.h" "netinet/in.h" "netinet/tcp.h" "netinet/ip.h"
+         #+linux "linux/errqueue.h" #+linux "linux/icmp.h"
          "arpa/inet.h")
 
 (in-package :iolib.sockets)
@@ -220,6 +221,50 @@
     (code   "ee_code"   :type :uint8)
     (info   "ee_info"   :type :uint8)
     (data   "ee_data"   :type :uint8)))
+
+;; RAW options
+#+linux
+(progn
+  (constant (icmp-filter "ICMP_FILTER"))
+
+  (constantenum icmp-types
+    (:icmp-echoreply "ICMP_ECHOREPLY")
+    (:icmp-dest-unreach "ICMP_DEST_UNREACH")
+    (:icmp-source-quench "ICMP_SOURCE_QUENCH")
+    (:icmp-redirect "ICMP_REDIRECT")
+    (:icmp-echo "ICMP_ECHO")
+    (:icmp-time-exceeded "ICMP_TIME_EXCEEDED")
+    (:icmp-parameterprob "ICMP_PARAMETERPROB")
+    (:icmp-timestamp "ICMP_TIMESTAMP")
+    (:icmp-timestampreply "ICMP_TIMESTAMPREPLY")
+    (:icmp-info-request "ICMP_INFO_REQUEST")
+    (:icmp-info-reply "ICMP_INFO_REPLY")
+    (:icmp-address "ICMP_ADDRESS")
+    (:icmp-addressreply "ICMP_ADDRESSREPLY"))
+
+  (constantenum icmp-unreach
+    (:icmp-net-unreach "ICMP_NET_UNREACH")
+    (:icmp-host-unreach "ICMP_HOST_UNREACH")
+    (:icmp-prot-unreach "ICMP_PROT_UNREACH")
+    (:icmp-port-unreach "ICMP_PORT_UNREACH")
+    (:icmp-frag-needed "ICMP_FRAG_NEEDED")
+    (:icmp-sr-failed "ICMP_SR_FAILED")
+    (:icmp-net-unknown "ICMP_NET_UNKNOWN")
+    (:icmp-host-unknown "ICMP_HOST_UNKNOWN")
+    (:icmp-host-isolated "ICMP_HOST_ISOLATED")
+    (:icmp-net-ano "ICMP_NET_ANO")
+    (:icmp-host-ano "ICMP_HOST_ANO")
+    (:icmp-net-unr-tos "ICMP_NET_UNR_TOS")
+    (:icmp-host-unr-tos "ICMP_HOST_UNR_TOS")
+    (:icmp-pkt-filtered "ICMP_PKT_FILTERED")
+    (:icmp-prec-violation "ICMP_PREC_VIOLATION")
+    (:icmp-prec-cutoff "ICMP_PREC_CUTOFF"))
+
+  (constantenum icmp-redirect
+    (:icmp-redir-net "ICMP_REDIR_NET")
+    (:icmp-redir-host "ICMP_REDIR_HOST")
+    (:icmp-redir-nettos "ICMP_REDIR_NETTOS")
+    (:icmp-redir-hosttos "ICMP_REDIR_HOSTTOS")))
 
 ;;; shutdown()
 (constant (shut-rd "SHUT_RD" "SD_RECEIVE"))
