@@ -228,19 +228,19 @@
   (constant (icmp-filter "ICMP_FILTER"))
 
   (constantenum icmp-types
-    (:icmp-echoreply "ICMP_ECHOREPLY")
+    (:icmp-echo-reply "ICMP_ECHOREPLY")
     (:icmp-dest-unreach "ICMP_DEST_UNREACH")
     (:icmp-source-quench "ICMP_SOURCE_QUENCH")
     (:icmp-redirect "ICMP_REDIRECT")
-    (:icmp-echo "ICMP_ECHO")
+    (:icmp-echo-request "ICMP_ECHO")
     (:icmp-time-exceeded "ICMP_TIME_EXCEEDED")
-    (:icmp-parameterprob "ICMP_PARAMETERPROB")
-    (:icmp-timestamp "ICMP_TIMESTAMP")
-    (:icmp-timestampreply "ICMP_TIMESTAMPREPLY")
+    (:icmp-parameter-prob "ICMP_PARAMETERPROB")
+    (:icmp-timestamp-request "ICMP_TIMESTAMP")
+    (:icmp-timestamp-reply "ICMP_TIMESTAMPREPLY")
     (:icmp-info-request "ICMP_INFO_REQUEST")
     (:icmp-info-reply "ICMP_INFO_REPLY")
-    (:icmp-address "ICMP_ADDRESS")
-    (:icmp-addressreply "ICMP_ADDRESSREPLY"))
+    (:icmp-address-request "ICMP_ADDRESS")
+    (:icmp-address-reply "ICMP_ADDRESSREPLY"))
 
   (constantenum icmp-unreach
     (:icmp-net-unreach "ICMP_NET_UNREACH")
