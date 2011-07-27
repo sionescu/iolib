@@ -216,6 +216,16 @@
    #:ip #:net)
   #+linux
   (:export   
+   ;; IP protocols
+   #:ipproto-ip
+   #:ipproto-ipv6
+   #:ipproto-icmp
+   #:ipproto-icmpv6
+   #:ipproto-tcp
+   #:ipproto-udp
+   #:ipproto-sctp
+   #:ipproto-raw
+   
    ;; CFFI enum ICMP Types
    #:icmp-types
    #:icmp-net-unreach
