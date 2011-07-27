@@ -215,7 +215,7 @@
    ;; Miscellaneous
    #:ip #:net)
   #+linux
-  (:export   
+  (:export
    ;; IP protocols
    #:ipproto-ip
    #:ipproto-ipv6
@@ -269,7 +269,7 @@
    #:icmp-redir-net
    #:icmp-redir-host
    #:icmp-redir-nettos
-   #:icmp-redir-hosttos   
+   #:icmp-redir-hosttos
 
    ;; CFFI enum ICMP-Time-Exceeded Types
    #:icmp-redirect
