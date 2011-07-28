@@ -225,25 +225,22 @@
    #:ipproto-udp
    #:ipproto-sctp
    #:ipproto-raw
-   
+
    ;; CFFI enum ICMP Types
    #:icmp-types
-   #:icmp-net-unreach
-   #:icmp-host-unreach
-   #:icmp-prot-unreach
-   #:icmp-port-unreach
-   #:icmp-frag-needed
-   #:icmp-sr-failed
-   #:icmp-net-unknown
-   #:icmp-host-unknown
-   #:icmp-host-isolated
-   #:icmp-net-ano
-   #:icmp-host-ano
-   #:icmp-net-unr-tos
-   #:icmp-host-unr-tos
-   #:icmp-pkt-filtered
-   #:icmp-prec-violation
-   #:icmp-prec-cutoff
+   #:icmp-echo-request
+   #:icmp-echo-reply
+   #:icmp-dest-unreach
+   #:icmp-source-quench
+   #:icmp-redirect
+   #:icmp-time-exceeded
+   #:icmp-parameter-prob
+   #:icmp-timestamp-request
+   #:icmp-timestamp-reply
+   #:icmp-info-request
+   #:icmp-info-reply
+   #:icmp-address-request
+   #:icmp-address-reply
 
    ;; CFFI enum ICMP-Unreach Types
    #:icmp-unreach
