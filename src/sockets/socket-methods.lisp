@@ -417,33 +417,38 @@
   (:more          msg-more      :linux)
   (:confirm       msg-confirm   :linux))
 
-(defun %%send-to (fd ss got-peer buffer start length flags)
-  (with-pointer-to-vector-data (buff-sap buffer)
-    (incf-pointer buff-sap start)
-    (loop
-       (restart-case
-           (return*
-            (%sendto fd buff-sap length flags
-                     (if got-peer ss (null-pointer))
-                     (if got-peer (sockaddr-size ss) 0)))
-         (ignore-syscall-error ()
-           :report "Ignore this socket condition"
-           :test isys:syscall-error-p
-           (return* 0))
-         (retry-syscall (&optional (timeout 15.0d0))
-           :report "Try to send data again"
-           :test isys:syscall-error-p
-           (when (plusp timeout)
-             (iomux:wait-until-fd-ready fd :output timeout nil)))))))
+(defun %%send-to (fd ss got-peer buff-sap start length flags)
+  (incf-pointer buff-sap start)
+  (loop
+    (restart-case
+        (return*
+         (%sendto fd buff-sap length flags
+                  (if got-peer ss (null-pointer))
+                  (if got-peer (sockaddr-size ss) 0)))
+      (ignore-syscall-error ()
+        :report "Ignore this socket condition"
+        :test isys:syscall-error-p
+        (return* 0))
+      (retry-syscall (&optional (timeout 15.0d0))
+        :report "Try to send data again"
+        :test isys:syscall-error-p
+        (when (plusp timeout)
+          (iomux:wait-until-fd-ready fd :output timeout nil))))))
 
 (defun %send-to (fd ss got-peer buffer start end flags)
-  (check-bounds buffer start end)
   (etypecase buffer
     (ub8-sarray
-     (%%send-to fd ss got-peer buffer start (- end start) flags))
+     (check-bounds buffer start end)
+     (with-pointer-to-vector-data (buff-sap buffer)
+       (%%send-to fd ss got-peer buff-sap start (- end start) flags)))
     ((or ub8-vector (vector t))
-     (%%send-to fd ss got-peer (coerce buffer 'ub8-sarray)
-                start (- end start) flags))))
+     (check-bounds buffer start end)
+     (with-pointer-to-vector-data (buff-sap (coerce buffer 'ub8-sarray))
+       (%%send-to fd ss got-peer buff-sap start (- end start) flags)))
+    (foreign-pointer
+     (check-type start unsigned-byte)
+     (check-type end   unsigned-byte)
+     (%%send-to fd ss got-peer buffer start (- end start) flags))))
 
 (defmethod send-to ((socket internet-socket) buffer &rest args
                     &key (start 0) end remote-host (remote-port 0) flags (ipv6 *ipv6*))
