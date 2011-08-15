@@ -8,27 +8,23 @@
 #+sbcl
 (progn
   (defun defknown-redefinition-error-p (e)
-    (declare (optimize speed))
     (and (typep e 'simple-error)
          (search "overwriting old FUN-INFO"
-                 (the string (simple-condition-format-control e)))))
-
-  (deftype defknown-redefinition-error ()
-    '(satisfies defknown-redefinition-error-p))
+                 (simple-condition-format-control e))))
 
   (defmacro %deffoldable (func argument-types return-type)
-    `(handler-bind ((defknown-redefinition-error #'continue))
+    `(handler-bind (((satisfies defknown-redefinition-error-p) #'continue))
        (sb-c:defknown ,func ,argument-types ,return-type (sb-c:foldable)))))
 
 #-(or sbcl)
 (defmacro %deffoldable (&rest args)
   (declare (ignore args)))
 
-(defun constantp (form &optional environment)
-  (cl:constantp (cond ((symbolp form)
-                       (macroexpand form environment))
-                      (t form))
-                environment))
+(defun constantp (form &optional env)
+  (cl:constantp (if (symbolp form)
+                    (macroexpand form env)
+                    form)
+                env))
 
 (defun constant-form-value (form &optional env)
   (declare (ignorable env))
