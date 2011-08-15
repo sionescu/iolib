@@ -29,7 +29,7 @@
 (defun constant-form-value (form &optional env)
   (declare (ignorable env))
   #+clozure
-  (ccl:eval-constant form)
+  (ccl::eval-constant form)
   #+sbcl
   (sb-int:constant-form-value form env)
   #-(or clozure sbcl)
