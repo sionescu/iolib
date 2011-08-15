@@ -30,6 +30,15 @@
                       (t form))
                 environment))
 
+(defun constant-form-value (form &optional env)
+  (declare (ignorable env))
+  #+clozure
+  (ccl:eval-constant form)
+  #+sbcl
+  (sb-int:constant-form-value form env)
+  #-(or clozure sbcl)
+  (eval form))
+
 (defmacro deffoldable (func &optional
                        (argument-types (list t))
                        (return-type t))
@@ -40,5 +49,5 @@
                                             &environment ,env)
          (declare (ignore ,args))
          (if (constantp ,form ,env)
-             (eval ,form)
+             (constant-form-value ,form ,env)
              ,form)))))

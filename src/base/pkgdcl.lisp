@@ -39,6 +39,7 @@
    ;; #:special is already in CL
    ;; DEFFOLDABLE
    #:deffoldable
+   #:constant-form-value
    ;; DEFOBSOLETE
    #:defobsolete
    #:signal-obsolete
