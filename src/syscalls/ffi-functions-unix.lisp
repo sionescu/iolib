@@ -925,7 +925,15 @@ as indicated by WHICH and WHO to VALUE."
 ;;; Environment
 ;;;-------------------------------------------------------------------------
 
-(defcvar ("environ" :read-only t) (:pointer :string))
+(defsyscall (os-environ "lfp_get_environ") :pointer
+  "Return a pointer to the current process environment.")
+
+(defmacro %obsolete-*environ* ()
+  (iolib.base::signal-obsolete '*environ* "use function OS-ENVIRON instead"
+                               "symbol macro" :WARN)
+  `(os-environ))
+
+(define-symbol-macro *environ* (%obsolete-*environ*))
 
 (defentrypoint getenv (name)
   "Returns the value of environment variable NAME."
@@ -947,9 +955,9 @@ The environment variable is overwritten only if overwrite is not NIL."
 
 ;; FIXME: move into libfixposix
 (defentrypoint clearenv ()
-  "Remove all name-value pairs from the environment and set the external
-variable *environ* to NULL."
-  (let ((envptr *environ*))
+  "Remove all name-value pairs from the environment set the
+OS environment to NULL."
+  (let ((envptr (os-environ)))
     (unless (null-pointer-p envptr)
       (loop :for i :from 0 :by 1
             :for string := (mem-aref envptr :string i)

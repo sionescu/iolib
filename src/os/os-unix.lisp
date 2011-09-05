@@ -89,7 +89,7 @@ failure."
 (defun environment ()
   "Return the current global environment."
   (let ((env (make-instance 'environment))
-        (envptr isys:*environ*))
+        (envptr (isys:os-environ)))
     (if (null-pointer-p envptr)
         ()
         (loop :for i :from 0 :by 1
@@ -138,7 +138,7 @@ of SETF ENVIRONMENT."
          (null
           (,body-fn (null-pointer)))
          ((eql t)
-          (,body-fn isys:*environ*))
+          (,body-fn (isys:os-environ)))
          (environment
           (let ((,count (1+ (hash-table-count
                              (environment-variables ,environment)))))

@@ -12,6 +12,7 @@
            #:truncate #:ftruncate #:time)
   ;; Specials
   (:export
+   ;; Deprecated, to be removed. 2011-09-05
    #:*environ*)
   ;; Simple POSIX Types
   (:export
@@ -604,6 +605,7 @@
    #:clock-settime
    #:get-monotonic-time)
   (:export ;; Environment
+   #:os-environ
    #:getenv
    #:setenv
    #:unsetenv
