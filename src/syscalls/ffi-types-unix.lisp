@@ -53,7 +53,7 @@
 (ctype nfds-t "nfds_t")
 (ctype rlim-t "rlim_t")
 (ctype id-t "id_t")
-(ctype clockid-t "lfp_clockid_t")
+(ctype clockid-t "clockid_t")
 
 
 ;;;-------------------------------------------------------------------------
