@@ -309,9 +309,10 @@
                                    :stderr stderr
                                    :external-format external-format)))
       (unwind-protect
-           (values (process-status process :wait t)
-                   (slurp (process-stdout process))
-                   (if (eql :pipe stderr)
-                       (slurp (process-stderr process))
-                       (make-string 0)))
+           (let ((stdout (slurp (process-stdout process)))
+                 (stderr (if (eql :pipe stderr)
+                             (slurp (process-stderr process))
+                             (make-string 0))))
+             (values (process-status process :wait t)
+                     stdout stderr))
         (close process)))))
