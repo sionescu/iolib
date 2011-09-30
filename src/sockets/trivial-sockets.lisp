@@ -7,7 +7,7 @@
 
 (defpackage :iolib.trivial-sockets
   (:use :iolib.base :iolib.sockets)
-  (:shadow #:socket-error)
+  (:shadow #:socket-error #:accept-connection)
   (:export #:open-stream #:socket-error #:socket-nested-error
            #:unsupported #:unsupported-feature
            #:open-server #:close-server #:accept-connection
@@ -88,7 +88,7 @@
   (declare (ignore element-type))       ; bivalent streams
   (let ((*ipv6* nil))
     (handler-bind ((error (lambda (c) (error 'socket-error :nested-error c))))
-      (accept-connection socket :external-format external-format))))
+      (iolib.sockets:accept-connection socket :external-format external-format))))
 
 ;;;;
 ;;;; Utilities
