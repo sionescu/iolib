@@ -99,11 +99,12 @@
 (declaim (inline %read-sequence))
 (defun %read-sequence (stream seq start end)
   (check-bounds seq start end)
-  (when (< start end)
+  (if (< start end)
     (etypecase seq
       (ub8-sarray (%read-into-simple-array-ub8 stream seq start end))
       (string     (%read-into-string stream seq start end))
-      (ub8-vector (%read-into-vector stream seq start end)))))
+      (ub8-vector (%read-into-vector stream seq start end)))
+    start))
 
 (declaim (inline read-sequence*))
 (defun read-sequence* (stream sequence &key (start 0) end)
