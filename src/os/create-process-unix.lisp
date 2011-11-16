@@ -296,15 +296,15 @@
                              :stdin infd :stdout outfd :stderr errfd
                              :external-format external-format))))))))
 
-(defun run-program (program-and-args &key (environment t) (stderr :pipe)
-                    (external-format :utf-8))
+(defun run-program (program-and-args &key (environment t)
+                    (stdin :null) (stderr :pipe) (external-format :utf-8))
   (flet ((slurp (stream)
            (with-output-to-string (s)
              (loop :for c := (read-char stream nil nil)
                    :while c :do (write-char c s)))))
     (let ((process (create-process program-and-args
                                    :environment environment
-                                   :stdin nil
+                                   :stdin stdin
                                    :stdout :pipe
                                    :stderr stderr
                                    :external-format external-format)))
