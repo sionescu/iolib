@@ -60,7 +60,7 @@
         t)))
 
 (defmethod print-object ((o process) s)
-  (print-unreadable-object (o s :type t :identity t)
+  (print-unreadable-object (o s :type t :identity nil)
     (format s "~S ~S ~S ~S"
             :pid (process-pid o)
             :status (process-status o))))
