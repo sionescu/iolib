@@ -302,12 +302,13 @@
            (with-output-to-string (s)
              (loop :for c := (read-char stream nil nil)
                    :while c :do (write-char c s)))))
-    (let ((process (create-process program-and-args
-                                   :environment environment
-                                   :stdin stdin
-                                   :stdout :pipe
-                                   :stderr stderr
-                                   :external-format external-format)))
+    (let ((process
+            (create-process program-and-args
+                            :environment environment
+                            :stdin stdin
+                            :stdout :pipe
+                            :stderr stderr
+                            :external-format external-format)))
       (unwind-protect
            (let ((stdout (slurp (process-stdout process)))
                  (stderr (if (eql :pipe stderr)
