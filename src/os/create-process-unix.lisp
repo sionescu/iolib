@@ -126,19 +126,20 @@
 (defun find-program (program)
   (cond
     ((eql :shell program)
-     "/bin/sh")
+     (list "/bin/sh" "-c"))
     (t
      (file-path-namestring program))))
 
 (defmacro with-argv (((arg0 argv) program arguments) &body body)
   (with-gensyms (argc)
-    `(let ((,program (find-program ,program))
-           (,argc (+ 2 (length ,arguments))))
+    `(let* ((,program (ensure-list (find-program ,program)))
+            (arguments (append (cdr ,program) arguments))
+            (,argc (+ 2 (length ,arguments))))
        (with-foreign-object (,argv :pointer ,argc)
          (isys:bzero ,argv (* ,argc (isys:sizeof :pointer)))
          (unwind-protect
               (progn
-                (allocate-argv ,argv ,program ,arguments)
+                (allocate-argv ,argv (car ,program) ,arguments)
                 (let ((,arg0 (mem-ref ,argv :pointer)))
                   ,@body))
            (delocate-null-ended-list ,argv))))))
