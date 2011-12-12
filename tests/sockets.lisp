@@ -7,7 +7,7 @@
 
 (in-suite :iolib.sockets)
 
-(defparameter *echo-address* (lookup-hostname "aldebaran.cddr.org"))
+(defparameter *echo-address* (lookup-hostname "deneb.cddr.org"))
 (defparameter *echo-port* 7)
 (defparameter *echo-timeout* 2)
 
