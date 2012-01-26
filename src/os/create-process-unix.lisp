@@ -277,20 +277,20 @@
                        (stdin :pipe) (stdout :pipe) (stderr :pipe)
                        new-session current-directory uid gid resetids
                        (external-format :utf-8))
-  (flet ((new-ctty-p (stdin stdout stderr)
+  (flet ((new-ctty-p ()
            (or (eql :pty stdin)
                (eql :pty stdout)
                (eql :pty stderr))))
     (destructuring-bind (program &rest arguments)
         (ensure-list program-and-args)
-      (when (new-ctty-p stdin stdout stderr)
-        (setf new-session t))
       (with-argv ((arg0 argv) program arguments)
         (with-c-environment (envp environment)
           (with-lfp-spawn-arguments (attributes file-actions pid)
             (with-redirections ((infd outfd errfd)
                                 (file-actions stdin stdout stderr))
-              (process-other-spawn-args attributes new-session current-directory
+              (process-other-spawn-args attributes
+                                        (or new-session (new-ctty-p))
+                                        current-directory
                                         uid gid resetids)
               (lfp-spawnp pid arg0 argv envp file-actions attributes)
               (make-instance 'process :pid (mem-ref pid 'pid-t)
