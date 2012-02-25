@@ -1111,7 +1111,7 @@ OS environment to NULL."
 (defentrypoint syslog (priority format &rest args)
   "Generates a log message, which will be distributed by syslogd.
 Using a FORMAT string and ARGS for lisp-side message formating."
-  (with-foreign-string (c-string (format nil format args))
+  (with-foreign-string (c-string (apply #'format nil format args))
     (%syslog priority "%s" c-string)))
 
 (defsyscall (closelog "lfp_closelog") :void
