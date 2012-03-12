@@ -290,8 +290,9 @@
     (ignore-some-conditions (isys:ewouldblock iomux:poll-timeout)
       (iomux:wait-until-fd-ready (fd-of socket) :input (wait->timeout wait) t)
       (with-sockaddr-storage-and-socklen (ss size)
-        (values (make-client-socket (%accept (fd-of socket) ss size))
-                (sockaddr-storage->sockaddr ss))))))
+        (multiple-value-call #'values
+          (make-client-socket (%accept (fd-of socket) ss size))
+          (sockaddr-storage->sockaddr ss))))))
 
 
 ;;;-------------------------------------------------------------------------

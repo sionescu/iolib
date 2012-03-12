@@ -247,7 +247,8 @@ specifies a timeout in seconds and T means \"wait forever\".
 EXTERNAL-FORMAT optionally specifies the external format of the new socket - the default being
 that of SOCKET. Buffer sizes for the new socket can also be specified using INPUT-BUFFER-SIZE
 and OUTPUT-BUFFER-SIZE.
-If a connection is received, returns two values: the newly created socket and the remote host address."))
+If a connection is received, returns two or three values: the newly created socket, the remote peer
+address and the remote port if applicable."))
 
 (defclass socket-stream-internet-active
     (active-socket stream-socket internet-socket) ()
