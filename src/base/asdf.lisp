@@ -16,17 +16,30 @@
   (defmethod asdf:perform :around ((o asdf:compile-op)
                                    (c :iolib-muffled-source-file))
     (with-muffled-output
-      (call-next-method)))
+      (with-standard-io-syntax
+        (let (;; Compilation fails because of CFFI types that
+              ;; can't be printed readably, so bind to NIL
+              (*print-readably* nil)
+              (*readtable* (copy-readtable)))
+          (call-next-method)))))
 
   (defmethod asdf:perform :around ((o asdf:load-op)
                                    (c :iolib-muffled-source-file))
     (with-muffled-output
-      (call-next-method)))
+      (with-standard-io-syntax
+        (let (;; See above
+              (*print-readably* nil)
+              (*readtable* (copy-readtable)))
+          (call-next-method)))))
 
   (defmethod asdf:perform :around ((o asdf:load-source-op)
                                    (c :iolib-muffled-source-file))
     (with-muffled-output
-      (call-next-method))))
+      (with-standard-io-syntax
+        (let (;;See above
+              (*print-readably* nil)
+              (*readtable* (copy-readtable)))
+          (call-next-method))))))
 
 #+scl
 (eval-when (:compile-toplevel :load-toplevel :execute)
