@@ -29,7 +29,7 @@
    (:file "address-predicates" :depends-on ("pkgdcl" "common" "address"))
    (:file "address-arithmetic" :depends-on ("pkgdcl" "common" "address" "address-predicates"))
 
-   (:file "base-sockets" :depends-on ("pkgdcl" "bsd" "config"))
+   (:file "base-sockets" :depends-on ("pkgdcl" "bsd" "common" "config"))
    (:file "socket-options"
      :depends-on ("pkgdcl" "grovel" "conditions" "bsd" "common" "config" "base-sockets"))
 
