@@ -38,7 +38,7 @@
       `(defun ,(ecase action
                       (:get (socktype-getter type))
                       (:set (socktype-setter type)))
-           ,args ,decls ,@forms))))
+           ,args ,@decls ,@forms))))
 
 (defmacro define-get-sockopt (os name type level optname)
   `(defmethod socket-option ((socket socket) (option-name (eql ,name)))
