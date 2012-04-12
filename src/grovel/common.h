@@ -144,6 +144,12 @@ void cffi_defconstant(FILE *output, char *name, char *value, char *docstring)
     fprintf(output, "(cl:defconstant %s %s%s)\n", name, value, buf);
 }
 
+void cffi_deftypedef(FILE *output, char *lisp_name, char *aggregate_type)
+{
+    fprintf(output, "(cffi:defctype %s (:%s %s))\n",
+            lisp_name, aggregate_type, lisp_name);
+}
+
 void cffi_deftypesize(FILE *output, char *type, int type_size)
 {
     static char buf[CFFI_BUFSIZE]; memset(buf, 0, CFFI_BUFSIZE);
@@ -219,6 +225,9 @@ void cffi_defcenum_member(FILE *output, char *lisp_name, char *value, char *docs
 
 #define CFFI_DEFCONSTANT(name, value, docstring)                        \
     cffi_defconstant(output, name, cffi_print_value(value), docstring)
+
+#define CFFI_DEFTYPEDEF(lisp_name, aggregate_type)      \
+    cffi_deftypedef(output, lisp_name, aggregate_type)
 
 #define CFFI_DEFTYPESIZE(lisp_name, ctype)              \
     cffi_deftypesize(output, lisp_name, sizeof(ctype))

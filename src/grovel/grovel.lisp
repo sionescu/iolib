@@ -369,6 +369,8 @@ int main(int argc, char**argv) {
                    union-c-name slot-c-name
                    (prin1-to-string slot-lisp-name) (prin1-to-string type) count)))))
     (format out "  CFFI_DEFCUNION_END;~%")
+    (format out "  CFFI_DEFTYPEDEF(~S, ~S);~%"
+            (string* union-lisp-name) (string* :union))
     (format out "  CFFI_DEFTYPESIZE(~S, ~A);~%"
             (string* union-lisp-name) union-c-name)))
 
@@ -450,6 +452,8 @@ int main(int argc, char**argv) {
                    struct-c-name slot-c-name
                    (prin1-to-string slot-lisp-name) (prin1-to-string type) count)))))    
     (format out "  CFFI_DEFCSTRUCT_END;~%")
+    (format out "  CFFI_DEFTYPEDEF(~S, ~S);~%"
+            (string* struct-lisp-name) (string* :struct))
     (format out "  CFFI_DEFTYPESIZE(~S, ~A);~%"
             (string* struct-lisp-name) struct-c-name)))
 
