@@ -7,6 +7,8 @@
 
 (in-suite :iolib.sockets)
 
+(iolib.base:enable-literal-reader)
+
 (defparameter *echo-address* (lookup-hostname "deneb.cddr.org"))
 (defparameter *echo-port* 7)
 (defparameter *echo-timeout* 2)

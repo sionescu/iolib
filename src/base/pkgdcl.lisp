@@ -49,9 +49,8 @@
    #:deprecation-warning-reason
    ;; Reader utils
    #:define-syntax
-   #:enable-reader-macro #:enable-reader-macro*
-   #:disable-reader-macro #:disable-reader-macro*
    #:define-literal-reader
+   #:enable-literal-reader #:enable-literal-reader*
    #:unknown-literal-syntax #:unknown-literal-syntax-name
    ;; Misc
    #:function-name #:function-name-p
