@@ -82,7 +82,7 @@
      (let ((found (find-package package/name)))
        (values (intern (if found
 			   (package-name found)
-			   (typecase package/name
+			   (etypecase package/name
 			     (string package/name)
 			     (symbol (symbol-name package/name))))
 		       (find-package :keyword))
@@ -139,13 +139,9 @@ to make them consistent"
 						  extends/including
 						  extends/excluding)
   (flet ((ensure-package (p)
-	   (let ((package (etypecase p
-			    (package p)
-			    ((or symbol string) (find-package p)))))
-	     (unless package
+	   (or (find-package p)
 	       ;; might want to be able to continue
-	       (error "No package named ~S" p))
-	     package))
+	       (error "No package named ~S" p)))
 	 (ensure-external-symbol (d p)
 	   (multiple-value-bind (s state)
 	       (find-symbol (etypecase d
@@ -212,16 +208,10 @@ to make them consistent"
 ;;;
 
 (defun clone-packages-to-package (froms to)
-  (let ((to (typecase to
-              (package to)
-              (t (or (find-package to)
-                     (make-package to :use '()))))))
-    (when (null to)
-      (error "No target package..."))
+  (let ((to (or (find-package to)
+                (make-package to :use '()))))
     (loop :for f :in froms
-          :for from := (typecase f
-                         (package f)
-                         (t (find-package f)))
+          :for from := (find-package f)
           :for used := (package-use-list from)
           :for shadows := (package-shadowing-symbols from)
           :for exports := (let ((exps '()))
@@ -241,9 +231,7 @@ to make them consistent"
           :do (use-package used to))
     (loop :with aliases := '()
           :for f :in froms
-          :for from := (typecase f
-                         (package f)
-                         (t (find-package f)))
+          :for from := (find-package f)
           :do (loop :for e :in (hp-alias-map from)
                     :when (assoc (first e) aliases
                                  :test #'string=)
