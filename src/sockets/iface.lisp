@@ -59,7 +59,7 @@
   (cdr interface))
 
 (defun lookup-interface (interface)
-  "Lookup an interface by name or index.  UNKNOWN-INTERFACE is
+  "Lookup an interface by name or index. UNKNOWN-INTERFACE is
 signalled if an interface is not found."
   (check-type interface (or unsigned-byte string symbol) "non-negative integer, a string or a symbol")
   (let ((parsed (ensure-string-or-unsigned-byte interface :errorp t)))
