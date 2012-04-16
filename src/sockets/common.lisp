@@ -135,7 +135,7 @@
       (assert (< path-length sun-path-len))
       (with-foreign-string (c-string address-string :null-terminated-p nil)
         (isys:memcpy (foreign-slot-pointer sun 'sockaddr-un 'path)
-                          c-string path-length))))
+                     c-string path-length))))
   (values sun))
 
 (defun actual-size-of-sockaddr-un (sun)
