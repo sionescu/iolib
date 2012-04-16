@@ -73,25 +73,28 @@
      (values (isys:wtermsig* status)
              (isys:wcoredump status)))))
 
-(defmethod process-status ((process process) &key wait)
-  (if (integerp (slot-value process 'status))
-      (exit-status (slot-value process 'status))
-      (multiple-value-bind (pid status)
-          (isys:waitpid (process-pid process)
-                        (if wait 0 isys:wnohang))
-        (cond
-          ((zerop pid)
-           :running)
-          (t
-           (setf (slot-value process 'status) status)
-           (exit-status status))))))
+(defgeneric process-status (process &key wait)
+  (:method ((process process) &key wait)
+    (if (integerp (slot-value process 'status))
+        (exit-status (slot-value process 'status))
+        (multiple-value-bind (pid status)
+            (isys:waitpid (process-pid process)
+                          (if wait 0 isys:wnohang))
+          (cond
+            ((zerop pid)
+             :running)
+            (t
+             (setf (slot-value process 'status) status)
+             (exit-status status)))))))
 
-(defmethod process-activep ((process process))
-  (eql :running (process-status process)))
+(defgeneric process-activep (process)
+  (:method ((process process))
+    (eql :running (process-status process))))
 
-(defmethod process-kill ((process process) &optional (signum :sigterm))
-  (isys:kill (process-pid process) signum)
-  process)
+(defgeneric process-kill (process &optional signum)
+  (:method ((process process) &optional (signum :sigterm))
+    (isys:kill (process-pid process) signum)
+    process))
 
 
 (defmacro with-lfp-spawn-arguments ((attributes file-actions pid) &body body)
