@@ -24,18 +24,14 @@
 (defun list-network-interfaces ()
   "Returns a list of network interfaces currently available."
   (let ((ifptr (null-pointer)))
-    (macrolet ((%if-slot-value (slot index)
-                 `(foreign-slot-value
-                   (mem-aref ifptr 'if-nameindex ,index)
-                   'if-nameindex ,slot)))
-      (unwind-protect
-           (progn
-             (setf ifptr (%if-nameindex))
-             (loop :for i :from 0
-                   :for name := (%if-slot-value 'name i)
-                   :for index := (%if-slot-value 'index i)
+    (unwind-protect
+         (progn
+           (setf ifptr (%if-nameindex))
+           (loop :for p := ifptr :then (inc-pointer p (isys:sizeof '(:struct if-nameindex)))
+                 :for name := (foreign-slot-value p '(:struct if-nameindex) 'name)
+                 :for index := (foreign-slot-value p '(:struct if-nameindex) 'index)
                :while (plusp index) :collect (make-interface name index)))
-        (unless (null-pointer-p ifptr) (%if-freenameindex ifptr))))))
+      (unless (null-pointer-p ifptr) (%if-freenameindex ifptr)))))
 
 (defun get-interface-by-index (index)
   (with-foreign-object (buffer :uint8 ifnamesize)
