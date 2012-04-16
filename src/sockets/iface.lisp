@@ -18,8 +18,8 @@
 (setf (documentation 'unknown-interface-datum 'function)
       "Return the datum that caused the signalling of an UNKNOWN-INTERFACE condition.")
 
-(defun signal-unknown-interface-error (datum)
-  (error 'unknown-interface :datum datum))
+(defun signal-unknown-interface-error (syscall datum)
+  (error 'unknown-interface :syscall syscall :datum datum))
 
 (defun list-network-interfaces ()
   "Returns a list of network interfaces currently available."
@@ -38,7 +38,7 @@
     (handler-case
         (%if-indextoname index buffer)
       (isys:enxio ()
-        (signal-unknown-interface-error index))
+        (signal-unknown-interface-error "if_indextoname" index))
       (:no-error (name)
         (make-interface name index)))))
 
@@ -46,7 +46,7 @@
   (handler-case
       (%if-nametoindex name)
     (isys:enxio ()
-      (signal-unknown-interface-error name))
+      (signal-unknown-interface-error "if_nametoindex" name))
     (:no-error (index)
       (make-interface (copy-seq name) index))))
 
