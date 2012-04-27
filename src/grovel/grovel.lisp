@@ -255,6 +255,9 @@ int main(int argc, char**argv) {
 ;;; FIXME: is there a better way to detect whether these flags
 ;;; are necessary?
 (defparameter *cpu-word-size-flags*
+  #-(or x86 x86-64 sparc sparc64)
+  '()
+  #+(or x86 x86-64 sparc sparc64)
   (ecase (cffi:foreign-type-size :long)
     (4 (list "-m32"))
     (8 (list "-m64"))))
