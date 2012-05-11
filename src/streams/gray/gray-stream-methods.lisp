@@ -29,8 +29,7 @@
        stream
      (setf ibuf (allocate-iobuf input-buffer-size)
            obuf (allocate-iobuf output-buffer-size)
-           ef external-format)
-     (trivial-garbage:finalize stream (lambda () (free-stream-buffers ibuf obuf))))))
+           ef external-format))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -66,7 +65,6 @@
   (with-accessors ((ibuf input-buffer-of)
                    (obuf output-buffer-of))
       stream
-    (trivial-garbage:cancel-finalization stream)
     (unless (or abort (null ibuf)) (finish-output stream))
     (free-stream-buffers ibuf obuf)
     (setf ibuf nil obuf nil))

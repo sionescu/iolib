@@ -9,7 +9,7 @@
                (read f))
   :licence "MIT"
   :defsystem-depends-on (:iolib.asdf :iolib.conf)
-  :depends-on (:iolib.base :iolib.multiplex :cffi :trivial-garbage)
+  :depends-on (:iolib.base :iolib.multiplex :cffi)
   :default-component-class :iolib-source-file
   :pathname "streams/gray/"
   :components

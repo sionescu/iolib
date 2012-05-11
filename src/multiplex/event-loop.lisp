@@ -77,7 +77,7 @@
 ;;; KLUDGE: CLOSE is for streams. --luis
 ;;;
 ;;; Also, we might want to close FDs here.  Or have a version/argument
-;;; that handles that.  Or... add finalizers to the fd streams.
+;;; that handles that.
 (defmethod close ((event-base event-base) &key abort)
   (declare (ignore abort))
   (close-multiplexer (mux-of event-base))
