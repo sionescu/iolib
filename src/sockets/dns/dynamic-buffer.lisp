@@ -6,9 +6,10 @@
 (in-package :iolib.sockets)
 
 (defclass dynamic-buffer ()
-  ((sequence     :initform nil  :accessor sequence-of)
-   (read-cursor  :initform 0    :accessor read-cursor-of)
-   (write-cursor :initform 0    :accessor write-cursor-of)))
+  ((sequence         :initform nil :accessor sequence-of)
+   (read-cursor      :initform 0   :accessor read-cursor-of)
+   (write-cursor     :initform 0   :accessor write-cursor-of)
+   (growth-threshold :initform 3/2 :accessor growth-threshold-of)))
 
 (defmethod initialize-instance :after ((buffer dynamic-buffer)
                                        &key (size 256) sequence (start 0) end)
@@ -51,11 +52,12 @@
 (defun maybe-grow-buffer (buffer vector)
   (with-accessors ((seq sequence-of)
                    (size size-of)
-                   (wcursor write-cursor-of))
+                   (wcursor write-cursor-of)
+                   (threshold growth-threshold-of))
       buffer
     (let ((vlen (length vector)))
       (when (< size (+ wcursor vlen))
-        (let ((newsize (* 3/2 (+ size vlen))))
+        (let ((newsize (* threshold (+ size vlen))))
           (setf seq (adjust-array seq newsize))))))
   (values buffer))
 
