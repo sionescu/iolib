@@ -65,7 +65,7 @@
    #:sequence-of
    #:read-cursor-of
    #:write-cursor-of
-   #:growth-threshold-of
+   #:growth-size-of
    #:write-ub8
    #:write-ub16
    #:write-ub32

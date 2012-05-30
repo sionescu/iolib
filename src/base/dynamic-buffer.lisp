@@ -6,12 +6,11 @@
 (in-package :iolib.base)
 
 (defclass dynamic-buffer ()
-  ((sequence         :initform nil :accessor sequence-of)
-   (read-cursor      :initform 0   :accessor read-cursor-of)
-   (write-cursor     :initform 0   :accessor write-cursor-of)
-   (growth-threshold :initarg :threshold
-                     :accessor growth-threshold-of))
-  (:default-initargs :threshold 3/2))
+  ((sequence     :initform nil :accessor sequence-of)
+   (read-cursor  :initform 0   :accessor read-cursor-of)
+   (write-cursor :initform 0   :accessor write-cursor-of)
+   (growth-size  :initarg :growth-size :accessor growth-size-of))
+  (:default-initargs :growth-size 3/2))
 
 (defmethod initialize-instance :after ((buffer dynamic-buffer)
                                        &key (size 256) sequence (start 0) end)
@@ -51,26 +50,26 @@
           (ldb (byte 8 8) value)
           (ldb (byte 8 0) value)))
 
-(defun maybe-grow-buffer (buffer vector)
+(defun maybe-grow-buffer (buffer request-size)
   (with-accessors ((seq sequence-of)
                    (size size-of)
                    (wcursor write-cursor-of)
-                   (threshold growth-threshold-of))
+                   (growth-size growth-size-of))
       buffer
-    (let ((vlen (length vector)))
-      (when (< size (+ wcursor vlen))
-        (let ((newsize (* threshold (+ size vlen))))
-          (setf seq (adjust-array seq newsize))))))
+    (when (< size (+ wcursor request-size))
+      (let ((newsize (* growth-size (+ size request-size))))
+        (setf seq (adjust-array seq newsize)))))
   (values buffer))
 
-(defun write-vector (buffer vector)
-  (maybe-grow-buffer buffer vector)
-  (with-accessors ((seq sequence-of)
-                   (wcursor write-cursor-of))
-      buffer
-    (let ((vlen (length vector)))
-      (replace seq vector :start1 wcursor)
-      (incf wcursor vlen)))
+(defun write-vector (buffer vector &optional (start 0) end)
+  (check-bounds vector start end)
+  (let ((request-size (- end start)))
+    (maybe-grow-buffer buffer request-size)
+    (with-accessors ((seq sequence-of)
+                     (wcursor write-cursor-of))
+        buffer
+      (replace seq vector :start1 wcursor :start2 start :end2 end)
+      (incf wcursor request-size)))
   (values buffer))
 
 (declaim (inline write-ub8))
