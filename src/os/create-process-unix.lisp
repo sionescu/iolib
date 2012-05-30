@@ -300,12 +300,33 @@
                              :stdin infd :stdout outfd :stderr errfd
                              :external-format external-format))))))))
 
+(defun slurp-char-stream (stream)
+  (with-output-to-string (s)
+    (loop :for c := (read-char stream nil nil)
+          :while c :do (write-char c s))))
+
+(defun slurp-octet-stream (stream)
+  (let ((dynbuffer (make-instance 'dynamic-buffer :size 4096 :growth-size 2))
+        (iobuffer (make-array 4096 :element-type '(unsigned-byte 8))))
+    (handler-case
+        (loop :for pos := (read-sequence iobuffer stream)
+              :while (plusp pos) :do
+          (write-vector dynbuffer iobuffer 0 pos))
+      (end-of-file () nil))
+    (subseq (sequence-of dynbuffer)
+            (read-cursor-of dynbuffer)
+            (write-cursor-of dynbuffer))))
+
 (defun run-program (program-and-args &key (environment t)
                     (stdin :null) (stderr :pipe) (external-format :utf-8))
   (flet ((slurp (stream)
-           (with-output-to-string (s)
-             (loop :for c := (read-char stream nil nil)
-                   :while c :do (write-char c s)))))
+           (if external-format
+               (slurp-char-stream stream)
+               (slurp-octet-stream stream)))
+         (make-empty-output ()
+           (if external-format
+               (make-array 0 :element-type 'character)
+               (make-array 0 :element-type '(unsigned-byte 8)))))
     (let ((process
             (create-process program-and-args
                             :environment environment
@@ -317,7 +338,7 @@
            (let ((stdout (slurp (process-stdout process)))
                  (stderr (if (eql :pipe stderr)
                              (slurp (process-stderr process))
-                             (make-string 0))))
+                             (make-empty-output))))
              (values (process-status process :wait t)
                      stdout stderr))
         (close process)))))
