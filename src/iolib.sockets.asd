@@ -57,7 +57,7 @@
    (:file "dns-common" :pathname "dns/common"
      :depends-on ("pkgdcl" "common"))
    (:file "nameservers" :pathname "dns/nameservers"
-     :depends-on ("pkgdcl" "address" "etc-files" "file-monitor"))
+     :depends-on ("pkgdcl" "address" "address-predicates" "etc-files" "file-monitor"))
    (:file "dynamic-buffer" :pathname "dns/dynamic-buffer"
      :depends-on ("pkgdcl"))
    (:file "message":pathname "dns/message"
