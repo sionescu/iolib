@@ -318,7 +318,8 @@
             (write-cursor-of dynbuffer))))
 
 (defun run-program (program-and-args &key (environment t)
-                    (stdin :null) (stderr :pipe) (external-format :utf-8))
+                    (stdin :null) (stdout :pipe) (stderr :pipe)
+                    (external-format :utf-8))
   (flet ((slurp (stream)
            (if external-format
                (slurp-char-stream stream)
@@ -331,11 +332,13 @@
             (create-process program-and-args
                             :environment environment
                             :stdin stdin
-                            :stdout :pipe
+                            :stdout stdout
                             :stderr stderr
                             :external-format external-format)))
       (unwind-protect
-           (let ((stdout (slurp (process-stdout process)))
+           (let ((stdout (if (eql :pipe stdout)
+                             (slurp (process-stdout process))
+                             (make-empty-output)))
                  (stderr (if (eql :pipe stderr)
                              (slurp (process-stderr process))
                              (make-empty-output))))
