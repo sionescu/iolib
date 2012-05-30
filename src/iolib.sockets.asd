@@ -58,14 +58,12 @@
      :depends-on ("pkgdcl" "common"))
    (:file "nameservers" :pathname "dns/nameservers"
      :depends-on ("pkgdcl" "address" "address-predicates" "etc-files" "file-monitor"))
-   (:file "dynamic-buffer" :pathname "dns/dynamic-buffer"
-     :depends-on ("pkgdcl"))
    (:file "message":pathname "dns/message"
-     :depends-on ("pkgdcl" "common" "dns-common" "dynamic-buffer"))
+     :depends-on ("pkgdcl" "common" "dns-common"))
    (:file "query" :pathname "dns/query"
      :depends-on ("pkgdcl" "conditions" "address" "address-predicates"
                   "socket-options" "socket-methods" "make-socket" "dns-common"
-                  "nameservers" "dynamic-buffer" "message"))
+                  "nameservers" "message"))
    (:file "dns-conditions" :pathname "dns/conditions"
      :depends-on ("pkgdcl"))
    (:file "lookup" :pathname "dns/lookup"

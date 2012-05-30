@@ -55,4 +55,5 @@
    (:file "reader" :depends-on ("pkgdcl" "return-star" "conditions"))
    (:file "sequence" :depends-on ("pkgdcl" "return-star"))
    (:file "matching" :depends-on ("pkgdcl" "return-star"))
-   (:file "time" :depends-on ("pkgdcl" "return-star"))))
+   (:file "time" :depends-on ("pkgdcl" "return-star"))
+   (:file "dynamic-buffer" :depends-on ("pkgdcl" "return-star"))))

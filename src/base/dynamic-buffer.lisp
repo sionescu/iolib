@@ -3,7 +3,7 @@
 ;;; --- Read/write adjustable buffer.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib.base)
 
 (defclass dynamic-buffer ()
   ((sequence         :initform nil :accessor sequence-of)

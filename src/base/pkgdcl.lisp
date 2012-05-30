@@ -60,4 +60,24 @@
    ;; Time
    #:timeout-designator #:positive-timeout-designator
    #:decode-timeout #:normalize-timeout #:clamp-timeout
+   ;; Dynamic-buffer
+   #:dynamic-buffer
+   #:sequence-of
+   #:read-cursor-of
+   #:write-cursor-of
+   #:growth-threshold-of
+   #:write-ub8
+   #:write-ub16
+   #:write-ub32
+   #:write-vector
+   #:read-ub8
+   #:read-ub16
+   #:read-ub32
+   #:read-vector
+   #:read-ub16-from-vector
+   #:read-ub32-from-vector
+   #:seek-read-cursor
+   #:dynamic-buffer-input-error
+   #:dynamic-buffer-eof
+   #:dynamic-buffer-index-out-of-bounds
    ))
