@@ -9,7 +9,9 @@
   ((sequence         :initform nil :accessor sequence-of)
    (read-cursor      :initform 0   :accessor read-cursor-of)
    (write-cursor     :initform 0   :accessor write-cursor-of)
-   (growth-threshold :initform 3/2 :accessor growth-threshold-of)))
+   (growth-threshold :initarg :threshold
+                     :accessor growth-threshold-of))
+  (:default-initargs :threshold 3/2))
 
 (defmethod initialize-instance :after ((buffer dynamic-buffer)
                                        &key (size 256) sequence (start 0) end)
