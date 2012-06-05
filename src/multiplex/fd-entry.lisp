@@ -29,6 +29,7 @@
   (fd 0 :type unsigned-byte)
   (read-handler  nil :type (or null fd-handler))
   (write-handler nil :type (or null fd-handler))
+  (write-ts 0.0d0 :type double-float)
   (error-callback nil :type (or null function-designator)))
 
 (defun fd-entry-handler (fd-entry event-type)
