@@ -347,10 +347,11 @@ within the extent of BODY.  Closes VAR."
           (setf readp (%dispatch-event fd-entry :read
                                        (if errorp :error nil) now)))
         (when (member :write ev-types)
-          (when (<= wthreshold (- now (fd-entry-write-ts fd-entry)))
-            (setf writep (%dispatch-event fd-entry :write
-                                          (if errorp :error nil) now)))
-          (setf (fd-entry-write-ts fd-entry) now))
+          (unwind-protect
+               (when (<= wthreshold (- now (fd-entry-write-ts fd-entry)))
+                 (setf writep (%dispatch-event fd-entry :write
+                                               (if errorp :error nil) now)))
+            (setf (fd-entry-write-ts fd-entry) now)))
         (when errorp
           (when-let ((callback (fd-entry-error-callback fd-entry)))
             (funcall callback (fd-entry-fd fd-entry) :error))
