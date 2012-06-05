@@ -15,7 +15,7 @@
     (format stream "epoll(4) multiplexer")))
 
 (defconstant +epoll-default-size-hint+ 25)
-(defconstant +epoll-max-events+ 1024)
+(defconstant +epoll-max-events+ 10240)
 
 (defmethod initialize-instance :after ((mux epoll-multiplexer)
                                        &key (size +epoll-default-size-hint+))
