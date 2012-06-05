@@ -20,11 +20,14 @@
               :reader fd-timers-of)
    (expired-events :initform nil
                    :accessor expired-events-of)
+   (write-interval-threshold :initarg :write-interval-threshold
+                             :accessor write-interval-threshold-of)
    (exit :initform nil
          :accessor exit-p)
    (exit-when-empty :initarg :exit-when-empty
                     :accessor exit-when-empty-p))
   (:default-initargs :mux *default-multiplexer*
+   	             :write-interval-threshold 0.0d0
                      :exit-when-empty nil))
 
 
@@ -66,7 +69,10 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod initialize-instance :after
-    ((base event-base) &key mux)
+    ((base event-base) &key mux write-interval-threshold)
+  (check-type write-interval-threshold non-negative-real)
+  (setf (write-interval-threshold-of base)
+        (float write-interval-threshold 1.0d0))
   (setf (slot-value base 'mux) (make-instance mux)))
 
 
@@ -321,16 +327,17 @@ within the extent of BODY.  Closes VAR."
 ;;; Waits for events and dispatches them.  Returns T if some events
 ;;; have been received, NIL otherwise.
 (defun dispatch-fd-events-once (event-base timeout now)
-  (loop
-     :with fd-events := (harvest-events (mux-of event-base) timeout)
-     :for ev :in fd-events
-     :for dlist :=    (%handle-one-fd event-base ev now nil)
-                :then (%handle-one-fd event-base ev now dlist)
-     :finally
-        (priority-queue-reorder (fd-timers-of event-base))
-      (return (values (consp fd-events) dlist))))
+  (let ((wthreshold (write-interval-threshold-of event-base)))
+    (loop
+      :with fd-events := (harvest-events (mux-of event-base) timeout)
+      :for ev :in fd-events
+      :for dlist :=    (%handle-one-fd event-base ev now nil wthreshold)
+                 :then (%handle-one-fd event-base ev now dlist wthreshold)
+      :finally
+         (priority-queue-reorder (fd-timers-of event-base))
+       (return (values (consp fd-events) dlist)))))
 
-(defun %handle-one-fd (event-base event now deletion-list)
+(defun %handle-one-fd (event-base event now deletion-list wthreshold)
   (destructuring-bind (fd ev-types) event
     (let* ((readp nil) (writep nil)
            (fd-entry (fd-entry-of event-base fd))
@@ -340,8 +347,11 @@ within the extent of BODY.  Closes VAR."
           (setf readp (%dispatch-event fd-entry :read
                                        (if errorp :error nil) now)))
         (when (member :write ev-types)
-          (setf writep (%dispatch-event fd-entry :write
-                                        (if errorp :error nil) now)))
+          (when (<= wthreshold (- now (fd-entry-write-ts fd-entry)))
+            (unwind-protect
+                 (setf writep (%dispatch-event fd-entry :write
+                                               (if errorp :error nil) now))
+              (setf (fd-entry-write-ts fd-entry) now))))
         (when errorp
           (when-let ((callback (fd-entry-error-callback fd-entry)))
             (funcall callback (fd-entry-fd fd-entry) :error))
