@@ -66,7 +66,7 @@
              "lfp_spawnattr_setctty")
     :int
   (attributes :pointer)
-  (ptmfd      pid-t))
+  (pts        sstring))
 
 (defsyscall (lfp-spawnattr-setcwd
              "lfp_spawnattr_setcwd")
