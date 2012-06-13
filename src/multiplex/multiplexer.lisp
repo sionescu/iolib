@@ -14,8 +14,9 @@
 (defun get-fd-limit ()
   "Return the maximum number of FDs available for the current process."
   (let ((fd-limit (isys:getrlimit isys:rlimit-nofile)))
-    (unless (eql fd-limit isys:rlim-infinity)
-      (1- fd-limit))))
+    (if (= fd-limit isys:rlim-infinity)
+        65536 ; 64K should be enough for anybody
+        fd-limit)))
 
 (defclass multiplexer ()
   ((fd :reader fd-of)
