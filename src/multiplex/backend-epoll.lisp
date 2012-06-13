@@ -8,18 +8,23 @@
 (defconstant +epoll-priority+ 1)
 
 (define-multiplexer epoll-multiplexer +epoll-priority+ (multiplexer)
-  ())
+  ((events :reader event-set-of)))
 
 (defmethod print-object ((mux epoll-multiplexer) stream)
   (print-unreadable-object (mux stream :type nil :identity nil)
     (format stream "epoll(4) multiplexer")))
 
-(defconstant +epoll-default-size-hint+ 25)
-(defconstant +epoll-max-events+ 1024)
+(defmethod initialize-instance :after ((mux epoll-multiplexer) &key (size 25))
+  (setf (slot-value mux 'fd) (isys:epoll-create size))
+  (setf (slot-value mux 'events)
+        (foreign-alloc 'isys:epoll-event :count (fd-limit-of mux))))
 
-(defmethod initialize-instance :after ((mux epoll-multiplexer)
-                                       &key (size +epoll-default-size-hint+))
-  (setf (slot-value mux 'fd) (isys:epoll-create size)))
+(defmethod close :after ((mux epoll-multiplexer) &key abort)
+  (declare (ignore abort))
+  (with-slots (events) mux
+    (when events
+      (foreign-free events)
+      (setf events nil))))
 
 (defun calc-epoll-flags (fd-entry)
   (logior (if (fd-entry-read-handler fd-entry)
@@ -81,12 +86,14 @@
             (fd-entry-fd fd-entry)))))
 
 (defmethod harvest-events ((mux epoll-multiplexer) timeout)
-  (with-foreign-object (events 'isys:epoll-event +epoll-max-events+)
-    (isys:bzero events (* +epoll-max-events+ (isys:sizeof 'isys:epoll-event)))
+  (with-accessors ((events event-set-of)
+                   (fd-limit fd-limit-of))
+      mux
+    (isys:bzero events (* fd-limit (isys:sizeof 'isys:epoll-event)))
     (let (ready-fds)
       (isys:repeat-upon-condition-decreasing-timeout
           ((isys:eintr) tmp-timeout timeout)
-        (setf ready-fds (isys:epoll-wait (fd-of mux) events +epoll-max-events+
+        (setf ready-fds (isys:epoll-wait (fd-of mux) events fd-limit
                                          (timeout->milliseconds tmp-timeout))))
       (macrolet ((epoll-slot (slot-name)
                    `(foreign-slot-value (mem-aref events 'isys:epoll-event i)
