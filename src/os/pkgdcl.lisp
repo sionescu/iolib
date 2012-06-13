@@ -23,6 +23,7 @@
    ;; Processes
    #:process
    #:process-pid
+   #:process-pty
    #:process-stdin
    #:process-stdout
    #:process-stderr

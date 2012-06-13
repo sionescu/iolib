@@ -29,11 +29,12 @@
    (closed :initform nil)
    (stdin  :reader process-stdin)
    (stdout :reader process-stdout)
-   (stderr :reader process-stderr)))
+   (stderr :reader process-stderr)
+   (pty    :reader process-pty)))
 
 (defmethod initialize-instance :after ((process process) &key
-                                       stdin stdout stderr external-format)
-  (with-slots ((in stdin) (out stdout) (err stderr))
+                                       stdin stdout stderr tty external-format)
+  (with-slots ((in stdin) (out stdout) (err stderr) pty)
       process
     (when stdin
       (setf in  (make-instance 'tty-stream :fd stdin
@@ -43,6 +44,9 @@
                                :external-format external-format)))
     (when stderr
       (setf err (make-instance 'tty-stream :fd stderr
+                               :external-format external-format)))
+    (when tty
+      (setf pty (make-instance 'tty-stream :fd tty
                                :external-format external-format)))))
 
 (defmethod close ((process process) &key abort)
@@ -55,6 +59,7 @@
         (close-process-stream stdin)
         (close-process-stream stdout)
         (close-process-stream stderr)
+        (close-process-stream pty)
         (process-status process :wait (not abort))
         (setf (slot-value process 'closed) t)
         t)))
@@ -216,37 +221,41 @@
   (dolist (fd fds)
     (when fd (isys:close fd))))
 
-(defun setup-slave-pty ()
-  (let ((ptmfd (isys:openpt (logior isys:o-rdwr isys:o-noctty isys:o-cloexec))))
-    (isys:grantpt ptmfd)
-    (isys:unlockpt ptmfd)
-    (values ptmfd (isys:ptsname ptmfd))))
+(defun setup-slave-pty (new-ctty-p)
+  (if new-ctty-p
+      (let ((ptmfd (isys:openpt (logior isys:o-rdwr isys:o-noctty isys:o-cloexec))))
+        (isys:grantpt ptmfd)
+        (isys:unlockpt ptmfd)
+        (values ptmfd (isys:ptsname ptmfd)))
+      (values nil nil)))
 
-(defmacro with-pty ((ptmfd pts) &body body)
+(defmacro with-pty ((new-ctty-p ptmfd pts) &body body)
   `(multiple-value-bind (,ptmfd ,pts)
-       (setup-slave-pty)
+       (setup-slave-pty ,new-ctty-p)
      (unwind-protect
           (locally ,@body)
-       (close-fds ,ptmfd))))
+       (unless ,new-ctty-p
+         (close-fds ,ptmfd)))))
 
 (defmacro with-redirections (((infd outfd errfd)
-                              (file-actions stdin stdout stderr))
+                              (file-actions stdin stdout stderr ptyfd pts))
                              &body body)
-  (with-gensyms (infd-child outfd-child errfd-child ptmfd pts)
-    `(with-pty (,ptmfd ,pts)
-       (multiple-value-bind (,infd ,infd-child ,outfd ,outfd-child ,errfd ,errfd-child)
-           (setup-redirections ,file-actions ,stdin ,stdout ,stderr ,ptmfd ,pts)
-         (unwind-protect-case ()
-             (locally ,@body)
-           (:always
-            (close-fds ,infd-child ,outfd-child ,errfd-child))
-           (:abort
-            (close-fds ,infd ,outfd ,errfd)))))))
+  (with-gensyms (infd-child outfd-child errfd-child)
+    `(multiple-value-bind (,infd ,infd-child ,outfd ,outfd-child ,errfd ,errfd-child)
+         (setup-redirections ,file-actions ,stdin ,stdout ,stderr ,ptyfd ,pts)
+       (unwind-protect-case ()
+           (locally ,@body)
+         (:always
+          (close-fds ,infd-child ,outfd-child ,errfd-child))
+         (:abort
+          (close-fds ,infd ,outfd ,errfd))))))
 
-(defun process-other-spawn-args (attributes new-session current-directory
+(defun process-other-spawn-args (attributes new-session pts current-directory
                                  uid gid resetids)
   (when new-session
     (lfp-spawnattr-setsid attributes))
+  (when pts
+    (lfp-spawnattr-setctty attributes pts))
   (when current-directory
     (lfp-spawnattr-setcwd attributes current-directory))
   (when uid
@@ -270,18 +279,22 @@
 ;;                 into a stream which goes into PROCESS slot
 ;;         t - inherit
 ;;         nil - close
-;; new-session: boolean - create a new session using setsid()
+;; pty: boolean - spawn a new controlling tty. it is also implicitly T if
+;;                either stdin, stdout or stderr is :pty
+;; new-session: boolean - create a new session using setsid(). it is also implicitly T
+;;                        if a PTY is requested
 ;; current-directory: path - a directory to switch to before executing
 ;; uid: user id - unsigned-byte or string
 ;; gid: group id - unsigned-byte or string
 ;; resetids: boolean - reset effective UID and GID to saved IDs
 
 (defun create-process (program-and-args &key (environment t)
-                       (stdin :pipe) (stdout :pipe) (stderr :pipe)
+                       (stdin :pipe) (stdout :pipe) (stderr :pipe) pty
                        new-session current-directory uid gid resetids
                        (external-format :utf-8))
-  (flet ((new-ctty-p ()
-           (or (eql :pty stdin)
+  (let ((new-ctty-p
+           (or pty
+               (eql :pty stdin)
                (eql :pty stdout)
                (eql :pty stderr))))
     (destructuring-bind (program &rest arguments)
@@ -289,16 +302,17 @@
       (with-argv ((arg0 argv) program arguments)
         (with-c-environment (envp environment)
           (with-lfp-spawn-arguments (attributes file-actions pid)
-            (with-redirections ((infd outfd errfd)
-                                (file-actions stdin stdout stderr))
-              (process-other-spawn-args attributes
-                                        (or new-session (new-ctty-p))
-                                        current-directory
-                                        uid gid resetids)
-              (lfp-spawnp pid arg0 argv envp file-actions attributes)
-              (make-instance 'process :pid (mem-ref pid 'pid-t)
-                             :stdin infd :stdout outfd :stderr errfd
-                             :external-format external-format))))))))
+            (with-pty (new-ctty-p ptyfd pts)
+              (with-redirections ((infd outfd errfd)
+                                  (file-actions stdin stdout stderr ptyfd pts))
+                (process-other-spawn-args attributes
+                                          new-session pts
+                                          current-directory
+                                          uid gid resetids)
+                (lfp-spawnp pid arg0 argv envp file-actions attributes)
+                (make-instance 'process :pid (mem-ref pid 'pid-t)
+                               :stdin infd :stdout outfd :stderr errfd :tty ptyfd
+                               :external-format external-format)))))))))
 
 (defun slurp-char-stream (stream)
   (with-output-to-string (s)
