@@ -5,7 +5,16 @@
 
 (in-package :iolib.common-lisp)
 
-(defclass trivial-gray-stream-mixin () ())
+(defclass trivial-gray-stream-mixin ()
+  ((%open :initform t)))
+
+(defmethod close ((s trivial-gray-stream-mixin) &key abort)
+  (declare (ignore abort))
+  (prog1 (slot-value s '%open)
+    (setf (slot-value s '%open) nil)))
+
+(defmethod open-stream-p ((s trivial-gray-stream-mixin))
+  (slot-value s '%open))
 
 (defgeneric stream-read-sequence
     (stream sequence start end &key &allow-other-keys))

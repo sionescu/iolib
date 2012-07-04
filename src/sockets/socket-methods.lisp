@@ -146,29 +146,29 @@
 ;;; CLOSE
 ;;;-------------------------------------------------------------------------
 
-(defmethod close :around ((socket socket) &key abort)
+(defmethod close :before ((socket socket) &key abort)
   (declare (ignore abort))
-  (prog1 (socket-open-p socket)
-    (call-next-method)
-    (setf (slot-value socket 'bound) nil)))
+  (setf (slot-value socket 'bound) nil))
 
-(defmethod close ((socket passive-socket) &key abort)
+(defmethod close ((socket socket) &key abort)
   (declare (ignore abort))
-  (when (next-method-p) (call-next-method))
+  (when (next-method-p)
+    (call-next-method))
+  (socket-open-p socket))
+
+(defmethod close :before ((socket passive-socket) &key abort)
+  (declare (ignore abort))
   (setf (slot-value socket 'listening) nil))
 
-(defmethod close ((socket datagram-socket) &key abort)
-  (declare (ignore abort))
-  (when (next-method-p) (call-next-method)))
-
 (defmethod socket-open-p ((socket socket))
-  (when (fd-of socket)
-    (with-sockaddr-storage-and-socklen (ss size)
-      (handler-case
-          (%getsockname (fd-of socket) ss size)
-        (isys:ebadf () nil)
-        (socket-connection-reset-error () nil)
-        (:no-error (_) (declare (ignore _)) t)))))
+  (if (null (fd-of socket))
+      nil
+      (with-sockaddr-storage-and-socklen (ss size)
+        (handler-case
+            (%getsockname (fd-of socket) ss size)
+          (isys:ebadf () nil)
+          (socket-connection-reset-error () nil)
+          (:no-error (_) (declare (ignore _)) t)))))
 
 
 ;;;-------------------------------------------------------------------------

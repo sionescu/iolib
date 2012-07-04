@@ -61,14 +61,14 @@
   '(unsigned-byte 8))
 
 ;; TODO: use the buffer pool
-(defmethod close :around ((stream dual-channel-gray-stream) &key abort)
+(defmethod close :before ((stream dual-channel-gray-stream) &key abort)
   (with-accessors ((ibuf input-buffer-of)
                    (obuf output-buffer-of))
       stream
-    (unless (or abort (null ibuf)) (finish-output stream))
+    (unless (or abort (null ibuf))
+      (finish-output stream))
     (free-stream-buffers ibuf obuf)
-    (setf ibuf nil obuf nil))
-  (call-next-method))
+    (setf ibuf nil obuf nil)))
 
 (defmethod (setf external-format-of)
     (external-format (stream dual-channel-gray-stream))

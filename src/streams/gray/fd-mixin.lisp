@@ -12,10 +12,8 @@
 
 ;;;; CLOSE
 
-(defmethod close ((fd-mixin dual-channel-fd-mixin)
-                  &key abort)
+(defmethod close :before ((fd-mixin dual-channel-fd-mixin) &key abort)
   (declare (ignore abort))
-  (when (next-method-p) (call-next-method))
   (when (fd-of fd-mixin)
     (isys:close (fd-of fd-mixin))
     (setf (fd-of fd-mixin) nil)))
