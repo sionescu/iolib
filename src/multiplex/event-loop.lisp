@@ -273,12 +273,16 @@ within the extent of BODY.  Closes VAR."
 (defvar *minimum-event-loop-step* 0.0d0)
 (defvar *maximum-event-loop-step* nil)
 
-(defmethod event-dispatch :before
+(defmethod event-dispatch :around
     ((event-base event-base) &key timeout one-shot min-step max-step)
   (declare (ignore one-shot min-step max-step))
   (setf (exit-p event-base) nil)
-  (when timeout
-    (exit-event-loop event-base :delay timeout)))
+  (let ((timer (when timeout
+                 (exit-event-loop event-base :delay timeout))))
+    (unwind-protect
+         (call-next-method)
+      (when timer
+        (remove-timer event-base timer)))))
 
 (defmethod event-dispatch ((event-base event-base) &key one-shot timeout
                            (min-step *minimum-event-loop-step*)
