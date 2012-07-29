@@ -80,12 +80,11 @@
                                       '("data")))))
 
 (defvar *test-dir*
-  (ensure-directories-exist
-   (merge-pathnames
-    (make-pathname :directory '(:relative "test-dir"))
-    (make-pathname :directory
-                   (pathname-directory
-                    (or *load-truename* *compile-file-truename*))))))
+  (merge-pathnames
+   (make-pathname :directory '(:relative "test-dir"))
+   (make-pathname :directory
+                  (pathname-directory
+                   (or *load-truename* *compile-file-truename*)))))
 
 ;;; A list of test files where each entry consists of the name
 ;;; prefix and a list of encodings.
@@ -164,6 +163,7 @@
 ;;; check if the outcome is as expected.  Uses various variants of the
 ;;; :DIRECTION keyword when opening the files."
 (defun compare-files (path-in external-format-in path-out external-format-out)
+  (ensure-directories-exist *test-dir*)
   (let ((full-path-in (merge-pathnames path-in *data-dir*))
         (full-path-out (merge-pathnames path-out *test-dir*))
         (full-path-orig (merge-pathnames path-out *data-dir*)))
