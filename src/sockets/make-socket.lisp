@@ -320,7 +320,7 @@ The socket is automatically closed upon exit."
 
 ;;; FIXME: must come up with a way to find out
 ;;; whether a socket is active or passive
-(defmethod make-socket-from-fd ((fd integer) &key (connect :active) (external-format :default)
+(defmethod make-socket-from-fd ((fd integer) &key (dup t) (connect :active) (external-format :default)
                                 input-buffer-size output-buffer-size)
   (flet ((%get-address-family (fd)
            (with-sockaddr-storage-and-socklen (ss size)
@@ -339,6 +339,7 @@ The socket is automatically closed upon exit."
                    :default
                    :connect connect
                    :fd fd
+                   :dup dup
                    :external-format external-format
                    :input-buffer-size input-buffer-size
                    :output-buffer-size output-buffer-size)))
