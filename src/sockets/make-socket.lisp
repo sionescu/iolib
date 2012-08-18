@@ -350,7 +350,8 @@ The socket is automatically closed upon exit."
 (defmethod make-socket-pair (&key (type :stream) (protocol :default) (external-format :default)
                              input-buffer-size output-buffer-size)
   (flet ((%make-socket-pair (fd)
-           (make-socket-from-fd fd :external-format external-format
+           (make-socket-from-fd fd :dup nil
+                                :external-format external-format
                                 :input-buffer-size input-buffer-size
                                 :output-buffer-size output-buffer-size)))
     (multiple-value-bind (fd1 fd2)
