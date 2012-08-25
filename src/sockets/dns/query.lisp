@@ -106,6 +106,15 @@
           (cons preference
                 (subseq name 0 (1- (length name)))))))
 
+(defmethod %decode-rr ((rr dns-rr) (type (eql :srv)) class)
+  (declare (ignore class))
+  (destructuring-bind (priority weight port target) (dns-rr-data rr)
+    (list* (dns-rr-ttl rr)
+           priority
+           weight
+           port
+           (subseq target 0 (1- (length target))))))
+
 (defun decode-rr (rr)
   (%decode-rr rr (dns-record-type rr) (dns-record-class rr)))
 
@@ -185,6 +194,12 @@
   (declare (ignore question-type))
   (let ((rr (aref (dns-message-answer msg) 0)))
     (decode-rr rr)))
+
+;; TODO: randomly choose between same priority by weight
+(defmethod %decode-response ((msg dns-message) (question-type (eql :srv)))
+  (declare (ignore question-type))
+  (let* ((decoded-rrs (map 'vector #'decode-rr (dns-message-answer msg))))
+    (aref (sort decoded-rrs #'< :key #'second) 0)))
 
 (defmethod %decode-response ((msg dns-message) (question-type (eql :txt)))
   (declare (ignore question-type))

@@ -14,7 +14,7 @@
 (defconstant (+query-type-map+ :test 'equal)
   '((:a . 1) (:ns . 2) (:cname . 5) (:soa . 6)
     (:wks . 11) (:ptr . 12) (:hinfo . 13) (:mx . 15)
-    (:txt . 16) (:aaaa . 28) (:any . 255)))
+    (:txt . 16) (:aaaa . 28) (:srv . 33) (:any . 255)))
 
 (defun query-type-number (id)
   (cdr (assoc id +query-type-map+)))

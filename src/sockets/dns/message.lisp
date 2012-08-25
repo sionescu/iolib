@@ -379,6 +379,15 @@
         (read-ub32 buffer)))            ; MINIMUM
 
 (defmethod read-rr-data ((buffer dynamic-buffer)
+                         (type (eql :srv)) (class (eql :in))
+                         resource-length)
+  (declare (ignore resource-length))
+  (list (read-ub16 buffer)              ; PRIORITY
+        (read-ub16 buffer)              ; WEIGHT
+        (read-ub16 buffer)              ; PORT
+        (read-domain-name buffer)))     ; TARGET
+
+(defmethod read-rr-data ((buffer dynamic-buffer)
                          (type (eql :txt)) (class (eql :in))
                          resource-length)
   (declare (ignore type class))
