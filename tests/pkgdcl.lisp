@@ -7,4 +7,6 @@
 
 (defpackage #:iolib-tests
   (:use :5am :iolib.base :iolib :iolib.pathnames)
+  #+sb-package-locks
+  (:lock t)
   (:export #:*echo-address* #:*echo-port*))

@@ -27,6 +27,8 @@
 
 (cl:defpackage :iolib.internal.conduits
   (:use :common-lisp)
+  #+sb-package-locks
+  (:lock t)
   ;; redefined CL names
   (:shadow #:export #:unexport #:defpackage #:delete-package #:rename-package)
   (:export #:export #:unexport #:defpackage #:delete-package #:rename-package)
@@ -355,7 +357,10 @@ As with extending you probably want to specify (:USE) when cloning."
                 (clone-packages-to-package ',cpcs ',name))))
           (t
 	   `(progn
-	      (cl:defpackage ,name ,@(nreverse dpcs))
+	      (cl:defpackage ,name
+                #+sb-package-locks
+                (:lock t)
+                ,@(nreverse dpcs))
 	      (recompute-conduits-for ',name))))))
 
 (defun delete-package (pack/name)

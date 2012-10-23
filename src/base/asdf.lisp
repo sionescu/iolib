@@ -4,7 +4,9 @@
 ;;;
 
 (defpackage :iolib.asdf
-  (:use :common-lisp))
+  (:use :common-lisp)
+  #+sb-package-locks
+  (:lock t))
 (in-package :iolib.asdf)
 
 (defclass :iolib-muffled-source-file (asdf:cl-source-file) ())

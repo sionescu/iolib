@@ -3,6 +3,8 @@
 
 (defpackage :iolib.examples
   (:use :cl :iolib :bordeaux-threads)
+  #+sb-package-locks
+  (:lock t)
   (:export :run-ex1-client
            :run-ex2-client
            :run-ex3-client
