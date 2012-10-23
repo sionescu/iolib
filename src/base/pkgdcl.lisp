@@ -76,6 +76,7 @@
    #:read-vector
    #:read-ub16-from-vector
    #:read-ub32-from-vector
+   #:ub16-to-vector
    #:seek-read-cursor
    #:dynamic-buffer-input-error
    #:dynamic-buffer-eof
