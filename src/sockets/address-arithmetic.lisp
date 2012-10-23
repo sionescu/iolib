@@ -115,11 +115,12 @@ subnet specified by NETWORK.")
   (:method ((address ipv4-address))
     (let ((octet (aref (address-name address) 0)))
       (cond
-        ((= #b0000 (ldb (byte 1 7) octet)) :a)
-        ((= #b0010 (ldb (byte 2 6) octet)) :b)
-        ((= #b0110 (ldb (byte 3 5) octet)) :c)
-        ((= #b1110 (ldb (byte 4 4) octet)) :d)
-        ((= #b1111 (ldb (byte 4 4) octet)) :e)))))
+        ((= #b0000 (ldb (byte 1 7) octet)) :a) ;   0.0.0.0 - 127.255.255.255
+        ((= #b0010 (ldb (byte 2 6) octet)) :b) ; 128.0.0.0 - 191.255.255.255
+        ((= #b0110 (ldb (byte 3 5) octet)) :c) ; 192.0.0.0 - 223.255.255.255
+        ((= #b1110 (ldb (byte 4 4) octet)) :d) ; 224.0.0.0 - 239.255.255.255
+        ((= #b1111 (ldb (byte 4 4) octet)) :e) ; 240.0.0.0 - 255.255.255.255
+        ))))
 
 (defgeneric inet-address-private-p (address)
   (:documentation "Returns T if ADDRESS is in a private network range.
