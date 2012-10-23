@@ -6,7 +6,7 @@
 (in-package :iolib.conf)
 
 (defun load-gray-streams ()
-  #+allegro
+  #+(and allegro (not (version>= 9 0)))
   (unless (fboundp 'stream:stream-write-string)
     (require "streamc"))
   #+cmu
