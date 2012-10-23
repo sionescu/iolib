@@ -113,7 +113,7 @@
   (print-unreadable-object (socket stream :identity t)
     (format stream "passive local stream socket")
     (if (socket-bound-p socket)
-        (format stream " ~:[bound to~;waiting @~] ~S"
+        (format stream " ~:[bound to~;waiting @~] ~A"
                   (socket-listening-p socket)
                   (address-to-string (local-filename socket)))
         (format stream ", ~:[closed~;unbound~]" (fd-of socket)))))
