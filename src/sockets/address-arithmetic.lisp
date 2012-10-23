@@ -75,6 +75,7 @@ host part of ADDRESS.")
   (check-type address ipv4-address "an Ipv4 address")
   (check-type netmask ipv4-address "an Ipv4 netmask")
   (setf (cidr-of network) (compute-cidr-prefix-from-netmask netmask))
+  (setf (netmask-of network) netmask)
   (setf (address-of network)
         (inet-address-network-portion address netmask)))
 
