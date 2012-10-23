@@ -204,6 +204,16 @@
    #:with-open-socket
    #:with-accept-connection
 
+   #:dns-query
+   #:dns-message
+   #:dns-message-id
+   #:dns-message-flags
+   #:dns-message-decoded-flags
+   #:dns-message-question
+   #:dns-message-answer
+   #:dns-message-authority
+   #:dns-message-additional
+
    ;; Specials
    #:*default-backlog-size*
    #:*default-linger-seconds*
