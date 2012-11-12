@@ -34,6 +34,7 @@
    #:make-alias
    #:defalias
    ;; #:function is already in CL
+   ;; #:compiler-macro is already in CL
    #:macro
    #:constant
    ;; #:special is already in CL

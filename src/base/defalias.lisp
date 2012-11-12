@@ -33,7 +33,8 @@
      (setf (fdefinition ',alias)
            (fdefinition ',original))
      (setf (documentation ',alias 'function)
-           (documentation ',original 'function))))
+           (documentation ',original 'function))
+     (defalias (compiler-macro ,alias) ,original)))
 
 (defnamespace macro
   "The namespace of macros.")
@@ -45,6 +46,17 @@
            (macro-function ',original))
      (setf (documentation ',alias 'function)
            (documentation ',original 'function))))
+
+(defnamespace compiler-macro
+  "The namespace of compiler macros.")
+
+(defmethod make-alias ((namespace (eql 'compiler-macro))
+                       original alias)
+  `(progn
+     (setf (compiler-macro-function ',alias)
+           (compiler-macro-function ',original))
+     (setf (documentation ',alias 'compiler-macro)
+           (documentation ',original 'compiler-macro))))
 
 (defnamespace special
   "The namespace of special variables.")
