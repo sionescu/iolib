@@ -69,7 +69,7 @@
            (documentation ',original 'variable))))
 
 (defnamespace constant
-  "The namespace of special variables.")
+  "The namespace of constant variables.")
 
 (defmethod make-alias ((namespace (eql 'constant))
                        original alias)
