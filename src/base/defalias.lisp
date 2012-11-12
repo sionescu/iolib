@@ -77,3 +77,14 @@
      (define-symbol-macro ,alias ,original)
      (setf (documentation ',alias 'variable)
            (documentation ',original 'variable))))
+
+(defnamespace class
+  "The namespace of classes.")
+
+(defmethod make-alias ((namespace (eql 'class))
+                       original alias)
+  `(progn
+     (setf (find-class ,alias)
+           (find-class ,original))
+     (setf (documentation ',alias 'type)
+           (documentation ',original 'type))))

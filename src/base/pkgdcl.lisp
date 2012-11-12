@@ -38,6 +38,7 @@
    #:macro
    #:constant
    ;; #:special is already in CL
+   ;; #:class is already in CL
    ;; DEFFOLDABLE
    #:deffoldable
    #:constant-form-value
