@@ -350,6 +350,8 @@
                             :stderr stderr
                             :external-format external-format)))
       (unwind-protect
+           ;; FIXME: this can hang if one of the pipe buffers get full,
+           ;; e.g. if there's more stderr output than stdout.
            (let ((stdout (if (eql :pipe stdout)
                              (slurp (process-stdout process))
                              (make-empty-output)))
