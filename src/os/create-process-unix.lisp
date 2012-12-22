@@ -299,7 +299,7 @@
                (eql :pty stderr))))
     (destructuring-bind (program &rest arguments)
         (ensure-list program-and-args)
-      (with-argv ((arg0 argv) program arguments)
+      (with-argv ((arg0 argv) (file-path-namestring program) arguments)
         (with-c-environment (envp environment)
           (with-lfp-spawn-arguments (attributes file-actions pid)
             (with-pty (new-ctty-p ptyfd pts)
