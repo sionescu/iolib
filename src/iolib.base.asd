@@ -15,20 +15,23 @@
   :components
   ((:file "conduits")
    #+scl (:file "scl-gray-streams")
-   (:file "pkgdcl" :depends-on ("conduits" #+scl "scl-gray-streams"))
+   (:file "pkgdcl" :depends-on ("conduits" #+scl "scl-gray-streams")
+    :perform
+    (asdf:compile-op :before (o c)
+      (funcall (find-symbol (string '#:load-gray-streams)
+                            :iolib.conf)))
+    :perform
+    (asdf:load-op :before (o c)
+      (funcall (find-symbol (string '#:load-gray-streams)
+                            :iolib.conf)))
+    :perform
+    (asdf:load-source-op :before (o c)
+      (funcall (find-symbol (string '#:load-gray-streams)
+                            :iolib.conf))))
    (:file "gray-streams"
-     :depends-on ("pkgdcl" #+scl "scl-gray-streams"))
+    :depends-on ("pkgdcl" #+scl "scl-gray-streams"))
    (:file "definitions" :depends-on ("pkgdcl"))
-   (:file "types" :depends-on ("pkgdcl")))
-  :perform (asdf:compile-op :before (o c)
-             (funcall (find-symbol (string '#:load-gray-streams)
-                                   :iolib.conf)))
-  :perform (asdf:load-op :before (o c)
-             (funcall (find-symbol (string '#:load-gray-streams)
-                                   :iolib.conf)))
-  :perform (asdf:load-source-op :before (o c)
-             (funcall (find-symbol (string '#:load-gray-streams)
-                                   :iolib.conf))))
+   (:file "types" :depends-on ("pkgdcl"))))
 
 (asdf:defsystem :iolib.base
   :description "Base IOlib package, used instead of CL."
