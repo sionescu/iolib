@@ -9,7 +9,7 @@
   #+(and allegro (not (version>= 9 0)))
   (unless (fboundp 'stream:stream-write-string)
     (require "streamc"))
-  #+cmu
+  #+(or cmu abcl)
   (require :gray-streams)
   #+ecl
   (when (fboundp 'gray::redefine-cl-functions)
