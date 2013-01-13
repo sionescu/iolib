@@ -51,7 +51,7 @@
                   "protocols" "services"))
    (:file "make-socket"
      :depends-on ("pkgdcl" "grovel" "common" "config" "address" "address-predicates"
-                  "socket-options" "services" "socket-methods"))
+                  "base-sockets" "socket-options" "services" "socket-methods"))
 
    ;; DNS client
    (:file "dns-common" :pathname "dns/common"
