@@ -3,10 +3,7 @@
 (asdf:defsystem :iolib.syscalls
   :description "Syscalls and foreign types."
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :version #.(with-open-file (f (merge-pathnames "../version.lisp-expr"
-                                                 (or *compile-file-pathname*
-                                                     *load-truename*)))
-               (read f))
+  :version (:read-file-form "../version.lisp-expr")
   :licence "MIT"
   :defsystem-depends-on (:iolib.asdf :iolib.conf :iolib-grovel)
   :depends-on (:trivial-features :cffi :iolib.base :iolib-grovel)

@@ -3,10 +3,7 @@
 (asdf:defsystem :iolib-tests
   :description "IOLib test suite."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
-  :version #.(with-open-file (f (merge-pathnames "../version.lisp-expr"
-                                                 (or *compile-file-pathname*
-                                                     *load-truename*)))
-               (read f))
+  :version (:read-file-form "../version.lisp-expr")
   :licence "MIT"
   :defsystem-depends-on (:iolib.base)
   :depends-on (:fiveam :iolib :iolib.pathnames)
