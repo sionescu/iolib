@@ -15,16 +15,13 @@
    (:file "pkgdcl" :depends-on ("conduits" #+scl "scl-gray-streams")
     :perform
     (asdf:compile-op :before (o c)
-      (funcall (find-symbol (string '#:load-gray-streams)
-                            :iolib.conf)))
+      (asdf/package:symbol-call :iolib.conf '#:load-gray-streams))
     :perform
     (asdf:load-op :before (o c)
-      (funcall (find-symbol (string '#:load-gray-streams)
-                            :iolib.conf)))
+      (asdf/package:symbol-call :iolib.conf '#:load-gray-streams))
     :perform
     (asdf:load-source-op :before (o c)
-      (funcall (find-symbol (string '#:load-gray-streams)
-                            :iolib.conf))))
+      (asdf/package:symbol-call :iolib.conf '#:load-gray-streams)))
    (:file "gray-streams"
     :depends-on ("pkgdcl" #+scl "scl-gray-streams"))
    (:file "definitions" :depends-on ("pkgdcl"))
