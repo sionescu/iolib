@@ -533,7 +533,7 @@ the files and directories contained within. Returns T on success."
       (walk directory 0 nil)
       t)))
 
-(defun delete-files (pathspec &key recursive)
+(defun delete-files (pathspec &key recursive follow-symlinks)
   (labels ((%delete-file (file)
              (isys:unlink (file-path-namestring
                                 (absolute-file-path file))))
@@ -541,7 +541,7 @@ the files and directories contained within. Returns T on success."
              (isys:rmdir (file-path-namestring
                                (absolute-file-path directory)))))
     (let* ((pathspec (file-path pathspec))
-           (kind (file-kind pathspec :follow-symlinks t)))
+           (kind (file-kind pathspec :follow-symlinks follow-symlinks)))
       (case kind
         (:directory
          (if recursive
