@@ -49,4 +49,6 @@
   ;; Fix suggested by DTC
   (defun clos::legal-class-name-p (x) (and x (symbolp x))))
 
-(defclass :iolib-source-file (:iolib-muffled-source-file) ())
+(defclass :iolib-source-file (:iolib-muffled-source-file)
+  ()
+  (:default-initargs :encoding :utf-8))

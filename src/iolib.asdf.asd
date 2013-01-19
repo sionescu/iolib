@@ -8,5 +8,6 @@
   :licence "MIT"
   :depends-on (:alexandria)
   :pathname "base/"
+  :encoding :utf-8
   :components
   ((:file "asdf")))
