@@ -6,6 +6,7 @@
 (in-package :iolib.common-lisp-user)
 
 (defpackage :iolib.base
+  (:nicknames :iolib/base)
   (:extend/excluding :iolib.common-lisp
                      #:defun #:defmethod #:defmacro #:define-compiler-macro
                      #:constantp)

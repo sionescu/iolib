@@ -6,6 +6,7 @@
 (in-package :common-lisp-user)
 
 (defpackage :iolib.os
+  (:nicknames :iolib/os)
   (:use :iolib.base :iolib.pathnames :cffi)
   (:import-from :iolib.syscalls
                 #:defsyscall #:sstring

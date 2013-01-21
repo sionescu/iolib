@@ -6,7 +6,7 @@
 (in-package :common-lisp-user)
 
 (defpackage :iolib.syscalls
-  (:nicknames #:isys)
+  (:nicknames :isys :iolib/syscalls)
   (:use :iolib.base :cffi)
   (:shadow #:open #:close #:read #:write #:listen
            #:truncate #:ftruncate #:time)

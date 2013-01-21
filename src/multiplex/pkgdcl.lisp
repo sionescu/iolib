@@ -6,7 +6,7 @@
 (in-package :common-lisp-user)
 
 (defpackage :iolib.multiplex
-  (:nicknames #:iomux)
+  (:nicknames :iomux :iolib/multiplex)
   (:use :iolib.base :cffi)
   (:export
    ;; Classes and Types

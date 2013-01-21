@@ -74,8 +74,8 @@
          ,@body))))
 
 (defvar *data-dir*
-  (let ((sys-pn (truename (asdf:system-definition-pathname
-                           (asdf:find-system 'iolib-tests)))))
+  (let ((sys-pn (truename (asdf:component-pathname
+                           (asdf:find-system :iolib/tests)))))
     (make-pathname :directory (append (pathname-directory sys-pn)
                                       '("data")))))
 

@@ -4,6 +4,7 @@
 ;;;
 
 (defpackage :iolib.asdf
+  (:nicknames :iolib/asdf)
   (:use :common-lisp)
   (:export #:compile-wrapper)
   #+sb-package-locks

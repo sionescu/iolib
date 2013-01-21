@@ -6,7 +6,7 @@
 (in-package :common-lisp-user)
 
 (defpackage :iolib.sockets
-  (:nicknames #:sockets)
+  (:nicknames :sockets :iolib/sockets)
   (:use :iolib.base :iolib.streams :cffi)
   (:import-from #:iolib.syscalls #:defsyscall
                 #:size-t #:ssize-t #:pid-t #:uid-t #:gid-t

@@ -6,7 +6,7 @@
 (in-package :common-lisp-user)
 
 (defpackage :iolib.pathnames
-  (:nicknames #:ipath)
+  (:nicknames :ipath :iolib/pathnames)
   (:use :iolib.base)
   (:export
    ;; Classes and types

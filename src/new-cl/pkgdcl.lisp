@@ -29,7 +29,7 @@
                 #:stream-clear-output #:stream-advance-to-column
                 #:stream-read-byte #:stream-write-byte)))
          `(defpackage :iolib.common-lisp
-            (:nicknames :iolib.cl)
+            (:nicknames :iolib.cl :iolib/common-lisp)
             (:extend/excluding :common-lisp
                                #:export #:unexport #:defpackage 
                                #:delete-package #:rename-package
@@ -47,5 +47,5 @@
   (define-gray-streams-package))
 
 (defpackage :iolib.common-lisp-user
-  (:nicknames :iolib.cl-user)
+  (:nicknames :iolib.cl-user :iolib/common-lisp-user :iolib/cl-user)
   (:use :iolib.common-lisp))

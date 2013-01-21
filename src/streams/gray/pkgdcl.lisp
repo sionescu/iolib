@@ -6,6 +6,7 @@
 (in-package :common-lisp-user)
 
 (defpackage :iolib.streams
+  (:nicknames :iolib/streams)
   (:use :iolib.base :cffi)
   (:export
    ;; Classes

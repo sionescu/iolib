@@ -66,7 +66,7 @@
 
 (defparameter *prologue*
   "
-#include <grovel/common.h>
+#include <grovel-common.h>
 
 int main(int argc, char**argv) {
   int autotype_tmp;
@@ -280,8 +280,8 @@ int main(int argc, char**argv) {
            ;; add the cffi directory to the include path to make common.h visible
            ,(format nil "-I~A"
                     (directory-namestring
-                     (truename
-                      (asdf:system-definition-pathname :iolib-grovel))))
+                     (asdf:component-pathname
+                      (asdf:find-system :iolib/grovel))))
            ,@(when library *platform-library-flags*)
            "-o" ,(native-namestring output-file)
            ,(native-namestring input-file))))

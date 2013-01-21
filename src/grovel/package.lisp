@@ -23,7 +23,8 @@
 ;;; DEALINGS IN THE SOFTWARE.
 ;;;
 
-(defpackage #:iolib-grovel
+(defpackage :iolib-grovel
+  (:nicknames :iolib/grovel)
   (:use #:common-lisp #:alexandria)
   (:import-from #:cffi-sys #:native-namestring)
   (:export
