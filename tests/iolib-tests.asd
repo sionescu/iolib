@@ -19,7 +19,7 @@
    (:file "streams" :depends-on ("pkgdcl" "defsuites"))
    (:file "sockets" :depends-on ("pkgdcl" "defsuites"))))
 
-(defmethod perform ((o test-op)
-                    (c (eql (find-system :iolib-tests))))
-  (operate 'load-op :iolib-tests)
-  (funcall (intern (symbol-name '#:run!) '#:5am) :iolib))
+(defmethod asdf:perform ((o asdf:test-op)
+                         (c (eql (asdf:find-system :iolib-tests))))
+  (asdf:load-system :iolib-tests)
+  (asdf/package:symbol-call :5am :run! :iolib))

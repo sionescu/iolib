@@ -13,5 +13,6 @@
   :pathname "iolib/"
   :components ((:file "pkgdcl")))
 
-(defmethod perform ((o test-op) (c (eql (find-system :iolib))))
-  (oos 'test-op :iolib-tests))
+(defmethod asdf:perform ((o asdf:test-op)
+                         (c (eql (asdf:find-system :iolib))))
+  (asdf:test-system :iolib-tests))
