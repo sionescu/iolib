@@ -6,7 +6,7 @@
   :version (:read-file-form "../version.lisp-expr")
   :licence "MIT"
   :defsystem-depends-on (:iolib.asdf)
-  :default-component-class :iolib-source-file
+  :around-compile "iolib.asdf:compile-wrapper"
   :pathname "conf/"
   :components
   ((:file "pkgdcl")

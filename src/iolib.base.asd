@@ -7,7 +7,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib.asdf :iolib.conf)
   :depends-on (:alexandria)
-  :default-component-class :iolib-source-file
+  :around-compile "iolib.asdf:compile-wrapper"
   :pathname "new-cl/"
   :components
   ((:file "conduits")
@@ -35,7 +35,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib.asdf :iolib.conf)
   :depends-on (:iolib.common-lisp :alexandria :split-sequence)
-  :default-component-class :iolib-source-file
+  :around-compile "iolib.asdf:compile-wrapper"
   :pathname "base/"
   :components
   ((:file "pkgdcl")

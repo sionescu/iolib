@@ -7,7 +7,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib.asdf :iolib.conf)
   :depends-on (:iolib.base :iolib.syscalls)
-  :default-component-class :iolib-source-file
+  :around-compile "iolib.asdf:compile-wrapper"
   :pathname "pathnames/"
   :components
   ((:file "pkgdcl")

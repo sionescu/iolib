@@ -7,7 +7,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib.asdf :iolib.conf :iolib-grovel)
   :depends-on (:trivial-features :cffi :iolib.base :iolib-grovel)
-  :default-component-class :iolib-source-file
+  :around-compile "iolib.asdf:compile-wrapper"
   :pathname "syscalls/"
   :components
   ((:file "pkgdcl")

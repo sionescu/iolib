@@ -8,7 +8,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib.asdf :iolib.conf)
   :depends-on (:iolib.base :iolib.syscalls :cffi)
-  :default-component-class :iolib-source-file
+  :around-compile "iolib.asdf:compile-wrapper"
   :pathname "multiplex/"
   :components
   ((:file "pkgdcl")

@@ -30,7 +30,7 @@
   :author "Dan Knapp <dankna@accela.net>"
   :defsystem-depends-on (:iolib.asdf :iolib.conf)
   :depends-on (:alexandria :cffi :iolib.asdf :iolib.conf)
-  :default-component-class :iolib-source-file
+  :around-compile "iolib.asdf:compile-wrapper"
   :licence "MIT"
   :pathname "grovel/"
   :components

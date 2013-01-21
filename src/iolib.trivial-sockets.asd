@@ -8,7 +8,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib.asdf :iolib.conf)
   :depends-on (:iolib.base :iolib.sockets)
-  :default-component-class :iolib-source-file
+  :around-compile "iolib.asdf:compile-wrapper"
   :pathname "sockets/"
   :components
   ((:file "trivial-sockets")))

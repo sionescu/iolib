@@ -8,7 +8,7 @@
   :defsystem-depends-on (:iolib.asdf :iolib.conf :iolib-grovel)
   :depends-on (:iolib.base :iolib-grovel :iolib.syscalls
                :iolib.streams :iolib.pathnames)
-  :default-component-class :iolib-source-file
+  :around-compile "iolib.asdf:compile-wrapper"
   :pathname "os/"
   :components
   ((:file "pkgdcl")
