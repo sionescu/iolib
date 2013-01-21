@@ -64,7 +64,7 @@ Glossary:
 :address-family :LOCAL :type :DATAGRAM
 * Valid keyword args: :LOCAL-FILENAME and :REMOTE-FILENAME"))
 
-(defgeneric make-socket-from-fd (fd &key connect external-format
+(defgeneric make-socket-from-fd (fd &key dup connect external-format
                                     input-buffer-size output-buffer-size)
   (:documentation "Create a socket instance of the appropriate subclass of SOCKET using FD.
 The connection type of the socket must be specified - :ACTIVE or :PASSIVE.
