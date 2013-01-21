@@ -23,7 +23,3 @@
                     (c (eql (find-system :iolib-tests))))
   (operate 'load-op :iolib-tests)
   (funcall (intern (symbol-name '#:run!) '#:5am) :iolib))
-
-(defmethod operation-done-p ((o test-op)
-                             (c (eql (find-system :iolib-tests))))
-  nil)

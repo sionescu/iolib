@@ -15,6 +15,3 @@
 
 (defmethod perform ((o test-op) (c (eql (find-system :iolib))))
   (oos 'test-op :iolib-tests))
-
-(defmethod operation-done-p ((o test-op) (c (eql (find-system :iolib))))
-  nil)
