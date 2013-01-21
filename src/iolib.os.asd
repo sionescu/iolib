@@ -9,6 +9,7 @@
   :depends-on (:iolib.base :iolib-grovel :iolib.syscalls
                :iolib.streams :iolib.pathnames)
   :around-compile "iolib.asdf:compile-wrapper"
+  :encoding :utf-8
   :pathname "os/"
   :components
   ((:file "pkgdcl")

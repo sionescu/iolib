@@ -8,6 +8,7 @@
   :defsystem-depends-on (:iolib.asdf :iolib.conf)
   :depends-on (:iolib.base :iolib.syscalls)
   :around-compile "iolib.asdf:compile-wrapper"
+  :encoding :utf-8
   :pathname "pathnames/"
   :components
   ((:file "pkgdcl")

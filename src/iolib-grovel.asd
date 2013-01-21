@@ -32,6 +32,7 @@
   :depends-on (:alexandria :cffi :iolib.asdf :iolib.conf)
   :around-compile "iolib.asdf:compile-wrapper"
   :licence "MIT"
+  :encoding :utf-8
   :pathname "grovel/"
   :components
   ((:file "package")

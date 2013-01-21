@@ -8,6 +8,7 @@
   :defsystem-depends-on (:iolib.base)
   :depends-on (:fiveam :iolib :iolib.pathnames)
   :around-compile "iolib.asdf:compile-wrapper"
+  :encoding :utf-8
   :components
   ((:file "pkgdcl")
    (:file "defsuites" :depends-on ("pkgdcl"))

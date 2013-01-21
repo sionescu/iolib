@@ -8,6 +8,7 @@
   :defsystem-depends-on (:iolib.asdf :iolib.conf)
   :depends-on (:alexandria)
   :around-compile "iolib.asdf:compile-wrapper"
+  :encoding :utf-8
   :pathname "new-cl/"
   :components
   ((:file "conduits")
@@ -36,6 +37,7 @@
   :defsystem-depends-on (:iolib.asdf :iolib.conf)
   :depends-on (:iolib.common-lisp :alexandria :split-sequence)
   :around-compile "iolib.asdf:compile-wrapper"
+  :encoding :utf-8
   :pathname "base/"
   :components
   ((:file "pkgdcl")

@@ -7,7 +7,7 @@
   :version (:read-file-form "../version.lisp-expr")
   :licence "MIT"
   :depends-on (:alexandria)
-  :pathname "base/"
   :encoding :utf-8
+  :pathname "base/"
   :components
   ((:file "asdf")))

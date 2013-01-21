@@ -11,6 +11,7 @@
                :babel :cffi :iolib-grovel :bordeaux-threads
                :idna)
   :around-compile "iolib.asdf:compile-wrapper"
+  :encoding :utf-8
   :pathname "sockets/"
   :components
   ((:file "pkgdcl")

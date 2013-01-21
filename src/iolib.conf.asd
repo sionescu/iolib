@@ -7,6 +7,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib.asdf)
   :around-compile "iolib.asdf:compile-wrapper"
+  :encoding :utf-8
   :pathname "conf/"
   :components
   ((:file "pkgdcl")

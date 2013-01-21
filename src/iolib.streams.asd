@@ -8,6 +8,7 @@
   :defsystem-depends-on (:iolib.asdf :iolib.conf)
   :depends-on (:iolib.base :iolib.multiplex :cffi)
   :around-compile "iolib.asdf:compile-wrapper"
+  :encoding :utf-8
   :pathname "streams/gray/"
   :components
   ((:file "pkgdcl")
