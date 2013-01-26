@@ -2,6 +2,7 @@
 ;;;; and this code is released under the same license as IOLib.
 
 (defpackage :iolib.examples
+  (:nicknames :iolib/examples)
   (:use :cl :iolib :bordeaux-threads)
   #+sb-package-locks
   (:lock t)
