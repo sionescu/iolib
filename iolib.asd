@@ -18,7 +18,7 @@
   :version (:read-file-form "version.lisp-expr")
   :licence "MIT"
   :defsystem-depends-on (:iolib/asdf)
-  :around-compile "iolib.asdf:compile-wrapper"
+  :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/conf/"
   :components
@@ -32,7 +32,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:alexandria)
-  :around-compile "iolib.asdf:compile-wrapper"
+  :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/new-cl/"
   :components
@@ -61,7 +61,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:iolib/common-lisp :alexandria :split-sequence)
-  :around-compile "iolib.asdf:compile-wrapper"
+  :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/base/"
   :components
@@ -84,7 +84,7 @@
   :author "Dan Knapp <dankna@accela.net>"
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:alexandria :cffi :iolib/asdf :iolib/conf)
-  :around-compile "iolib.asdf:compile-wrapper"
+  :around-compile "iolib/asdf:compile-wrapper"
   :licence "MIT"
   :encoding :utf-8
   :pathname "src/grovel/"
@@ -109,7 +109,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib/asdf :iolib/conf :iolib/grovel)
   :depends-on (:trivial-features :cffi :iolib/base :iolib/grovel)
-  :around-compile "iolib.asdf:compile-wrapper"
+  :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/syscalls/"
   :components
@@ -133,7 +133,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/syscalls :cffi)
-  :around-compile "iolib.asdf:compile-wrapper"
+  :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/multiplex/"
   :components
@@ -174,7 +174,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/multiplex :cffi)
-  :around-compile "iolib.asdf:compile-wrapper"
+  :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/streams/gray/"
   :components
@@ -199,7 +199,7 @@
   :depends-on (:iolib/base :iolib/syscalls :iolib/streams
                :babel :cffi :iolib/grovel :bordeaux-threads
                :idna)
-  :around-compile "iolib.asdf:compile-wrapper"
+  :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/sockets/"
   :components
@@ -265,7 +265,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/sockets)
-  :around-compile "iolib.asdf:compile-wrapper"
+  :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/sockets/"
   :components
@@ -278,7 +278,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/syscalls)
-  :around-compile "iolib.asdf:compile-wrapper"
+  :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/pathnames/"
   :components
@@ -295,7 +295,7 @@
   :defsystem-depends-on (:iolib/asdf :iolib/conf :iolib/grovel)
   :depends-on (:iolib/base :iolib/grovel :iolib/syscalls
                :iolib/streams :iolib/pathnames)
-  :around-compile "iolib.asdf:compile-wrapper"
+  :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/os/"
   :components
@@ -313,7 +313,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib/base)
   :depends-on (:fiveam :iolib :iolib/pathnames)
-  :around-compile "iolib.asdf:compile-wrapper"
+  :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "tests/"
   :components
@@ -339,7 +339,7 @@
   :licence "MIT"
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/multiplex :iolib/streams :iolib/sockets)
-  :around-compile "iolib.asdf:compile-wrapper"
+  :around-compile "iolib/asdf:compile-wrapper"
   :in-order-to ((asdf:test-op (asdf:test-op :iolib/tests)))
   :encoding :utf-8
   :pathname "src/iolib/"
