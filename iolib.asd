@@ -1,5 +1,8 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
+(unless (or #+asdf3 (asdf/driver:version<= "2.29" (asdf-version)))
+  (error "You need ASDF >= 2.29 to load this system correctly."))
+
 (asdf:defsystem :iolib/asdf
   :description "A few ASDF component classes."
   :author "Stelian Ionescu <sionescu@cddr.org>"
