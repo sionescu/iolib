@@ -306,6 +306,24 @@
    (:file "create-process" :pathname #+unix "create-process-unix"))
   :serial t)
 
+(asdf:defsystem :iolib
+  :description "I/O library."
+  :author "Stelian Ionescu <sionescu@cddr.org>"
+  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
+  :version (:read-file-form "version.lisp-expr")
+  :licence "MIT"
+  :defsystem-depends-on (:iolib/asdf :iolib/conf)
+  :depends-on (:iolib/base :iolib/multiplex :iolib/streams :iolib/sockets)
+  :around-compile "iolib/asdf:compile-wrapper"
+  :encoding :utf-8
+  :pathname "src/iolib/"
+  :components ((:file "pkgdcl")))
+
+(defmethod asdf:perform ((o asdf:test-op)
+                         (c (eql (asdf:find-system :iolib))))
+  (asdf:load-system :iolib/tests)
+  (asdf/package:symbol-call :5am :run! :iolib))
+
 (asdf:defsystem :iolib/tests
   :description "IOLib test suite."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
@@ -325,25 +343,6 @@
    (:file "events" :depends-on ("pkgdcl" "defsuites"))
    (:file "streams" :depends-on ("pkgdcl" "defsuites"))
    (:file "sockets" :depends-on ("pkgdcl" "defsuites"))))
-
-(defmethod asdf:perform ((o asdf:test-op)
-                         (c (eql (asdf:find-system :iolib/tests))))
-  (asdf:load-system :iolib/tests)
-  (asdf/package:symbol-call :5am :run! :iolib))
-
-(asdf:defsystem :iolib
-  :description "I/O library."
-  :author "Stelian Ionescu <sionescu@cddr.org>"
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
-  :licence "MIT"
-  :defsystem-depends-on (:iolib/asdf :iolib/conf)
-  :depends-on (:iolib/base :iolib/multiplex :iolib/streams :iolib/sockets)
-  :around-compile "iolib/asdf:compile-wrapper"
-  :in-order-to ((asdf:test-op (asdf:test-op :iolib/tests)))
-  :encoding :utf-8
-  :pathname "src/iolib/"
-  :components ((:file "pkgdcl")))
 
 (asdf:defsystem :iolib/examples
   :version (:read-file-form "version.lisp-expr")
