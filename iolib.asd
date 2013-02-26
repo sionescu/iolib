@@ -1,7 +1,7 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
-(unless (or #+asdf3 (asdf/driver:version<= "2.29" (asdf-version)))
-  (error "You need ASDF >= 2.29 to load this system correctly."))
+(unless (or #+asdf3 (asdf/driver:version<= "2.31.1" (asdf-version)))
+  (error "You need ASDF >= 2.31.1 to load this system correctly."))
 
 (asdf:defsystem :iolib/asdf
   :description "A few ASDF component classes."
@@ -86,7 +86,9 @@
   :description "The CFFI Groveller"
   :author "Dan Knapp <dankna@accela.net>"
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
-  :depends-on (:alexandria :cffi :iolib/asdf :iolib/conf)
+  :depends-on (:alexandria
+               #+allegro (:require "osi")
+               :cffi :iolib/asdf :iolib/conf)
   :around-compile "iolib/asdf:compile-wrapper"
   :licence "MIT"
   :encoding :utf-8
@@ -97,13 +99,7 @@
    (:static-file "grovel-common.h")
    (:file "grovel")
    (:file "asdf"))
-  :serial t
-  :perform (asdf:compile-op :before (o c)
-             #+allegro (require "osi"))
-  :perform (asdf:load-op :before (o c)
-             #+allegro (require "osi"))
-  :perform (asdf:load-source-op :before (o c)
-             #+allegro (require "osi")))
+  :serial t)
 
 (asdf:defsystem :iolib/syscalls
   :description "Syscalls and foreign types."
