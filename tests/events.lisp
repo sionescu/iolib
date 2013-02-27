@@ -44,7 +44,7 @@
    (with-event-base/for-each-mux (base)
      (let ((cb nil))
        (add-timer base (lambda () (setq cb :timeout)) 1.5)
-       (event-dispatch base :one-shot t :timeout 2)
+       (event-dispatch base :timeout 2)
        (assert (eq cb :timeout))))))
 
 (defun timeout-cb (fd event)
