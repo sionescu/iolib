@@ -484,13 +484,14 @@ Return two values: the file descriptor and the path of the temporary file."
 
 (defsyscall (%ptsname "lfp_ptsname")
     (:pointer :handle fd)
-  (fd :int))
+  (fd     :int)
+  (buf    :pointer)
+  (buflen size-t))
 
 (defentrypoint ptsname (fd)
-  (let ((str (%ptsname fd)))
-    (unwind-protect
-         (nth-value 0 (foreign-string-to-lisp str))
-      (foreign-free str))))
+  (with-foreign-pointer (buf +cstring-path-max+ bufsize)
+    (%ptsname fd buf bufsize)
+    (nth-value 0 (foreign-string-to-lisp buf))))
 
 
 ;;;-------------------------------------------------------------------------
