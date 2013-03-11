@@ -141,7 +141,7 @@
 (defmacro with-argv (((arg0 argv) program arguments) &body body)
   (with-gensyms (argc)
     `(let* ((,program (ensure-list (find-program ,program)))
-            (arguments (append (cdr ,program) arguments))
+            (,arguments (append (cdr ,program) ,arguments))
             (,argc (+ 2 (length ,arguments))))
        (with-foreign-object (,argv :pointer ,argc)
          (isys:bzero ,argv (* ,argc (isys:sizeof :pointer)))
