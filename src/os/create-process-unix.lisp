@@ -136,11 +136,11 @@
     ((eql :shell program)
      (list "/bin/sh" "-c"))
     (t
-     (file-path-namestring program))))
+     (list (file-path-namestring program)))))
 
 (defmacro with-argv (((arg0 argv) program arguments) &body body)
   (with-gensyms (argc)
-    `(let* ((,program (ensure-list (find-program ,program)))
+    `(let* ((,program (find-program ,program))
             (,arguments (append (cdr ,program) ,arguments))
             (,argc (+ 2 (length ,arguments))))
        (with-foreign-object (,argv :pointer ,argc)
