@@ -223,10 +223,14 @@
 
 (defun setup-slave-pty (new-ctty-p)
   (if new-ctty-p
-      (let ((ptmfd (isys:openpt (logior isys:o-rdwr isys:o-noctty isys:o-cloexec))))
-        (isys:grantpt ptmfd)
-        (isys:unlockpt ptmfd)
-        (values ptmfd (isys:ptsname ptmfd)))
+      (let (ptmfd)
+        (unwind-protect-case ()
+            (progn
+              (setf ptmfd (isys:openpt (logior isys:o-rdwr isys:o-noctty isys:o-cloexec)))
+              (isys:grantpt ptmfd)
+              (isys:unlockpt ptmfd)
+              (values ptmfd (isys:ptsname ptmfd)))
+          (:abort (when ptmfd (isys:close ptmfd)))))
       (values nil nil)))
 
 (defmacro with-pty ((new-ctty-p ptmfd pts) &body body)
