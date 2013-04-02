@@ -483,7 +483,7 @@ Return two values: the file descriptor and the path of the temporary file."
   (fd :int))
 
 (defsyscall (%ptsname "lfp_ptsname")
-    (:pointer :handle fd)
+    (:int :handle fd)
   (fd     :int)
   (buf    :pointer)
   (buflen size-t))
