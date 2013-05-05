@@ -62,6 +62,7 @@
    #:ipv4-address
    #:ipv6-address
    #:local-address
+   #+linux #:netlink-address
 
    ;; Address Functions
    #:address-name
@@ -71,6 +72,7 @@
    #:copy-address
    #:ensure-address
    #:make-address
+   #+linux #:netlink-address-multicast-groups
 
    ;; Well-known Addresses
    #:+ipv4-loopback+

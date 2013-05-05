@@ -35,6 +35,10 @@ ADDRESS-NAME reader."))
 (unset-method-docstring #'abstract-address-p () '(local-address))
 (set-function-docstring 'abstract-address-p "Return T if ADDRESS is a LOCAL-ADDRESS that lives in the abstract namespace.")
 
+(defclass netlink-address (address)
+  ((multicast-groups :initform 0 :initarg :multicast-groups
+                     :reader netlink-address-multicast-groups)))
+
 (defmethod initialize-instance :after ((address local-address) &key)
   (with-slots (name) address
     (etypecase name
@@ -347,6 +351,9 @@ returned unmodified."
   (format nil "~:[~;@~]~S" (abstract-address-p address)
           (address-name address)))
 
+(defmethod address-to-string ((address netlink-address))
+  (format nil "~A" (netlink-address-multicast-groups address)))
+
 (defmethod print-object ((address inet-address) stream)
   (let ((namestring (address-to-string address)))
     (if (or *print-readably* *print-escape*)
@@ -356,6 +363,11 @@ returned unmodified."
 (defmethod print-object ((address local-address) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
     (format stream "Unix socket address: ~A"
+            (address-to-string address))))
+
+(defmethod print-object ((address netlink-address) stream)
+  (print-unreadable-object (address stream :type nil :identity nil)
+    (format stream "Netlink socket address: ~A"
             (address-to-string address))))
 
 ;;;; Reader Macro
