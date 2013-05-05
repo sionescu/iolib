@@ -152,6 +152,10 @@ Works only on DATAGRAM sockets."))
   (:default-initargs :address-family :local)
   (:documentation "Mixin for sockets of domain AF_LOCAL."))
 
+(defclass netlink-socket (socket) ()
+  (:default-initargs :address-family :netlink)
+  (:documentation "Mixin for sockets of domain AF_NETLINK."))
+
 (defgeneric send-file-descriptor (socket file-descriptor)
   (:documentation "Send FILE-DESCRIPTOR through SOCKET.
 The receiving process must use RECEIVE-FILE-DESCRIPTOR to receive the
@@ -283,3 +287,8 @@ address and the remote port if applicable."))
     (internet-socket raw-socket) ()
   (:default-initargs :type :raw)
   (:documentation "Class representing active sockets of type SOCK_RAW and domain AF_LOCAL."))
+
+(defclass socket-raw-netlink
+    (netlink-socket raw-socket) ()
+  (:default-initargs :type :raw)
+  (:documentation "Class representing active sockets of type SOCK_RAW and domain AF_NETLINK."))

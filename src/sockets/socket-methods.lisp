@@ -13,7 +13,8 @@
   (let ((sf (ecase address-family
               (:ipv4  af-inet)
               (:ipv6  af-inet6)
-              (:local af-local)))
+              (:local af-local)
+              (:netlink af-netlink)))
         (st (ecase type
               (:stream   sock-stream)
               (:datagram sock-dgram)
@@ -140,6 +141,16 @@
               (format stream " waiting @ ~A/~A"
                       (address-to-string host) port))
             (format stream ", closed" )))))
+
+(defmethod print-object ((socket socket-raw-netlink) stream)
+  (print-unreadable-object (socket stream :identity t)
+    (format stream "netlink socket")
+    (if (socket-bound-p socket)
+        (multiple-value-bind (address port)
+            (local-name socket)
+          (format stream " bound to ~A@~A"
+                  port (address-to-string address)))
+        (format stream ", ~:[closed~;unbound~]" (fd-of socket)))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -187,6 +198,9 @@
   (nth-value 0 (%local-name socket)))
 
 (defmethod local-port ((socket internet-socket))
+  (nth-value 1 (%local-name socket)))
+
+(defmethod local-port ((socket netlink-socket))
   (nth-value 1 (%local-name socket)))
 
 (defmethod local-filename ((socket local-socket))
@@ -253,6 +267,12 @@
 (defmethod bind-address ((socket local-socket) (address local-address) &key)
   (with-sockaddr-un (sun (address-name address) (abstract-address-p address))
     (%bind (fd-of socket) sun (actual-size-of-sockaddr-un sun)))
+  (values socket))
+
+(defmethod bind-address ((socket netlink-socket) (address netlink-address)
+                         &key (port 0))
+  (with-sockaddr-nl (snl (netlink-address-multicast-groups address) port)
+    (%bind (fd-of socket) snl (isys:sizeof 'sockaddr-nl)))
   (values socket))
 
 (defmethod bind-address :after ((socket socket) (address address) &key)
