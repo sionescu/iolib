@@ -16,6 +16,7 @@
    ;; Conditions
    #:socket-error
    #:socket-address-in-use-error
+   #:socket-address-family-not-supported-error
    #:socket-address-not-available-error
    #:socket-already-connected-error
    #:socket-connection-aborted-error

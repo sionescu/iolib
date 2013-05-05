@@ -52,6 +52,7 @@
   (:documentation "Error signalled upon finding an unknown socket error."))
 
 (define-socket-error socket-address-in-use-error          :eaddrinuse)
+(define-socket-error socket-address-family-not-supported-error :eafnosupport)
 (define-socket-error socket-address-not-available-error   :eaddrnotavail)
 (define-socket-error socket-network-down-error            :enetdown)
 (define-socket-error socket-network-reset-error           :enetreset)
