@@ -16,7 +16,8 @@
       ((:local :datagram nil)      . socket-datagram-local)
       ((:ipv4  :datagram nil)      . socket-datagram-internet)
       ((:ipv6  :datagram nil)      . socket-datagram-internet)
-      ((:ipv4  :raw      nil)      . socket-raw-internet)))
+      ((:ipv4  :raw      nil)      . socket-raw-internet)
+      ((:netlink :raw    nil)      . socket-raw-netlink)))
 
   (defun select-socket-class (address-family type connect)
     (or (loop :for ((sock-family sock-type sock-connect) . class)
@@ -252,12 +253,29 @@ call CLOSE with :ABORT T on `VAR'."
     (%%init-socket/internet-raw socket include-headers)))
 
 
+;;; Netlink Socket creation
+
+(defun %%init-socket/netlink-raw (socket local-port multicast-groups)
+  (when local-port
+    (bind-address socket
+                  (make-instance 'netlink-address
+                                 :multicast-groups multicast-groups)
+                  :port local-port))
+  (values socket))
+
+(define-socket-creator (:netlink :raw)
+    (family protocol &key (local-port 0) (multicast-groups 0))
+  (with-close-on-error (socket (create-socket family :raw protocol))
+    (%%init-socket/netlink-raw socket local-port multicast-groups)))
+
+
 ;;; MAKE-SOCKET
 
 (defmethod make-socket (&rest args &key (address-family :internet) (type :stream) (protocol :default)
                         (connect :active) (ipv6 *ipv6*) &allow-other-keys)
   (when (eql :file address-family) (setf address-family :local))
-  (check-type address-family (member :internet :local :ipv4 :ipv6) "one of :INTERNET, :LOCAL(or :FILE), :IPV4 or :IPV6")
+  (check-type address-family (member :internet :local :ipv4 :ipv6 :netlink)
+              "one of :INTERNET, :LOCAL(or :FILE), :IPV4, :IPV6 or :NETLINK")
   (check-type type (member :stream :datagram :raw) "either :STREAM, :DATAGRAM or :RAW")
   (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
   (let ((args (remove-from-plist args :address-family :type :protocol :connect :ipv6)))
@@ -284,7 +302,9 @@ call CLOSE with :ABORT T on `VAR'."
         ((:local :datagram)
          (%make-socket/local-datagram           args :local :default))
         ((:ipv4 :raw)
-         (%make-socket/internet-raw             args :ipv4  protocol))))))
+         (%make-socket/internet-raw             args :ipv4  protocol))
+        ((:netlink :raw)
+         (%make-socket/netlink-raw              args :netlink protocol))))))
 
 (define-compiler-macro make-socket (&whole form &environment env &rest args
                                     &key (address-family :internet) (type :stream) (protocol :default)
@@ -292,7 +312,8 @@ call CLOSE with :ABORT T on `VAR'."
   (when (eql :file address-family) (setf address-family :local))
   (cond
     ((and (constantp address-family env) (constantp type env) (constantp connect env))
-     (check-type address-family (member :internet :local :ipv4 :ipv6) "one of :INTERNET, :LOCAL(or :FILE), :IPV4 or :IPV6")
+     (check-type address-family (member :internet :local :ipv4 :ipv6 :netlink)
+                 "one of :INTERNET, :LOCAL(or :FILE), :IPV4, :IPV6 or :NETLINK")
      (check-type type (member :stream :datagram :raw) "either :STREAM, :DATAGRAM or :RAW")
      (check-type connect (member :active :passive) "either :ACTIVE or :PASSIVE")
      (let* ((family (if (member address-family '(:ipv4 :ipv6)) :internet address-family))

@@ -22,7 +22,7 @@
   (:documentation "Create an instance of a subclass of SOCKET. ADDRESS-FAMILY, TYPE, CONNECT and IPV6
 are used to specify the kind of socket to create.
 
-* ADDRESS-FAMILY - :INTERNET or :LOCAL (or :FILE as synonim)
+* ADDRESS-FAMILY - :INTERNET, :LOCAL (or :FILE as synonim), or :NETLINK(on Linux)
 * TYPE - :STREAM, :DATAGRAM or :RAW
 * CONNECT - :ACTIVE or :PASSIVE
 * IPV6 - if NIL, create an IPv4 socket, otherwise an IPv6 socket.
@@ -41,6 +41,7 @@ To initialize the socket, the following keyword arguments can be used depending 
 * :interface - a string. set option SO_BINDTODEVICE to this interface
 * :input-buffer-size - a positive integer. Create the stream input buffer of this size
 * :output-buffer-size - a positive integer. Create the stream output buffer of this size
+* :multicast-groups - a non-negative integer. Accept messages sent to those multicast groups
 
 Glossary:
 * hostname designator: an instance of INET-ADDRESS or any object accepted by LOOKUP-HOST. IPV6 is passed to LOOKUP-HOST as is
@@ -65,7 +66,10 @@ Glossary:
 * Valid keyword args: :LOCAL-FILENAME and :REMOTE-FILENAME
 
 :address-family :INTERNET :type :RAW
-* Valid keyword args: :INCLUDE-HEADERS"))
+* Valid keyword args: :INCLUDE-HEADERS
+
+:address-family :NETLINK :type :RAW
+* Valid keyword args: :LOCAL-PORT and :MULTICAST-GROUPS"))
 
 (defgeneric make-socket-from-fd (fd &key dup connect external-format
                                     input-buffer-size output-buffer-size)
