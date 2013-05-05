@@ -273,7 +273,7 @@ call CLOSE with :ABORT T on `VAR'."
 
 #-linux
 (define-socket-creator (:netlink :raw)
-    (family protocol &key (local-port 0) (multicast-groups 0))
+    (family protocol &key local-port multicast-groups)
   (declare (ignore family protocol local-port multicast-groups))
   (error 'socket-address-family-not-supported-error))
 
