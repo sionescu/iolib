@@ -33,6 +33,7 @@
 (include "sys/socket.h" "sys/un.h" "netdb.h" "errno.h"
          "net/if.h" "netinet/in.h" "netinet/tcp.h" "netinet/ip.h"
          #+linux "linux/errqueue.h" #+linux "linux/icmp.h"
+         #+linux "linux/netlink.h"
          "arpa/inet.h")
 
 (in-package :iolib.sockets)
@@ -439,3 +440,12 @@
 
 (cstruct ifreq "struct ifreq"
   (name "ifr_name" :type :char :count :auto))
+
+;;;; from linux/netlink.h
+
+#+linux
+(cstruct sockaddr-nl "struct sockaddr_nl"
+  "A Netlink socket address."
+  (family "nl_family" :type sa-family-t)
+  (port   "nl_pid"    :type :uint32)
+  (groups "nl_groups" :type :uint32))
