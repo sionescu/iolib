@@ -24,7 +24,7 @@
 (defmethod print-object ((socket-error socket-error) stream)
   (print-unreadable-object (socket-error stream :type t :identity nil)
     (let ((code (iolib.syscalls:code-of socket-error)))
-      (format stream "~S ~S ~S, FD: ~S"
+      (format stream "~S ~S ~S~@[, FD: ~S~]"
               (or code "[Unknown code]")
               (error-identifier socket-error)
               (if code (isys:strerror code) "[Can't get error string.]")
