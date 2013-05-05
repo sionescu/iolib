@@ -73,26 +73,34 @@ ADDRESS-NAME reader."))
             (values (parse-un-path path) nil))
       (make-instance 'local-address :name name :abstract abstract))))
 
+(defun sockaddr-nl->sockaddr (snl)
+  (with-foreign-slots ((groups port) snl sockaddr-nl)
+    (values (make-instance 'netlink-address :multicast-groups groups)
+            port)))
+
 (defun sockaddr-storage->sockaddr (ss)
   (with-foreign-slots ((family) ss sockaddr-storage)
     (switch (family :test #'=)
       (af-inet (sockaddr-in->sockaddr ss))
       (af-inet6 (sockaddr-in6->sockaddr ss))
-      (af-local (sockaddr-un->sockaddr ss)))))
+      (af-local (sockaddr-un->sockaddr ss))
+      (af-netlink (sockaddr-nl->sockaddr ss)))))
 
 (defun sockaddr->sockaddr-storage (ss sockaddr &optional (port 0))
   (etypecase sockaddr
     (ipv4-address (make-sockaddr-in ss (address-name sockaddr) port))
     (ipv6-address (make-sockaddr-in6 ss (address-name sockaddr) port))
     (local-address (make-sockaddr-un ss (address-name sockaddr)
-                                     (abstract-address-p sockaddr)))))
+                                     (abstract-address-p sockaddr)))
+    (netlink-address (make-sockaddr-nl ss (multicast-groups sockaddr) port))))
 
 (defun sockaddr-size (ss)
   (with-foreign-slots ((family) ss sockaddr-storage)
     (switch (family :test #'=)
       (af-inet  (isys:sizeof 'sockaddr-in))
       (af-inet6 (isys:sizeof 'sockaddr-in6))
-      (af-local (isys:sizeof 'sockaddr-un)))))
+      (af-local (isys:sizeof 'sockaddr-un))
+      (af-netlink (isys:sizeof 'sockaddr-nl)))))
 
 ;;;; Conversion functions
 

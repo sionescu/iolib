@@ -154,6 +154,21 @@
      (make-sockaddr-un ,var ,address ,abstract)
      ,@body))
 
+(defun make-sockaddr-nl (snl multicast-groups &optional (portno 0))
+  (declare (type ub32 multicast-groups)
+           (type ub32 portno))
+  (isys:bzero snl (isys:sizeof 'sockaddr-nl))
+  (with-foreign-slots ((family groups port) snl sockaddr-nl)
+    (setf family af-netlink)
+    (setf groups multicast-groups)
+    (setf port portno))
+  (values snl))
+
+(defmacro with-sockaddr-nl ((var multicast-groups &optional (port 0)) &body body)
+  `(with-foreign-object (,var 'sockaddr-nl)
+     (make-sockaddr-nl ,var ,multicast-groups ,port)
+     ,@body))
+
 (defmacro with-sockaddr-storage ((var) &body body)
   `(with-foreign-object (,var 'sockaddr-storage)
      (isys:bzero ,var (isys:sizeof 'sockaddr-storage))
