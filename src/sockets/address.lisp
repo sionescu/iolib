@@ -8,10 +8,14 @@
 ;;;; Class Definitions
 
 (defclass address ()
-  ((name :initarg :name :reader address-name :type vector))
+  ()
   (:documentation "Base class for all socket address classes."))
 
-(defclass inet-address (address) ()
+(defclass named-address ()
+  ((name :initarg :name :reader address-name :type vector))
+  (:documentation "Base class for socket address with a name."))
+
+(defclass inet-address (named-address) ()
   (:documentation "Base class for IPv4 and IPv6 addresses."))
 
 (defclass ipv4-address (inet-address) ()
@@ -24,7 +28,7 @@ ADDRESS-NAME reader."))
 can be accessed as vector of type IPV6-ARRAY through the
 ADDRESS-NAME reader."))
 
-(defclass local-address (address)
+(defclass local-address (named-address)
   ((abstract :initform nil :initarg :abstract
              :reader abstract-address-p :type boolean))
   (:documentation "UNIX socket address."))

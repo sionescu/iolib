@@ -58,6 +58,7 @@
    ;; Address Classes
    #:address
    #:inet-address
+   #:named-address
    #:ipv4-address
    #:ipv6-address
    #:local-address
