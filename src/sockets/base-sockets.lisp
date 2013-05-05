@@ -23,7 +23,7 @@
 are used to specify the kind of socket to create.
 
 * ADDRESS-FAMILY - :INTERNET or :LOCAL (or :FILE as synonim)
-* TYPE - :STREAM or :DATAGRAM
+* TYPE - :STREAM, :DATAGRAM or :RAW
 * CONNECT - :ACTIVE or :PASSIVE
 * IPV6 - if NIL, create an IPv4 socket, otherwise an IPv6 socket.
 
@@ -62,7 +62,10 @@ Glossary:
 * Valid keyword args: :LOCAL-HOST, :LOCAL-PORT, :REMOTE-HOST, :REMOTE-PORT, :REUSE-ADDRESS, :INTERFACE and :BROADCAST
 
 :address-family :LOCAL :type :DATAGRAM
-* Valid keyword args: :LOCAL-FILENAME and :REMOTE-FILENAME"))
+* Valid keyword args: :LOCAL-FILENAME and :REMOTE-FILENAME
+
+:address-family :INTERNET :type :RAW
+* Valid keyword args: :INCLUDE-HEADERS"))
 
 (defgeneric make-socket-from-fd (fd &key dup connect external-format
                                     input-buffer-size output-buffer-size)
