@@ -154,6 +154,7 @@
      (make-sockaddr-un ,var ,address ,abstract)
      ,@body))
 
+#+linux
 (defun make-sockaddr-nl (snl multicast-groups &optional (portno 0))
   (declare (type ub32 multicast-groups)
            (type ub32 portno))
@@ -164,6 +165,7 @@
     (setf port portno))
   (values snl))
 
+#+linux
 (defmacro with-sockaddr-nl ((var multicast-groups &optional (port 0)) &body body)
   `(with-foreign-object (,var 'sockaddr-nl)
      (make-sockaddr-nl ,var ,multicast-groups ,port)

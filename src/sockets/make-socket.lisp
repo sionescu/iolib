@@ -17,6 +17,7 @@
       ((:ipv4  :datagram nil)      . socket-datagram-internet)
       ((:ipv6  :datagram nil)      . socket-datagram-internet)
       ((:ipv4  :raw      nil)      . socket-raw-internet)
+      #+linux
       ((:netlink :raw    nil)      . socket-raw-netlink)))
 
   (defun select-socket-class (address-family type connect)
@@ -255,6 +256,7 @@ call CLOSE with :ABORT T on `VAR'."
 
 ;;; Netlink Socket creation
 
+#+linux
 (defun %%init-socket/netlink-raw (socket local-port multicast-groups)
   (when local-port
     (bind-address socket
@@ -263,10 +265,17 @@ call CLOSE with :ABORT T on `VAR'."
                   :port local-port))
   (values socket))
 
+#+linux
 (define-socket-creator (:netlink :raw)
     (family protocol &key (local-port 0) (multicast-groups 0))
   (with-close-on-error (socket (create-socket family :raw protocol))
     (%%init-socket/netlink-raw socket local-port multicast-groups)))
+
+#-linux
+(define-socket-creator (:netlink :raw)
+    (family protocol &key (local-port 0) (multicast-groups 0))
+  (declare (ignore family protocol local-port multicast-groups))
+  (error 'socket-address-family-not-supported-error))
 
 
 ;;; MAKE-SOCKET
@@ -350,6 +359,7 @@ The socket is automatically closed upon exit."
                (af-inet  :ipv4)
                (af-inet6 :ipv6)
                (af-local :local)
+               #+linux
                (af-netlink :netlink))))
          (%get-type (fd)
            (eswitch ((get-socket-option-int fd sol-socket so-type) :test #'=)

@@ -156,6 +156,7 @@ Works only on DATAGRAM sockets."))
   (:default-initargs :address-family :local)
   (:documentation "Mixin for sockets of domain AF_LOCAL."))
 
+#+linux
 (defclass netlink-socket (socket) ()
   (:default-initargs :address-family :netlink)
   (:documentation "Mixin for sockets of domain AF_NETLINK."))
@@ -292,6 +293,7 @@ address and the remote port if applicable."))
   (:default-initargs :type :raw)
   (:documentation "Class representing active sockets of type SOCK_RAW and domain AF_LOCAL."))
 
+#+linux
 (defclass socket-raw-netlink
     (netlink-socket raw-socket) ()
   (:default-initargs :type :raw)

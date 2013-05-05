@@ -14,6 +14,7 @@
               (:ipv4  af-inet)
               (:ipv6  af-inet6)
               (:local af-local)
+              #+linux
               (:netlink af-netlink)))
         (st (ecase type
               (:stream   sock-stream)
@@ -142,6 +143,7 @@
                       (address-to-string host) port))
             (format stream ", closed" )))))
 
+#+linux
 (defmethod print-object ((socket socket-raw-netlink) stream)
   (print-unreadable-object (socket stream :identity t)
     (format stream "netlink socket")
@@ -200,6 +202,7 @@
 (defmethod local-port ((socket internet-socket))
   (nth-value 1 (%local-name socket)))
 
+#+linux
 (defmethod local-port ((socket netlink-socket))
   (nth-value 1 (%local-name socket)))
 
@@ -269,6 +272,7 @@
     (%bind (fd-of socket) sun (actual-size-of-sockaddr-un sun)))
   (values socket))
 
+#+linux
 (defmethod bind-address ((socket netlink-socket) (address netlink-address)
                          &key (port 0))
   (with-sockaddr-nl (snl (netlink-address-multicast-groups address) port)

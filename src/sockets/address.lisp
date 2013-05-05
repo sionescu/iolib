@@ -35,6 +35,7 @@ ADDRESS-NAME reader."))
 (unset-method-docstring #'abstract-address-p () '(local-address))
 (set-function-docstring 'abstract-address-p "Return T if ADDRESS is a LOCAL-ADDRESS that lives in the abstract namespace.")
 
+#+linux
 (defclass netlink-address (address)
   ((multicast-groups :initform 0 :initarg :multicast-groups
                      :reader netlink-address-multicast-groups)))
@@ -81,6 +82,7 @@ ADDRESS-NAME reader."))
             (values (parse-un-path path) nil))
       (make-instance 'local-address :name name :abstract abstract))))
 
+#+linux
 (defun sockaddr-nl->sockaddr (snl)
   (with-foreign-slots ((groups port) snl sockaddr-nl)
     (values (make-instance 'netlink-address :multicast-groups groups)
@@ -92,6 +94,7 @@ ADDRESS-NAME reader."))
       (af-inet (sockaddr-in->sockaddr ss))
       (af-inet6 (sockaddr-in6->sockaddr ss))
       (af-local (sockaddr-un->sockaddr ss))
+      #+linux
       (af-netlink (sockaddr-nl->sockaddr ss)))))
 
 (defun sockaddr->sockaddr-storage (ss sockaddr &optional (port 0))
@@ -100,6 +103,7 @@ ADDRESS-NAME reader."))
     (ipv6-address (make-sockaddr-in6 ss (address-name sockaddr) port))
     (local-address (make-sockaddr-un ss (address-name sockaddr)
                                      (abstract-address-p sockaddr)))
+    #+linux
     (netlink-address (make-sockaddr-nl ss (multicast-groups sockaddr) port))))
 
 (defun sockaddr-size (ss)
@@ -108,6 +112,7 @@ ADDRESS-NAME reader."))
       (af-inet  (isys:sizeof 'sockaddr-in))
       (af-inet6 (isys:sizeof 'sockaddr-in6))
       (af-local (isys:sizeof 'sockaddr-un))
+      #+linux
       (af-netlink (isys:sizeof 'sockaddr-nl)))))
 
 ;;;; Conversion functions
@@ -351,6 +356,7 @@ returned unmodified."
   (format nil "~:[~;@~]~S" (abstract-address-p address)
           (address-name address)))
 
+#+linux
 (defmethod address-to-string ((address netlink-address))
   (format nil "~A" (netlink-address-multicast-groups address)))
 
@@ -365,6 +371,7 @@ returned unmodified."
     (format stream "Unix socket address: ~A"
             (address-to-string address))))
 
+#+linux
 (defmethod print-object ((address netlink-address) stream)
   (print-unreadable-object (address stream :type nil :identity nil)
     (format stream "Netlink socket address: ~A"
