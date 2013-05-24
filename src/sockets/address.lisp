@@ -104,7 +104,8 @@ ADDRESS-NAME reader."))
     (local-address (make-sockaddr-un ss (address-name sockaddr)
                                      (abstract-address-p sockaddr)))
     #+linux
-    (netlink-address (make-sockaddr-nl ss (multicast-groups sockaddr) port))))
+    (netlink-address (make-sockaddr-nl ss (netlink-address-multicast-groups sockaddr)
+                                       port))))
 
 (defun sockaddr-size (ss)
   (with-foreign-slots ((family) ss sockaddr-storage)
