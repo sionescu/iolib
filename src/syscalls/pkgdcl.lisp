@@ -561,6 +561,7 @@
   (:export ;; Process creation and info
    #:fork
    #:execv
+   #:execvp
    #:waitpid
    #:getpid
    #:getppid
