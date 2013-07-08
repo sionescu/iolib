@@ -33,6 +33,9 @@
    (write-fn :initform #'default-write-fn :initarg :write-fn :accessor write-fn-of))
   (:documentation "placeholder"))
 
+(defgeneric fd-non-blocking (fd-mixin))
+(defgeneric (setf fd-non-blocking) (mode fd-mixin))
+
 ;;;; Bivalent Socket Gray Stream
 
 (defclass dual-channel-gray-stream (trivial-gray-stream-mixin

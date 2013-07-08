@@ -19,6 +19,7 @@
 
    ;; Accessors
    #:external-format-of
+   #:fd-non-blocking
    #:fd-of
    #:read-buffer-size
    #:read-buffer-empty-p

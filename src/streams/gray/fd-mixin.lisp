@@ -17,3 +17,14 @@
   (when (fd-of fd-mixin)
     (isys:close (fd-of fd-mixin))
     (setf (fd-of fd-mixin) nil)))
+
+;;;; Get and Set O_NONBLOCK
+
+(defmethod fd-non-blocking ((fd-mixin dual-channel-fd-mixin))
+  (isys:fd-nonblock (fd-of fd-mixin)))
+(defobsolete fd-non-blocking "stream FDs are now always non-blocking.")
+
+(defmethod (setf fd-non-blocking) (mode (fd-mixin dual-channel-fd-mixin))
+  (check-type mode boolean "a boolean value")
+  (setf (isys:fd-nonblock (fd-of fd-mixin)) mode))
+(defobsolete (setf fd-non-blocking) "stream FDs are now always non-blocking.")
