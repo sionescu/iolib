@@ -6,15 +6,9 @@
 (in-package :iolib.base)
 
 #+sbcl
-(progn
-  (defun defknown-redefinition-error-p (e)
-    (and (typep e 'simple-error)
-         (search "overwriting old FUN-INFO"
-                 (simple-condition-format-control e))))
-
-  (defmacro %deffoldable (func argument-types return-type)
-    `(handler-bind (((satisfies defknown-redefinition-error-p) #'continue))
-       (sb-c:defknown ,func ,argument-types ,return-type (sb-c:foldable)))))
+(defmacro %deffoldable (func argument-types return-type)
+  `(sb-c:defknown ,func ,argument-types ,return-type (sb-c:foldable)
+     :overwrite-fndb-silently t))
 
 #-(or sbcl)
 (defmacro %deffoldable (&rest args)
