@@ -10,28 +10,6 @@
 (deftype ipv4-array () '(ub8-sarray 4))
 (deftype ipv6-array () '(ub16-sarray 8))
 
-;;;; Byte-swap functions
-
-(defun htons (short)
-  #+little-endian
-  (logior (ash (logand (the ub16 short) #x00FF) 8)
-          (ash (logand (the ub16 short) #xFF00) -8))
-  #+big-endian short)
-
-(defun ntohs (short)
-  (htons short))
-
-(defun htonl (long)
-  #+little-endian
-  (logior (ash (logand (the ub32 long) #x000000FF) 24)
-          (ash (logand (the ub32 long) #x0000FF00) 8)
-          (ash (logand (the ub32 long) #x00FF0000) -8)
-          (ash (logand (the ub32 long) #xFF000000) -24))
-  #+big-endian long)
-
-(defun ntohl (long)
-  (htonl long))
-
 ;;;; Conversion between address formats
 
 (defun copy-simple-array-ub16-to-alien-vector (lisp-vec alien-vec)

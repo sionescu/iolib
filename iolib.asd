@@ -197,7 +197,7 @@
   :defsystem-depends-on (:iolib/asdf :iolib/conf :iolib/grovel)
   :depends-on (:iolib/base :iolib/syscalls :iolib/streams
                :babel :cffi :iolib/grovel :bordeaux-threads
-               :idna)
+               :idna :swap-bytes)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/sockets/"
