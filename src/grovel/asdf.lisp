@@ -39,7 +39,7 @@
   ((cc-flags :initform nil :accessor cc-flags-of :initarg :cc-flags)))
 
 (defmethod asdf:perform :around ((op asdf:compile-op) (file cc-flags-mixin))
-  (declare (ignore op))
+  (declare (ignorable op))
   (let ((*cc-flags* (append (ensure-list (cc-flags-of file))
                             *cc-flags*)))
     (call-next-method)))
@@ -65,7 +65,7 @@
     PROCESS-OP.")))
 
 (defmethod asdf:output-files ((op process-op) (c process-op-input))
-  (declare (ignore op))
+  (declare (ignorable op))
   (list (make-pathname :type (generated-lisp-file-type c)
                        :defaults (asdf:component-pathname c))))
 
@@ -75,12 +75,12 @@
     ,@(call-next-method)))
 
 (defmethod asdf:component-depends-on ((op asdf:compile-op) (c process-op-input))
-  (declare (ignore op))
+  (declare (ignorable op))
   `((process-op ,(asdf:component-name c))
     ,@(call-next-method)))
 
 (defmethod asdf:component-depends-on ((op asdf:load-source-op) (c process-op-input))
-  (declare (ignore op))
+  (declare (ignorable op))
   `((process-op ,(asdf:component-name c))
     ,@(call-next-method)))
 
