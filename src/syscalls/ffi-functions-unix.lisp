@@ -333,6 +333,18 @@ Return two values: the file descriptor and the path of the temporary file."
   (let ((template (concatenate 'string template "XXXXXX")))
     (with-sstring-to-cstring (ptr template)
       (values (%mkstemp ptr) (cstring-to-sstring ptr)))))
+
+(defsyscall (%mkostemp "lfp_mkostemp") :int
+  (template :pointer)
+  (flags    :uint64))
+
+(defentrypoint mkostemp (&optional (template "") (flags 0))
+  "Generate a unique temporary filename from TEMPLATE.
+FLAGS are used to open the temporary file.
+Return two values: the file descriptor and the path of the temporary file."
+  (let ((template (concatenate 'string template "XXXXXX")))
+    (with-sstring-to-cstring (ptr template)
+      (values (%mokstemp ptr) (cstring-to-sstring ptr)))))
 
 
 ;;;-------------------------------------------------------------------------

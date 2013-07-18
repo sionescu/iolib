@@ -506,7 +506,8 @@
    #:lstat
    #:sync
    #:fsync
-   #:mkstemp)
+   #:mkstemp
+   #:mkostemp)
   (:export ;; Directories
    #:mkdir
    #:rmdir
