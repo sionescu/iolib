@@ -344,7 +344,7 @@ FLAGS are used to open the temporary file.
 Return two values: the file descriptor and the path of the temporary file."
   (let ((template (concatenate 'string template "XXXXXX")))
     (with-sstring-to-cstring (ptr template)
-      (values (%mkostemp ptr) (cstring-to-sstring ptr)))))
+      (values (%mkostemp ptr flags) (cstring-to-sstring ptr)))))
 
 
 ;;;-------------------------------------------------------------------------
