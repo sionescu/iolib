@@ -59,4 +59,6 @@
           (write-ip-header ip-header frame-size (dotted-to-integer target))
           (setf (mem-ref payload :uint32) (htonl #x1A2B3C4D))
           (write-icmp-header icmp-header icmp-packet-size id seqno)
-          (send-to socket frame :end frame-size :remote-host target))))))
+          (send-to socket frame :end frame-size :remote-host target)
+          (iolib/multiplex:wait-until-fd-ready (socket-os-fd socket) :input)
+          (receive-from socket :size (* 64 1024)))))))
