@@ -567,6 +567,11 @@
     (let ((nbytes (%receive-from (fd-of socket) ss size buffer start end flags)))
       (values buffer nbytes))))
 
+(defmethod receive-from ((socket raw-socket) &key buffer start end flags)
+  (with-sockaddr-storage-and-socklen (ss size)
+    (let ((nbytes (%receive-from (fd-of socket) ss size buffer start end flags)))
+      (values buffer nbytes))))
+
 (defmethod receive-from ((socket datagram-socket) &key buffer start end flags)
   (with-sockaddr-storage-and-socklen (ss size)
     (let ((nbytes (%receive-from (fd-of socket) ss size buffer start end flags)))
