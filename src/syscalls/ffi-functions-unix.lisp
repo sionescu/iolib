@@ -12,7 +12,8 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (define-foreign-library libfixposix
     (t (:default "libfixposix")))
-  (use-foreign-library libfixposix))
+  (unless (foreign-library-loaded-p 'libfixposix)
+    (use-foreign-library libfixposix)))
 
 
 
