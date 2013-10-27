@@ -11,7 +11,7 @@
   ()
   (:documentation "Base class for all socket address classes."))
 
-(defclass named-address ()
+(defclass named-address (address)
   ((name :initarg :name :reader address-name :type vector))
   (:documentation "Base class for socket address with a name."))
 
