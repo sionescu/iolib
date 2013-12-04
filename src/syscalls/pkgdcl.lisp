@@ -523,7 +523,8 @@
    #:ioctl
    #:fd-cloexec-p
    #:fd-nonblock-p
-   #:fd-open-p)
+   #:fd-open-p
+   #:fd-tty-p)
   (:export ;; TTYs
    #:openpt
    #:grantpt
