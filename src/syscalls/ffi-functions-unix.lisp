@@ -477,6 +477,10 @@ Return two values: the file descriptor and the path of the temporary file."
 
 (defsyscall (fd-open-p "lfp_is_fd_open") bool-designator
   (fd :int))
+
+(defsyscall (fd-tty-p "isatty") bool-designator
+  (fd :int))
+
 
 
 ;;;-------------------------------------------------------------------------
