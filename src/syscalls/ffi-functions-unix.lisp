@@ -479,7 +479,7 @@ Return two values: the file descriptor and the path of the temporary file."
   (fd :int))
 
 (defsyscall (fd-tty-p "isatty") bool-designator
-            (fd :int))
+  (fd :int))
 
 
 
