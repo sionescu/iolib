@@ -45,7 +45,7 @@
     (call-next-method)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defclass process-op (asdf:operation)
+  (defclass process-op (asdf:downward-operation)
     ()
     (:documentation "This ASDF operation performs the steps necessary
   to generate a compilable and loadable lisp file from a
