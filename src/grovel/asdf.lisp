@@ -70,8 +70,7 @@
                        :defaults (asdf:component-pathname c))))
 
 (defmethod asdf:component-depends-on ((op process-op) (c process-op-input))
-  `(#-asdf3 (asdf:load-op ,@(asdf::component-load-dependencies c))
-    #+asdf3 (asdf:prepare-op ,c)
+  `((asdf:prepare-op ,c)
     ,@(call-next-method)))
 
 (defmethod asdf:component-depends-on ((op asdf:compile-op) (c process-op-input))
