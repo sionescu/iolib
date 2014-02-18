@@ -28,8 +28,12 @@
   (:use #:common-lisp #:alexandria)
   (:import-from #:cffi-sys #:native-namestring)
   (:export
+   ;; Class name
+   #:grovel-file
    #:process-grovel-file
    ;; Error condition
    #:missing-definition)
   (:export
+   ;; Class name
+   #:wrapper-file
    #:process-wrapper-file))
