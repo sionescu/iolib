@@ -17,7 +17,6 @@
         (*print-readably* nil)
         (*readtable* (copy-readtable))
         (asdf/lisp-build:*uninteresting-compiler-conditions*
-          '(#+sbcl sb-int:package-at-variance))
-        (asdf/lisp-build:*uninteresting-loader-conditions*
-          '(#+sbcl sb-int:package-at-variance)))
+          (append '(#+sbcl sb-int:package-at-variance)
+                  asdf/lisp-build:*uninteresting-compiler-conditions*)))
     (funcall continuation)))
