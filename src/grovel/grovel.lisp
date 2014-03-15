@@ -256,7 +256,10 @@ int main(int argc, char**argv) {
    ;; ECL internal flags
    #+ecl (list c::*cc-flags*)
    ;; FreeBSD non-base header files
-   #+freebsd (list "-I" "/usr/local/include/")))
+   #+freebsd (list "-I" "/usr/local/include/")
+   ;; DragonFly Dports install software in /usr/local
+   ;; And what about pkgsrc?
+   #+dragonfly (list "-I" "/usr/local/include/")))
 
 ;;; FIXME: is there a better way to detect whether these flags
 ;;; are necessary?

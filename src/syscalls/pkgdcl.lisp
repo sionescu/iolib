@@ -99,13 +99,17 @@
    #:ehostunreach #:eidrm #:eilseq #:einprogress #:eintr #:einval #:eio
    #:eisconn #:eisdir #:eloop #:emfile #:emlink #:emsgsize #:emultihop
    #:enametoolong #:enetdown #:enetreset #:enetunreach #:enfile
-   #:enobufs #:enodata #:enodev #:enoent #:enoexec #:enolck #:enolink
-   #:enomem #:enomsg #:enonet #:enoprotoopt #:enospc #:enosr #:enostr
+   #:enobufs #:enodev #:enoent #:enoexec #:enolck #:enolink
+   #:enomem #:enomsg #:enonet #:enoprotoopt #:enospc
    #:enosys #:enotconn #:enotdir #:enotempty #:enotsock #:enotsup #:enotty
    #:enxio #:eopnotsupp #:eoverflow #:eperm #:epipe #:eproto
    #:eprotonosupport #:eprototype #:erange #:erofs #:eshutdown #:espipe
-   #:esrch #:estale #:etime #:etimedout #:etxtbsy #:ewouldblock #:exdev
-   #:ebug)
+   #:esrch #:estale #:etimedout #:etxtbsy #:ewouldblock #:exdev
+   #:ebug
+   #-(or freebsd dragonfly) #:enodata
+   #-(or freebsd dragonfly) #:enosr
+   #-(or freebsd dragonfly) #:enostr
+   #-(or freebsd dragonfly) #:etime)
   (:export ;; fcntl.h
    ;; Open()
    #:o-rdonly
