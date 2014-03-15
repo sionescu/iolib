@@ -105,7 +105,7 @@
  (:enetunreach "ENETUNREACH")
  (:enfile "ENFILE")
  (:enobufs "ENOBUFS")
- #-dragonfly
+ #-(or freebsd dragonfly)
  (:enodata "ENODATA")
  (:enodev "ENODEV")
  (:enoent "ENOENT")
@@ -117,9 +117,9 @@
  (:enonet "ENONET" :optional t)
  (:enoprotoopt "ENOPROTOOPT")
  (:enospc "ENOSPC")
- #-dragonfly
+ #-(or freebsd dragonfly)
  (:enosr "ENOSR")
- #-dragonfly
+ #-(or freebsd dragonfly)
  (:enostr "ENOSTR")
  (:enosys "ENOSYS")
  (:enotconn "ENOTCONN")
@@ -142,7 +142,7 @@
  (:espipe "ESPIPE")
  (:esrch "ESRCH")
  (:estale "ESTALE")
- #-dragonfly
+ #-(or freebsd dragonfly)
  (:etime "ETIME")
  (:etimedout "ETIMEDOUT")
  (:etxtbsy "ETXTBSY")
