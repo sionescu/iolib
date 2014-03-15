@@ -210,7 +210,7 @@
 
 ;;; FreeBSD-specific options
 
-(define-socket-options :get-and-set sol-socket :freebsd
+(define-socket-options :get-and-set sol-socket (:or :freebsd :dragonfly)
   (reuse-port   so-reuseport   :bool)
   (use-loopback so-useloopback :bool)
   (no-sigpipe   so-nosigpipe   :bool))
@@ -243,7 +243,7 @@
   tcp-nodelay ipproto-tcp :bool :any)
 
 (define-socket-option tcp-maxseg :get-and-set
-  tcp-maxseg ipproto-tcp :int (:or :linux :freebsd))
+  tcp-maxseg ipproto-tcp :int (:or :linux :freebsd :dragonfly))
 
 ;;; Linux-specific TCP Options
 
@@ -263,7 +263,7 @@
 
 ;;; FreeBSD-specific TCP Options
 
-(define-socket-options :get-and-set ipproto-tcp :freebsd
+(define-socket-options :get-and-set ipproto-tcp (:or :freebsd :dragonfly)
   (tcp-noopt  tcp-noopt  :bool)
   (tcp-nopush tcp-nopush :bool))
 

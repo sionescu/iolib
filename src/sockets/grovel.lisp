@@ -346,7 +346,7 @@
   (onoff  "l_onoff"  :type :int)
   (linger "l_linger" :type :int))
 
-#+freebsd
+#+(or freebsd dragonfly)
 (cstruct accept-filter-arg "struct accept_filter_arg"
   (name "af_name" :type :uint8 :count :auto)
   (arg  "af_arg"  :type :uint8 :count :auto))
@@ -357,6 +357,9 @@
   "A UNIX-domain socket address."
   (family "sun_family" :type sa-family-t)
   (path   "sun_path"   :type :uint8 :count :auto))
+
+#+dragonfly
+(constant (local-peercred "LOCAL_PEERCRED"))
 
 #+freebsd
 (progn

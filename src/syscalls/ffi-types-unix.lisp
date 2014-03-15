@@ -105,7 +105,7 @@
  (:enetunreach "ENETUNREACH")
  (:enfile "ENFILE")
  (:enobufs "ENOBUFS")
- (:enodata "ENODATA")
+ (:enodata "ENODATA" :optional t)
  (:enodev "ENODEV")
  (:enoent "ENOENT")
  (:enoexec "ENOEXEC")
@@ -116,8 +116,8 @@
  (:enonet "ENONET" :optional t)
  (:enoprotoopt "ENOPROTOOPT")
  (:enospc "ENOSPC")
- (:enosr "ENOSR")
- (:enostr "ENOSTR")
+ (:enosr "ENOSR" :optional t)
+ (:enostr "ENOSTR" :optional t)
  (:enosys "ENOSYS")
  (:enotconn "ENOTCONN")
  (:enotdir "ENOTDIR")
@@ -139,7 +139,7 @@
  (:espipe "ESPIPE")
  (:esrch "ESRCH")
  (:estale "ESTALE")
- (:etime "ETIME")
+ (:etime "ETIME" :optional t)
  (:etimedout "ETIMEDOUT")
  (:etxtbsy "ETXTBSY")
  (:ewouldblock "EWOULDBLOCK")
@@ -470,7 +470,7 @@
   (constant (rlimit-rtprio "RLIMIT_RTPRIO"))
   (constant (rlimit-sigpending "RLIMIT_SIGPENDING")))
 
-#+freebsd
+#+(or dragonfly freebsd)
 (constant (rlimit-sbsize "RLIMIT_SBSIZE"))
 
 
