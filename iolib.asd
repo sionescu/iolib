@@ -188,6 +188,38 @@
      :depends-on ("pkgdcl" "classes" "conditions" "buffer" "fd-mixin"
                   "io-helpers"))))
 
+(asdf:defsystem :iolib/zstreams
+  :description "Zeta streams."
+  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
+  :version (:read-file-form "version.lisp-expr")
+  :licence "MIT"
+  :defsystem-depends-on (:iolib/asdf)
+  :depends-on (:iolib/base :iolib/syscalls :iolib/pathnames :cffi :bordeaux-threads)
+  :around-compile "iolib.asdf:compile-wrapper"
+  :encoding :utf-8
+  :pathname "src/streams/zeta/"
+  :components
+  ((:file "pkgdcl")
+   (:file "types" :depends-on ("pkgdcl"))
+   (:file "conditions" :depends-on ("pkgdcl"))
+
+   ;; Platform-specific files
+   (:file "ffi-functions" :pathname #+unix "ffi-functions-unix"
+     :depends-on ("pkgdcl" "conditions"))
+
+   ;; Device interface definition
+   (:file "device" :depends-on ("pkgdcl" "types"))
+
+   ;; Low-level buffers
+   (:file "iobuf" :depends-on ("pkgdcl" "types"))
+
+   ;; Streams
+   (:file "stream" :depends-on ("pkgdcl" "types" "conditions" "device" "iobuf"))
+
+   ;; Devices
+   (:file "file" :pathname #+unix "file-unix"
+     :depends-on ("pkgdcl" "types" "conditions" "ffi-functions" "device" "stream"))))
+
 (asdf:defsystem :iolib/sockets
   :description "Socket library."
   :author "Stelian Ionescu <sionescu@cddr.org>"
