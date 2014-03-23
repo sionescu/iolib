@@ -16,7 +16,7 @@
         ;; can't be printed readably, so bind to NIL
         (*print-readably* nil)
         (*readtable* (copy-readtable))
-        (asdf/lisp-build:*uninteresting-compiler-conditions*
+        (uiop:*uninteresting-compiler-conditions*
           (append '(#+sbcl sb-int:package-at-variance)
-                  asdf/lisp-build:*uninteresting-compiler-conditions*)))
+                  uiop:*uninteresting-compiler-conditions*)))
     (funcall continuation)))

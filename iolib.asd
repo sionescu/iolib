@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
-(unless (or #+asdf3 (asdf/driver:version<= "2.31.1" (asdf-version)))
+(unless (or #+asdf3 (uiop:version<= "2.31.1" (asdf-version)))
   (error "You need ASDF >= 2.31.1 to load this system correctly."))
 
 (asdf:defsystem :iolib/asdf
@@ -44,13 +44,13 @@
    (:file "pkgdcl" :depends-on ("conduits" #+scl "scl-gray-streams")
     :perform
     (asdf:compile-op :before (o c)
-      (asdf/package:symbol-call :iolib/conf '#:load-gray-streams))
+      (uiop:symbol-call :iolib/conf '#:load-gray-streams))
     :perform
     (asdf:load-op :before (o c)
-      (asdf/package:symbol-call :iolib/conf '#:load-gray-streams))
+      (uiop:symbol-call :iolib/conf '#:load-gray-streams))
     :perform
     (asdf:load-source-op :before (o c)
-      (asdf/package:symbol-call :iolib/conf '#:load-gray-streams)))
+      (uiop:symbol-call :iolib/conf '#:load-gray-streams)))
    (:file "gray-streams"
     :depends-on ("pkgdcl" #+scl "scl-gray-streams"))
    (:file "definitions" :depends-on ("pkgdcl"))
@@ -353,7 +353,7 @@
 (defmethod asdf:perform ((o asdf:test-op)
                          (c (eql (asdf:find-system :iolib))))
   (asdf:load-system :iolib/tests)
-  (asdf/package:symbol-call :5am :run! :iolib))
+  (uiop:symbol-call :5am :run! :iolib))
 
 (asdf:defsystem :iolib/tests
   :description "IOLib test suite."
