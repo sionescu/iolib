@@ -16,17 +16,26 @@
 ;;;; Addresses
 
 ;;; a real address
-(test (address-to-vector.1 :compile-at :definition-time)
+(test (address-to-vector.ipv4.string.1 :compile-at :definition-time)
   (is (equalp (address-to-vector "127.0.0.1")
               (values #(127 0 0 1) :ipv4))))
 
 ;;; and an address with bit 8 set on some octets
-(test (address-to-vector.2 :compile-at :definition-time)
+(test (address-to-vector.ipv4.string.2 :compile-at :definition-time)
   (is (equalp (address-to-vector "242.1.211.3")
               (values #(242 1 211 3) :ipv4))))
 
-(test (address-to-vector.3 :compile-at :definition-time)
+;;; a real address
+(test (address-to-vector.ipv4.vector.1 :compile-at :definition-time)
+  (is (equalp (address-to-vector #(127 0 0 1))
+              (values #(127 0 0 1) :ipv4))))
+
+(test (address-to-vector.ipv6.string.1 :compile-at :definition-time)
   (is (equalp (address-to-vector "::")
+              (values #(0 0 0 0 0 0 0 0) :ipv6))))
+
+(test (address-to-vector.ipv6.vector.1 :compile-at :definition-time)
+  (is (equalp (address-to-vector #(0 0 0 0 0 0 0 0))
               (values #(0 0 0 0 0 0 0 0) :ipv6))))
 
 ;;; RT: used to return the PARSE-ERROR as a secondary value.
