@@ -102,24 +102,26 @@
     process))
 
 
-(defmacro with-lfp-spawn-arguments ((attributes file-actions pid) &body body)
-  (with-gensyms (spawnattr-initialized-p file-actions-initialized-p)
-    `(with-foreign-objects ((,attributes 'lfp-spawnattr-t)
-                            (,file-actions 'lfp-spawn-file-actions-t)
-                            (,pid 'pid-t))
-       (let ((,spawnattr-initialized-p nil)
-             (,file-actions-initialized-p nil))
-         (unwind-protect
-              (progn
-                (setf ,spawnattr-initialized-p
-                      (lfp-spawnattr-init ,attributes))
-                (setf ,file-actions-initialized-p
-                      (lfp-spawn-file-actions-init ,file-actions))
-                ,@body)
-           (when ,spawnattr-initialized-p
-             (lfp-spawnattr-destroy ,attributes))
-           (when ,file-actions-initialized-p
-             (lfp-spawn-file-actions-destroy ,file-actions)))))))
+(defun call-with-lfp-spawn-arguments (thunk)
+  (with-foreign-objects ((attributes 'lfp-spawnattr-t)
+                         (file-actions 'lfp-spawn-file-actions-t))
+    (let ((spawnattr-initialized-p nil)
+          (file-actions-initialized-p nil))
+      (unwind-protect
+           (progn
+             (setf spawnattr-initialized-p
+                   (lfp-spawnattr-init attributes))
+             (setf file-actions-initialized-p
+                   (lfp-spawn-file-actions-init file-actions))
+             (funcall thunk attributes file-actions))
+        (when spawnattr-initialized-p
+          (lfp-spawnattr-destroy attributes))
+        (when file-actions-initialized-p
+          (lfp-spawn-file-actions-destroy file-actions))))))
+
+(defmacro with-lfp-spawn-arguments ((attributes file-actions) &body body)
+  `(call-with-lfp-spawn-arguments
+    (lambda (,attributes ,file-actions) ,@body)))
 
 (defun allocate-argv (argv program arglist)
   ;; copy program name
@@ -305,7 +307,7 @@
         (ensure-list program-and-args)
       (with-argv ((arg0 argv) program arguments)
         (with-c-environment (envp environment)
-          (with-lfp-spawn-arguments (attributes file-actions pid)
+          (with-lfp-spawn-arguments (attributes file-actions)
             (with-pty (new-ctty-p ptyfd pts)
               (with-redirections ((infd outfd errfd)
                                   (file-actions stdin stdout stderr ptyfd pts))
@@ -313,10 +315,11 @@
                                           new-session pts
                                           current-directory
                                           uid gid resetids)
-                (lfp-spawnp pid arg0 argv envp file-actions attributes)
-                (make-instance 'process :pid (mem-ref pid 'pid-t)
-                               :stdin infd :stdout outfd :stderr errfd :tty ptyfd
-                               :external-format external-format)))))))))
+                (with-foreign-object (pid 'pid-t)
+                  (lfp-spawnp pid arg0 argv envp file-actions attributes)
+                  (make-instance 'process :pid (mem-ref pid 'pid-t)
+                                          :stdin infd :stdout outfd :stderr errfd :tty ptyfd
+                                          :external-format external-format))))))))))
 
 (defun slurp-char-stream (stream)
   (with-output-to-string (s)
