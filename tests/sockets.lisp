@@ -274,9 +274,18 @@
 ;;;; Sockets
 
 ;;; RT: don't accept unknown keyword arguments, such as typos.
-(test make-socket.1
+(test (make-socket.unknown-keyword.error.function :compile-at :definition-time)
   (signals error
-    (make-socket :this-kw-arg-doesnt-exist t)))
+    (locally
+        (declare (notinline make-socket))
+      (make-socket :this-kw-arg-doesnt-exist t))))
+
+;;; RT: don't accept unknown keyword arguments, such as typos.
+(test (make-socket.unknown-keyword.error.compiler-macro :compile-at :definition-time)
+  (signals error
+    (funcall
+     (alexandria:ignore-some-conditions (warning)
+       (compile nil '(lambda () (make-socket :this-kw-arg-doesnt-exist t)))))))
 
 (test (make-socket.2 :compile-at :definition-time)
   (is (equalp (with-open-socket (s :address-family :ipv4)
