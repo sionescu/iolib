@@ -62,13 +62,6 @@ call CLOSE with :ABORT T on `VAR'."
      (:ipv4 (create-socket :ipv4 ,@args))
      (:ipv6 (create-socket :ipv6 ,@args))))
 
-(defmacro with-guard-against-non-list-args-and-destructuring-bind-errors
-    (form args &body body)
-  `(if (listp ,args)
-       (handler-case (progn ,@body)
-         (error (err) `(error ,err)))
-       ,form))
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun make-first-level-name (family type connect)
     (if (eql :stream type)
@@ -76,33 +69,35 @@ call CLOSE with :ABORT T on `VAR'."
         (format-symbol :iolib.sockets "%~A/~A-~A" :make-socket family type))))
 
 (defmacro define-socket-creator ((socket-family socket-type &optional socket-connect)
-                                 (family protocol key &rest args) &body body)
+                                 (family protocol key &rest parameters) &body body)
   (assert (eql '&key key))
   (flet ((maybe-quote-default-value (arg)
            (cond ((symbolp arg) arg)
                  ((consp arg)   (list (first arg) `(quote ,(second arg))))))
          (arg-name (arg)
-           (cond ((symbolp arg) arg)
-                 ((consp arg)   (first arg))))
+           (car (ensure-list arg)))
          (quotify (form)
            `(list (quote ,(car form)) ,@(cdr form))))
-    (let* ((arg-names (mapcar #'arg-name args))
+    (let* ((parameter-names (mapcar #'arg-name parameters))
            (first-level-function (make-first-level-name socket-family socket-type socket-connect))
-           (second-level-function (format-symbol t "%~A" first-level-function))
-           (first-level-body `(,second-level-function family protocol ,@arg-names)))
-      `(progn
-         (declaim (inline ,second-level-function))
-         (defun ,second-level-function (,family ,protocol ,@arg-names) ,@body)
-         (defun ,first-level-function (arguments family protocol)
-           (destructuring-bind (&key ,@args) arguments ,first-level-body))
-         (define-compiler-macro ,first-level-function (&whole form arguments family protocol)
-           (with-guard-against-non-list-args-and-destructuring-bind-errors
-               form arguments
+           (second-level-function (format-symbol t "%~A" first-level-function)))
+      (flet ((make-first-level-body (family protocol)
+               `(,second-level-function ,family ,protocol ,@parameter-names)))
+        `(progn
+           (declaim (inline ,second-level-function))
+           (defun ,second-level-function (,family ,protocol ,@parameter-names) ,@body)
+           (defun ,first-level-function (arguments family protocol)
+             (destructuring-bind (&key ,@parameters)
+                 arguments
+               ,(make-first-level-body family protocol)))
+           (define-compiler-macro ,first-level-function (&whole form arguments family protocol)
              ;; Must quote default values in order for them not to be evaluated
              ;; in the compilation environment
-             (destructuring-bind (&key ,@(mapcar #'maybe-quote-default-value args))
-                 (cdr arguments)
-               ,(quotify first-level-body))))))))
+             (if (listp arguments)
+                 (destructuring-bind (&key ,@(mapcar #'maybe-quote-default-value parameters))
+                     (cdr arguments)
+                   ,(quotify (make-first-level-body family protocol)))
+                 form)))))))
 
 
 ;;; Internet Stream Active Socket creation
