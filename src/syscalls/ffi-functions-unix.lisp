@@ -538,7 +538,7 @@ Return two values: the file descriptor and the path of the temporary file."
   (fd     :int)
   (fd-set :pointer))
 
-(defcfun (fd-isset "lfp_fd_isset") bool
+(defcfun (fd-isset "lfp_fd_isset") :bool
   (fd     :int)
   (fd-set :pointer))
 
