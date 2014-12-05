@@ -18,6 +18,6 @@
                        :start 0 :end comment-start)))
 
 (defun map-etc-file (thunk file)
-  (with-open-file (fin file)
+  (with-open-file (fin file :external-format :latin-1)
     (loop :for line := (read-line fin nil nil)
        :while line :do (funcall thunk (split-etc-tokens line)))))
