@@ -696,6 +696,11 @@ processes mapping the same region."
   (file sstring)
   (argv :pointer))
 
+(defsyscall (execve "execve") :int
+  (file sstring)
+  (argv :pointer)
+  (envp :pointer))
+
 (defsyscall (%waitpid "waitpid") pid-t
   (pid     pid-t)
   (status  :pointer)

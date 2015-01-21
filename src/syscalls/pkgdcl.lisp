@@ -564,6 +564,7 @@
    #:fork
    #:execv
    #:execvp
+   #:execve
    #:waitpid
    #:getpid
    #:getppid
