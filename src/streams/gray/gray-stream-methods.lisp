@@ -65,7 +65,7 @@
   (with-accessors ((ibuf input-buffer-of)
                    (obuf output-buffer-of))
       stream
-    (unless (or abort (null ibuf))
+    (unless (or abort (null obuf))
       (finish-output stream))
     (free-stream-buffers ibuf obuf)
     (setf ibuf nil obuf nil)))
