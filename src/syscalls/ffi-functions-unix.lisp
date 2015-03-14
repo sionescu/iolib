@@ -951,8 +951,16 @@ as indicated by WHICH and WHO to VALUE."
 ;;; Environment
 ;;;-------------------------------------------------------------------------
 
-(defsyscall (os-environ "lfp_get_environ") :pointer
-  "Return a pointer to the current process environment.")
+(eval-when (:compile-toplevel :load-toplevel :execute)
+;;; libfixposix doesn't get updated very often on Debian.  Since
+;;; lfp_get_environ is a relatively new addition, make sure the symbol
+;;; exits before mapping it to os-environ.  Otherwise use the 'old'
+;;; method.
+  (if (cffi:foreign-symbol-pointer "lfp_get_environ")
+      (defsyscall (os-environ "lfp_get_environ") :pointer
+        "Return a pointer to the current process environment.")
+      (defun os-environ ()
+        (cffi:foreign-symbol-pointer "environ"))))
 
 (defmacro %obsolete-*environ* ()
   (iolib.base::signal-obsolete '*environ* "use function OS-ENVIRON instead"
