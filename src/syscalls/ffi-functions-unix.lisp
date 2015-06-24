@@ -447,13 +447,21 @@ Return two values: the file descriptor and the path of the temporary file."
  (request :unsigned-int)
  (arg     :pointer))
 
+(defsyscall (%ioctl/integer "ioctl")
+    (:int :handle fd)
+  "Send request REQUEST to file referenced by FD using argument ARG."
+ (fd      :int)
+ (request :unsigned-int)
+ (arg     :unsigned-int))
+
 (defentrypoint ioctl (fd request &optional (arg nil argp))
   "Control an I/O device."
   (cond
     ((not argp)     (%ioctl/noarg   fd request))
     ((pointerp arg) (%ioctl/pointer fd request arg))
+    ((integerp arg) (%ioctl/integer fd request arg))
     (t (error 'type-error :datum arg
-              :expected-type '(or null foreign-pointer)))))
+              :expected-type '(or null integer foreign-pointer)))))
 
 (defsyscall (fd-cloexec-p "lfp_is_fd_cloexec") bool-designator
   (fd :int))
