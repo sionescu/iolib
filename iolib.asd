@@ -6,9 +6,8 @@
 (asdf:defsystem :iolib/asdf
   :description "A few ASDF component classes."
   :author "Stelian Ionescu <sionescu@cddr.org>"
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :depends-on (:alexandria)
   :encoding :utf-8
   :pathname "src/base/"
@@ -18,8 +17,8 @@
 (asdf:defsystem :iolib/conf
   :description "Compile-time configuration for IOLib."
   :author "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/asdf)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
@@ -30,9 +29,9 @@
 
 (asdf:defsystem :iolib/common-lisp
   :description "Slightly modified Common Lisp."
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
+  :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:alexandria)
   :around-compile "iolib/asdf:compile-wrapper"
@@ -59,9 +58,8 @@
 (asdf:defsystem :iolib/base
   :description "Base IOlib package, used instead of CL."
   :author "Stelian Ionescu <sionescu@cddr.org>"
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:iolib/common-lisp :alexandria :split-sequence)
   :around-compile "iolib/asdf:compile-wrapper"
@@ -85,12 +83,14 @@
 (asdf:defsystem :iolib/grovel
   :description "The CFFI Groveller"
   :author "Dan Knapp <dankna@accela.net>"
+  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
+  :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:alexandria
                #+allegro (:require "osi")
                :cffi :iolib/asdf :iolib/conf)
   :around-compile "iolib/asdf:compile-wrapper"
-  :licence "MIT"
   :encoding :utf-8
   :pathname "src/grovel/"
   :components
@@ -103,9 +103,9 @@
 
 (asdf:defsystem :iolib/syscalls
   :description "Syscalls and foreign types."
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
+  :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/asdf :iolib/conf :iolib/grovel)
   :depends-on (:trivial-features :cffi :iolib/base :iolib/grovel)
   :around-compile "iolib/asdf:compile-wrapper"
@@ -127,9 +127,8 @@
 (asdf:defsystem :iolib/multiplex
   :description "I/O multiplexing library."
   :author "Stelian Ionescu <sionescu@cddr.org>"
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/syscalls :cffi)
   :around-compile "iolib/asdf:compile-wrapper"
@@ -168,9 +167,9 @@
 
 (asdf:defsystem :iolib/streams
   :description "Gray streams."
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
+  :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/multiplex :cffi)
   :around-compile "iolib/asdf:compile-wrapper"
@@ -190,9 +189,9 @@
 
 (asdf:defsystem :iolib/zstreams
   :description "Zeta streams."
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
+  :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/asdf)
   :depends-on (:iolib/base :iolib/syscalls :iolib/pathnames :cffi :bordeaux-threads)
   :around-compile "iolib.asdf:compile-wrapper"
@@ -223,9 +222,8 @@
 (asdf:defsystem :iolib/sockets
   :description "Socket library."
   :author "Stelian Ionescu <sionescu@cddr.org>"
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/asdf :iolib/conf :iolib/grovel)
   :depends-on (:iolib/base :iolib/syscalls :iolib/streams
                :babel :cffi :iolib/grovel :bordeaux-threads
@@ -292,8 +290,8 @@
   :description "Trivial-Sockets compatibility layer."
   :author "Dan Barlow <dan@telent.net>"
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/sockets)
   :around-compile "iolib/asdf:compile-wrapper"
@@ -305,8 +303,8 @@
 (asdf:defsystem :iolib/pathnames
   :description "New pathnames."
   :author "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/syscalls)
   :around-compile "iolib/asdf:compile-wrapper"
@@ -320,9 +318,9 @@
 
 (asdf:defsystem :iolib/os
   :description "OS interface."
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
+  :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/asdf :iolib/conf :iolib/grovel)
   :depends-on (:iolib/base :iolib/grovel :iolib/syscalls
                :iolib/streams :iolib/pathnames)
@@ -340,9 +338,8 @@
 (asdf:defsystem :iolib
   :description "I/O library."
   :author "Stelian Ionescu <sionescu@cddr.org>"
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :version (:read-file-form "version.lisp-expr")
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/multiplex :iolib/streams :iolib/sockets)
   :around-compile "iolib/asdf:compile-wrapper"
@@ -358,8 +355,9 @@
 (asdf:defsystem :iolib/tests
   :description "IOLib test suite."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
-  :version (:read-file-form "version.lisp-expr")
+  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
+  :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/base)
   :depends-on (:fiveam :iolib :iolib/pathnames)
   :around-compile "iolib/asdf:compile-wrapper"
@@ -376,6 +374,10 @@
    (:file "sockets" :depends-on ("pkgdcl" "defsuites"))))
 
 (asdf:defsystem :iolib/examples
+  :description "Examples for IOLib tutorial at http://pages.cs.wisc.edu/~psilord/blog/data/iolib-tutorial/tutorial.html"
+  :author "Peter Keller <psilord@cs.wisc.edu>"
+  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
+  :licence "MIT"
   :version (:read-file-form "version.lisp-expr")
   :defsystem-depends-on (:iolib/base)
   :depends-on (:iolib :bordeaux-threads)
