@@ -95,7 +95,6 @@
   :pathname "src/grovel/"
   :components
   ((:file "package")
-   (:file "invoke")
    (:static-file "grovel-common.h")
    (:file "grovel")
    (:file "asdf"))
