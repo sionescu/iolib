@@ -89,7 +89,7 @@
   :defsystem-depends-on (:iolib/asdf :iolib/conf)
   :depends-on (:alexandria
                #+allegro (:require "osi")
-               :cffi :iolib/asdf :iolib/conf)
+               :cffi :cffi-grovel :iolib/asdf :iolib/conf)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/grovel/"
