@@ -27,7 +27,6 @@
   (:nicknames :iolib/grovel)
   (:use #:common-lisp #:alexandria)
   (:import-from #:cffi-sys #:native-namestring)
-  (:import-from #:cffi-grovel #:invoke)
   (:export
    ;; Class name
    #:grovel-file
