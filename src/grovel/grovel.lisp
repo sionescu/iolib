@@ -42,6 +42,13 @@
 
 ;;;# Error Conditions
 
+(define-condition grovel-error (simple-error) ())
+
+(defun grovel-error (format-control &rest format-arguments)
+  (error 'grovel-error
+         :format-control format-control
+         :format-arguments format-arguments))
+
 ;;; This warning is signalled when iolib-grovel can't find some macro.
 ;;; Signalled by CONSTANT or CONSTANTENUM.
 (define-condition missing-definition (warning)
@@ -168,7 +175,7 @@ int main(int argc, char**argv) {
 (defgeneric %process-grovel-form (name out arguments)
   (:method (name out arguments)
     (declare (ignore out arguments))
-    (error "Unknown Grovel syntax: ~S" name)))
+    (grovel-error "Unknown Grovel syntax: ~S" name)))
 
 (defun process-grovel-form (out form)
   (%process-grovel-form (form-kind form) out (cdr form)))
@@ -610,7 +617,7 @@ int main(int argc, char**argv) {
 (defgeneric %process-wrapper-form (name out arguments)
   (:method (name out arguments)
     (declare (ignore out arguments))
-    (error "Unknown Grovel syntax: ~S" name)))
+    (grovel-error "Unknown Grovel syntax: ~S" name)))
 
 ;;; OUT is lexically bound to the output stream within BODY.
 (defmacro define-wrapper-syntax (name lambda-list &body body)
