@@ -40,6 +40,21 @@
   "Coerce S to a string, making sure that it returns an extended string"
   (map 'string #'identity (string s)))
 
+;;; Do we really want to suppress the output by default?
+(defun invoke (command &rest args)
+  (when (pathnamep command)
+    (setf command (cffi-sys:native-namestring command)))
+  (format *debug-io* "; ~A~{ ~A~}~%" command args)
+  (multiple-value-bind (output stderr exit-code)
+      (uiop:run-program (list* command args) :output :string)
+    (declare (ignore stderr))
+    (unless (zerop exit-code)
+      (grovel-error "External process exited with code ~S.~@
+                     Command was: ~S~{ ~S~}~@
+                     Output was:~%~A"
+                    exit-code command args output))
+    output))
+
 ;;;# Error Conditions
 
 (define-condition grovel-error (simple-error) ())
