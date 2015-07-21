@@ -11,6 +11,6 @@ Pin: origin download.opensuse.org
 Pin-Priority: 1001
 EOF
 
-apt-get update
+apt-get update -qq
 
 apt-get -y --force-yes install libfixposix2 libfixposix-dev
