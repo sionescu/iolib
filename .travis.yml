@@ -31,7 +31,7 @@ install:
   - curl -L https://github.com/luismbo/cl-travis/raw/master/install.sh | sh
   - cl -e "(cl:in-package :cl-user)
            (dolist (p '(:trivial-features :cffi :split-sequence :idna
-                        :bordeaux-threads :swap-bytes :fiveam))
+                        :bordeaux-threads :swap-bytes :uiop :fiveam))
              (ql:quickload p :verbose t))"
 
 script:
