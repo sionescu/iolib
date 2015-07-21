@@ -1,0 +1,42 @@
+language: lisp
+
+env:
+  matrix:
+    - LISP=ccl
+    - LISP=sbcl
+    # - LISP=abcl # Need to have cl-travis install JNA
+    - LISP=cmucl
+    - LISP=ecl
+
+matrix:
+  allow_failures:
+    - env: LISP=cmucl
+    - env: LISP=ecl
+
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+  irc:
+    channels:
+      - "chat.freenode.net#iolib"
+    on_success: change
+    on_failure: always
+    use_notice: true
+    skip_join: true
+
+install:
+  - if [ "$LISP" = "allegro" ]; then sudo apt-get install libc6-dev-i386 libffi-dev:i386; fi
+  - sudo ./install-repo.bash
+  - curl -L https://github.com/luismbo/cl-travis/raw/master/install.sh | sh
+  - cl -e "(cl:in-package :cl-user)
+           (dolist (p '(:trivial-features :cffi :split-sequence :idna
+                        :bordeaux-threads :swap-bytes :fiveam))
+             (ql:quickload p :verbose t))"
+
+script:
+  - cl -e "(cl:in-package :cl-user)
+           (ql:quickload :iolib/tests :verbose t)
+           (uiop:quit (if (some (lambda (x) (typep x '5am::test-failure))
+                                (5am:run :iolib))
+                          1 0))"
