@@ -17,3 +17,5 @@
 (def-suite :iolib.streams :in :iolib)
 
 (def-suite :iolib.sockets :in :iolib)
+
+(def-suite :iolib.os :in :iolib)
