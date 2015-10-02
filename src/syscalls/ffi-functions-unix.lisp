@@ -582,6 +582,13 @@ Return two values: the file descriptor and the path of the temporary file."
     (maxevents :int)
     (timeout   :int)))
 
+#+linux
+(progn
+  (defsyscall (eventfd "eventfd") :int
+    "Create a file descriptor for event notification"
+    (initval :unsigned-int)
+    (flags :int)))
+
 #+bsd
 (progn
   (defsyscall (kqueue "kqueue") :int

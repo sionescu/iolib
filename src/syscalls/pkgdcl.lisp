@@ -381,6 +381,12 @@
    #:epollmsg
    #:epolloneshot
    #:epollet)
+  #+linux
+  (:export ;; sys/eventfd.h
+   #:eventfd
+   #:efd-cloexec
+   #:efd-nonblock
+   #:efd-semaphore)
   #+bsd
   (:export ;; sys/event.h
    ;; struct kevent
