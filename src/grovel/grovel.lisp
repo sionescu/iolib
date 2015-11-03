@@ -276,7 +276,8 @@ int main(int argc, char**argv) {
    #+darwin (list "-I" "/opt/local/include/")
    #-darwin nil
    ;; ECL internal flags
-   #+ecl (list c::*cc-flags*)
+   #+ecl (split-sequence:split-sequence #\space c::*cc-flags*
+                                        :remove-empty-subseqs t)
    ;; FreeBSD non-base header files
    ;; DragonFly Dports install software in /usr/local
    ;; And what about pkgsrc?
