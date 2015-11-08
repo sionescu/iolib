@@ -266,7 +266,8 @@ int main(int argc, char**argv) {
 
 
 (defparameter *cxx*
-  #+(or cygwin (not windows)) "g++"
+  #+freebsd "clang++"
+  #+(or cygwin (not windows freebsd)) "g++"
   #+(and windows (not cygwin)) "c:/msys/1.0/bin/g++.exe")
 
 (defparameter *cc-flags*
