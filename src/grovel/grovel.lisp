@@ -266,6 +266,8 @@ int main(int argc, char**argv) {
 
 
 (defparameter *cxx*
+  #+freebsd "clang++"
+  #-freebsd
   #+(or cygwin (not windows)) "g++"
   #+(and windows (not cygwin)) "c:/msys/1.0/bin/g++.exe")
 
