@@ -3,7 +3,7 @@
 ;;; --- kqueue(2) multiplexer implementation.
 ;;;
 
-(in-package :iolib.multiplex)
+(in-package :iolib/multiplex)
 
 (defconstant +kqueue-priority+ 1)
 

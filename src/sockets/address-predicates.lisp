@@ -3,7 +3,7 @@
 ;;; --- Predicate functions for addresses.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 ;;;; Well-known addresses
 

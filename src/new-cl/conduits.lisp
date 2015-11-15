@@ -25,7 +25,7 @@
 ;;; !!! TODO: more of the package operators probably need to be shadowed
 ;;;           Errors should be signalled as subtypes of PACKAGE-ERROR
 
-(cl:defpackage :iolib.internal.conduits
+(defpackage :iolib/internal/conduits
   (:use :common-lisp)
   #+sb-package-locks
   (:lock t)
@@ -35,7 +35,7 @@
   ;; non-CL thing
   (:export #:recompute-conduits))
 
-(in-package :iolib.internal.conduits)
+(in-package :iolib/internal/conduits)
 
 ;;;; Hack to make the HP stuff `work' even when they are not loaded.
 ;;;

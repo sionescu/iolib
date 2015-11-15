@@ -3,7 +3,7 @@
 ;;; --- Error conditions.
 ;;;
 
-(in-package :iolib.base)
+(in-package :iolib/base)
 
 ;;;-------------------------------------------------------------------------
 ;;; Subtype Errors

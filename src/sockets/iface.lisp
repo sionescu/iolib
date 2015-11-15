@@ -3,7 +3,7 @@
 ;;; --- Network interface lookup.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defun make-interface (name index)
   "Constructor for INTERFACE objects."

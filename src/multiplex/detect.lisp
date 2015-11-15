@@ -3,7 +3,7 @@
 ;;; --- Detect available multiplexers.
 ;;;
 
-(in-package :iolib.multiplex)
+(in-package :iolib/multiplex)
 
 ;;; TODO: do real detecting here
 (setf *default-multiplexer*

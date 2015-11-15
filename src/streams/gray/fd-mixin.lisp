@@ -3,7 +3,7 @@
 ;;; --- FD mixin definitions
 ;;;
 
-(in-package :iolib.streams)
+(in-package :iolib/streams)
 
 (defmethod shared-initialize :around ((stream dual-channel-fd-mixin) slot-names &key)
   (declare (ignore slot-names))

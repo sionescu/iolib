@@ -3,7 +3,7 @@
 ;;; --- Base socket classes.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 ;;;; Sockets
 

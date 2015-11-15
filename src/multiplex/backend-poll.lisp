@@ -3,7 +3,7 @@
 ;;; --- poll(2) multiplexer implementation.
 ;;;
 
-(in-package :iolib.multiplex)
+(in-package :iolib/multiplex)
 
 (defconstant +poll-priority+ 2)
 

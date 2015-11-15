@@ -3,7 +3,7 @@
 ;;; --- Socket conditions.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defgeneric error-code (err)
   (:method ((err isys:syscall-error))
@@ -23,7 +23,7 @@
 
 (defmethod print-object ((socket-error socket-error) stream)
   (print-unreadable-object (socket-error stream :type t :identity nil)
-    (let ((code (iolib.syscalls:code-of socket-error)))
+    (let ((code (iolib/syscalls:code-of socket-error)))
       (format stream "~S ~S ~S~@[, FD: ~S~]"
               (or code "[Unknown code]")
               (error-identifier socket-error)

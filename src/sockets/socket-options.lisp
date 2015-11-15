@@ -3,7 +3,7 @@
 ;;; --- Setter and getters for various socket options.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 ;;;; Macrology
 

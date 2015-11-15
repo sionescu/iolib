@@ -28,7 +28,7 @@
 ;;; DEALINGS IN THE SOFTWARE.
 ;;;
 
-(in-package :iolib-grovel)
+(in-package :iolib/grovel)
 
 (defun ensure-pathname (thing)
   (if (typep thing 'logical-pathname)

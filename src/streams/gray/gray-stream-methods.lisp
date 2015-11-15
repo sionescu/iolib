@@ -3,7 +3,7 @@
 ;;; --- Implementation using Gray streams.
 ;;;
 
-(in-package :iolib.streams)
+(in-package :iolib/streams)
 
 ;;;-------------------------------------------------------------------------
 ;;; Instance Initialization

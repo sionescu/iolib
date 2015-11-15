@@ -6,7 +6,7 @@
 ;;; TODO: add 8bit-chars versions of SSTRING-TO-CSTRING,
 ;;;       COUNT-SSTRING-OCTETS and CSTRING-TO-SSTRING
 
-(in-package :iolib.syscalls)
+(in-package :iolib/syscalls)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (pushnew (cond

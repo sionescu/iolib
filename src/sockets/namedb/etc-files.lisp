@@ -3,7 +3,7 @@
 ;;; etc-files.lisp --- Common parsing routines for /etc namedb files.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defun space-char-p (char)
   (declare (type character char))

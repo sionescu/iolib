@@ -3,7 +3,7 @@
 ;;; --- Type definitions and constructors
 ;;;
 
-(in-package :iolib.common-lisp)
+(in-package :iolib/common-lisp)
 
 (deftype boolean ()
   'cl:boolean)

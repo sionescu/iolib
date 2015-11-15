@@ -3,11 +3,11 @@
 ;;; --- Package definition
 ;;;
 
-(in-package :common-lisp-user)
+(in-package :iolib/common-lisp-user)
 
-(defpackage :iolib.syscalls
-  (:nicknames :isys :iolib/syscalls)
-  (:use :iolib.base :cffi)
+(defpackage :iolib/syscalls
+  (:nicknames :isys :iolib.syscalls)
+  (:use :iolib/base :cffi)
   (:shadow #:open #:close #:read #:write #:listen
            #:truncate #:ftruncate #:time)
   ;; Specials

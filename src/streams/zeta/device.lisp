@@ -3,7 +3,7 @@
 ;;; --- Device common functions.
 ;;;
 
-(in-package :iolib.zstreams)
+(in-package :iolib/zstreams)
 
 ;;;-------------------------------------------------------------------------
 ;;; Classes and Types

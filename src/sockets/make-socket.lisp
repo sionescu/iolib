@@ -3,7 +3,7 @@
 ;;; --- Socket creation.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *socket-type-map*
@@ -65,8 +65,8 @@ call CLOSE with :ABORT T on `VAR'."
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun make-first-level-name (family type connect)
     (if (eql :stream type)
-        (format-symbol :iolib.sockets "%~A/~A-~A-~A" :make-socket family type connect)
-        (format-symbol :iolib.sockets "%~A/~A-~A" :make-socket family type))))
+        (format-symbol :iolib/sockets "%~A/~A-~A-~A" :make-socket family type connect)
+        (format-symbol :iolib/sockets "%~A/~A-~A" :make-socket family type))))
 
 (defmacro define-socket-creator ((socket-family socket-type &optional socket-connect)
                                  (family protocol key &rest parameters) &body body)

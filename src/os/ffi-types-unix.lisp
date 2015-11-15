@@ -3,7 +3,7 @@
 ;;; --- Foreign types related to lfp_spawn(3)
 ;;;
 
-(in-package :iolib.os)
+(in-package :iolib/os)
 
 (include "lfp.h")
 

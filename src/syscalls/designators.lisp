@@ -3,7 +3,7 @@
 ;;; --- CFFI type designators.
 ;;;
 
-(in-package :iolib.syscalls)
+(in-package :iolib/syscalls)
 
 ;;;-------------------------------------------------------------------------
 ;;; CFFI Type Designators

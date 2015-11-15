@@ -3,7 +3,7 @@
 ;;; --- Time utils.
 ;;;
 
-(in-package :iolib.base)
+(in-package :iolib/base)
 
 (deftype timeout ()
   'double-float)

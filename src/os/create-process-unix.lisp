@@ -3,7 +3,7 @@
 ;;; --- Wrapper over lfp_spawn(3)
 ;;;
 
-(in-package :iolib.os)
+(in-package :iolib/os)
 
 (defun tty-read-fn (fd buf nbytes)
   (handler-case
@@ -18,7 +18,7 @@
              :handle fd
              :syscall "write"))))
 
-(defclass tty-stream (iolib.streams:dual-channel-gray-stream)
+(defclass tty-stream (iolib/streams:dual-channel-gray-stream)
   ()
   (:default-initargs :read-fn  #'tty-read-fn
                      :write-fn #'tty-write-fn))
@@ -170,8 +170,8 @@
        (dup-from-path "/dev/null"))
       (unsigned-byte
        (dup-from-fd stream))
-      (iolib.streams:dual-channel-fd-mixin
-       (dup-from-fd (iolib.streams:fd-of stream)))
+      (iolib/streams:dual-channel-fd-mixin
+       (dup-from-fd (iolib/streams:fd-of stream)))
       (null
        (lfp-spawn-file-actions-addclose file-actions fd)))))
 

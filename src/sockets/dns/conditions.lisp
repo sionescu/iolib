@@ -3,7 +3,7 @@
 ;;; --- Resolver conditions.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (define-condition resolver-error (isys:iolib-error)
   ((datum :initarg :data :reader resolver-error-datum))

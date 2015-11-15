@@ -3,7 +3,7 @@
 ;;; --- DNS client constants.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defconstant +dns-max-datagram-size+ 4096)
 

@@ -3,7 +3,7 @@
 ;;; --- *NIX syscall error conditions.
 ;;;
 
-(in-package :iolib.syscalls)
+(in-package :iolib/syscalls)
 
 ;;;-------------------------------------------------------------------------
 ;;; POSIX Syscall Errors

@@ -3,7 +3,7 @@
 ;;; file-monitor.lisp --- Monitor files on disk.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defclass file-monitor ()
   ((file :initform (error "Must supply a file name")

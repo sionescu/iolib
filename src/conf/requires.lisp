@@ -3,7 +3,7 @@
 ;;; --- Load all non-ASDF deps - usually implementation-specific REQUIREs
 ;;;
 
-(in-package :iolib.conf)
+(in-package :iolib/conf)
 
 (defun load-gray-streams ()
   #+(and allegro (not (version>= 9 0)))

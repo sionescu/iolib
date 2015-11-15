@@ -3,7 +3,7 @@
 ;;; --- Low-level I/O functions.
 ;;;
 
-(in-package :iolib.streams)
+(in-package :iolib/streams)
 
 ;;;-------------------------------------------------------------------------
 ;;; Input

@@ -3,7 +3,7 @@
 ;;; --- RETURN* wrappers.
 ;;;
 
-(in-package :iolib.base)
+(in-package :iolib/base)
 
 (cl:defmacro defun (name args &body body)
   `(,(find-right-symbol :defun :series)
@@ -35,7 +35,7 @@
 (cl:defun find-right-symbol (name &rest packages)
   (multiple-value-bind (symbol foundp)
       (if (eql (find-symbol (string name) *package*)
-               (find-symbol (string name) :iolib.base))
+               (find-symbol (string name) :iolib/base))
           ;; NAME has been imported from IOLIB.UTILS, so we must
           ;; find a default somewhere else, defaulting to the CL package
           (find-symbol (string name) (find-right-package packages))

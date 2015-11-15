@@ -3,7 +3,7 @@
 ;;; --- Syscall error conditions.
 ;;;
 
-(in-package :iolib.syscalls)
+(in-package :iolib/syscalls)
 
 ;;;-------------------------------------------------------------------------
 ;;; System Errors

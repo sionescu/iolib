@@ -3,7 +3,7 @@
 ;;; --- Special variable definitions.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defvar *ipv6* nil
   "Specifies the default behaviour with respect to IPv6:

@@ -3,7 +3,7 @@
 ;;; --- Debug helpers.
 ;;;
 
-(in-package :iolib.base)
+(in-package :iolib/base)
 
 (defvar *safety-checks*
   #+iolib-debug t #-iolib-debug nil

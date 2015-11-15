@@ -3,7 +3,7 @@
 ;;; --- Declaring forms as foldable(pure)
 ;;;
 
-(in-package :iolib.base)
+(in-package :iolib/base)
 
 #+sbcl
 (defmacro %deffoldable (func argument-types return-type)

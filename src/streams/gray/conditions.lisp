@@ -3,7 +3,7 @@
 ;;; --- Gray stream conditions.
 ;;;
 
-(in-package :iolib.streams)
+(in-package :iolib/streams)
 
 (define-condition hangup (stream-error)
   ()

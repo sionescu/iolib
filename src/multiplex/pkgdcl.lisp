@@ -3,11 +3,11 @@
 ;;; --- Package definition.
 ;;;
 
-(in-package :common-lisp-user)
+(in-package :iolib/common-lisp-user)
 
-(defpackage :iolib.multiplex
-  (:nicknames :iomux :iolib/multiplex)
-  (:use :iolib.base :cffi)
+(defpackage :iolib/multiplex
+  (:nicknames :iomux :iolib.multiplex)
+  (:use :iolib/base :cffi)
   (:export
    ;; Classes and Types
    #:timer

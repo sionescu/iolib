@@ -3,11 +3,11 @@
 ;;; --- Package definition.
 ;;;
 
-(in-package :common-lisp-user)
+(in-package :iolib/common-lisp-user)
 
-(defpackage :iolib.pathnames
-  (:nicknames :ipath :iolib/pathnames)
-  (:use :iolib.base)
+(defpackage :iolib/pathnames
+  (:nicknames :ipath :iolib.pathnames)
+  (:use :iolib/base)
   (:export
    ;; Classes and types
    #:file-path #:file-path-designator

@@ -3,7 +3,7 @@
 ;;; --- Make DNS queries.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defvar *dns-recursion-desired* t
   "Whether the \"RECURSION-DESIRED\" field should be set ot not.")

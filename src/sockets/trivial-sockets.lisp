@@ -3,18 +3,18 @@
 ;;; --- Main socket methods.
 ;;;
 
-(in-package :common-lisp-user)
+(in-package :iolib/common-lisp-user)
 
-(defpackage :iolib.trivial-sockets
-  (:nicknames :iolib/trivial-sockets)
-  (:use :iolib.base :iolib.sockets)
+(defpackage :iolib/trivial-sockets
+  (:nicknames :iolib.trivial-sockets)
+  (:use :iolib/base :iolib/sockets)
   (:shadow #:socket-error #:accept-connection)
   (:export #:open-stream #:socket-error #:socket-nested-error
            #:unsupported #:unsupported-feature
            #:open-server #:close-server #:accept-connection
            #:with-server))
 
-(in-package :iolib.trivial-sockets)
+(in-package :iolib/trivial-sockets)
 
 ;;;;
 ;;;; ERRORS

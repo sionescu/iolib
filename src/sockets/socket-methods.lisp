@@ -3,7 +3,7 @@
 ;;; --- Various socket methods.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 ;;;-------------------------------------------------------------------------
 ;;; Shared Initialization

@@ -3,7 +3,7 @@
 ;;; --- lfp_spawn(3) and its minions
 ;;;
 
-(in-package :iolib.os)
+(in-package :iolib/os)
 
 (defsyscall (lfp-spawn "lfp_spawn")
     (:int :restart t)

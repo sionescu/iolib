@@ -3,7 +3,7 @@
 ;;; --- Early FFI definitions.
 ;;;
 
-(in-package :iolib.syscalls)
+(in-package :iolib/syscalls)
 
 ;;;-------------------------------------------------------------------------
 ;;; Syscall return wrapper

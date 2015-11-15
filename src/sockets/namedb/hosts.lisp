@@ -3,7 +3,7 @@
 ;;; hosts.lisp --- Static host lookup.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defvar *hosts-file* "/etc/hosts")
 

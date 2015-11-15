@@ -3,7 +3,7 @@
 ;;; --- DNS message creation.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defclass dns-message ()
   ((id    :initform 0 :initarg :id    :accessor dns-message-id)

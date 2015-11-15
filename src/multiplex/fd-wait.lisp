@@ -3,7 +3,7 @@
 ;;; --- Wait for events on single FDs.
 ;;;
 
-(in-package :iolib.multiplex)
+(in-package :iolib/multiplex)
 
 (define-condition poll-error (error)
   ((fd :initarg :fd :reader poll-error-fd)

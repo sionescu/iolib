@@ -36,7 +36,7 @@
          #+linux "linux/netlink.h"
          "arpa/inet.h")
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (constantenum socket-error-values
   (:eprotonosupport "EPROTONOSUPPORT")

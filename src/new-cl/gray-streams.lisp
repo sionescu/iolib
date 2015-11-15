@@ -3,7 +3,7 @@
 ;;; --- GRAY stream mixin.
 ;;;
 
-(in-package :iolib.common-lisp)
+(in-package :iolib/common-lisp)
 
 (defclass trivial-gray-stream-mixin ()
   ((%open :initform t)))

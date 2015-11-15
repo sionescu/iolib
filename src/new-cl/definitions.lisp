@@ -3,7 +3,7 @@
 ;;; --- Various definers
 ;;;
 
-(in-package :iolib.common-lisp)
+(in-package :iolib/common-lisp)
 
 (defmacro defconstant (name value &optional documentation
                        &environment env)

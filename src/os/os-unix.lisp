@@ -3,7 +3,7 @@
 ;;; --- OS interface.
 ;;;
 
-(in-package :iolib.os)
+(in-package :iolib/os)
 
 ;;;; Environment access
 

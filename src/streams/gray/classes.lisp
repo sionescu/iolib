@@ -3,7 +3,7 @@
 ;;; --- fd-streams classes.
 ;;;
 
-(in-package :iolib.streams)
+(in-package :iolib/streams)
 
 ;;;; Stream Buffers
 

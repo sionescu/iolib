@@ -3,13 +3,14 @@
 ;;; --- ASDF component classes
 ;;;
 
-(defpackage :iolib.asdf
-  (:nicknames :iolib/asdf)
+(defpackage :iolib/asdf
+  (:nicknames :iolib.asdf)
   (:use :common-lisp)
   (:export #:compile-wrapper)
   #+sb-package-locks
   (:lock t))
-(in-package :iolib.asdf)
+
+(in-package :iolib/asdf)
 
 (defun compile-wrapper (continuation)
   (let ((*readtable* (copy-readtable))

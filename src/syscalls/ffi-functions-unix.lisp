@@ -3,7 +3,7 @@
 ;;; --- *UNIX foreign function definitions.
 ;;;
 
-(in-package :iolib.syscalls)
+(in-package :iolib/syscalls)
 
 (eval-when (:compile-toplevel)
   (declaim (optimize (speed 3) (safety 1) (debug 1))))
@@ -963,7 +963,7 @@ as indicated by WHICH and WHO to VALUE."
   "Return a pointer to the current process environment.")
 
 (defmacro %obsolete-*environ* ()
-  (iolib.base::signal-obsolete '*environ* "use function OS-ENVIRON instead"
+  (iolib/base::signal-obsolete '*environ* "use function OS-ENVIRON instead"
                                "symbol macro" :WARN)
   `(os-environ))
 

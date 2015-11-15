@@ -3,7 +3,7 @@
 ;;; --- Package definition.
 ;;;
 
-(in-package :common-lisp-user)
+(in-package :iolib/common-lisp-user)
 
 (macrolet
     ((defconduit (name &body clauses)
@@ -21,7 +21,7 @@
             (:export ,@(get-symbols (cdar clauses)))))))
 
   (defconduit :iolib
-    (:use :iolib.multiplex :iolib.streams :iolib.sockets)))
+    (:use :iolib/multiplex :iolib/streams :iolib/sockets)))
 
 ;; SBCL changes *package* if LOAD-OPing :iolib in the REPL
 t

@@ -3,7 +3,7 @@
 ;;; --- Base class for multiplexers.
 ;;;
 
-(in-package :iolib.multiplex)
+(in-package :iolib/multiplex)
 
 (defvar *available-multiplexers* nil
   "An alist of (PRIORITY . MULTIPLEXER). Smaller values mean higher priority.")

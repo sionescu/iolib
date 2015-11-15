@@ -3,7 +3,7 @@
 ;;; protocols.lisp --- Protocol lookup.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defvar *protocols-file* "/etc/protocols")
 

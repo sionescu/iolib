@@ -3,7 +3,7 @@
 ;;; fd-entry.lisp --- FD event structure.
 ;;;
 
-(in-package :iolib.multiplex)
+(in-package :iolib/multiplex)
 
 ;;;; EVENT
 

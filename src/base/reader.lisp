@@ -3,7 +3,7 @@
 ;;; --- Reader utils
 ;;;
 
-(in-package :iolib.base)
+(in-package :iolib/base)
 
 ;; Literal object dispatcher
 

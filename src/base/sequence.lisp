@@ -3,7 +3,7 @@
 ;;; --- Sequence utils
 ;;;
 
-(in-package :iolib.base)
+(in-package :iolib/base)
 
 (defmacro check-bounds (sequence start end)
   (with-gensyms (length)

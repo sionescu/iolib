@@ -3,7 +3,7 @@
 ;;; --- Bindings for BSD sockets.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defmacro define-socket-creation-call (name return-type &body args)
   `(defsyscall ,name

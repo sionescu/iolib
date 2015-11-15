@@ -3,7 +3,7 @@
 ;;; --- Arithmetic with addresses and network masks.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defun make-netmask (&key cidr class)
   "Create a subnet mask by specifying either its class(:A, :B or :C) or

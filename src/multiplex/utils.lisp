@@ -3,7 +3,7 @@
 ;;; --- Miscellaneous utilities.
 ;;;
 
-(in-package :iolib.multiplex)
+(in-package :iolib/multiplex)
 
 (defun timeout->timeval (timeout tv)
   (with-foreign-slots ((isys:sec isys:usec) tv isys:timeval)

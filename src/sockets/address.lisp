@@ -3,7 +3,7 @@
 ;;; --- IP address classes and main methods.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 ;;;; Class Definitions
 

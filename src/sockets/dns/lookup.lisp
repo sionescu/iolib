@@ -3,7 +3,7 @@
 ;;; --- High-level name lookup.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defconstant +max-ipv4-value+ (1- (expt 2 32))
   "Integer denoting 255.255.255.255")

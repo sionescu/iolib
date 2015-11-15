@@ -3,7 +3,7 @@
 ;;; --- Foreign memory buffers.
 ;;;
 
-(in-package :iolib.streams)
+(in-package :iolib/streams)
 
 ;;;; Foreign Buffers
 

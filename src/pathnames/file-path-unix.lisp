@@ -3,7 +3,7 @@
 ;;; --- New pathnames.
 ;;;
 
-(in-package :iolib.pathnames)
+(in-package :iolib/pathnames)
 
 ;;;-------------------------------------------------------------------------
 ;;; Classes and Types

@@ -3,11 +3,11 @@
 ;;; --- Package definition.
 ;;;
 
-(in-package :common-lisp-user)
+(in-package :iolib/common-lisp-user)
 
-(defpackage :iolib.streams
-  (:nicknames :iolib/streams)
-  (:use :iolib.base :cffi)
+(defpackage :iolib/streams
+  (:nicknames :iolib.streams)
+  (:use :iolib/base :cffi)
   (:export
    ;; Classes
    #:dual-channel-fd-mixin

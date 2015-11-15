@@ -3,7 +3,7 @@
 ;;; --- Declaring forms as obsolete.
 ;;;
 
-(in-package :iolib.base)
+(in-package :iolib/base)
 
 (define-condition deprecation-warning (style-warning)
   ((function-name :initarg :function-name :reader deprecation-warning-function-name)

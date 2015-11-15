@@ -23,9 +23,11 @@
 ;;; DEALINGS IN THE SOFTWARE.
 ;;;
 
-(defpackage :iolib-grovel
-  (:nicknames :iolib/grovel)
-  (:use #:alexandria #:iolib/base)
+(in-package :iolib/common-lisp-user)
+
+(defpackage :iolib/grovel
+  (:nicknames :iolib-grovel)
+  (:use :alexandria :iolib/base)
   (:import-from #:cffi-sys #:native-namestring)
   (:export
    ;; Class name

@@ -3,7 +3,7 @@
 ;;; services.lisp --- Service lookup.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defvar *services-file* "/etc/services")
 

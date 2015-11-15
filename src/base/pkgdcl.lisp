@@ -3,11 +3,11 @@
 ;;; --- Package definition.
 ;;;
 
-(in-package :iolib.common-lisp-user)
+(in-package :iolib/common-lisp-user)
 
-(defpackage :iolib.base
-  (:nicknames :iolib/base)
-  (:extend/excluding :iolib.common-lisp
+(defpackage :iolib/base
+  (:nicknames :iolib.base)
+  (:extend/excluding :iolib/common-lisp
                      #:defun #:defmethod #:defmacro #:define-compiler-macro
                      #:constantp)
   (:extend :alexandria :split-sequence)

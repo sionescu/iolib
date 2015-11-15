@@ -3,9 +3,9 @@
 ;;; --- Package definition.
 ;;;
 
-(in-package :common-lisp-user)
+(in-package :iolib/common-lisp-user)
 
-(defpackage :iolib.zstreams
-  (:use :iolib.base :iolib.pathnames :cffi)
+(defpackage :iolib/zstreams
+  (:use :iolib/base :iolib/pathnames :cffi)
   (:export
    ))

@@ -3,7 +3,7 @@
 ;;; --- Various helpers for bsd-sockets.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 ;;;; Types
 

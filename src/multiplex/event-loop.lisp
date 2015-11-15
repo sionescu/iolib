@@ -3,7 +3,7 @@
 ;;; --- Main event loop.
 ;;;
 
-(in-package :iolib.multiplex)
+(in-package :iolib/multiplex)
 
 
 ;;;-------------------------------------------------------------------------

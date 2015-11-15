@@ -3,7 +3,7 @@
 ;;; --- Types.
 ;;;
 
-(in-package :iolib.base)
+(in-package :iolib/base)
 
 (deftype function-designator ()
   '(or symbol function))

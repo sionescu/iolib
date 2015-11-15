@@ -3,7 +3,7 @@
 ;;; --- I/O buffers.
 ;;;
 
-(in-package :iolib.zstreams)
+(in-package :iolib/zstreams)
 
 (eval-when (:compile-toplevel)
   (declaim (optimize speed)))

@@ -3,7 +3,7 @@
 ;;; --- Match utils
 ;;;
 
-(in-package :iolib.base)
+(in-package :iolib/base)
 
 (defmacro multiple-value-case ((values &key (test 'eql)) &body body)
   (setf values (ensure-list values))

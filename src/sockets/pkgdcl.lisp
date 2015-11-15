@@ -3,18 +3,18 @@
 ;;; --- Package definition.
 ;;;
 
-(in-package :common-lisp-user)
+(in-package :iolib/common-lisp-user)
 
-(defpackage :iolib.sockets
-  (:nicknames :sockets :iolib/sockets)
-  (:use :iolib.base :iolib.streams :cffi)
-  (:import-from #:swap-bytes
+(defpackage :iolib/sockets
+  (:nicknames :sockets :iolib.sockets)
+  (:use :iolib/base :iolib/streams :cffi)
+  (:import-from :swap-bytes
                 #:htons #:ntohs #:htonl #:ntohl)
-  (:import-from #:iolib.syscalls
+  (:import-from :iolib/syscalls
                 #:defsyscall
                 #:size-t #:ssize-t #:pid-t #:uid-t #:gid-t
                 #:timeval #:sec #:usec)
-  (:import-from #:iolib.multiplex
+  (:import-from :iolib/multiplex
                 #:decode-timeout)
   (:export
    ;; Conditions

@@ -3,7 +3,7 @@
 ;;; --- Creating aliases in CL namespaces
 ;;;
 
-(in-package :iolib.base)
+(in-package :iolib/base)
 
 (defvar *namespaces* nil)
 

@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
-(in-package :iolib.internal.conduits)
+(in-package :iolib/internal/conduits)
 
 (macrolet
     ((define-gray-streams-package ()
@@ -28,15 +28,15 @@
                 #:stream-fresh-line #:stream-finish-output #:stream-force-output
                 #:stream-clear-output #:stream-advance-to-column
                 #:stream-read-byte #:stream-write-byte)))
-         `(defpackage :iolib.common-lisp
-            (:nicknames :iolib.cl :iolib/common-lisp)
+         `(defpackage :iolib/common-lisp
+            (:nicknames :iolib.cl :iolib.common-lisp)
             (:extend/excluding :common-lisp
                                #:export #:unexport #:defpackage 
                                #:delete-package #:rename-package
                                #:defconstant
                                #:boolean)
             (:export #:defconstant #:boolean)
-            (:extend/excluding :iolib.internal.conduits
+            (:extend/excluding :iolib/internal/conduits
                                #:recompute-conduits)
             (:import-from ,#1# ,@#2#)
             (:export #:trivial-gray-stream-mixin
@@ -46,6 +46,6 @@
                      ,@#2#)))))
   (define-gray-streams-package))
 
-(defpackage :iolib.common-lisp-user
-  (:nicknames :iolib.cl-user :iolib/common-lisp-user :iolib/cl-user)
-  (:use :iolib.common-lisp))
+(defpackage :iolib/common-lisp-user
+  (:nicknames :iolib/cl-user :iolib/common-lisp-user :iolib.cl-user)
+  (:use :iolib/common-lisp))

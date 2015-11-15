@@ -3,7 +3,7 @@
 ;;; --- Foreign type definitions for *NIX systems.
 ;;;
 
-(in-package :iolib.syscalls)
+(in-package :iolib/syscalls)
 
 ;;; FIXME: Find a way to use pkg-config to get these flags
 ;;;        instead of hard-coding them

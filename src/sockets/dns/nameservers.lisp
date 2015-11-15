@@ -3,7 +3,7 @@
 ;;; --- Nameservers management.
 ;;;
 
-(in-package :iolib.sockets)
+(in-package :iolib/sockets)
 
 (defvar *resolv.conf-file* "/etc/resolv.conf")
 
