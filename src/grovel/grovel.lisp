@@ -242,7 +242,10 @@ int main(int argc, char**argv) {
             (write-string *postscript* out)))))
     c-file))
 
-(defparameter *exe-extension* #-windows nil #+windows "exe")
+(defparameter *exe-extension*
+  (fcase
+    (:windows "exe")
+    (t        nil)))
 
 (defun exe-filename (defaults)
   (let ((path (make-pathname :type *exe-extension*
@@ -265,37 +268,39 @@ int main(int argc, char**argv) {
   (name :string))
 
 
+(defun parse-command-line (s)
+  (split-sequence #\Space s :remove-empty-subseqs t))
+
 (defparameter *cxx*
-  #+freebsd "clang++"
-  #+(or cygwin (not windows freebsd)) "g++"
-  #+(and windows (not cygwin)) "c:/msys/1.0/bin/g++.exe")
+  (fcase
+    (:freebsd "clang++")
+    ((or :cygwin (not (or :windows :freebsd))) "g++")
+    ((and :windows (not :cygwin)) "c:/msys/1.0/bin/g++.exe")))
 
 (defparameter *cc-flags*
   (append
    (list "-Wno-write-strings")
-   ;; For MacPorts
-   #+darwin (list "-I" "/opt/local/include/")
-   #-darwin nil
    ;; ECL internal flags
-   #+ecl (split-sequence:split-sequence #\space c::*cc-flags*
-                                        :remove-empty-subseqs t)
-   ;; FreeBSD non-base header files
-   ;; DragonFly Dports install software in /usr/local
-   ;; And what about pkgsrc?
-   #+(or freebsd dragonfly)
-   (list "-I" "/usr/local/include/")))
+   #+ecl (parse-command-line c::*cc-flags*)
+   (fcase
+     ;; For MacPorts
+     (:darwin '("-I" "/opt/local/include/"))
+     ;; FreeBSD non-base header files
+     ;; DragonFly Dports install software in /usr/local
+     ;; And what about pkgsrc?
+     ((or :freebsd :dragonfly) '("-I" "/usr/local/include/"))
+     (t '()))))
 
 ;;; FIXME: is there a better way to detect whether these flags
 ;;; are necessary?
 (defparameter *cpu-word-size-flags*
-  #-(or arm x86 x86-64 sparc sparc64)
-  '()
-  #+arm
-  (list "-marm")
-  #+(or x86 x86-64 sparc sparc64)
-  (ecase (cffi:foreign-type-size :pointer)
-    (4 (list "-m32"))
-    (8 (list "-m64"))))
+  (fcase
+    ((or :x86 :x86-64 :sparc :sparc64)
+     (ecase (cffi:foreign-type-size :pointer)
+       (4 (list "-m32"))
+       (8 (list "-m64"))))
+    (:arm '("-marm"))
+    (t    '())))
 
 (defparameter *platform-library-flags*
   (list #+darwin "-bundle"

@@ -55,6 +55,7 @@
    #:define-literal-reader
    #:enable-literal-reader #:enable-literal-reader*
    #:unknown-literal-syntax #:unknown-literal-syntax-name
+   #:fcase
    ;; Misc
    #:function-name #:function-name-p
    #:check-bounds #:join #:join* #:shrink-vector #:full-string

@@ -41,3 +41,10 @@
 (defmacro define-literal-reader (name (stream) &body body)
   `(setf (getf (symbol-plist ',name) 'read-literal-fn)
          (lambda (,stream) ,@body)))
+
+(defmacro fcase (&body clauses)
+  `(cond
+     ,@(loop :for c :in clauses
+             :for test := (car c)
+             :for forms := (cdr c)
+             :collect `((featurep ',test) ,@forms))))
