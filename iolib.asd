@@ -1,9 +1,9 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
-(unless (or #+asdf3 (uiop:version<= "2.31.1" (asdf-version)))
-  (error "You need ASDF >= 2.31.1 to load this system correctly."))
+#.(unless (or #+asdf3.1 (version<= "3.1" (asdf-version)))
+    (error "You need ASDF >= 3.1 to load this system correctly."))
 
-(asdf:defsystem :iolib/asdf
+(defsystem :iolib/asdf
   :description "A few ASDF component classes."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
@@ -14,7 +14,7 @@
   :components
   ((:file "asdf")))
 
-(asdf:defsystem :iolib/conf
+(defsystem :iolib/conf
   :description "Compile-time configuration for IOLib."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
@@ -27,7 +27,7 @@
   ((:file "pkgdcl")
    (:file "requires" :depends-on ("pkgdcl"))))
 
-(asdf:defsystem :iolib/common-lisp
+(defsystem :iolib/common-lisp
   :description "Slightly modified Common Lisp."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
@@ -42,20 +42,20 @@
    #+scl (:file "scl-gray-streams")
    (:file "pkgdcl" :depends-on ("conduits" #+scl "scl-gray-streams")
     :perform
-    (asdf:compile-op :before (o c)
-      (uiop:symbol-call :iolib/conf '#:load-gray-streams))
+    (compile-op :before (o c)
+      (symbol-call :iolib/conf '#:load-gray-streams))
     :perform
-    (asdf:load-op :before (o c)
-      (uiop:symbol-call :iolib/conf '#:load-gray-streams))
+    (load-op :before (o c)
+      (symbol-call :iolib/conf '#:load-gray-streams))
     :perform
-    (asdf:load-source-op :before (o c)
-      (uiop:symbol-call :iolib/conf '#:load-gray-streams)))
+    (load-source-op :before (o c)
+      (symbol-call :iolib/conf '#:load-gray-streams)))
    (:file "gray-streams"
     :depends-on ("pkgdcl" #+scl "scl-gray-streams"))
    (:file "definitions" :depends-on ("pkgdcl"))
    (:file "types" :depends-on ("pkgdcl"))))
 
-(asdf:defsystem :iolib/base
+(defsystem :iolib/base
   :description "Base IOlib package, used instead of CL."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
@@ -80,7 +80,7 @@
    (:file "time" :depends-on ("pkgdcl" "return-star"))
    (:file "dynamic-buffer" :depends-on ("pkgdcl" "return-star" "sequence"))))
 
-(asdf:defsystem :iolib/grovel
+(defsystem :iolib/grovel
   :description "The CFFI Groveller"
   :author "Dan Knapp <dankna@accela.net>"
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
@@ -99,7 +99,7 @@
    (:file "asdf"))
   :serial t)
 
-(asdf:defsystem :iolib/syscalls
+(defsystem :iolib/syscalls
   :description "Syscalls and foreign types."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
@@ -122,7 +122,7 @@
    (:file "ffi-functions" :pathname #+unix "ffi-functions-unix"))
   :serial t)
 
-(asdf:defsystem :iolib/multiplex
+(defsystem :iolib/multiplex
   :description "I/O multiplexing library."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
@@ -163,7 +163,7 @@
     :depends-on ("pkgdcl" "multiplexer" "backend-select"
                           #+linux "backend-epoll" #+bsd "backend-kqueue"))))
 
-(asdf:defsystem :iolib/streams
+(defsystem :iolib/streams
   :description "Gray streams."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
@@ -185,7 +185,7 @@
      :depends-on ("pkgdcl" "classes" "conditions" "buffer" "fd-mixin"
                   "io-helpers"))))
 
-(asdf:defsystem :iolib/zstreams
+(defsystem :iolib/zstreams
   :description "Zeta streams."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
@@ -217,7 +217,7 @@
    (:file "file" :pathname #+unix "file-unix"
      :depends-on ("pkgdcl" "types" "conditions" "ffi-functions" "device" "stream"))))
 
-(asdf:defsystem :iolib/sockets
+(defsystem :iolib/sockets
   :description "Socket library."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
@@ -284,7 +284,7 @@
      :depends-on ("pkgdcl" "address" "address-predicates" "file-monitor" "hosts"
                   "nameservers" "message" "query" "dns-conditions"))))
 
-(asdf:defsystem :iolib/trivial-sockets
+(defsystem :iolib/trivial-sockets
   :description "Trivial-Sockets compatibility layer."
   :author "Dan Barlow <dan@telent.net>"
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
@@ -298,7 +298,7 @@
   :components
   ((:file "trivial-sockets")))
 
-(asdf:defsystem :iolib/pathnames
+(defsystem :iolib/pathnames
   :description "New pathnames."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
@@ -314,7 +314,7 @@
    (:file "file-path-os" :pathname #+unix "file-path-unix"))
   :serial t)
 
-(asdf:defsystem :iolib/os
+(defsystem :iolib/os
   :description "OS interface."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
@@ -333,7 +333,7 @@
    (:file "create-process" :pathname #+unix "create-process-unix"))
   :serial t)
 
-(asdf:defsystem :iolib
+(defsystem :iolib
   :description "I/O library."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
@@ -345,12 +345,12 @@
   :pathname "src/iolib/"
   :components ((:file "pkgdcl")))
 
-(defmethod asdf:perform ((o asdf:test-op)
-                         (c (eql (asdf:find-system :iolib))))
-  (asdf:load-system :iolib/tests)
-  (uiop:symbol-call :5am :run! :iolib))
+(defmethod perform ((o test-op)
+                    (c (eql (find-system :iolib))))
+  (load-system :iolib/tests)
+  (symbol-call :5am :run! :iolib))
 
-(asdf:defsystem :iolib/tests
+(defsystem :iolib/tests
   :description "IOLib test suite."
   :author "Luis Oliveira <loliveira@common-lisp.net>"
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
@@ -371,7 +371,7 @@
    (:file "streams" :depends-on ("pkgdcl" "defsuites"))
    (:file "sockets" :depends-on ("pkgdcl" "defsuites"))))
 
-(asdf:defsystem :iolib/examples
+(defsystem :iolib/examples
   :description "Examples for IOLib tutorial at http://pages.cs.wisc.edu/~psilord/blog/data/iolib-tutorial/tutorial.html"
   :author "Peter Keller <psilord@cs.wisc.edu>"
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
