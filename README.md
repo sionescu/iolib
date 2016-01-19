@@ -1,4 +1,9 @@
--*- outline -*-
+-*- markdown -*-
+
+* Compilation IOlib requires a C library named LibFixPOSIX -
+https://github.com/sionescu/libfixposix - and its headers in order to
+compile. LibFixPOSIX can either be installed manually, for which there
+are instructions in the source code, or through distro repositories.
 
 * Tests
  Some of the socket tests require an echo server, the default being
