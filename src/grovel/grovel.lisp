@@ -46,13 +46,17 @@
     (setf command (cffi-sys:native-namestring command)))
   (format *debug-io* "; ~A~{ ~A~}~%" command args)
   (multiple-value-bind (output stderr exit-code)
-      (uiop:run-program (list* command args) :output :string)
-    (declare (ignore stderr))
+      (uiop:run-program (list* command args)
+                        :output :string
+                        :error-output :string
+                        ;; We'll throw our own error
+                        :ignore-error-status t)
     (unless (zerop exit-code)
       (grovel-error "External process exited with code ~S.~@
                      Command was: ~S~{ ~S~}~@
-                     Output was:~%~A"
-                    exit-code command args output))
+                     Output was:~%~A~@
+                     Error output was:~%~A"
+                    exit-code command args output stderr))
     output))
 
 ;;;# Error Conditions
