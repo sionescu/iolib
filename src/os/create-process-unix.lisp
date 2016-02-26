@@ -257,7 +257,7 @@
           (close-fds ,infd ,outfd ,errfd))))))
 
 (defun process-other-spawn-args (attributes new-session pts current-directory
-                                 uid gid resetids)
+                                 uid gid resetids vfork)
   (when new-session
     (lfp-spawnattr-setsid attributes))
   (when pts
@@ -269,7 +269,9 @@
   (when gid
     (lfp-spawnattr-setgid attributes gid))
   (when resetids
-    (lfp-spawnattr-setflags attributes lfp-spawn-resetids)))
+    (lfp-spawnattr-setflags attributes lfp-spawn-resetids))
+  (when vfork
+    (lfp-spawnattr-setflags attributes lfp-spawn-usevfork)))
 
 ;; program: :shell - the system shell
 ;;          file-path designator - a path
@@ -296,7 +298,7 @@
 
 (defun create-process (program-and-args &key (environment t)
                        (stdin :pipe) (stdout :pipe) (stderr :pipe) pty
-                       new-session current-directory uid gid resetids
+                       new-session current-directory uid gid resetids vfork
                        (external-format :utf-8))
   (let ((new-ctty-p
            (or pty
@@ -314,7 +316,7 @@
                 (process-other-spawn-args attributes
                                           new-session pts
                                           current-directory
-                                          uid gid resetids)
+                                          uid gid resetids vfork)
                 (with-foreign-object (pid 'pid-t)
                   (lfp-spawnp pid arg0 argv envp file-actions attributes)
                   (make-instance 'process :pid (mem-ref pid 'pid-t)

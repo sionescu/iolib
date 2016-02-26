@@ -21,5 +21,6 @@
 (constant (lfp-spawn-resetids      "LFP_SPAWN_RESETIDS"))
 (constant (lfp-spawn-setuid        "LFP_SPAWN_SETUID"))
 (constant (lfp-spawn-setgid        "LFP_SPAWN_SETGID"))
+(constant (lfp-spawn-usevfork      "LFP_SPAWN_USEVFORK"))
 ;; (constant (lfp-spawn-setschedparam "LFP_SPAWN_SETSCHEDPARAM"))
 ;; (constant (lfp-spawn-setscheduler  "LFP_SPAWN_SETSCHEDULER"))
