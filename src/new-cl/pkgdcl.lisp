@@ -47,5 +47,5 @@
   (define-gray-streams-package))
 
 (defpackage :iolib/common-lisp-user
-  (:nicknames :iolib/cl-user :iolib/common-lisp-user :iolib.cl-user)
+  (:nicknames :iolib/cl-user :iolib.cl-user)
   (:use :iolib/common-lisp))
