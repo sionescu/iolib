@@ -82,14 +82,14 @@
     ,@(call-next-method)))
 
 (defmethod asdf:perform ((op asdf:compile-op) (c process-op-input))
-  (let ((generated-lisp-file (first (asdf:output-files (make-instance 'process-op) c))))
+  (let ((generated-lisp-file (first (asdf:output-files (asdf:make-operation 'process-op) c))))
     (asdf:perform op (make-instance 'asdf:cl-source-file
                                     :name (asdf:component-name c)
                                     :parent (asdf:component-parent c)
                                     :pathname generated-lisp-file))))
 
 (defmethod asdf:perform ((op asdf:load-source-op) (c process-op-input))
-  (let ((generated-lisp-file (first (asdf:output-files (make-instance 'process-op) c))))
+  (let ((generated-lisp-file (first (asdf:output-files (asdf:make-operation 'process-op) c))))
     (asdf:perform op (make-instance 'asdf:cl-source-file
                                     :name (asdf:component-name c)
                                     :parent (asdf:component-parent c)
