@@ -3,23 +3,12 @@
 #.(unless (or #+asdf3.1 (version<= "3.1" (asdf-version)))
     (error "You need ASDF >= 3.1 to load this system correctly."))
 
-(defsystem :iolib/asdf
-  :description "A few ASDF component classes."
-  :author "Stelian Ionescu <sionescu@cddr.org>"
-  :licence "MIT"
-  :version (:read-file-form "version.sexp")
-  :depends-on (:alexandria)
-  :encoding :utf-8
-  :pathname "src/base/"
-  :components
-  ((:file "asdf")))
-
 (defsystem :iolib/conf
   :description "Compile-time configuration for IOLib."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/asdf)
+  :defsystem-depends-on (:iolib.asdf)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/conf/"
@@ -32,7 +21,7 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/asdf :iolib/conf)
+  :defsystem-depends-on (:iolib.asdf :iolib/conf)
   :depends-on (:alexandria)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
@@ -60,7 +49,7 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/asdf :iolib/conf)
+  :defsystem-depends-on (:iolib.asdf :iolib/conf)
   :depends-on (:iolib/common-lisp :alexandria :split-sequence)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
@@ -86,8 +75,8 @@
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/asdf :iolib/conf)
-  :depends-on (:iolib/asdf :iolib/base :iolib/conf
+  :defsystem-depends-on (:iolib.asdf :iolib/conf)
+  :depends-on (:iolib.asdf :iolib/base :iolib/conf
                :alexandria :split-sequence #+allegro (:require "osi") :cffi :uiop)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
@@ -104,7 +93,7 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/asdf :iolib/conf :iolib/grovel)
+  :defsystem-depends-on (:iolib.asdf :iolib/conf :iolib/grovel)
   :depends-on (:trivial-features :cffi :iolib/base :iolib/grovel)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
@@ -127,7 +116,7 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/asdf :iolib/conf)
+  :defsystem-depends-on (:iolib.asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/syscalls :cffi)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
@@ -168,7 +157,7 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/asdf :iolib/conf)
+  :defsystem-depends-on (:iolib.asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/multiplex :cffi)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
@@ -190,7 +179,7 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/asdf)
+  :defsystem-depends-on (:iolib.asdf)
   :depends-on (:iolib/base :iolib/syscalls :iolib/pathnames :cffi :bordeaux-threads)
   :around-compile "iolib.asdf:compile-wrapper"
   :encoding :utf-8
@@ -222,7 +211,7 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/asdf :iolib/conf :iolib/grovel)
+  :defsystem-depends-on (:iolib.asdf :iolib/conf :iolib/grovel)
   :depends-on (:iolib/base :iolib/syscalls :iolib/streams
                :babel :cffi :iolib/grovel :bordeaux-threads
                :idna :swap-bytes)
@@ -290,7 +279,7 @@
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/asdf :iolib/conf)
+  :defsystem-depends-on (:iolib.asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/sockets)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
@@ -303,7 +292,7 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/asdf :iolib/conf)
+  :defsystem-depends-on (:iolib.asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/syscalls)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
@@ -319,7 +308,7 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/asdf :iolib/conf :iolib/grovel)
+  :defsystem-depends-on (:iolib.asdf :iolib/conf :iolib/grovel)
   :depends-on (:iolib/base :iolib/grovel :iolib/syscalls
                :iolib/streams :iolib/pathnames)
   :around-compile "iolib/asdf:compile-wrapper"
@@ -338,7 +327,7 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/asdf :iolib/conf)
+  :defsystem-depends-on (:iolib.asdf :iolib/conf)
   :depends-on (:iolib/base :iolib/multiplex :iolib/streams :iolib/sockets)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
