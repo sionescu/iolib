@@ -307,7 +307,7 @@
                (eql :pty stderr))))
     (destructuring-bind (program &rest arguments)
         (ensure-list program-and-args)
-      (with-argv ((arg0 argv) program arguments)
+      (with-argv ((arg0 argv) (file-path-namestring program) arguments)
         (with-c-environment (envp environment)
           (with-lfp-spawn-arguments (attributes file-actions)
             (with-pty (new-ctty-p ptyfd pts)
@@ -359,6 +359,8 @@
                             :stderr stderr
                             :external-format external-format)))
       (unwind-protect
+           ;; FIXME: this can hang if one of the pipe buffers get full,
+           ;; e.g. if there's more stderr output than stdout.
            (let ((stdout (if (eql :pipe stdout)
                              (slurp (process-stdout process))
                              (make-empty-output)))
