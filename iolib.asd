@@ -3,98 +3,13 @@
 #.(unless (or #+asdf3.1 (version<= "3.1" (asdf-version)))
     (error "You need ASDF >= 3.1 to load this system correctly."))
 
-(defsystem :iolib/conf
-  :description "Compile-time configuration for IOLib."
-  :author "Stelian Ionescu <sionescu@cddr.org>"
-  :licence "MIT"
-  :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf)
-  :around-compile "iolib/asdf:compile-wrapper"
-  :encoding :utf-8
-  :pathname "src/conf/"
-  :components
-  ((:file "pkgdcl")
-   (:file "requires" :depends-on ("pkgdcl"))))
-
-(defsystem :iolib/common-lisp
-  :description "Slightly modified Common Lisp."
-  :author "Stelian Ionescu <sionescu@cddr.org>"
-  :licence "MIT"
-  :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib/conf)
-  :depends-on (:alexandria)
-  :around-compile "iolib/asdf:compile-wrapper"
-  :encoding :utf-8
-  :pathname "src/new-cl/"
-  :components
-  ((:file "conduits")
-   #+scl (:file "scl-gray-streams")
-   (:file "pkgdcl" :depends-on ("conduits" #+scl "scl-gray-streams")
-    :perform
-    (compile-op :before (o c)
-      (symbol-call :iolib/conf '#:load-gray-streams))
-    :perform
-    (load-op :before (o c)
-      (symbol-call :iolib/conf '#:load-gray-streams))
-    :perform
-    (load-source-op :before (o c)
-      (symbol-call :iolib/conf '#:load-gray-streams)))
-   (:file "gray-streams"
-    :depends-on ("pkgdcl" #+scl "scl-gray-streams"))
-   (:file "definitions" :depends-on ("pkgdcl"))
-   (:file "types" :depends-on ("pkgdcl"))))
-
-(defsystem :iolib/base
-  :description "Base IOlib package, used instead of CL."
-  :author "Stelian Ionescu <sionescu@cddr.org>"
-  :licence "MIT"
-  :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib/conf)
-  :depends-on (:iolib/common-lisp :alexandria :split-sequence)
-  :around-compile "iolib/asdf:compile-wrapper"
-  :encoding :utf-8
-  :pathname "src/base/"
-  :components
-  ((:file "pkgdcl")
-   (:file "return-star" :depends-on ("pkgdcl"))
-   (:file "types" :depends-on ("pkgdcl" "return-star"))
-   (:file "debug" :depends-on ("pkgdcl" "return-star"))
-   (:file "conditions" :depends-on ("pkgdcl" "return-star"))
-   (:file "defalias" :depends-on ("pkgdcl" "return-star"))
-   (:file "deffoldable" :depends-on ("pkgdcl" "return-star"))
-   (:file "defobsolete" :depends-on ("pkgdcl" "return-star"))
-   (:file "reader" :depends-on ("pkgdcl" "return-star" "conditions"))
-   (:file "sequence" :depends-on ("pkgdcl" "return-star"))
-   (:file "matching" :depends-on ("pkgdcl" "return-star"))
-   (:file "time" :depends-on ("pkgdcl" "return-star"))
-   (:file "dynamic-buffer" :depends-on ("pkgdcl" "return-star" "sequence"))))
-
-(defsystem :iolib/grovel
-  :description "The CFFI Groveller"
-  :author "Dan Knapp <dankna@accela.net>"
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :licence "MIT"
-  :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib/conf)
-  :depends-on (:iolib.asdf :iolib/base :iolib/conf
-               :alexandria :split-sequence #+allegro (:require "osi") :cffi :uiop)
-  :around-compile "iolib/asdf:compile-wrapper"
-  :encoding :utf-8
-  :pathname "src/grovel/"
-  :components
-  ((:file "package")
-   (:static-file "grovel-common.h")
-   (:file "grovel")
-   (:file "asdf"))
-  :serial t)
-
 (defsystem :iolib/syscalls
   :description "Syscalls and foreign types."
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib/conf :iolib/grovel)
-  :depends-on (:trivial-features :cffi :iolib/base :iolib/grovel)
+  :defsystem-depends-on (:iolib.asdf :iolib.conf :iolib.grovel)
+  :depends-on (:trivial-features :cffi :iolib.base :iolib.grovel)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/syscalls/"
@@ -116,8 +31,8 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib/conf)
-  :depends-on (:iolib/base :iolib/syscalls :cffi)
+  :defsystem-depends-on (:iolib.asdf :iolib.conf)
+  :depends-on (:iolib.base :iolib/syscalls :cffi)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/multiplex/"
@@ -157,8 +72,8 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib/conf)
-  :depends-on (:iolib/base :iolib/multiplex :cffi)
+  :defsystem-depends-on (:iolib.asdf :iolib.conf)
+  :depends-on (:iolib.base :iolib/multiplex :cffi)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/streams/gray/"
@@ -180,7 +95,7 @@
   :licence "MIT"
   :version (:read-file-form "version.sexp")
   :defsystem-depends-on (:iolib.asdf)
-  :depends-on (:iolib/base :iolib/syscalls :iolib/pathnames :cffi :bordeaux-threads)
+  :depends-on (:iolib.base :iolib/syscalls :iolib/pathnames :cffi :bordeaux-threads)
   :around-compile "iolib.asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/streams/zeta/"
@@ -211,9 +126,9 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib/conf :iolib/grovel)
-  :depends-on (:iolib/base :iolib/syscalls :iolib/streams
-               :babel :cffi :iolib/grovel :bordeaux-threads
+  :defsystem-depends-on (:iolib.asdf :iolib.conf :iolib.grovel)
+  :depends-on (:iolib.base :iolib/syscalls :iolib/streams
+               :babel :cffi :iolib.grovel :bordeaux-threads
                :idna :swap-bytes)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
@@ -279,8 +194,8 @@
   :maintainer "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib/conf)
-  :depends-on (:iolib/base :iolib/sockets)
+  :defsystem-depends-on (:iolib.asdf :iolib.conf)
+  :depends-on (:iolib.base :iolib/sockets)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/sockets/"
@@ -292,8 +207,8 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib/conf)
-  :depends-on (:iolib/base :iolib/syscalls)
+  :defsystem-depends-on (:iolib.asdf :iolib.conf)
+  :depends-on (:iolib.base :iolib/syscalls)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/pathnames/"
@@ -308,8 +223,8 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib/conf :iolib/grovel)
-  :depends-on (:iolib/base :iolib/grovel :iolib/syscalls
+  :defsystem-depends-on (:iolib.asdf :iolib.conf :iolib.grovel)
+  :depends-on (:iolib.base :iolib.grovel :iolib/syscalls
                :iolib/streams :iolib/pathnames)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
@@ -327,63 +242,10 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib/conf)
-  :depends-on (:iolib/base :iolib/multiplex :iolib/streams :iolib/sockets)
+  :defsystem-depends-on (:iolib.asdf :iolib.conf)
+  :depends-on (:iolib.base :iolib/multiplex :iolib/streams :iolib/sockets)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/iolib/"
-  :components ((:file "pkgdcl")))
-
-(defmethod perform ((o test-op)
-                    (c (eql (find-system :iolib))))
-  (load-system :iolib/tests)
-  (symbol-call :5am :run! :iolib))
-
-(defsystem :iolib/tests
-  :description "IOLib test suite."
-  :author "Luis Oliveira <loliveira@common-lisp.net>"
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :licence "MIT"
-  :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/base)
-  :depends-on (:fiveam :iolib :iolib/pathnames)
-  :around-compile "iolib/asdf:compile-wrapper"
-  :encoding :utf-8
-  :pathname "tests/"
-  :components
-  ((:file "pkgdcl")
-   (:file "defsuites" :depends-on ("pkgdcl"))
-   (:file "base" :depends-on ("pkgdcl" "defsuites"))
-   (:file "file-paths-os" :depends-on ("pkgdcl" "defsuites")
-     :pathname #+unix "file-paths-unix")
-   (:file "events" :depends-on ("pkgdcl" "defsuites"))
-   (:file "streams" :depends-on ("pkgdcl" "defsuites"))
-   (:file "sockets" :depends-on ("pkgdcl" "defsuites"))))
-
-(defsystem :iolib/examples
-  :description "Examples for IOLib tutorial at http://pages.cs.wisc.edu/~psilord/blog/data/iolib-tutorial/tutorial.html"
-  :author "Peter Keller <psilord@cs.wisc.edu>"
-  :maintainer "Stelian Ionescu <sionescu@cddr.org>"
-  :licence "MIT"
-  :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib/base)
-  :depends-on (:iolib :bordeaux-threads)
-  :around-compile "iolib/asdf:compile-wrapper"
-  :pathname "examples/"
-  :components ((:file "package")
-               (:file "ex1-client" :depends-on ("package"))
-               (:file "ex2-client" :depends-on ("package"))
-               (:file "ex3-client" :depends-on ("package"))
-               (:file "ex4-client" :depends-on ("package"))
-               (:file "ex5a-client" :depends-on ("package"))
-               (:file "ex5b-client" :depends-on ("package"))
-               (:file "ex1-server" :depends-on ("package"))
-               (:file "ex2-server" :depends-on ("package"))
-               (:file "ex3-server" :depends-on ("package"))
-               (:file "ex4-server" :depends-on ("package"))
-               (:file "ex5-server" :depends-on ("package"))
-               (:file "ex6-server" :depends-on ("package"))
-               (:file "ex7-buffer" :depends-on ("package"))
-               (:file "ex7-server" :depends-on ("package" "ex7-buffer"))
-               (:file "ex8-buffer" :depends-on ("package"))
-               (:file "ex8-server" :depends-on ("package" "ex8-buffer"))))
+  :components ((:file "pkgdcl"))
+  :in-order-to ((test-op (test-op :iolib.tests))))
