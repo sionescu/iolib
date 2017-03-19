@@ -320,7 +320,7 @@ int main(int argc, char**argv) {
            ,(format nil "-I~A"
                     (directory-namestring
                      (asdf:component-pathname
-                      (asdf:find-system :iolib/grovel))))
+                      (asdf:find-system :iolib.grovel))))
            ,@(when library *platform-library-flags*)
            "-o" ,(native-namestring output-file)
            ,(native-namestring input-file))))
