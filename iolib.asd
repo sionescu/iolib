@@ -346,7 +346,7 @@
   :licence "MIT"
   :version (:read-file-form "version.sexp")
   :defsystem-depends-on (:iolib/base)
-  :depends-on (:fiveam :iolib :iolib/pathnames)
+  :depends-on (:fiveam :iolib :iolib/os :iolib/pathnames)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "tests/"
@@ -358,7 +358,8 @@
      :pathname #+unix "file-paths-unix")
    (:file "events" :depends-on ("pkgdcl" "defsuites"))
    (:file "streams" :depends-on ("pkgdcl" "defsuites"))
-   (:file "sockets" :depends-on ("pkgdcl" "defsuites"))))
+   (:file "sockets" :depends-on ("pkgdcl" "defsuites"))
+   (:file "os" :depends-on ("pkgdcl" "defsuites"))))
 
 (defsystem :iolib/examples
   :description "Examples for IOLib tutorial at http://pages.cs.wisc.edu/~psilord/blog/data/iolib-tutorial/tutorial.html"
