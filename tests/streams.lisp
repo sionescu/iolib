@@ -74,17 +74,11 @@
          ,@body))))
 
 (defvar *data-dir*
-  (let ((sys-pn (truename (asdf:component-pathname
-                           (asdf:find-system :iolib.tests)))))
-    (make-pathname :directory (append (pathname-directory sys-pn)
-                                      '("data")))))
+  (asdf:system-relative-pathname "iolib" "tests/data/"))
 
 (defvar *test-dir*
-  (merge-pathnames
-   (make-pathname :directory '(:relative "test-dir"))
-   (make-pathname :directory
-                  (pathname-directory
-                   (or *load-truename* *compile-file-truename*)))))
+  (asdf:apply-output-translations
+   (asdf:system-relative-pathname "iolib" "tests/test-dir/")))
 
 ;;; A list of test files where each entry consists of the name
 ;;; prefix and a list of encodings.
