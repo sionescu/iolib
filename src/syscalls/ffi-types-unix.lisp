@@ -23,7 +23,7 @@
          "pwd.h" "grp.h")
 
 #+linux
-(include "sys/epoll.h" "sys/syscall.h")
+(include "sys/epoll.h" "sys/eventfd.h" "sys/syscall.h")
 
 #+bsd
 (include "sys/event.h" "sys/time.h")    ; for kqueue
@@ -604,6 +604,16 @@
   (constant (epolloneshot "EPOLLONESHOT"))
   (constant (epollet "EPOLLET")))
 
+
+;;;-------------------------------------------------------------------------
+;;; sys/eventfd.h
+;;;-------------------------------------------------------------------------
+
+#+linux
+(progn
+  (constant (efd-cloexec "EFD_CLOEXEC"))
+  (constant (efd-nonblock "EFD_NONBLOCK"))
+  (constant (efd-semaphore "EFD_SEMAPHORE")))
 
 ;;;-------------------------------------------------------------------------
 ;;; sys/event.h
