@@ -335,7 +335,8 @@ int main(int argc, char**argv) {
 ;;; *the extent of a given grovel file.
 (defun process-grovel-file (input-file &optional (output-defaults input-file))
   (with-standard-io-syntax
-    (let* ((c-file (generate-c-file input-file output-defaults))
+    (let* ((*print-readably* nil)
+           (c-file (generate-c-file input-file output-defaults))
            (exe-file (exe-filename c-file))
            (lisp-file (tmp-lisp-filename c-file)))
       (cc-compile-and-link c-file exe-file)
@@ -631,7 +632,8 @@ int main(int argc, char**argv) {
 ;;; *the extent of a given wrapper file.
 (defun process-wrapper-file (input-file output-defaults lib-soname)
   (with-standard-io-syntax
-    (let ((lib-file
+    (let ((*print-readably* nil)
+          (lib-file
             (lib-filename (make-soname lib-soname output-defaults))))
       (multiple-value-bind (c-file lisp-forms)
           (generate-c-lib-file input-file output-defaults)
