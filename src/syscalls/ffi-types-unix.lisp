@@ -71,12 +71,19 @@
  (:eaddrnotavail "EADDRNOTAVAIL")
  (:eadv "EADV" :optional t)
  (:eafnosupport "EAFNOSUPPORT")
+ #+openbsd
+ (:eagain "EAGAIN")
  (:ealready "EALREADY")
+ #+openbsd
+ (:eauth "EAUTH" :optional t)
  (:ebade "EBADE" :optional t)
  (:ebadf "EBADF")
  (:ebadfd "EBADFD" :optional t)
+ #-openbsd
  (:ebadmsg "EBADMSG")
  (:ebadr "EBADR" :optional t)
+ #+openbsd
+ (:ebadrpc "EBADRPC" :optional t)
  (:ebadrqc "EBADRQC" :optional t)
  (:ebadslt "EBADSLT" :optional t)
  (:ebfont "EBFONT" :optional t)
@@ -96,7 +103,12 @@
  (:eexist "EEXIST")
  (:efault "EFAULT")
  (:efbig "EFBIG")
+ #+openbsd
+ (:eftype "FTYPE" :optional t)
+ #-openbsd
  (:ehostdown "EHOSTDOWN")
+ #+openbsd
+ (:ehostdown "EHOSTDOWN" :optional t)
  (:ehostunreach "EHOSTUNREACH")
  (:ehwpoison "EHWPOISON" :optional t)
  (:eidrm "EIDRM")
@@ -105,6 +117,8 @@
  (:eintr "EINTR")
  (:einval "EINVAL")
  (:eio "EIO")
+ #+openbsd
+ (:eipsec "EIPSEC" :optional t)
  (:eisconn "EISCONN")
  (:eisdir "EISDIR")
  (:eisnam "EISNAM" :optional t)
@@ -115,6 +129,8 @@
  (:el2nsync "EL2NSYNC" :optional t)
  (:el3hlt "EL3HLT" :optional t)
  (:el3rst "EL3RST" :optional t)
+ #+openbsd
+ (:elast "ELAST" :optional t) 
  (:elibacc "ELIBACC" :optional t)
  (:elibbad "ELIBBAD" :optional t)
  (:elibexec "ELIBEXEC" :optional t)
@@ -126,14 +142,19 @@
  (:emfile "EMFILE")
  (:emlink "EMLINK")
  (:emsgsize "EMSGSIZE")
+ #-openbsd
  (:emultihop "EMULTIHOP")
  (:enametoolong "ENAMETOOLONG")
  (:enavail "ENAVAIL" :optional t)
+ #+openbsd
+ (:eneedauth "ENEEDAUTH" :optional t)
  (:enetdown "ENETDOWN")
  (:enetreset "ENETRESET")
  (:enetunreach "ENETUNREACH")
  (:enfile "ENFILE")
  (:enoano "ENOANO" :optional t)
+ #+openbsd
+ (:enoattr "ENOATTR" :optional t)
  (:enobufs "ENOBUFS")
  (:enocsi "ENOCSI" :optional t)
  (:enodata "ENODATA" :optional t)
@@ -142,6 +163,7 @@
  (:enoexec "ENOEXEC")
  (:enokey "ENOKEY" :optional t)
  (:enolck "ENOLCK")
+ #-openbsd
  (:enolink "ENOLINK")
  (:enomedium "ENOMEDIUM" :optional t)
  (:enomem "ENOMEM")
@@ -170,6 +192,15 @@
  (:eperm "EPERM")
  (:epfnosupport "EPFNOSUPPORT" :optional t)
  (:epipe "EPIPE")
+ #+openbsd
+ (:eproclim "EPROCLIM" :optional t)
+ #+openbsd
+ (:eprocunavail "EPROCUNAVAIL" :optional t)
+ #+openbsd
+ (:eprogmismatch "EPROGMISMATCH" :optional t)
+ #+openbsd
+ (:eprogunavail "EPROGUNAVAIL" :optional t)
+ #-openbsd
  (:eproto "EPROTO")
  (:eprotonosupport "EPROTONOSUPPORT")
  (:eprototype "EPROTOTYPE")
@@ -180,7 +211,12 @@
  (:erestart "ERESTART" :optional t)
  (:erfkill "ERFKILL" :optional t)
  (:erofs "EROFS")
+ #+openbsd
+ (:erpcmismatch "ERPCMISMATCH" :optional t)
+ #-openbsd
  (:eshutdown "ESHUTDOWN")
+ #+openbsd
+ (:eshutdown "ESHUTDOWN" :optional t)
  (:esocktnosupport "ESOCKTNOSUPPORT" :optional t)
  (:espipe "ESPIPE")
  (:esrch "ESRCH")

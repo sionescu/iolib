@@ -57,6 +57,7 @@
 (define-socket-error socket-network-down-error            :enetdown)
 (define-socket-error socket-network-reset-error           :enetreset)
 (define-socket-error socket-network-unreachable-error     :enetunreach)
+#-openbsd
 (define-socket-error socket-no-network-error              :enonet)
 (define-socket-error socket-connection-aborted-error      :econnaborted)
 (define-socket-error socket-connection-reset-error        :econnreset)

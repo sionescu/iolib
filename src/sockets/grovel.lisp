@@ -47,6 +47,7 @@
   (:eprototype "EPROTOTYPE")
   (:enoprotoopt "ENOPROTOOPT")
   (:eremote "EREMOTE")
+  #-openbsd
   (:enolink "ENOLINK")
   (:epfnosupport "EPFNOSUPPORT")
   (:eafnosupport "EAFNOSUPPORT")
