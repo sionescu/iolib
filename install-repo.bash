@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cat >> /etc/apt/sources.list <<EOF
-deb http://download.opensuse.org/repositories/home:/sionescu/Ubuntu_Precise/ ./
+deb http://download.opensuse.org/repositories/home:/sionescu/Ubuntu_Trusty/ ./
 EOF
 
 cat >> /etc/apt/preferences <<EOF
