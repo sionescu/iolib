@@ -211,7 +211,7 @@ int main(int argc, char**argv) {
   (member (form-kind form) *header-forms*))
 
 (defun make-c-file-name (output-defaults)
-  (make-pathname :type "c" :defaults output-defaults))
+  (make-pathname :type "cc" :defaults output-defaults))
 
 (defun generate-c-file (input-file output-defaults)
   (let ((c-file (make-c-file-name output-defaults)))
