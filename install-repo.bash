@@ -17,6 +17,8 @@ Pin: origin download.opensuse.org
 Pin-Priority: 1001
 EOF
 
+apt-key adv --recv-key https://download.opensuse.org/repositories/home:/sionescu/Ubuntu/Release.key
+
 apt-get update -qq
 
 apt-get -y install libfixposix3 libfixposix-dev
