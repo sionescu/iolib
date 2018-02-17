@@ -7,7 +7,7 @@ set -o errexit   ## set -e : exit the script if any statement returns a non-true
 set -o xtrace    # print commands as they are executed
 
 cat >> /etc/apt/sources.list <<EOF
-deb http://download.opensuse.org/repositories/home:/sionescu/Ubuntu_14.04/ ./
+deb http://download.opensuse.org/repositories/home:/sionescu/Ubuntu/ ./
 EOF
 
 cat >> /etc/apt/preferences <<EOF
