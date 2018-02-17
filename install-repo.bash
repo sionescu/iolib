@@ -19,4 +19,6 @@ EOF
 
 apt-get update -qq
 
-apt-get -y --force-yes install libfixposix3 libfixposix-dev
+apt-get -y install libfixposix3 libfixposix-dev
+
+dpkg -L libfixposix3 libfixposix-dev
