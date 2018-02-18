@@ -9,8 +9,8 @@
 
 (iolib.base:enable-literal-reader)
 
-(defparameter *echo-address* (lookup-hostname "deneb.cddr.org"))
-(defparameter *echo-port* 7)
+(defparameter *echo-address* (lookup-hostname "iolib.cddr.org"))
+(defparameter *echo-port* 25877)
 (defparameter *echo-timeout* 2)
 
 ;;;; Addresses
