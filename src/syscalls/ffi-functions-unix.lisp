@@ -21,6 +21,7 @@
 ;;;-------------------------------------------------------------------------
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  ;; Minimum viable LibFixPOSIX version.
   (let ((minver '(0 4 3)))
     (labels ((version-string (n)
                (format nil "~A.~A.~A"
@@ -32,12 +33,9 @@
                        (ash (second v) 8)
                        (third v)))
              (buildinfo ()
-               (if (foreign-symbol-pointer "lfp_buildinfo")
-                   (with-foreign-object (info 'lfp-buildinfo)
-                     (foreign-funcall "lfp_buildinfo" :pointer info :int)
-                     (foreign-slot-value info 'lfp-buildinfo 'release))
-                   (error "Cannot determine LibFixPOSIX version, please update to ~A"
-                          (version-string (version-int minver))))))
+               (with-foreign-object (info 'lfp-buildinfo)
+                 (foreign-funcall "lfp_buildinfo" :pointer info :int)
+                 (foreign-slot-value info 'lfp-buildinfo 'release))))
       (let ((version (buildinfo))
             (minint (version-int minver)))
         (when (< version minint)
