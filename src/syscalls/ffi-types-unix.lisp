@@ -27,6 +27,15 @@
 
 #+bsd
 (include "sys/event.h" "sys/time.h")    ; for kqueue
+
+
+;;;-------------------------------------------------------------------------
+;;; LibFixPOSIX build info
+;;;-------------------------------------------------------------------------
+
+(cstruct lfp-buildinfo "struct lfp_buildinfo"
+  (release "release" :type :uint64)
+  (vcsid   "vcsid"   :type :string))
 
 
 
