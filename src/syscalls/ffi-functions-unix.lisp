@@ -21,26 +21,28 @@
 ;;;-------------------------------------------------------------------------
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  ;; Minimum viable LibFixPOSIX version.
-  (let ((minver '(0 4 3)))
-    (labels ((version-string (n)
-               (format nil "~A.~A.~A"
-                       (logand #xff (ash n -16))
-                       (logand #xff (ash n -8))
-                       (logand #xff n)))
-             (version-int (v)
-               (logior (ash (first v) 16)
-                       (ash (second v) 8)
-                       (third v)))
-             (buildinfo ()
-               (with-foreign-object (info 'lfp-buildinfo)
-                 (foreign-funcall "lfp_buildinfo" :pointer info :int)
-                 (foreign-slot-value info 'lfp-buildinfo 'release))))
-      (let ((version (buildinfo))
-            (minint (version-int minver)))
-        (when (< version minint)
-          (error "The minimum required LibFixPOSIX version is ~A but ~A was loaded"
-                 (version-string minint) (version-string version)))))))
+  (labels ((version-string (n)
+             (format nil "~A.~A.~A"
+                     (logand #xff (ash n -16))
+                     (logand #xff (ash n -8))
+                     (logand #xff n)))
+           (version-int (v)
+             (logior (ash (first v) 16)
+                     (ash (second v) 8)
+                     (third v)))
+           (buildinfo ()
+             (with-foreign-object (info 'lfp-buildinfo)
+               (foreign-funcall "lfp_buildinfo" :pointer info :int)
+               (foreign-slot-value info 'lfp-buildinfo 'release)))
+           (ensure-minver (minver)
+             (let ((version (buildinfo))
+                   (minint (version-int minver)))
+               (when (< version minint)
+                 (error "The minimum required LibFixPOSIX version is ~A ~
+                         but ~A was loaded"
+                        (version-string minint) (version-string version))))))
+    ;; Minimum viable LibFixPOSIX version.
+    (ensure-minver '(0 4 3))))
 
 
 ;;;-------------------------------------------------------------------------
