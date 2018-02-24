@@ -6,12 +6,11 @@ set -o nounset   ## set -u : exit the script if you try to use an uninitialised 
 set -o errexit   ## set -e : exit the script if any statement returns a non-true return value
 set -o xtrace    # print commands as they are executed
 
-cat >> /etc/apt/sources.list <<EOF
+cat > /etc/apt/sources.list.d/libfixposix.list <<EOF
 deb http://download.opensuse.org/repositories/home:/sionescu/Debian/ ./
 EOF
 
-cat >> /etc/apt/preferences <<EOF
-
+cat > /etc/apt/preferences.d/libfixposix <<EOF
 Package: libfixposix*
 Pin: origin download.opensuse.org
 Pin-Priority: 1001
