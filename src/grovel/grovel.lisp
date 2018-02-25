@@ -278,6 +278,7 @@ int main(int argc, char**argv) {
 (defparameter *cxx*
   (fcase
     (:freebsd "clang++")
+    (:openbsd "eg++")
     ((or :cygwin (not (or :windows :freebsd))) "g++")
     ((and :windows (not :cygwin)) "c:/msys/1.0/bin/g++.exe")))
 
@@ -291,8 +292,9 @@ int main(int argc, char**argv) {
      (:darwin '("-I" "/opt/local/include/"))
      ;; FreeBSD non-base header files
      ;; DragonFly Dports install software in /usr/local
+     ;; OpenBSD install lfp in /usr/local/include
      ;; And what about pkgsrc?
-     ((or :freebsd :dragonfly) '("-I" "/usr/local/include/"))
+     ((or :freebsd :dragonfly :openbsd) '("-I" "/usr/local/include/"))
      (t '()))))
 
 ;;; FIXME: is there a better way to detect whether these flags
