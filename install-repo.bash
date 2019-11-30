@@ -12,7 +12,7 @@ case "$1" in
 esac
 
 cat > /etc/apt/sources.list.d/libfixposix.list <<EOF
-deb http://download.opensuse.org/repositories/home:/sionescu/Debian/ ./
+deb http://download.opensuse.org/repositories/home:/sionescu/Debian_Old/ ./
 EOF
 
 cat > /etc/apt/preferences.d/libfixposix <<EOF
