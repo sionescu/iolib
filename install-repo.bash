@@ -25,6 +25,6 @@ curl https://download.opensuse.org/repositories/home:/sionescu/Debian_Old/Releas
 
 apt-get update -qq
 
-apt-get -y install libfixposix3:${ARCH} libfixposix-dev
+apt-get -y install libfixposix3:${ARCH} libfixposix-dev:${ARCH}
 
 dpkg -L libfixposix3 libfixposix-dev
