@@ -21,7 +21,7 @@ Pin: origin download.opensuse.org
 Pin-Priority: 1001
 EOF
 
-curl https://download.opensuse.org/repositories/home:/sionescu/Debian/Release.key | apt-key add -
+curl https://download.opensuse.org/repositories/home:/sionescu/Debian_Old/Release.key | apt-key add -
 
 apt-get update -qq
 
