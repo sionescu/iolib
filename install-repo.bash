@@ -6,6 +6,11 @@ set -o nounset   ## set -u : exit the script if you try to use an uninitialised 
 set -o errexit   ## set -e : exit the script if any statement returns a non-true return value
 set -o xtrace    # print commands as they are executed
 
+ARCH=amd64
+case "$1" in
+    allegro | *32 ) ARCH=i386 ;;
+esac
+
 cat > /etc/apt/sources.list.d/libfixposix.list <<EOF
 deb http://download.opensuse.org/repositories/home:/sionescu/Debian/ ./
 EOF
@@ -20,6 +25,6 @@ curl https://download.opensuse.org/repositories/home:/sionescu/Debian/Release.ke
 
 apt-get update -qq
 
-apt-get -y install libfixposix3 libfixposix-dev
+apt-get -y install libfixposix3:${ARCH} libfixposix-dev
 
 dpkg -L libfixposix3 libfixposix-dev

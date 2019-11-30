@@ -33,7 +33,7 @@ notifications:
 
 install:
   - if [ "$LISP" = "allegro" ]; then sudo apt-get install libc6-dev-i386 libffi-dev:i386; fi
-  - sudo ./install-repo.bash
+  - sudo ./install-repo.bash "$LISP"
   - curl -L https://raw.githubusercontent.com/sionescu/cl-travis/master/install.sh | sh
   - cl -e "(cl:in-package :cl-user)
            (dolist (p '(:trivial-features :cffi :split-sequence :idna
