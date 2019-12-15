@@ -274,7 +274,7 @@
 ;;;; Sockets
 
 ;;; RT: don't accept unknown keyword arguments, such as typos.
-(test (make-socket.unknown-keyword.error.function :compile-at :definition-time)
+(test (make-socket.unknown-keyword.error.function)
   (signals error
     (locally
         (declare (notinline make-socket))
