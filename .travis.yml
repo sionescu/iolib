@@ -4,19 +4,19 @@ language: lisp
 env:
   matrix:
     - LISP=ccl
-    - LISP=ccl32
+    # - LISP=ccl32
     - LISP=sbcl
-    - LISP=sbcl32
-    - LISP=allegro
-    - LISP=cmucl
+    # - LISP=sbcl32
+    # - LISP=allegro
+    # - LISP=cmucl
     - LISP=ecl
 
 matrix:
   allow_failures:
-    - env: LISP=ccl32
-    - env: LISP=sbcl32
-    - env: LISP=allegro
-    - env: LISP=cmucl
+    # - env: LISP=ccl32
+    # - env: LISP=sbcl32
+    # - env: LISP=allegro
+    # - env: LISP=cmucl
     - env: LISP=ecl
 
 notifications:
