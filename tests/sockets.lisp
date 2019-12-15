@@ -284,7 +284,7 @@
 (test (make-socket.unknown-keyword.error.compiler-macro :compile-at :definition-time)
   (signals error
     (funcall
-     (alexandria:ignore-some-conditions (warning)
+     (alexandria:ignore-some-conditions (warning error)
        (compile nil '(lambda () (make-socket :this-kw-arg-doesnt-exist t)))))))
 
 (test (make-socket.2 :compile-at :definition-time)
