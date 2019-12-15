@@ -1,11 +1,11 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- iolib.pathnames test suite.
+;;; --- iolib/pathnames test suite.
 ;;;
 
-(in-package :iolib-tests)
+(in-package :iolib/tests)
 
-(in-suite :iolib.pathnames)
+(in-suite :iolib/pathnames)
 
 (defmacro is-file-path (path (&rest components))
   (with-gensyms (p)

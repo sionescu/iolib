@@ -1,8 +1,8 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- iolib.base test suite.
+;;; --- iolib/base test suite.
 ;;;
 
-(in-package :iolib-tests)
+(in-package :iolib/tests)
 
-(in-suite :iolib.base)
+(in-suite :iolib/base)

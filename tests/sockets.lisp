@@ -1,11 +1,11 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- iolib.sockets test suite.
+;;; --- iolib/sockets test suite.
 ;;;
 
-(in-package :iolib-tests)
+(in-package :iolib/tests)
 
-(in-suite :iolib.sockets)
+(in-suite :iolib/sockets)
 
 (iolib.base:enable-literal-reader)
 
@@ -382,7 +382,7 @@
   (is (string= (let ((file (namestring
                             (make-pathname :name "local-socket" :type nil
                                            :defaults (asdf:component-pathname
-                                                      (asdf:find-system :iolib.tests))))))
+                                                      (asdf:find-system :iolib/tests))))))
                  (ignore-errors (delete-file file))
                  (with-open-socket (p :address-family :local :connect :passive :local-filename file)
                    (with-open-socket (a :address-family :local :remote-filename file)

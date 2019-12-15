@@ -1,11 +1,11 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- iolib.multiplex test suite.
+;;; --- iolib/multiplex test suite.
 ;;;
 
-(in-package :iolib-tests)
+(in-package :iolib/tests)
 
-(in-suite :iolib.multiplex)
+(in-suite :iolib/multiplex)
 
 (defmacro with-event-base/for-each-mux ((base &rest initargs) &body body)
   `(let ((failed-list))

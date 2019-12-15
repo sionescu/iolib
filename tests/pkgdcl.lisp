@@ -5,9 +5,9 @@
 
 (in-package :cl-user)
 
-(defpackage :iolib-tests
+(defpackage :iolib/tests
   (:nicknames :iolib/tests)
-  (:use :5am :iolib.base :iolib :iolib.pathnames)
+  (:use :5am :iolib/base :iolib :iolib/pathnames)
   #+sb-package-locks
   (:lock t)
   (:export #:*echo-address* #:*echo-port*))

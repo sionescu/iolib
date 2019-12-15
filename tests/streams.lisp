@@ -1,6 +1,6 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 ;;;
-;;; --- iolib.streams test suite.
+;;; --- iolib/streams test suite.
 ;;;
 ;;; Copyright (c) 2006-2007, Dr. Edmund Weitz.  All rights reserved.
 ;;; Copyright (c) 2007, Luis Oliveira  <loliveira@common-lisp.net>
@@ -29,9 +29,9 @@
 ;;; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ;;; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-(in-package :iolib-tests)
+(in-package :iolib/tests)
 
-(in-suite :iolib.streams)
+(in-suite :iolib/streams)
 
 (defclass my-file-stream (dual-channel-gray-stream)
   ((path :initarg :path :reader file-stream-path)))
