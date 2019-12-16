@@ -8,8 +8,8 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib.conf :iolib.grovel)
-  :depends-on (:trivial-features :cffi :iolib.base :iolib.grovel)
+  :defsystem-depends-on (:iolib.asdf :iolib.conf :cffi-grovel)
+  :depends-on (:trivial-features :cffi :iolib.base)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/syscalls/"
@@ -18,7 +18,7 @@
    #+unix
    (:file "syscall-path-strings" :pathname "unix-syscall-path-strings")
    ;; Platform-specific files
-   (:iolib-grovel-file "ffi-types" :pathname #+unix "ffi-types-unix")
+   (:cffi-grovel-file "ffi-types" :pathname #+unix "ffi-types-unix")
    (:file "conditions")
    (:file "os-conditions" :pathname #+unix "os-conditions-unix")
    (:file "designators")
@@ -126,16 +126,16 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib.conf :iolib.grovel)
+  :defsystem-depends-on (:iolib.asdf :iolib.conf :cffi-grovel)
   :depends-on (:iolib.base :iolib/syscalls :iolib/streams
-               :babel :cffi :iolib.grovel :bordeaux-threads
+               :babel :cffi :bordeaux-threads
                :idna :swap-bytes)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
   :pathname "src/sockets/"
   :components
   ((:file "pkgdcl")
-   (:iolib-grovel-file "grovel" :depends-on ("pkgdcl"))
+   (:cffi-grovel-file "grovel" :depends-on ("pkgdcl"))
    (:file "conditions" :depends-on ("pkgdcl" "grovel"))
    (:file "bsd" :depends-on ("pkgdcl" "grovel" "conditions"))
    (:file "common" :depends-on ("pkgdcl" "grovel" "bsd"))
@@ -223,8 +223,8 @@
   :author "Stelian Ionescu <sionescu@cddr.org>"
   :licence "MIT"
   :version (:read-file-form "version.sexp")
-  :defsystem-depends-on (:iolib.asdf :iolib.conf :iolib.grovel)
-  :depends-on (:iolib.base :iolib.grovel :iolib/syscalls
+  :defsystem-depends-on (:iolib.asdf :iolib.conf :cffi-grovel)
+  :depends-on (:iolib.base :iolib/syscalls
                :iolib/streams :iolib/pathnames)
   :around-compile "iolib/asdf:compile-wrapper"
   :encoding :utf-8
@@ -232,7 +232,7 @@
   :components
   ((:file "pkgdcl")
    (:file "os" :pathname #+unix "os-unix")
-   (:iolib-grovel-file "ffi-types" :pathname #+unix "ffi-types-unix")
+   (:cffi-grovel-file "ffi-types" :pathname #+unix "ffi-types-unix")
    (:file "ffi-functions" :pathname #+unix "ffi-functions-unix")
    (:file "create-process" :pathname #+unix "create-process-unix"))
   :serial t)
