@@ -31,9 +31,9 @@
                      (ash (second v) 8)
                      (third v)))
            (buildinfo ()
-             (with-foreign-object (info 'lfp-buildinfo)
+             (with-foreign-object (info '(:struct lfp-buildinfo))
                (foreign-funcall "lfp_buildinfo" :pointer info :int)
-               (foreign-slot-value info 'lfp-buildinfo 'release)))
+               (foreign-slot-value info '(:struct lfp-buildinfo) 'release)))
            (ensure-minver (minver)
              (let ((version (buildinfo))
                    (minint (version-int minver)))
@@ -329,7 +329,7 @@ to the argument OFFSET according to the directive WHENCE."
 ;;; If necessary for performance reasons, we can add an optional
 ;;; argument to this function and use that to reuse a wrapper object.
 (defentrypoint funcall-stat (fn arg)
-  (with-foreign-object (buf 'stat)
+  (with-foreign-object (buf '(:struct stat))
     (funcall fn arg buf)
     (make-instance 'stat :pointer buf)))
 
@@ -560,7 +560,7 @@ Return two values: the file descriptor and the path of the temporary file."
   (timeout   :pointer))
 
 (defentrypoint copy-fd-set (from to)
-  (memcpy to from (sizeof 'fd-set))
+  (memcpy to from (sizeof '(:struct fd-set)))
   to)
 
 (defcfun (fd-clr "lfp_fd_clr") :void
@@ -672,11 +672,12 @@ Return two values: the file descriptor and the path of the temporary file."
 
 (defentrypoint readdir (dir)
   "Reads an item from the listing of directory DIR (reentrant)."
-  (with-foreign-objects ((entry 'dirent) (result :pointer))
+  (with-foreign-objects ((entry '(:struct dirent))
+                         (result :pointer))
     (%readdir dir entry result)
     (if (null-pointer-p (mem-ref result :pointer))
         nil
-        (with-foreign-slots ((name type fileno) entry dirent)
+        (with-foreign-slots ((name type fileno) entry (:struct dirent))
           (values (cstring-to-sstring name) type fileno)))))
 
 (defsyscall (rewinddir "rewinddir") :void
@@ -821,8 +822,8 @@ processes mapping the same region."
 
 (defentrypoint getrlimit (resource)
   "Return soft and hard limit of system resource RESOURCE."
-  (with-foreign-object (rl 'rlimit)
-    (with-foreign-slots ((cur max) rl rlimit)
+  (with-foreign-object (rl '(:struct rlimit))
+    (with-foreign-slots ((cur max) rl (:struct rlimit))
       (%getrlimit resource rl)
       (values cur max))))
 
@@ -833,8 +834,8 @@ processes mapping the same region."
 
 (defentrypoint setrlimit (resource soft-limit hard-limit)
   "Set SOFT-LIMIT and HARD-LIMIT of system resource RESOURCE."
-  (with-foreign-object (rl 'rlimit)
-    (with-foreign-slots ((cur max) rl rlimit)
+  (with-foreign-object (rl '(:struct rlimit))
+    (with-foreign-slots ((cur max) rl (:struct rlimit))
       (setf cur soft-limit
             max hard-limit)
       (%setrlimit resource rl))))
@@ -847,19 +848,23 @@ processes mapping the same region."
 ;;; instead like we do in STAT.
 (defentrypoint getrusage (who)
   "Return resource usage measures of WHO."
-  (with-foreign-object (ru 'rusage)
+  (with-foreign-object (ru '(:struct rusage))
     (%getrusage who ru)
     (with-foreign-slots ((maxrss ixrss idrss isrss minflt majflt nswap inblock
                           oublock msgsnd msgrcv nsignals nvcsw nivcsw)
-                         ru rusage)
-      (values (foreign-slot-value (foreign-slot-pointer ru 'rusage 'utime)
-                                  'timeval 'sec)
-              (foreign-slot-value (foreign-slot-pointer ru 'rusage 'utime)
-                                  'timeval 'usec)
-              (foreign-slot-value (foreign-slot-pointer ru 'rusage 'stime)
-                                  'timeval 'sec)
-              (foreign-slot-value (foreign-slot-pointer ru 'rusage 'stime)
-                                  'timeval 'usec)
+                         ru (:struct rusage))
+      (values (foreign-slot-value
+               (foreign-slot-pointer ru '(:struct rusage) 'utime)
+               '(:struct timeval) 'sec)
+              (foreign-slot-value
+               (foreign-slot-pointer ru '(:struct rusage) 'utime)
+               '(:struct timeval) 'usec)
+              (foreign-slot-value
+               (foreign-slot-pointer ru '(:struct rusage) 'stime)
+               '(:struct timeval) 'sec)
+              (foreign-slot-value
+               (foreign-slot-pointer ru '(:struct rusage) 'stime)
+               '(:struct timeval) 'usec)
               maxrss ixrss idrss isrss minflt majflt
               nswap inblock oublock msgsnd
               msgrcv nsignals nvcsw nivcsw))))
@@ -949,8 +954,8 @@ as indicated by WHICH and WHO to VALUE."
   (res     :pointer))
 
 (defentrypoint clock-getres (clock-id)
-  (with-foreign-object (ts 'timespec)
-    (with-foreign-slots ((sec nsec) ts timespec)
+  (with-foreign-object (ts '(:struct timespec))
+    (with-foreign-slots ((sec nsec) ts (:struct timespec))
       (%clock-getres clock-id ts)
       (values sec nsec))))
 
@@ -960,8 +965,8 @@ as indicated by WHICH and WHO to VALUE."
 
 (defentrypoint clock-gettime (clock-id)
   "Returns the time of the clock CLOCKID."
-  (with-foreign-object (ts 'timespec)
-    (with-foreign-slots ((sec nsec) ts timespec)
+  (with-foreign-object (ts '(:struct timespec))
+    (with-foreign-slots ((sec nsec) ts (:struct timespec))
       (%clock-gettime clock-id ts)
       (values sec nsec))))
 
@@ -971,8 +976,8 @@ as indicated by WHICH and WHO to VALUE."
 
 (defentrypoint clock-settime (clock-id)
   "Sets the time of the clock CLOCKID."
-  (with-foreign-object (ts 'timespec)
-    (with-foreign-slots ((sec nsec) ts timespec)
+  (with-foreign-object (ts '(:struct timespec))
+    (with-foreign-slots ((sec nsec) ts (:struct timespec))
       (%clock-settime clock-id ts)
       (values sec nsec))))
 
@@ -1057,12 +1062,12 @@ OS environment to NULL."
 
 (defentrypoint uname ()
   "Get name and information about current kernel."
-  (with-foreign-object (buf 'utsname)
-    (bzero buf (sizeof 'utsname))
+  (with-foreign-object (buf '(:struct utsname))
+    (bzero buf (sizeof '(:struct utsname)))
     (%uname buf)
     (macrolet ((utsname-slot (name)
                  `(foreign-string-to-lisp
-                   (foreign-slot-pointer buf 'utsname ',name))))
+                   (foreign-slot-pointer buf '(:struct utsname) ',name))))
       (values (utsname-slot sysname)
               (utsname-slot nodename)
               (utsname-slot release)
@@ -1095,9 +1100,11 @@ OS environment to NULL."
   (result  :pointer))
 
 (defun funcall-getpw (fn arg)
-  (with-foreign-objects ((pw 'passwd) (pwp :pointer))
+  (with-foreign-objects ((pw '(:struct passwd))
+                         (pwp :pointer))
     (with-foreign-pointer (buf +cstring-path-max+ bufsize)
-      (with-foreign-slots ((name passwd uid gid gecos dir shell) pw passwd)
+      (with-foreign-slots ((name passwd uid gid gecos dir shell)
+                           pw (:struct passwd))
         (funcall fn arg pw buf bufsize pwp)
         (if (null-pointer-p (mem-ref pwp :pointer))
             nil
@@ -1138,9 +1145,10 @@ OS environment to NULL."
 
 ;; FIXME: return group members too
 (defun funcall-getgr (fn arg)
-  (with-foreign-objects ((gr 'group) (grp :pointer))
+  (with-foreign-objects ((gr '(:struct group))
+                         (grp :pointer))
     (with-foreign-pointer (buf +cstring-path-max+ bufsize)
-      (with-foreign-slots ((name passwd gid) gr group)
+      (with-foreign-slots ((name passwd gid) gr (:struct group))
         (funcall fn arg gr buf bufsize grp)
         (if (null-pointer-p (mem-ref grp :pointer))
             nil

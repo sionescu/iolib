@@ -57,10 +57,10 @@ Returns two boolean values indicating readability and writeability of `FILE-DESC
   (flet ((poll-error (unix-err)
            (error 'poll-error :fd file-descriptor
                   :identifier (isys:identifier-of unix-err))))
-    (with-foreign-object (pollfd 'isys:pollfd)
-      (isys:bzero pollfd (isys:sizeof 'isys:pollfd))
+    (with-foreign-object (pollfd '(:struct isys:pollfd))
+      (isys:bzero pollfd (isys:sizeof '(:struct isys:pollfd)))
       (with-foreign-slots ((isys:fd isys:events isys:revents)
-                           pollfd isys:pollfd)
+                           pollfd (:struct isys:pollfd))
         (setf isys:fd     file-descriptor
               isys:events (compute-poll-flags event-type))
         (handler-case

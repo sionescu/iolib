@@ -120,7 +120,8 @@
 ;;;; netinet/un.h
 
 (defconstant unix-path-max
-  (- (isys:sizeof 'sockaddr-un) (foreign-slot-offset 'sockaddr-un 'path)))
+  (- (isys:sizeof '(:struct sockaddr-un))
+     (foreign-slot-offset '(:struct sockaddr-un) 'path)))
 
 ;;;; net/if.h
 

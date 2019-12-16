@@ -350,7 +350,8 @@ The socket is automatically closed upon exit."
   (flet ((%get-address-family (fd)
            (with-sockaddr-storage-and-socklen (ss size)
              (%getsockname fd ss size)
-             (eswitch ((foreign-slot-value ss 'sockaddr-storage 'family) :test #'=)
+             (eswitch ((foreign-slot-value ss '(:struct sockaddr-storage) 'family)
+                       :test #'=)
                (af-inet  :ipv4)
                (af-inet6 :ipv6)
                (af-local :local)
@@ -391,16 +392,16 @@ The socket is automatically closed upon exit."
 ;;; SEND/RECEIVE-FILE-DESCRIPTOR
 
 (defun call-with-buffers-for-fd-passing (fn)
-  (with-foreign-object (msg 'msghdr)
-    (isys:bzero msg (isys:sizeof 'msghdr))
+  (with-foreign-object (msg '(:struct msghdr))
+    (isys:bzero msg (isys:sizeof '(:struct msghdr)))
     (with-foreign-pointer (buffer #.(isys:cmsg.space (isys:sizeof :int))
                            buffer-size)
       (isys:bzero buffer buffer-size)
-      (with-foreign-slots ((control controllen) msg msghdr)
+      (with-foreign-slots ((control controllen) msg (:struct msghdr))
         (setf control    buffer
               controllen buffer-size)
         (let ((cmsg (isys:cmsg.firsthdr msg)))
-          (with-foreign-slots ((len level type) cmsg cmsghdr)
+          (with-foreign-slots ((len level type) cmsg (:struct cmsghdr))
             (setf len (isys:cmsg.len (isys:sizeof :int))
                   level sol-socket
                   type scm-rights)

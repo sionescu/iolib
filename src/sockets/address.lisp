@@ -60,13 +60,13 @@ ADDRESS-NAME reader."))
 ;;;; Conversion functions for SOCKADDR_* structs
 
 (defun sockaddr-in->sockaddr (sin)
-  (with-foreign-slots ((addr port) sin sockaddr-in)
+  (with-foreign-slots ((addr port) sin (:struct sockaddr-in))
     (values (make-instance 'ipv4-address
                            :name (integer-to-vector (ntohl addr)))
             (ntohs port))))
 
 (defun sockaddr-in6->sockaddr (sin6)
-  (with-foreign-slots ((addr port) sin6 sockaddr-in6)
+  (with-foreign-slots ((addr port) sin6 (:struct sockaddr-in6))
     (values (make-instance 'ipv6-address
                            :name (in6-addr-to-ipv6-array addr))
             (ntohs port))))
@@ -75,7 +75,7 @@ ADDRESS-NAME reader."))
   (foreign-string-to-lisp path :max-chars (1- unix-path-max)))
 
 (defun sockaddr-un->sockaddr (sun)
-  (with-foreign-slots ((path) sun sockaddr-un)
+  (with-foreign-slots ((path) sun (:struct sockaddr-un))
     (multiple-value-bind (name abstract)
         (if (zerop (mem-aref path :uint8 0))
             (values (parse-un-path (inc-pointer path 1)) t)
@@ -84,12 +84,12 @@ ADDRESS-NAME reader."))
 
 #+linux
 (defun sockaddr-nl->sockaddr (snl)
-  (with-foreign-slots ((groups port) snl sockaddr-nl)
+  (with-foreign-slots ((groups port) snl (:struct sockaddr-nl))
     (values (make-instance 'netlink-address :multicast-groups groups)
             port)))
 
 (defun sockaddr-storage->sockaddr (ss)
-  (with-foreign-slots ((family) ss sockaddr-storage)
+  (with-foreign-slots ((family) ss (:struct sockaddr-storage))
     (switch (family :test #'=)
       (af-inet (sockaddr-in->sockaddr ss))
       (af-inet6 (sockaddr-in6->sockaddr ss))
@@ -108,13 +108,13 @@ ADDRESS-NAME reader."))
                                        port))))
 
 (defun sockaddr-size (ss)
-  (with-foreign-slots ((family) ss sockaddr-storage)
+  (with-foreign-slots ((family) ss (:struct sockaddr-storage))
     (switch (family :test #'=)
-      (af-inet  (isys:sizeof 'sockaddr-in))
-      (af-inet6 (isys:sizeof 'sockaddr-in6))
-      (af-local (isys:sizeof 'sockaddr-un))
+      (af-inet  (isys:sizeof '(:struct sockaddr-in)))
+      (af-inet6 (isys:sizeof '(:struct sockaddr-in6)))
+      (af-local (isys:sizeof '(:struct sockaddr-un)))
       #+linux
-      (af-netlink (isys:sizeof 'sockaddr-nl)))))
+      (af-netlink (isys:sizeof '(:struct sockaddr-nl))))))
 
 ;;;; Conversion functions
 

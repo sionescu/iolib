@@ -487,8 +487,8 @@
   (max "rlim_max" :type rlim-t))
 
 (cstruct rusage "struct rusage"
-  (utime    "ru_utime"    :type timeval)
-  (stime    "ru_stime"    :type timeval)
+  (utime    "ru_utime"    :type (:struct timeval))
+  (stime    "ru_stime"    :type (:struct timeval))
   (maxrss   "ru_maxrss"   :type :long)
   (ixrss    "ru_ixrss"    :type :long)
   (idrss    "ru_idrss"    :type :long)
@@ -594,7 +594,7 @@
 
   (cstruct epoll-event "struct epoll_event"
     (events "events" :type :uint32)
-    (data   "data"   :type epoll-data))
+    (data   "data"   :type (:union epoll-data)))
 
   (constant (epoll-ctl-add "EPOLL_CTL_ADD"))
   (constant (epoll-ctl-del "EPOLL_CTL_DEL"))

@@ -19,7 +19,7 @@
   (:default-initargs :fd-limit (1- isys:fd-setsize)))
 
 (defun allocate-fd-set ()
-  (let ((fd-set (foreign-alloc 'isys:fd-set)))
+  (let ((fd-set (foreign-alloc '(:struct isys:fd-set))))
     (isys:fd-zero fd-set)
     fd-set))
 
@@ -89,14 +89,14 @@
                (null timeout))
       (warn "Non fds to monitor and no timeout set !")
       (return* nil))
-    (with-foreign-objects ((read-fds 'isys:fd-set)
-                           (write-fds 'isys:fd-set)
-                           (except-fds 'isys:fd-set))
+    (with-foreign-objects ((read-fds '(:struct isys:fd-set))
+                           (write-fds '(:struct isys:fd-set))
+                           (except-fds '(:struct isys:fd-set)))
       (isys:copy-fd-set rs read-fds)
       (isys:copy-fd-set ws write-fds)
       (isys:copy-fd-set es except-fds)
       (handler-case
-          (with-foreign-object (ts 'isys:timespec)
+          (with-foreign-object (ts '(:struct isys:timespec))
             (isys:repeat-upon-condition-decreasing-timeout
                 ((isys:eintr) tmp-timeout timeout)
               (when tmp-timeout

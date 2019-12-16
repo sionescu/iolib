@@ -244,11 +244,11 @@
 
 (defun bind-ipv4-address (fd address port)
   (with-sockaddr-in (sin address port)
-    (%bind fd sin (isys:sizeof 'sockaddr-in))))
+    (%bind fd sin (isys:sizeof '(:struct sockaddr-in)))))
 
 (defun bind-ipv6-address (fd address port)
   (with-sockaddr-in6 (sin6 address port)
-    (%bind fd sin6 (isys:sizeof 'sockaddr-in6))))
+    (%bind fd sin6 (isys:sizeof '(:struct sockaddr-in6)))))
 
 (defmethod bind-address ((socket internet-socket) (address ipv4-address)
                          &key (port 0))
@@ -276,7 +276,7 @@
 (defmethod bind-address ((socket netlink-socket) (address netlink-address)
                          &key (port 0))
   (with-sockaddr-nl (snl (netlink-address-multicast-groups address) port)
-    (%bind (fd-of socket) snl (isys:sizeof 'sockaddr-nl)))
+    (%bind (fd-of socket) snl (isys:sizeof '(:struct sockaddr-nl))))
   (values socket))
 
 (defmethod bind-address :after ((socket socket) (address address) &key)
@@ -325,11 +325,11 @@
 
 (defun ipv4-connect (fd address port)
   (with-sockaddr-in (sin address port)
-    (%connect fd sin (isys:sizeof 'sockaddr-in))))
+    (%connect fd sin (isys:sizeof '(:struct sockaddr-in)))))
 
 (defun ipv6-connect (fd address port)
   (with-sockaddr-in6 (sin6 address port)
-    (%connect fd sin6 (isys:sizeof 'sockaddr-in6))))
+    (%connect fd sin6 (isys:sizeof '(:struct sockaddr-in6)))))
 
 (defun call-with-socket-to-wait-connect (socket thunk wait)
   (check-type wait timeout-designator)
@@ -389,10 +389,10 @@
 ;;;-------------------------------------------------------------------------
 
 (defmethod disconnect ((socket datagram-socket))
-  (with-foreign-object (sin 'sockaddr-in)
-    (isys:bzero sin (isys:sizeof 'sockaddr-in))
-    (setf (foreign-slot-value sin 'sockaddr-in 'addr) af-unspec)
-    (%connect (fd-of socket) sin (isys:sizeof 'sockaddr-in))
+  (with-foreign-object (sin '(:struct sockaddr-in))
+    (isys:bzero sin (isys:sizeof '(:struct sockaddr-in)))
+    (setf (foreign-slot-value sin '(:struct sockaddr-in) 'addr) af-unspec)
+    (%connect (fd-of socket) sin (isys:sizeof '(:struct sockaddr-in)))
     (values socket)))
 
 

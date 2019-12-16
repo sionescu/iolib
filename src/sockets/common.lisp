@@ -72,63 +72,63 @@
 
 (defun make-sockaddr-in (sin ub8-vector &optional (portno 0))
   (declare (type ipv4-array ub8-vector) (type ub16 portno))
-  (isys:bzero sin (isys:sizeof 'sockaddr-in))
-  (with-foreign-slots ((family addr port) sin sockaddr-in)
+  (isys:bzero sin (isys:sizeof '(:struct sockaddr-in)))
+  (with-foreign-slots ((family addr port) sin (:struct sockaddr-in))
     (setf family af-inet)
     (setf addr (htonl (vector-to-integer ub8-vector)))
     (setf port (htons portno)))
   (values sin))
 
 (defmacro with-sockaddr-in ((var address &optional (port 0)) &body body)
-  `(with-foreign-object (,var 'sockaddr-in)
+  `(with-foreign-object (,var '(:struct sockaddr-in))
      (make-sockaddr-in ,var ,address ,port)
      ,@body))
 
 (defun make-sockaddr-in6 (sin6 ub16-vector &optional (portno 0))
   (declare (type ipv6-array ub16-vector) (type ub16 portno))
-  (isys:bzero sin6 (isys:sizeof 'sockaddr-in6))
-  (with-foreign-slots ((family addr port) sin6 sockaddr-in6)
+  (isys:bzero sin6 (isys:sizeof '(:struct sockaddr-in6)))
+  (with-foreign-slots ((family addr port) sin6 (:struct sockaddr-in6))
     (setf family af-inet6)
     (copy-simple-array-ub16-to-alien-vector ub16-vector addr)
     (setf port (htons portno)))
   (values sin6))
 
 (defmacro with-sockaddr-in6 ((var address &optional port) &body body)
-  `(with-foreign-object (,var 'sockaddr-in6)
+  `(with-foreign-object (,var '(:struct sockaddr-in6))
      (make-sockaddr-in6 ,var ,address ,port)
      ,@body))
 
 (defun make-sockaddr-un (sun string abstract)
   (declare (type string string))
-  (isys:bzero sun (isys:sizeof 'sockaddr-un))
-  (with-foreign-slots ((family path) sun sockaddr-un)
+  (isys:bzero sun (isys:sizeof '(:struct sockaddr-un)))
+  (with-foreign-slots ((family path) sun (:struct sockaddr-un))
     (setf family af-local)
     (let* ((address-string
             (concatenate 'string (when abstract (string #\Null)) string))
            (path-length (length address-string))
            (sun-path-len
             (load-time-value
-             (- (isys:sizeof 'sockaddr-un)
-                (foreign-slot-offset 'sockaddr-un 'path)))))
+             (- (isys:sizeof '(:struct sockaddr-un))
+                (foreign-slot-offset '(:struct sockaddr-un) 'path)))))
       (assert (< path-length sun-path-len))
       (with-foreign-string (c-string address-string :null-terminated-p nil)
-        (isys:memcpy (foreign-slot-pointer sun 'sockaddr-un 'path)
+        (isys:memcpy (foreign-slot-pointer sun '(:struct sockaddr-un) 'path)
                      c-string path-length))))
   (values sun))
 
 (defun actual-size-of-sockaddr-un (sun)
-  (let ((path-ptr (foreign-slot-pointer sun 'sockaddr-un 'path))
+  (let ((path-ptr (foreign-slot-pointer sun '(:struct sockaddr-un) 'path))
         (sun-path-len
          (load-time-value
-          (- (isys:sizeof 'sockaddr-un)
-             (foreign-slot-offset 'sockaddr-un 'path)))))
+          (- (isys:sizeof '(:struct sockaddr-un))
+             (foreign-slot-offset '(:struct sockaddr-un) 'path)))))
     (loop :for i :from 1 :below sun-path-len
           :if (zerop (mem-aref path-ptr :char i))
-          :do (return (+ i (foreign-slot-offset 'sockaddr-un 'path)))
+          :do (return (+ i (foreign-slot-offset '(:struct sockaddr-un) 'path)))
           :finally (bug "Invalid sockaddr_un struct: slot sun_path contains invalid C string"))))
 
 (defmacro with-sockaddr-un ((var address abstract) &body body)
-  `(with-foreign-object (,var 'sockaddr-un)
+  `(with-foreign-object (,var '(:struct sockaddr-un))
      (make-sockaddr-un ,var ,address ,abstract)
      ,@body))
 
@@ -136,8 +136,8 @@
 (defun make-sockaddr-nl (snl multicast-groups &optional (portno 0))
   (declare (type ub32 multicast-groups)
            (type ub32 portno))
-  (isys:bzero snl (isys:sizeof 'sockaddr-nl))
-  (with-foreign-slots ((family groups port) snl sockaddr-nl)
+  (isys:bzero snl (isys:sizeof '(:struct sockaddr-nl)))
+  (with-foreign-slots ((family groups port) snl (:struct sockaddr-nl))
     (setf family af-netlink)
     (setf groups multicast-groups)
     (setf port portno))
@@ -145,13 +145,13 @@
 
 #+linux
 (defmacro with-sockaddr-nl ((var multicast-groups &optional (port 0)) &body body)
-  `(with-foreign-object (,var 'sockaddr-nl)
+  `(with-foreign-object (,var '(:struct sockaddr-nl))
      (make-sockaddr-nl ,var ,multicast-groups ,port)
      ,@body))
 
 (defmacro with-sockaddr-storage ((var) &body body)
-  `(with-foreign-object (,var 'sockaddr-storage)
-     (isys:bzero ,var (isys:sizeof 'sockaddr-storage))
+  `(with-foreign-object (,var '(:struct sockaddr-storage))
+     (isys:bzero ,var (isys:sizeof '(:struct sockaddr-storage)))
      ,@body))
 
 (defmacro with-socklen ((var value) &body body)
@@ -161,7 +161,7 @@
 
 (defmacro with-sockaddr-storage-and-socklen ((ss-var size-var) &body body)
   `(with-sockaddr-storage (,ss-var)
-     (with-socklen (,size-var (isys:sizeof 'sockaddr-storage))
+     (with-socklen (,size-var (isys:sizeof '(:struct sockaddr-storage)))
        ,@body)))
 
 ;;;; Misc

@@ -130,18 +130,18 @@
 (define-socket-option-type :linger (onoff (linger *default-linger-seconds*)))
 
 (define-socket-option-helper (:get :linger) (fd level option)
-  (with-foreign-object (optval 'linger)
-    (with-socklen (optlen (isys:sizeof 'linger))
+  (with-foreign-object (optval '(:struct linger))
+    (with-socklen (optlen (isys:sizeof '(:struct linger)))
       (%getsockopt fd level option optval optlen)
-      (with-foreign-slots ((linger onoff) optval linger)
+      (with-foreign-slots ((linger onoff) optval (:struct linger))
         (values (not (zerop onoff)) linger)))))
 
 (define-socket-option-helper (:set :linger) (fd level option new-onoff new-linger)
-  (with-foreign-object (optval 'linger)
-    (with-foreign-slots ((linger onoff) optval linger)
+  (with-foreign-object (optval '(:struct linger))
+    (with-foreign-slots ((linger onoff) optval (:struct linger))
       (setf onoff (lisp->c-bool new-onoff)
             linger new-linger))
-    (%setsockopt fd level option optval (isys:sizeof 'linger))
+    (%setsockopt fd level option optval (isys:sizeof '(:struct linger)))
     (values new-onoff new-linger)))
 
 ;;; TIMEVAL
@@ -149,17 +149,17 @@
 (define-socket-option-type :timeval (sec))
 
 (define-socket-option-helper (:get :timeval) (fd level option)
-  (with-foreign-object (optval 'timeval)
-    (with-socklen (optlen (isys:sizeof 'timeval))
+  (with-foreign-object (optval '(:struct timeval))
+    (with-socklen (optlen (isys:sizeof '(:struct timeval)))
       (%getsockopt fd level option optval optlen)
-      (with-foreign-slots ((sec usec) optval timeval)
+      (with-foreign-slots ((sec usec) optval (:struct timeval))
         (values sec usec)))))
 
 (define-socket-option-helper (:set :timeval) (fd level option new-sec)
-  (with-foreign-object (optval 'timeval)
-    (with-foreign-slots ((sec usec) optval timeval)
+  (with-foreign-object (optval '(:Struct timeval))
+    (with-foreign-slots ((sec usec) optval (:struct timeval))
       (setf (values sec usec) (decode-timeout new-sec)))
-    (%setsockopt fd level option optval (isys:sizeof 'timeval))
+    (%setsockopt fd level option optval (isys:sizeof '(:struct timeval)))
     (values new-sec)))
 
 ;;; IFREQ-NAME
@@ -168,12 +168,12 @@
 
 #+linux
 (define-socket-option-helper (:set :ifreq-name) (fd level option interface)
-  (with-foreign-object (optval 'ifreq)
-    (isys:bzero optval (isys:sizeof 'ifreq))
-    (with-foreign-slots ((name) optval ifreq)
+  (with-foreign-object (optval '(:struct ifreq))
+    (isys:bzero optval (isys:sizeof '(:struct ifreq)))
+    (with-foreign-slots ((name) optval (:struct ifreq))
       (with-foreign-string (ifname interface)
         (isys:memcpy name ifname (min (length interface) (1- ifnamsiz)))))
-    (%setsockopt fd level option optval (isys:sizeof 'ifreq))
+    (%setsockopt fd level option optval (isys:sizeof '(:struct ifreq)))
     (values interface)))
 
 ;;;; Option Definitions
