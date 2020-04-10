@@ -67,6 +67,7 @@
    #:defentrypoint
    #:defcfun*
    #:defsyscall
+   #:defkernel
 
    ;; CFFI Type Designators
    #:pointer-or-nil
