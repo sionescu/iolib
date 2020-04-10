@@ -123,11 +123,13 @@
 ;;;-------------------------------------------------------------------------
 
 (defmacro defentrypoint (name (&rest args) &body body)
+  "Like DEFUN, in addition it DECLAIMs the function INLINE."
   `(progn
      (declaim (inline ,name))
      (defun ,name ,args ,@body)))
 
 (defmacro defcfun* (name-and-opts return-type &body args)
+  "Like CFFI:DEFCFUN, in addition it DECLAIMs the function INLINE."
   (multiple-value-bind (lisp-name c-name options)
       (cffi::parse-name-and-options name-and-opts)
     `(progn
@@ -136,6 +138,8 @@
          ,@args))))
 
 (defmacro defsyscall (name-and-opts return-type &body args)
+  "Like CFFI:DEFCFUN, in addition it DECLAIMs the function INLINE and
+wraps the return value using SYSCALL-WRAPPER."
   (multiple-value-bind (lisp-name c-name options)
       (cffi::parse-name-and-options name-and-opts)
     `(progn
@@ -146,6 +150,7 @@
          ,@args))))
 
 (defmacro defkernel (name-and-opts return-type &body body)
+  "Like DEFSYSCALL, but obtains the error number from the return value."
   (destructuring-bind (type &rest keyargs)
       (ensure-list return-type)
     (assert (eql :int type))
