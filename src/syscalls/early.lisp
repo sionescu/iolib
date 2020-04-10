@@ -144,6 +144,15 @@
            (syscall-wrapper ,@(append (ensure-list return-type)
                                       (list :syscall c-name)))
          ,@args))))
+
+(defmacro defkernel (name-and-opts return-type &body body)
+  (destructuring-bind (type &rest keyargs)
+      (ensure-list return-type)
+    (assert (eql :int type))
+    (assert (null (getf keyargs 'error-location)))
+    `(defsyscall ,name-and-opts
+         (:int :error-location :negative-return ,@keyargs)
+       ,@body)))
 
 ;;;-------------------------------------------------------------------------
 ;;; CFFI additions
