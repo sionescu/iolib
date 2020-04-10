@@ -87,25 +87,25 @@
       value
       (with-gensyms (retval errno block)
         (let ((foreign-call
-               `(let* ,(remove-if 'null
-                                  `((,retval (convert-from-foreign ,value ',(base-type-of type)))
-                                    ,(case (error-location-of type)
-                                           (:errno `(,errno (errno)))
-                                           (:return `(,errno ,retval)))))
-                  ,(let* ((return-val-exp
-                           (if (eql 'identity (return-filter-of type))
-                               retval
-                               `(,(return-filter-of type) ,retval)))
-                          (return-exp
-                           (if (eql 'never-fails (error-predicate-of type))
-                               `return-val-exp
-                               `(if (,(error-predicate-of type) ,retval)
-                                    (,(error-generator-of type) ,errno ,(syscall-of type)
-                                      ,(handle-of type) ,(handle2-of type))
-                                    ,return-val-exp))))
-                         (if (syscall-restart-p type)
-                             `(return-from ,block ,return-exp)
-                             return-exp)))))
+                `(let* ,`((,retval (convert-from-foreign ,value ',(base-type-of type)))
+                          ,@(case (error-location-of type)
+                              (:errno `((,errno (errno))))
+                              (:return `((,errno ,retval)))
+                              (:negative-return `((,errno (- ,retval))))))
+                   ,(let* ((return-val-exp
+                             (if (eql 'identity (return-filter-of type))
+                                 retval
+                                 `(,(return-filter-of type) ,retval)))
+                           (return-exp
+                             (if (eql 'never-fails (error-predicate-of type))
+                                 `return-val-exp
+                                 `(if (,(error-predicate-of type) ,retval)
+                                      (,(error-generator-of type) ,errno ,(syscall-of type)
+                                       ,(handle-of type) ,(handle2-of type))
+                                      ,return-val-exp))))
+                      (if (syscall-restart-p type)
+                          `(return-from ,block ,return-exp)
+                          return-exp)))))
           (if (syscall-restart-p type)
               `(block ,block
                  (tagbody :restart
