@@ -42,7 +42,7 @@
                          but ~A was loaded"
                         (version-string minint) (version-string version))))))
     ;; Minimum viable LibFixPOSIX version.
-    (ensure-minver '(0 4 3))))
+    (ensure-minver '(0 5 0))))
 
 
 ;;;-------------------------------------------------------------------------
@@ -116,15 +116,18 @@ The two memory areas may overlap."
 ;;; Files
 ;;;-------------------------------------------------------------------------
 
-(defsyscall (%open "lfp_open")
+(defkernel (%open "lfp_open_k")
     (:int :restart t)
+  (newfd (:pointer :int))
   (path  sstring)
   (flags :uint64)
   (mode  mode-t))
 
-(defentrypoint open (path flags &optional (mode #o666))
-  "Open a file descriptor for PATH using FLAGS and permissions MODE(#o666 by default)."
-  (%open path flags mode))
+(defentrypoint open (path flags &optional (mode #o600))
+  "Open a file descriptor for PATH using FLAGS and permissions MODE(#o600 by default)."
+  (with-foreign-object (newfd :int)
+    (%open newfd path flags mode)
+    (mem-aref newfd :int)))
 
 (defsyscall (creat "lfp_creat")
     (:int :restart t)
