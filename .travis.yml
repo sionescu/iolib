@@ -1,17 +1,18 @@
+os: linux
 dist: bionic
-language: lisp
+language: generic
 
 env:
-  matrix:
-    - LISP=ccl
-    # - LISP=ccl32
+  jobs:
     - LISP=sbcl
     # - LISP=sbcl32
+    - LISP=ccl
+    # - LISP=ccl32
+    - LISP=ecl
     # - LISP=allegro
     # - LISP=cmucl
-    - LISP=ecl
 
-matrix:
+jobs:
   allow_failures:
     # - env: LISP=ccl32
     # - env: LISP=sbcl32
@@ -46,5 +47,3 @@ script:
            (uiop:quit (if (some (lambda (x) (typep x '5am::test-failure))
                                 (5am:run :iolib))
                           1 0))"
-
-sudo: required
