@@ -153,7 +153,7 @@ wraps the return value using SYSCALL-WRAPPER."
   "Like DEFSYSCALL, but obtains the error number from the return value."
   (destructuring-bind (type &rest keyargs)
       (ensure-list return-type)
-    (assert (eql :int type))
+    (assert (eql :int (cffi::canonicalize-foreign-type type)))
     (assert (null (getf keyargs 'error-location)))
     `(defsyscall ,name-and-opts
          (:int :error-location :negative-return ,@keyargs)
