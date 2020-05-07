@@ -881,15 +881,15 @@ as indicated by WHICH and WHO to VALUE."
   (who   :int)
   (value :int))
 
+(defkernel (%nice "lfp_nice_k") :int
+  (increment :int)
+  (new-nice  :pointer))
+
 (defentrypoint nice (&optional (increment 0))
   "Get or set process priority."
-  ;; FIXME: race condition. might need WITHOUT-INTERRUPTS on some impl.s
-  (setf (errno) 0)
-  (let ((retval (foreign-funcall "nice" :int increment :int))
-        (errno (errno)))
-    (if (and (= retval -1) (/= errno 0))
-        (signal-syscall-error errno "nice")
-        retval)))
+  (with-foreign-object (new-nice :int)
+    (%nice increment new-nice)
+    (mem-ref new-nice :int)))
 
 (defsyscall (exit "_exit") :void
   "terminate the calling process"
