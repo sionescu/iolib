@@ -10,10 +10,10 @@
 
 ;; FIXME: move this into an ASDF operation
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (define-foreign-library libfixposix
+  (define-foreign-library
+      (libfixposix :canary "lfp_buildinfo")
     (t (:default "libfixposix")))
-  (use-foreign-library libfixposix))
-
+  (load-foreign-library 'libfixposix))
 
 
 ;;;-------------------------------------------------------------------------
