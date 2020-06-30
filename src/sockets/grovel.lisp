@@ -36,6 +36,8 @@
          #+linux "linux/netlink.h"
          "arpa/inet.h")
 
+#+(or sunos solaris) (cc-flags "-std=c99" "-D_POSIX_C_SOURCE=200112L" "-D__EXTENSIONS__")
+
 (in-package :iolib/sockets)
 
 (constantenum socket-error-values
