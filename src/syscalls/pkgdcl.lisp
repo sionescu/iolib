@@ -249,8 +249,6 @@
    #:siginfo
    #:siglost
    #:sigwinch
-   #:sig-ign
-   #:sig-dfl
    ;; struct sigaction
    #:sigaction
    #:handler
