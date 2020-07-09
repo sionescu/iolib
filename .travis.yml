@@ -33,17 +33,10 @@ notifications:
     skip_join: true
 
 install:
-  - if [ "$LISP" = "allegro" ]; then sudo apt-get install libc6-dev-i386 libffi-dev:i386; fi
   - curl -L https://raw.githubusercontent.com/sionescu/cl-travis/master/install.sh | sh
   - sudo ./install-repo.bash "$LISP"
-  - cl -e "(cl:in-package :cl-user)
-           (dolist (p '(:trivial-features :cffi :split-sequence :idna
-                        :bordeaux-threads :swap-bytes :uiop :fiveam))
-             (ql:quickload p :verbose t))"
 
 script:
   - cl -e "(cl:in-package :cl-user)
-           (asdf:load-system :iolib/tests :verbose t)
-           (uiop:quit (if (some (lambda (x) (typep x '5am::test-failure))
-                                (5am:run :iolib))
-                          1 0))"
+           (ql:quickload :iolib/tests :verbose t)
+           (uiop:quit (if (5am:run! :iolib) 0 1))"
