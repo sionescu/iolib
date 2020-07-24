@@ -242,7 +242,7 @@ The steps this program performs are:
           :address-family :internet
           :type :stream
           :external-format '(:utf-8 :eol-style :crlf)
-          :ipv6 nil)))
+          :ipv6 nil))))
 |                                                                              |
 +------------------------------------------------------------------------------+
 
