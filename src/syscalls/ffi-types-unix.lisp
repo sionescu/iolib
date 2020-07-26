@@ -462,8 +462,8 @@
 ;; point.
 (cstruct dirent "struct dirent"
   ;; POSIX actually requires this to be d_ino
-  #-(or sunos solaris) (fileno "d_fileno" :type #-freebsd ino-t #+freebsd :uint32)
-  #-(or sunos solaris) (type   "d_type"   :type :uint8)
+  #-sunos (fileno "d_fileno" :type #-freebsd ino-t #+freebsd :uint32)
+  #-sunos (type   "d_type"   :type :uint8)
   (name   "d_name"   :type :uint8 :count :auto))
 
 ;;; filetypes set in d_type slot of struct dirent
