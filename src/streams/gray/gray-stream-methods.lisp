@@ -261,9 +261,10 @@
 
 (defmethod stream-listen ((stream dual-channel-gray-stream))
   (let ((char (stream-read-char-no-hang stream)))
-    (cond ((characterp char) (stream-unread-char stream char) t)
-          ((eql :eof char) nil)
-          (t t))))
+    (cond ((characterp char)
+           (stream-unread-char stream char)
+           t)
+          (t nil))))
 
 
 ;;;-------------------------------------------------------------------------
