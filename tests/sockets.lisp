@@ -187,6 +187,9 @@
 (defparameter *google-ns*
   (list #/ip/8.8.8.8 #/ip/8.8.4.4))
 
+(test (missing-hosts-file :compile-at :definition-time)
+  (is-false (iolib/sockets::parse-/etc/hosts "/foo/no-such-file")))
+
 #-no-internet-available
 (test (lookup-hostname.1 :compile-at :definition-time)
   (is (equalp (multiple-value-bind (address addresses truename)

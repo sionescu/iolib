@@ -52,8 +52,9 @@
              (destructuring-bind (address cname &rest aliases) tokens
                (push (make-host cname (ensure-address address) aliases)
                      hosts))))
-      (map-etc-file (lambda (tokens) (ignore-errors (parse-one-line tokens)))
-                    file)
+      (alexandria:ignore-some-conditions (file-error)
+        (map-etc-file (lambda (tokens) (ignore-errors (parse-one-line tokens)))
+                      file))
       (nreverse hosts))))
 
 (defun search-host-by-name (name ipv6)
