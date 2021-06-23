@@ -60,7 +60,7 @@
               ;; ...and handle the connection!
               (when client
                 (make-thread #'process-ex4-client-thread
-                             :name 'process-ex4-client-thread))))
+                             :name "process-ex4-client-thread"))))
 
       ;; Clean up form for uw-p.
       ;; Clean up all of the client threads when done.
