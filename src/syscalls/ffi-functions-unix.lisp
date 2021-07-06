@@ -677,8 +677,8 @@ Return two values: the file descriptor and the path of the temporary file."
     (%readdir dir entry result)
     (if (null-pointer-p (mem-ref result :pointer))
         nil
-        (with-foreign-slots ((name type fileno) entry (:struct dirent))
-          (values (cstring-to-sstring name) type fileno)))))
+        (with-foreign-slots ((name #-sunos type #-sunos fileno) entry (:struct dirent))
+          (values (cstring-to-sstring name) #-sunos type #-sunos fileno)))))
 
 (defsyscall (rewinddir "rewinddir") :void
   "Rewind directory DIR."
