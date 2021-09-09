@@ -122,7 +122,7 @@ call CLOSE with :ABORT T on `VAR'."
                           local-host local-port remote-host remote-port
                           input-buffer-size output-buffer-size)
   (with-close-on-error (socket (%create-internet-socket family :stream protocol
-                                                        :connect :active 
+                                                        :connect :active
                                                         :external-format external-format
                                                         :input-buffer-size input-buffer-size
                                                         :output-buffer-size output-buffer-size))
@@ -392,20 +392,29 @@ The socket is automatically closed upon exit."
 ;;; SEND/RECEIVE-FILE-DESCRIPTOR
 
 (defun call-with-buffers-for-fd-passing (fn)
-  (with-foreign-object (msg '(:struct msghdr))
+  (with-foreign-objects ((msg '(:struct msghdr))
+                         (nothing-name :char 1)
+                         (nothing-iov '(:struct iovec)))
     (isys:bzero msg (isys:sizeof '(:struct msghdr)))
+    (isys:bzero nothing-iov (isys:sizeof '(:struct iovec)))
     (with-foreign-pointer (buffer #.(isys:cmsg.space (isys:sizeof :int))
                            buffer-size)
       (isys:bzero buffer buffer-size)
-      (with-foreign-slots ((control controllen) msg (:struct msghdr))
+      (with-foreign-slots ((base len) nothing-iov (:struct iovec))
+        (setf base nothing-name
+              len  1))
+      (with-foreign-slots ((control controllen iov iovlen)
+                           msg (:struct msghdr))
         (setf control    buffer
-              controllen buffer-size)
-        (let ((cmsg (isys:cmsg.firsthdr msg)))
-          (with-foreign-slots ((len level type) cmsg (:struct cmsghdr))
-            (setf len (isys:cmsg.len (isys:sizeof :int))
-                  level sol-socket
-                  type scm-rights)
-            (funcall fn msg cmsg)))))))
+              controllen buffer-size
+              iov        nothing-iov
+              iovlen     1))
+      (let ((cmsg (isys:cmsg.firsthdr msg)))
+        (with-foreign-slots ((len level type) cmsg (:struct cmsghdr))
+          (setf len (isys:cmsg.len (isys:sizeof :int))
+                level sol-socket
+                type scm-rights)
+          (funcall fn msg cmsg))))))
 
 (defmacro with-buffers-for-fd-passing ((msg-var cmsg-var) &body body)
   `(call-with-buffers-for-fd-passing (lambda (,msg-var ,cmsg-var) ,@body)))

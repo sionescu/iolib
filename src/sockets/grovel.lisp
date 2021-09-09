@@ -296,6 +296,10 @@
 (constant (msg-eor "MSG_EOR"))                        ; recvmsg sendmsg
 (constant (msg-ctrunc "MSG_CTRUNC"))                  ; recvmsg
 
+(cstruct iovec "struct iovec"
+  (base "iov_base" :type :pointer)
+  (len "iov_len" :type size-t))
+
 (cstruct msghdr "struct msghdr"
   (name       "msg_name"       :type :pointer)
   (namelen    "msg_namelen"    :type socklen-t)
