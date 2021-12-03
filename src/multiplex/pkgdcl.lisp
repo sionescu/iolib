@@ -33,6 +33,7 @@
    #:with-event-base
 
    ;; Operations on FDs
+   #:fd-monitored-p
    #:fd-readablep
    #:fd-ready-p
    #:fd-writablep

@@ -141,6 +141,8 @@ within the extent of BODY.  Closes VAR."
     (error "FD ~A is already monitored for event ~A" fd event-type)))
 
 (defun fd-monitored-p (event-base fd event-type)
+  "Generalised predicate returning the event handler if the given FD
+is monitored for EVENT-TYPE."
   (let ((entry (fd-entry-of event-base fd)))
     (and entry (fd-entry-handler entry event-type))))
 
