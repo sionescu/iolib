@@ -5,6 +5,10 @@
 
 (in-package :iolib/os)
 
+#+bsd
+(progn
+  (pkg-config-cflags "libfixposix"))
+
 (include "lfp.h")
 
 (constant (+stdin+  "STDIN_FILENO"))

@@ -16,6 +16,10 @@
   (define "_LARGEFILE64_SOURCE")
   (define "_FILE_OFFSET_BITS" 64))
 
+#+bsd
+(progn
+  (pkg-config-cflags "libfixposix"))
+
 (include "lfp.h")
 
 (include "sys/poll.h" ;; FIXME: add poll() to LFP
