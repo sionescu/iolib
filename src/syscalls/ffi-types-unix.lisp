@@ -5,16 +5,7 @@
 
 (in-package :iolib/syscalls)
 
-;;; FIXME: Find a way to use pkg-config to get these flags
-;;;        instead of hard-coding them
-#+linux
-(progn
-  (c "#if !defined(_GNU_SOURCE)")
-  (define "_GNU_SOURCE")
-  (c "#endif // _GNU_SOURCE")
-  (define "_LARGEFILE_SOURCE")
-  (define "_LARGEFILE64_SOURCE")
-  (define "_FILE_OFFSET_BITS" 64))
+(pkg-config-cflags "libfixposix")
 
 (include "lfp.h")
 
