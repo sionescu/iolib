@@ -3,6 +3,9 @@
 #.(unless (or #+asdf3.1 (version<= "3.1" (asdf-version)))
     (error "You need ASDF >= 3.1 to load this system correctly."))
 
+#-unix
+(error "Unfortunately, IOlib lacks support for non-Unix OSes (like Windows).")
+
 (defsystem :iolib/syscalls
   :description "Syscalls and foreign types."
   :author "Stelian Ionescu <sionescu@cddr.org>"
