@@ -1,5 +1,5 @@
 os: linux
-dist: bionic
+dist: focal
 language: generic
 
 env:
@@ -12,7 +12,8 @@ env:
     # - LISP=allegro
     # - LISP=cmucl
 
-jobs:
+matrix:
+  fast_finish: true
   allow_failures:
     # - env: LISP=ccl32
     # - env: LISP=sbcl32

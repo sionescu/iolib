@@ -53,7 +53,10 @@
 
 (defgeneric add-timer (event-base function timeout &key one-shot))
 
-(defgeneric remove-fd-handlers (event-base fd &key read write error))
+(defgeneric remove-fd-handlers (event-base fd &key read write error)
+  (:documentation "Removes FD handlers for the given event types.
+If READ, WRITE and ERROR are all NIL (the default), then all are removed.
+Returns T if some handlers were removed, NIL otherwise."))
 
 (defgeneric remove-timer (event-base timer))
 
@@ -141,6 +144,8 @@ within the extent of BODY.  Closes VAR."
     (error "FD ~A is already monitored for event ~A" fd event-type)))
 
 (defun fd-monitored-p (event-base fd event-type)
+  "Generalised predicate returning the event handler if the given FD
+is monitored for EVENT-TYPE."
   (let ((entry (fd-entry-of event-base fd)))
     (and entry (fd-entry-handler entry event-type))))
 
@@ -226,21 +231,27 @@ within the extent of BODY.  Closes VAR."
   (let ((entry (fd-entry-of event-base fd)))
     (cond
       (entry
-       (%remove-fd-handlers event-base fd entry read write error)
-       (when (and read write)
-         (assert (null (fd-entry-of event-base fd)))))
-      (t
-       (error "Trying to remove a non-monitored FD.")))))
+       (prog1
+           (%remove-fd-handlers event-base fd entry read write error)
+         (when (and read write)
+           (assert (null (fd-entry-of event-base fd))))))
+      (t nil))))
 
 (defun %remove-fd-handlers (event-base fd entry read write error)
   (let ((rev (fd-entry-read-handler entry))
-        (wev (fd-entry-write-handler entry)))
+        (wev (fd-entry-write-handler entry))
+        (eev (fd-entry-error-callback entry))
+        (removed nil))
     (when (and rev read)
-      (%remove-io-handler event-base fd entry rev))
+      (%remove-io-handler event-base fd entry rev)
+      (setf removed t))
     (when (and wev write)
-      (%remove-io-handler event-base fd entry wev))
-    (when error
-      (setf (fd-entry-error-callback entry) nil))))
+      (%remove-io-handler event-base fd entry wev)
+      (setf removed t))
+    (when (and eev error)
+      (setf (fd-entry-error-callback entry) nil)
+      (setf removed t))
+    removed))
 
 (defun %remove-io-handler (event-base fd fd-entry event)
   (let ((event-type (fd-handler-type event)))
