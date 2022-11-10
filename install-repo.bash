@@ -22,6 +22,7 @@ Pin: origin download.opensuse.org
 Pin-Priority: 1001
 EOF
 
+mkdir -vp /etc/apt/keyrings/
 curl https://download.opensuse.org/repositories/home:/sionescu/Debian/Release.key | sudo tee "${KEYFILE}"
 
 apt-get update -qq
