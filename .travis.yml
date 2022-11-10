@@ -5,18 +5,14 @@ language: generic
 env:
   jobs:
     - LISP=sbcl
-    # - LISP=sbcl32
     - LISP=ccl
-    # - LISP=ccl32
     - LISP=ecl
     # - LISP=allegro
     # - LISP=cmucl
 
-matrix:
+jobs:
   fast_finish: true
   allow_failures:
-    # - env: LISP=ccl32
-    # - env: LISP=sbcl32
     # - env: LISP=allegro
     # - env: LISP=cmucl
     - env: LISP=ecl
@@ -27,7 +23,7 @@ notifications:
     on_failure: always
   irc:
     channels:
-      - "chat.freenode.net#iolib"
+      - "irc.libera.chat#iolib"
     on_success: change
     on_failure: always
     use_notice: true
