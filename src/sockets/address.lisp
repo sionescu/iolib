@@ -453,10 +453,13 @@ IPV4-ADDRESS, IPV6-ADDRESS or LOCAL-ADDRESS, respectively, will
 be created.  Otherwise, a TYPE-ERROR is signalled.  See also
 ENSURE-ADDRESS."
   (cond
-    ((ignore-errors (coercef name 'ipv4-array))
+    ((and (typep name '(array * (4)))
+          (every #'(lambda (x) (typep x '(unsigned-byte 8))) name))
      (make-instance 'ipv4-address :name name))
-    ((ignore-errors (coercef name 'ipv6-array))
+    ((and (typep name '(array * (8)))
+          (every #'(lambda (x) (typep x '(unsigned-byte 16))) name))
      (make-instance 'ipv6-address :name name))
-    ((stringp name) (make-instance 'local-address :name name))
+    ((stringp name)
+     (make-instance 'local-address :name name))
     (t (error 'type-error :datum name
               :expected-type '(or string ipv4-array ipv6-array)))))
