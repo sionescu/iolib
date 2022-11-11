@@ -13,7 +13,7 @@ esac
 
 KEYFILE=/etc/apt/keyrings/obs-sionescu.key
 cat > /etc/apt/sources.list.d/libfixposix.list <<EOF
-deb [signed-by=${KEYFILE}] http://download.opensuse.org/repositories/home:/sionescu/Debian/ ./
+deb [signed-by=${KEYFILE}] http://download.opensuse.org/repositories/home:/sionescu/Ubuntu_Jammy/ ./
 EOF
 
 cat > /etc/apt/preferences.d/libfixposix <<EOF
@@ -23,7 +23,7 @@ Pin-Priority: 1001
 EOF
 
 mkdir -vp /etc/apt/keyrings/
-curl https://download.opensuse.org/repositories/home:/sionescu/Debian/Release.key | sudo tee "${KEYFILE}"
+curl https://download.opensuse.org/repositories/home:/sionescu/Ubuntu_Jammy/Release.key | sudo tee "${KEYFILE}"
 
 apt-get update -qq
 
