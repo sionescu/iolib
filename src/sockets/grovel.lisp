@@ -30,7 +30,7 @@
 ;;; This file contains a lot of unused types and constants that should
 ;;; be cleaned up or at least commented out.
 
-(include "sys/socket.h" "sys/un.h" "netdb.h" "errno.h"
+(include "sys/socket.h" "sys/un.h" "netdb.h" "errno.h" "time.h"
          "net/if.h" "netinet/in.h" "netinet/tcp.h" "netinet/ip.h"
          #+linux "linux/errqueue.h" #+linux "linux/icmp.h"
          #+linux "linux/netlink.h"
