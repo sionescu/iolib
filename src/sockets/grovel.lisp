@@ -47,7 +47,7 @@
   ((:eprototype "EPROTOTYPE"))
   ((:enoprotoopt "ENOPROTOOPT"))
   ((:eremote "EREMOTE"))
-  ((:enolink "ENOLINK"))
+  ((:enolink "ENOLINK") :optional t)
   ((:epfnosupport "EPFNOSUPPORT"))
   ((:eafnosupport "EAFNOSUPPORT"))
   ((:eaddrinuse "EADDRINUSE"))

@@ -98,9 +98,9 @@
    #:echild #:econnaborted #:econnrefused #:econnreset #:edeadlk
    #:edestaddrreq #:edom #:edquot #:eexist #:efault #:efbig #:ehostdown
    #:ehostunreach #:eidrm #:eilseq #:einprogress #:eintr #:einval #:eio
-   #:eisconn #:eisdir #:eloop #:emfile #:emlink #:emsgsize #:emultihop
+   #:eisconn #:eisdir #:eloop #:emfile #:emlink #:emsgsize #-openbsd #:emultihop
    #:enametoolong #:enetdown #:enetreset #:enetunreach #:enfile
-   #:enobufs #-dragonfly #:enodata #:enodev #:enoent #:enoexec #:enolck #:enolink
+   #:enobufs #-dragonfly #:enodata #:enodev #:enoent #:enoexec #:enolck #-openbsd #:enolink
    #:enomem #:enomsg #:enonet #:enoprotoopt #:enospc #-dragonfly #:enosr #-dragonfly #:enostr
    #:enosys #:enotconn #:enotdir #:enotempty #:enotsock #:enotsup #:enotty
    #:enxio #:eopnotsupp #:eoverflow #:eperm #:epipe #:eproto
