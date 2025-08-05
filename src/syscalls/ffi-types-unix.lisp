@@ -14,7 +14,7 @@
          "pwd.h" "grp.h")
 
 #+linux
-(include "sys/epoll.h" "sys/syscall.h")
+(include "sys/epoll.h" "sys/syscall.h" "sys/eventfd.h")
 
 #+bsd
 (include "sys/event.h" "sys/time.h")    ; for kqueue
@@ -443,6 +443,9 @@
 #+linux (constant (pollrdhup "POLLRDHUP"))
 (constant (pollhup "POLLHUP"))
 (constant (pollnval "POLLNVAL"))
+#+linux (constant (efd-cloexec "EFD_CLOEXEC"))
+#+linux (constant (efd-nonblock "EFD_NONBLOCK"))
+#+linux (constant (efd-semaphore "EFD_SEMAPHORE"))
 
 
 ;;; dirent.h

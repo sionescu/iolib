@@ -609,7 +609,12 @@ Return two values: the file descriptor and the path of the temporary file."
     (epfd      :int)
     (events    :pointer)
     (maxevents :int)
-    (timeout   :int)))
+    (timeout   :int))
+
+  #+linux
+  (defsyscall (eventfd "eventfd") :int
+    (initial :int)
+    (flags   :int)))
 
 #+bsd
 (progn
