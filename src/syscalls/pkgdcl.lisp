@@ -283,6 +283,11 @@
    ;; struct pollfd
    #:pollfd
    #:fd #:events #:revents
+   ;; sys/eventfd.h
+   #:eventfd
+   #:efd-cloexec
+   #:efd-nonblock
+   #:efd-semaphore
    ;; Poll()
    #:pollin
    #:pollrdnorm
