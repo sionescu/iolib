@@ -8,24 +8,14 @@
 (defconstant +epoll-priority+ 1)
 
 (define-multiplexer epoll-multiplexer +epoll-priority+ (multiplexer)
-  ((events :reader event-set-of)))
+  ())
 
 (defmethod print-object ((mux epoll-multiplexer) stream)
   (print-unreadable-object (mux stream :type nil :identity nil)
     (format stream "epoll(4) multiplexer")))
 
 (defmethod initialize-instance :after ((mux epoll-multiplexer) &key (size 25))
-  (setf (slot-value mux 'fd) (isys:epoll-create size))
-  (setf (slot-value mux 'events)
-        (foreign-alloc '(:struct isys:epoll-event)
-                       :count (fd-limit-of mux))))
-
-(defmethod close :after ((mux epoll-multiplexer) &key abort)
-  (declare (ignore abort))
-  (with-slots (events) mux
-    (when events
-      (foreign-free events)
-      (setf events nil))))
+  (setf (slot-value mux 'fd) (isys:epoll-create size)))
 
 (defun calc-epoll-flags (fd-entry)
   (logior (if (fd-entry-read-handler fd-entry)
@@ -89,28 +79,28 @@
             (fd-entry-fd fd-entry)))))
 
 (defmethod harvest-events ((mux epoll-multiplexer) timeout)
-  (with-accessors ((events event-set-of)
-                   (fd-limit fd-limit-of))
+  (with-accessors ((fd-limit fd-limit-of))
       mux
-    (isys:bzero events (* fd-limit (isys:sizeof '(:struct isys:epoll-event))))
-    (let (ready-fds)
-      (isys:repeat-upon-condition-decreasing-timeout
-          ((isys:eintr) tmp-timeout timeout)
-        (setf ready-fds (isys:epoll-wait (fd-of mux) events fd-limit
-                                         (timeout->milliseconds tmp-timeout))))
-      (macrolet ((epoll-slot (slot-name)
-                   `(foreign-slot-value
-                     ;; FIXME: tests fail when wrapping this bare reference
-                     ;; in a :STRUCT.
-                     (mem-aref events 'isys:epoll-event i)
-                     '(:struct isys:epoll-event) ',slot-name)))
-        (return*
-         (loop :for i :below ready-fds
-               :for fd := (foreign-slot-value (epoll-slot isys:data)
-                                              '(:union isys:epoll-data) 'isys:fd)
-               :for event-mask := (epoll-slot isys:events)
-               :for epoll-event := (make-epoll-event fd event-mask)
-               :when epoll-event :collect epoll-event))))))
+    (with-foreign-object (events 'isys:epoll-event fd-limit)
+      (isys:bzero events (* fd-limit (isys:sizeof '(:struct isys:epoll-event))))
+      (let (ready-fds)
+        (isys:repeat-upon-condition-decreasing-timeout
+            ((isys:eintr) tmp-timeout timeout)
+          (setf ready-fds (isys:epoll-wait (fd-of mux) events fd-limit
+                                           (timeout->milliseconds tmp-timeout))))
+        (macrolet ((epoll-slot (slot-name)
+                     `(foreign-slot-value
+                       ;; FIXME: tests fail when wrapping this bare reference
+                       ;; in a :STRUCT.
+                       (mem-aref events 'isys:epoll-event i)
+                       '(:struct isys:epoll-event) ',slot-name)))
+          (return*
+           (loop :for i :below ready-fds
+                 :for fd := (foreign-slot-value (epoll-slot isys:data)
+                                                '(:union isys:epoll-data) 'isys:fd)
+                 :for event-mask := (epoll-slot isys:events)
+                 :for epoll-event := (make-epoll-event fd event-mask)
+                 :when epoll-event :collect epoll-event)))))))
 
 (defun make-epoll-event (fd mask)
   (let ((event ()))
